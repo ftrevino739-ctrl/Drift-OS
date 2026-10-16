@@ -21,23 +21,35 @@ function loadAndPatchIndex() {
 	if (!file) return null;
 	let html = fs.readFileSync(file, "utf8");
 
-	// Gate OFF for now (re-enable later with enabled:true + password 1)
-	html = html.replace(/enabled\s*:\s*true/, "enabled:false");
+	// === FORCE GATE OFF (was matching a comment before, not DRIFT_ACCESS) ===
+	html = html.replace(
+		/window\.DRIFT_ACCESS\s*=\s*\{[\s\S]*?enabled\s*:\s*true/,
+		"window.DRIFT_ACCESS={enabled:false"
+	);
+	// safety: any remaining DRIFT enabled true
+	html = html.replace(
+		/(DRIFT_ACCESS\s*=\s*\{[\s\n\r]*enabled\s*:\s*)true/,
+		"$1false"
+	);
 	html = html.replace(/passwordHash\s*:\s*['"][a-fA-F0-9]{64}['"]/g, "passwordHash:'" + TEMP_PASS_HASH + "'");
 
-	// Full app list in start menu
+	// Hide gate with CSS no matter what JS does
+	const forceCss =
+		"<style id=\"drift-force-desk\">#gate{display:none!important;visibility:hidden!important;pointer-events:none!important}#desk{display:block!important}</style>";
+	if (html.includes("</head>")) html = html.replace("</head>", forceCss + "</head>");
+
+	// Full app list
 	html = html.replace(
 		"const APPS={calc:'Calculator',browser:'Browser',ai:'AI',yt:'YouTube'};",
 		"const APPS={calc:'Calculator',browser:'Browser',ai:'AI',yt:'YouTube',cam:'Camera',mus:'Music',movies:'Movies',code:'VS Code',discord:'Discord',gmail:'Gmail',ig:'Instagram',tt:'TikTok',classroom:'Classroom',canva:'Canva',roblox:'Roblox',gimkit:'Gimkit',games:'Games',chat:'Chat'};"
 	);
 
-	// Desktop defaults
 	html = html.replace(
 		"const defD=()=>({pins:['calc','browser','ai','yt'],desk:['calc','browser','ai','yt'],chats:[]});",
 		"const defD=()=>({pins:['calc','browser','ai','yt','gmail','gimkit'],desk:['browser','ai','yt','gmail','gimkit','movies','cam','chat'],chats:[]});"
 	);
 
-	// XAPPS referenced undefined classroomApp/canvaApp/robloxApp → crashed entire OS
+	// Fix crash from missing classroomApp/canvaApp/robloxApp
 	const xapps =
 		"const XAPPS={cam:{n:'Camera',f:camera},mus:{n:'Music',f:music},movies:{n:'Movies',f:movies},code:{n:'VS Code',f:vscode},discord:{n:'Discord',f:discordApp},gmail:{n:'Gmail',f:gmailApp},ig:{n:'Instagram',f:igApp},tt:{n:'TikTok',f:ttApp}," +
 		"classroom:{n:'Classroom',f:function(r){proxySite(r,'https://classroom.google.com','Classroom')}}," +
@@ -49,7 +61,6 @@ function loadAndPatchIndex() {
 		xapps
 	);
 
-	// Extra icons after IC.yt
 	const extraIC =
 		";(function(){function L(b,t){return '<svg viewBox=\"0 0 48 48\"><rect width=\"48\" height=\"48\" rx=\"11\" fill=\"'+b+'\"/><text x=\"24\" y=\"31\" text-anchor=\"middle\" font-size=\"15\" font-weight=\"700\" fill=\"#fff\" font-family=\"system-ui,sans-serif\">'+t+'</text></svg>'}" +
 		"IC.cam=L('#0f172a','Cam');IC.mus=L('#1db954','Mu');IC.movies=L('#e50914','N');IC.code=L('#007acc','VS');" +
@@ -65,6 +76,19 @@ function loadAndPatchIndex() {
 		/try\{const ph=localStorage\.getItem\('drift:ph'\);if\(ph&&ph\.length===64\)A\.passwordHash=ph\}catch\(e\)\{\}/g,
 		"try{localStorage.removeItem('drift:ph')}catch(e){}"
 	);
+
+	// Boot: force unlock + refresh desk if stuck on old localStorage desk list
+	const boot =
+		"<script>(function(){" +
+		"try{sessionStorage.setItem('drift:gate','1');localStorage.removeItem('drift:ph');}catch(e){}" +
+		"function forceDesk(){" +
+		"  var g=document.getElementById('gate'); if(g){g.classList.add('gone');g.style.display='none';}" +
+		"  if(window.DRIFT_ACCESS) window.DRIFT_ACCESS.enabled=false;" +
+		"}" +
+		"if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',forceDesk); else forceDesk();" +
+		"setTimeout(forceDesk,50);setTimeout(forceDesk,300);" +
+		"})();</script>";
+	if (html.includes("</head>")) html = html.replace("</head>", boot + "</head>");
 
 	return html;
 }
@@ -107,13 +131,16 @@ fastify.get("/", sendIndex);
 fastify.get("/index.html", sendIndex);
 fastify.get("/health", async () => {
 	const html = loadAndPatchIndex();
+	const access = (html || "").match(/DRIFT_ACCESS\s*=\s*\{[\s\S]{0,120}/);
 	return {
 		ok: true,
 		servedBytes: html ? html.length : 0,
-		gateDisabled: !!(html && /enabled\s*:\s*false/.test(html)),
+		gateReallyOff: !!(html && /DRIFT_ACCESS\s*=\s*\{\s*enabled\s*:\s*false/.test(html)),
+		forceCss: !!(html && html.includes("drift-force-desk")),
 		fullApps: !!(html && html.includes("gimkit:'Gimkit'")),
 		xappsFixed: !!(html && html.includes("gimkit:{n:'Gimkit'")),
 		scramjet: !!scramjetPath,
+		snippet: access ? access[0].slice(0, 80) : null,
 	};
 });
 
@@ -132,6 +159,6 @@ fastify.setNotFoundHandler((_req, reply) => {
 let port = parseInt(process.env.PORT || "", 10);
 if (Number.isNaN(port)) port = 8080;
 await fastify.listen({ port, host: "0.0.0.0" });
-console.log("Drift listening", port, "| gate OFF | full apps + scramjet");
+console.log("Drift listening", port, "| GATE FORCED OFF | full apps + scramjet");
 process.on("SIGINT", () => process.exit(0));
 process.on("SIGTERM", () => process.exit(0));
