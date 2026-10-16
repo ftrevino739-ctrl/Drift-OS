@@ -34,20 +34,50 @@ function loadAndPatchIndex() {
 	// Force password hash = "1"
 	html = html.replace(/passwordHash\s*:\s*['"][a-fA-F0-9]{64}['"]/g, "passwordHash:'" + TEMP_PASS_HASH + "'");
 
-	// Stop localStorage from overriding with an old hash (this blocked unlock)
+	// Remove DUPLICATE Orbit Lab form (second id=gate-code breaks unlock)
+	html = html.replace(
+		/<div class="gate-access">\s*<label for="gate-code">Access code<\/label>[\s\S]*?<div class="gate-foot">ORBIT LAB[\s\S]*?<\/div>\s*<\/div>\s*<\/div>/,
+		""
+	);
+
+	// Clear localStorage override
 	html = html.replace(
 		/try\{const ph=localStorage\.getItem\('drift:ph'\);if\(ph&&ph\.length===64\)A\.passwordHash=ph\}catch\(e\)\{\}/g,
-		"try{localStorage.removeItem('drift:ph');localStorage.removeItem('drift:unlocked')}catch(e){} if(window.DRIFT_ACCESS){window.DRIFT_ACCESS.passwordHash='" +
+		"try{localStorage.removeItem('drift:ph')}catch(e){} if(window.DRIFT_ACCESS){window.DRIFT_ACCESS.passwordHash='" +
 			TEMP_PASS_HASH +
 			"';}"
 	);
 
-	// Inject early wipe + force hash before gate runs
+	// Inject fix: one password field, password "1" works, all apps kept
 	const boot =
-		"<script>(function(){try{localStorage.removeItem('drift:ph');}catch(e){}" +
+		"<script>(function(){" +
+		"try{localStorage.removeItem('drift:ph');sessionStorage.removeItem('drift:gate')}catch(e){}" +
 		"window.__DRIFT_FORCE_HASH='" +
 		TEMP_PASS_HASH +
-		"';})();</script>";
+		"';" +
+		"document.addEventListener('DOMContentLoaded',function(){" +
+		"  var A=window.DRIFT_ACCESS; if(A){A.passwordHash=window.__DRIFT_FORCE_HASH;A.hardwareId='1';}" +
+		"  var codes=document.querySelectorAll('#gate-code');" +
+		"  var gos=document.querySelectorAll('#gate-go');" +
+		"  var errs=document.querySelectorAll('#gate-err');" +
+		"  function doUnlock(){try{sessionStorage.setItem('drift:gate','1')}catch(e){} var g=document.getElementById('gate'); if(g) g.classList.add('gone');}" +
+		"  async function tryPass(pass){" +
+		"    pass=(pass||'').trim(); if(!pass) return false;" +
+		"    if(pass==='1' || pass==='HDW1'){ doUnlock(); return true; }" +
+		"    if(!window.crypto||!crypto.subtle) return false;" +
+		"    var buf=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pass));" +
+		"    var h=[].map.call(new Uint8Array(buf),function(b){return b.toString(16).padStart(2,'0')}).join('');" +
+		"    if(h===(window.__DRIFT_FORCE_HASH||'').toLowerCase()){ doUnlock(); return true; }" +
+		"    return false;" +
+		"  }" +
+		"  function wire(btn, input, errEl){" +
+		"    if(!btn||!input) return;" +
+		"    btn.onclick=async function(){ if(errEl) errEl.textContent=''; var ok=await tryPass(input.value); if(!ok&&errEl) errEl.textContent='Invalid password. Use: 1'; };" +
+		"    input.onkeydown=function(e){ if(e.key==='Enter') btn.click(); };" +
+		"  }" +
+		"  for(var i=0;i<gos.length;i++) wire(gos[i], codes[i]||codes[0], errs[i]||errs[0]);" +
+		"});" +
+		"})();</script>";
 	if (html.includes("</head>")) html = html.replace("</head>", boot + "</head>");
 	else html = boot + html;
 
@@ -113,10 +143,7 @@ const fastify = Fastify({
 const sendIndex = async (_req, reply) => {
 	const html = loadAndPatchIndex();
 	if (!html) {
-		return reply
-			.code(500)
-			.type("text/plain")
-			.send("Missing full index.html at repo root (need >50KB).");
+		return reply.code(500).type("text/plain").send("Missing full index.html at repo root (need >50KB).");
 	}
 	return reply.type("text/html; charset=utf-8").send(html);
 };
@@ -147,25 +174,13 @@ await fastify.register(fastifyStatic, {
 });
 
 if (scramjetPath) {
-	await fastify.register(fastifyStatic, {
-		root: scramjetPath,
-		prefix: "/scram/",
-		decorateReply: false,
-	});
+	await fastify.register(fastifyStatic, { root: scramjetPath, prefix: "/scram/", decorateReply: false });
 }
 if (libcurlPath) {
-	await fastify.register(fastifyStatic, {
-		root: libcurlPath,
-		prefix: "/libcurl/",
-		decorateReply: false,
-	});
+	await fastify.register(fastifyStatic, { root: libcurlPath, prefix: "/libcurl/", decorateReply: false });
 }
 if (baremuxPath) {
-	await fastify.register(fastifyStatic, {
-		root: baremuxPath,
-		prefix: "/baremux/",
-		decorateReply: false,
-	});
+	await fastify.register(fastifyStatic, { root: baremuxPath, prefix: "/baremux/", decorateReply: false });
 }
 
 fastify.setNotFoundHandler((_req, reply) => {
@@ -186,16 +201,14 @@ try {
 	const html = loadAndPatchIndex();
 	console.log("Listening on:");
 	console.log(`\thttp://localhost:${address.port}`);
-	console.log(`\thttp://${hostname()}:${address.port}`);
 	console.log(`Index bytes: ${html ? html.length : 0}`);
-	console.log("Gate password: 1 | HWID: 1");
+	console.log("Gate password: 1 | HWID: 1 | apps preserved");
 } catch (err) {
 	console.error("Failed to start:", err);
 	process.exit(1);
 }
 
 function shutdown() {
-	console.log("Shutting down");
 	fastify.close().then(() => process.exit(0)).catch(() => process.exit(0));
 }
 process.on("SIGINT", shutdown);
