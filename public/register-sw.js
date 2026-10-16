@@ -1,11 +1,11 @@
 "use strict";
-const stockSW = "./sw.js";
-const swAllowedHostnames = ["localhost", "127.0.0.1"];
 async function registerSW() {
-	if (!navigator.serviceWorker) {
-		if (location.protocol !== "https:" && !swAllowedHostnames.includes(location.hostname))
-			throw new Error("Service workers cannot be registered without https.");
-		throw new Error("Your browser doesn't support service workers.");
-	}
-	await navigator.serviceWorker.register(stockSW);
+  if (!navigator.serviceWorker) throw new Error("No service workers");
+  try {
+    const r = await fetch("/scram/scramjet.all.js", { method: "HEAD", cache: "no-store" });
+    if (!r.ok) return null;
+  } catch (e) {
+    return null;
+  }
+  return navigator.serviceWorker.register("./sw.js");
 }
