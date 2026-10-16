@@ -1,49 +1,48 @@
-# Drift-OS
+# Drift-OS / Northwind Atlas
 
-Web desktop (WebOS) with Scramjet proxy, YouTube, AI (Drift models), Camera, Movies, Gmail, Instagram, TikTok.
+Web desktop with Scramjet proxy, YouTube, Drift AI, Chat, Games, Gimkit, Classroom, Canva, Roblox.
 
-## Quick start (with Scramjet)
+## Quick start (Scramjet / Railway)
 
 ```bash
-cd WebOS-Scramjet   # or clone root and npm install
-npm install
+npm install --legacy-peer-deps
 npm start
 ```
 
-Open http://localhost:8080
+Open http://localhost:8080 (Railway injects `PORT`).
 
-## Static WebOS only
+## Vercel (static only)
 
-Open `index.html` — apps that need login (Discord, IG, TikTok) require the Scramjet server (`npm start`).
+- Output Directory: `public`
+- Full Scramjet proxy will **not** work on Vercel (no `/wisp`).
 
-## AI Worker (Cloudflare)
+## Access gate
 
-1. Create a Worker and paste `worker.js`
-2. Set secrets: `GROQ_KEY`, `OPENROUTER_KEY`, optional `XKIRO_KEY`, `YT_KEY`, `SERPAPI_KEY`
-3. Point WebOS `DDG0` / `wos:ddg` to your worker URL
+- Hardware ID fixed to `1`
+- Password verified with **SHA-256** (`DRIFT_ACCESS.passwordHash`)
+- Owner panel: `?owner=YOUR_PIN` → hash a new password
 
-## Drift models (recommended)
+## AI features
 
-| Name | Backend |
-|------|---------|
-| Drift 1.0 | Groq Llama 3.3 70B |
-| Drift 1.1 | OpenRouter DeepSeek R1 |
-| Drift 1.2 | OpenRouter Gemini Flash |
-| Drift 1.3 | OpenRouter Qwen 72B |
-| Drift 1.4 | OpenRouter Llama 70B |
+- **Thinking** panel for models flagged with think (DeepSeek / Qwen-style)
+- **Caveman** mode: minimal answers
+- **Custom instructions** (saved on device)
+- Say **open Browser** → AI emits `OPEN_APP:browser` and the OS opens it
+- Model list: hover **⋯** for capabilities (code / vision / thinking) — no separate About page
+- Markdown: **bold**, tables (`| col |`), code blocks with copy/download/preview
 
-## Announcement toggle
+## Apps
 
-In `index.html`:
+Chat (Discord-style channels), Games + local leaderboard, Gimkit join, Classroom, Canva, Roblox, Netflix-style Movies.
 
-```js
-window.DRIFT_CONFIG = {
-  announce: true,  // false to hide
-  announceTitle: 'Drift has been updated',
-  announceBody: '...'
-};
-```
+## Gimkit cheat
+
+The userscript from TheLazySquid needs **Tampermonkey** in a normal browser tab (`GM_*` APIs). It cannot fully run inside a locked iframe.
+
+## Worker secrets (Cloudflare)
+
+`GROQ_KEY`, `OPENROUTER_KEY`, optional `XKIRO_KEY`, `YT_KEY`.
 
 ## License
 
-AGPL for Scramjet components (Mercury Workshop). WebOS UI provided as-is for personal use.
+AGPL for Scramjet (Mercury Workshop). UI as-is for personal use.
