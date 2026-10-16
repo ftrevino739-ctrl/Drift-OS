@@ -16,38 +16,29 @@ const publicPath = fileURLToPath(new URL("../public/", import.meta.url));
 const rootIndexPath = path.join(rootPath, "index.html");
 const pubIndexPath = path.join(publicPath, "index.html");
 
-// SHA-256 of temporary password "0"
+// SHA-256("0") — temporary gate password
 const TEMP_PASS_HASH = "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9";
 
-function ensureFullIndex() {
-	try {
-		if (!fs.existsSync(rootIndexPath)) return;
-		const rs = fs.statSync(rootIndexPath).size;
-		const ps = fs.existsSync(pubIndexPath) ? fs.statSync(pubIndexPath).size : 0;
-		if (rs > 50000 && rs > ps) {
-			fs.copyFileSync(rootIndexPath, pubIndexPath);
-			console.log(`Synced root index.html -> public/index.html (${rs} bytes)`);
-		}
-	} catch (e) {
-		console.warn("index sync skipped", e);
-	}
-}
+function loadAndPatchIndex() {
+	let file = null;
+	if (fs.existsSync(rootIndexPath) && fs.statSync(rootIndexPath).size > 50000) file = rootIndexPath;
+	else if (fs.existsSync(pubIndexPath)) file = pubIndexPath;
+	if (!file) return null;
+	let html = fs.readFileSync(file, "utf8");
 
-function patchHtml(html) {
-	html = html.replace(
-		/#gate\{position:fixed;inset:0;z-index:999999;background:#000;color:#e8e8e8;font-family:ui-sans-serif,system-ui,sans-serif;overflow:hidden;display:flex;flex-direction:column\}/,
-		"#gate{position:fixed;inset:0;z-index:999999;background:#000;color:#e8e8e8;font-family:ui-sans-serif,system-ui,sans-serif;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;display:block}"
+	// Scrollable gate
+	html = html.split("overflow:hidden;display:flex;flex-direction:column}").join(
+		"overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;display:block}"
 	);
-	html = html.replace(
-		/\.gate-ui\{position:relative;z-index:2;max-width:720px;margin:auto;padding:28px 22px 40px;text-align:center\}/,
-		".gate-ui{position:relative;z-index:2;max-width:720px;margin:0 auto;padding:28px 22px 100px;text-align:center}"
+	html = html.split("margin:auto;padding:28px 22px 40px;text-align:center}").join(
+		"margin:0 auto;padding:28px 22px 100px;text-align:center}"
 	);
-	html = html.replace(/passwordHash:'[a-f0-9]{64}'/g, "passwordHash:'" + TEMP_PASS_HASH + "'");
-	html = html.replace(/passwordHash:"[a-f0-9]{64}"/g, 'passwordHash:"' + TEMP_PASS_HASH + '"');
+
+	// Force password hash = SHA-256 of "0"
+	html = html.replace(/passwordHash\s*:\s*['"][a-fA-F0-9]{64}['"]/g, "passwordHash:'" + TEMP_PASS_HASH + "'");
+
 	return html;
 }
-
-ensureFullIndex();
 
 logging.set_level(logging.NONE);
 Object.assign(wisp.options, {
@@ -71,19 +62,21 @@ const fastify = Fastify({
 	},
 });
 
-fastify.get("/", async (_req, reply) => {
-	ensureFullIndex();
-	let file = null;
-	if (fs.existsSync(rootIndexPath) && fs.statSync(rootIndexPath).size > 50000) file = rootIndexPath;
-	else if (fs.existsSync(pubIndexPath)) file = pubIndexPath;
-	if (!file) return reply.code(404).send("index.html missing");
-	const html = patchHtml(fs.readFileSync(file, "utf8"));
+// Always serve the FULL root WebOS (inline CSS/JS) — never the thin public shell
+const sendIndex = async (_req, reply) => {
+	const html = loadAndPatchIndex();
+	if (!html) return reply.code(404).send("index.html missing at repo root");
 	return reply.type("text/html; charset=utf-8").send(html);
-});
+};
+fastify.get("/", sendIndex);
+fastify.get("/index.html", sendIndex);
 
+// Static assets only — do NOT auto-serve index.html for "/"
 fastify.register(fastifyStatic, {
 	root: publicPath,
 	decorateReply: true,
+	index: false,
+	wildcard: false,
 });
 
 fastify.register(fastifyStatic, {
@@ -110,11 +103,12 @@ fastify.setNotFoundHandler((_req, reply) => {
 
 fastify.server.on("listening", () => {
 	const address = fastify.server.address();
+	const html = loadAndPatchIndex();
 	console.log("Listening on:");
 	console.log(`\thttp://localhost:${address.port}`);
 	console.log(`\thttp://${hostname()}:${address.port}`);
-	console.log(`Root index: ${fs.existsSync(rootIndexPath) ? fs.statSync(rootIndexPath).size + " bytes" : "missing"}`);
-	console.log("Temp gate password: 0 (HWID 1)");
+	console.log(`Index bytes: ${html ? html.length : 0}`);
+	console.log("Gate password: 0 | HWID: 1");
 });
 
 process.on("SIGINT", shutdown);
