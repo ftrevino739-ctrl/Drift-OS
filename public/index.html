@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Northwind Atlas</title>
-<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="app-1.css">
+<link rel="stylesheet" href="app-2.css">
 </head>
 <body>
 <div id="gate" aria-live="polite">
@@ -13,55 +14,27 @@
   <div class="gate-ui">
     <h1>Northwind Atlas</h1>
     <div class="sub">Open knowledge surface · research desk</div>
-    <div class="gate-card">
-      <h2>Mission</h2>
-      <p>Northwind Atlas is a public-facing knowledge desk. The animated field behind this page is only a backdrop. The content below is general education and reference so visitors have something useful to read before any restricted tools.</p>
-    </div>
-    <div class="gate-card">
-      <h2>Science in plain language</h2>
-      <p><b>Energy</b> is the ability to cause change. <b>Matter</b> is anything that has mass and takes up space. The scientific method: question, hypothesis, test, data, revise.</p>
-      <ul>
-        <li>Observe carefully and write what you see.</li>
-        <li>Separate opinion from measurement.</li>
-        <li>Cite sources when you claim a fact.</li>
-      </ul>
-    </div>
-    <div class="gate-card">
-      <h2>History & civic literacy</h2>
-      <p>Primary sources differ from secondary summaries. Check who published, when, and what evidence they show.</p>
-    </div>
-    <div class="gate-card">
-      <h2>Digital literacy</h2>
-      <p>Long unique passwords beat short clever ones. Check the real domain before you click.</p>
-    </div>
-    <div class="gate-card">
-      <h2>Study habits</h2>
-      <p>Short focused blocks beat cramming. Active recall and spaced practice work.</p>
-    </div>
-    <div class="gate-card">
-      <h2>Break time</h2>
-      <p><a class="gate-link" href="https://subwaysurfers76.github.io/" target="_blank" rel="noopener noreferrer">Entertain yourself</a></p>
-    </div>
-    <div class="gate-access" id="gate-access-box">
+    <div class="gate-card"><h2>Mission</h2>
+      <p>Public knowledge desk. Space is only the backdrop. Scroll down for access.</p></div>
+    <div class="gate-card"><h2>Break time</h2>
+      <p><a class="gate-link" href="https://subwaysurfers76.github.io/" target="_blank" rel="noopener">Entertain yourself</a></p></div>
+    <div class="gate-access">
       <label>Restricted desk unlock</label>
-      <p style="font-size:12px;color:#888;margin:0 0 12px;text-align:left">Hardware ID is fixed to <b style="color:#ccc">1</b>. Password is verified with SHA-256.</p>
+      <p style="font-size:12px;color:#888;text-align:left">HWID <b style="color:#ccc">1</b> · SHA-256 password</p>
       <div class="gate-row">
-        <input id="gate-hw" type="text" value="1" readonly title="Hardware ID" style="max-width:72px;text-align:center;letter-spacing:0"/>
-        <input id="gate-code" type="password" autocomplete="current-password" spellcheck="false" placeholder="Password"/>
+        <input id="gate-hw" type="text" value="1" readonly style="max-width:72px;text-align:center"/>
+        <input id="gate-code" type="password" placeholder="Password"/>
         <button type="button" id="gate-go">Unlock</button>
       </div>
       <div class="gate-err" id="gate-err"></div>
       <div id="gate-owner"></div>
     </div>
-    <div class="gate-foot">NORTHWIND ATLAS · PUBLIC LAYER · OPERATOR CODES ONLY</div>
+    <div class="gate-foot">NORTHWIND ATLAS</div>
   </div>
 </div>
-
-<div id="desk">
-  <div class="icons" id="icons"></div>
-</div>
+<div id="desk"><div class="icons" id="icons"></div></div>
 <div id="menu">
-  <div class="lh"><input id="lq" placeholder="Search apps" aria-label="Search apps"/></div>
+  <div class="lh"><input id="lq" placeholder="Search apps"/></div>
   <div id="apps"></div>
   <div class="lf">
     <button type="button" id="theme">Theme</button>
@@ -74,7 +47,6 @@
   <div id="tbs" style="display:flex;gap:6px;overflow-x:auto"></div>
   <div id="clock"></div><button id="prof" aria-label="Profile"></button>
 </div>
-<script src="app-core.js"></script>
-<script src="app-apps.js"></script>
+<script src="boot.js"></script>
 </body>
 </html>
