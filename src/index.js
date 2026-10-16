@@ -16,27 +16,23 @@ const publicPath = fileURLToPath(new URL("../public/", import.meta.url));
 const rootIndexPath = path.join(rootPath, "index.html");
 const pubIndexPath = path.join(publicPath, "index.html");
 
-// SHA-256("0") — temporary gate password
-const TEMP_PASS_HASH = "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9";
+// SHA-256 of password "1"
+const TEMP_PASS_HASH = "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b";
 
 function loadAndPatchIndex() {
 	let file = null;
 	if (fs.existsSync(rootIndexPath) && fs.statSync(rootIndexPath).size > 50000) file = rootIndexPath;
-	else if (fs.existsSync(pubIndexPath)) file = pubIndexPath;
+	else if (fs.existsSync(pubIndexPath) && fs.statSync(pubIndexPath).size > 50000) file = pubIndexPath;
 	if (!file) return null;
 	let html = fs.readFileSync(file, "utf8");
 
-	// Scrollable gate
 	html = html.split("overflow:hidden;display:flex;flex-direction:column}").join(
 		"overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;display:block}"
 	);
 	html = html.split("margin:auto;padding:28px 22px 40px;text-align:center}").join(
 		"margin:0 auto;padding:28px 22px 100px;text-align:center}"
 	);
-
-	// Force password hash = SHA-256 of "0"
 	html = html.replace(/passwordHash\s*:\s*['"][a-fA-F0-9]{64}['"]/g, "passwordHash:'" + TEMP_PASS_HASH + "'");
-
 	return html;
 }
 
@@ -62,16 +58,35 @@ const fastify = Fastify({
 	},
 });
 
-// Always serve the FULL root WebOS (inline CSS/JS) — never the thin public shell
 const sendIndex = async (_req, reply) => {
 	const html = loadAndPatchIndex();
-	if (!html) return reply.code(404).send("index.html missing at repo root");
+	if (!html) {
+		return reply
+			.code(500)
+			.type("text/plain")
+			.send("Missing full index.html at repo root (need >50KB file). public/ shell is not enough.");
+	}
 	return reply.type("text/html; charset=utf-8").send(html);
 };
+
 fastify.get("/", sendIndex);
 fastify.get("/index.html", sendIndex);
 
-// Static assets only — do NOT auto-serve index.html for "/"
+fastify.get("/health", async (_req, reply) => {
+	const rootSize = fs.existsSync(rootIndexPath) ? fs.statSync(rootIndexPath).size : 0;
+	const pubSize = fs.existsSync(pubIndexPath) ? fs.statSync(pubIndexPath).size : 0;
+	const html = loadAndPatchIndex();
+	const hasNewHash = !!(html && html.includes(TEMP_PASS_HASH));
+	return {
+		ok: true,
+		rootIndexBytes: rootSize,
+		publicIndexBytes: pubSize,
+		servedBytes: html ? html.length : 0,
+		passwordIs1: hasNewHash,
+		hwid: "1",
+	};
+});
+
 fastify.register(fastifyStatic, {
 	root: publicPath,
 	decorateReply: true,
@@ -108,7 +123,7 @@ fastify.server.on("listening", () => {
 	console.log(`\thttp://localhost:${address.port}`);
 	console.log(`\thttp://${hostname()}:${address.port}`);
 	console.log(`Index bytes: ${html ? html.length : 0}`);
-	console.log("Gate password: 0 | HWID: 1");
+	console.log("Gate password: 1 | HWID: 1");
 });
 
 process.on("SIGINT", shutdown);
