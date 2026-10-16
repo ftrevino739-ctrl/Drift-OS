@@ -13,23 +13,23 @@ import { baremuxPath } from "@mercuryworkshop/bare-mux/node";
 
 const rootPath = fileURLToPath(new URL("../", import.meta.url));
 const publicPath = fileURLToPath(new URL("../public/", import.meta.url));
+const rootIndexPath = path.join(rootPath, "index.html");
+const pubIndexPath = path.join(publicPath, "index.html");
 
-// Full WebOS lives at repo root as index.html (~189KB).
-// public/index.html may be a thin shell — sync the full file on boot.
-try {
-	const rootIndex = path.join(rootPath, "index.html");
-	const pubIndex = path.join(publicPath, "index.html");
-	if (fs.existsSync(rootIndex)) {
-		const rs = fs.statSync(rootIndex).size;
-		const ps = fs.existsSync(pubIndex) ? fs.statSync(pubIndex).size : 0;
+function ensureFullIndex() {
+	try {
+		if (!fs.existsSync(rootIndexPath)) return;
+		const rs = fs.statSync(rootIndexPath).size;
+		const ps = fs.existsSync(pubIndexPath) ? fs.statSync(pubIndexPath).size : 0;
 		if (rs > 50000 && rs > ps) {
-			fs.copyFileSync(rootIndex, pubIndex);
+			fs.copyFileSync(rootIndexPath, pubIndexPath);
 			console.log(`Synced root index.html -> public/index.html (${rs} bytes)`);
 		}
+	} catch (e) {
+		console.warn("index sync skipped", e);
 	}
-} catch (e) {
-	console.warn("index sync skipped", e);
 }
+ensureFullIndex();
 
 logging.set_level(logging.NONE);
 Object.assign(wisp.options, {
@@ -51,6 +51,18 @@ const fastify = Fastify({
 				else socket.end();
 			});
 	},
+});
+
+// Prefer the full WebOS at repo root (ignores thin public shell)
+fastify.get("/", async (_req, reply) => {
+	ensureFullIndex();
+	if (fs.existsSync(rootIndexPath) && fs.statSync(rootIndexPath).size > 50000) {
+		return reply.type("text/html; charset=utf-8").send(fs.readFileSync(rootIndexPath));
+	}
+	if (fs.existsSync(pubIndexPath)) {
+		return reply.type("text/html; charset=utf-8").send(fs.readFileSync(pubIndexPath));
+	}
+	return reply.code(404).send("index.html missing");
 });
 
 fastify.register(fastifyStatic, {
@@ -85,6 +97,7 @@ fastify.server.on("listening", () => {
 	console.log("Listening on:");
 	console.log(`\thttp://localhost:${address.port}`);
 	console.log(`\thttp://${hostname()}:${address.port}`);
+	console.log(`Root index: ${fs.existsSync(rootIndexPath) ? fs.statSync(rootIndexPath).size + " bytes" : "missing"}`);
 });
 
 process.on("SIGINT", shutdown);
