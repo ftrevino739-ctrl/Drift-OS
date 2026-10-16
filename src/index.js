@@ -1,6 +1,8 @@
 import { createServer } from "node:http";
 import { fileURLToPath } from "url";
 import { hostname } from "node:os";
+import fs from "node:fs";
+import path from "node:path";
 import { server as wisp, logging } from "@mercuryworkshop/wisp-js/server";
 import Fastify from "fastify";
 import fastifyStatic from "@fastify/static";
@@ -9,7 +11,25 @@ import { scramjetPath } from "@mercuryworkshop/scramjet/path";
 import { libcurlPath } from "@mercuryworkshop/libcurl-transport";
 import { baremuxPath } from "@mercuryworkshop/bare-mux/node";
 
+const rootPath = fileURLToPath(new URL("../", import.meta.url));
 const publicPath = fileURLToPath(new URL("../public/", import.meta.url));
+
+// Full WebOS lives at repo root as index.html (~189KB).
+// public/index.html may be a thin shell — sync the full file on boot.
+try {
+	const rootIndex = path.join(rootPath, "index.html");
+	const pubIndex = path.join(publicPath, "index.html");
+	if (fs.existsSync(rootIndex)) {
+		const rs = fs.statSync(rootIndex).size;
+		const ps = fs.existsSync(pubIndex) ? fs.statSync(pubIndex).size : 0;
+		if (rs > 50000 && rs > ps) {
+			fs.copyFileSync(rootIndex, pubIndex);
+			console.log(`Synced root index.html -> public/index.html (${rs} bytes)`);
+		}
+	}
+} catch (e) {
+	console.warn("index sync skipped", e);
+}
 
 logging.set_level(logging.NONE);
 Object.assign(wisp.options, {
@@ -56,7 +76,7 @@ fastify.register(fastifyStatic, {
 	decorateReply: false,
 });
 
-fastify.setNotFoundHandler((res, reply) => {
+fastify.setNotFoundHandler((_req, reply) => {
 	return reply.code(404).type("text/html").sendFile("404.html");
 });
 
