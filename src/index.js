@@ -22,13 +22,35 @@ function loadAndPatchIndex() {
 	} catch {}
 	if (!file) return null;
 	let html = fs.readFileSync(file, "utf8");
+
+	// Scrollable gate
 	html = html.split("overflow:hidden;display:flex;flex-direction:column}").join(
 		"overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;display:block}"
 	);
 	html = html.split("margin:auto;padding:28px 22px 40px;text-align:center}").join(
 		"margin:0 auto;padding:28px 22px 100px;text-align:center}"
 	);
+
+	// Force password hash = "1"
 	html = html.replace(/passwordHash\s*:\s*['"][a-fA-F0-9]{64}['"]/g, "passwordHash:'" + TEMP_PASS_HASH + "'");
+
+	// Stop localStorage from overriding with an old hash (this blocked unlock)
+	html = html.replace(
+		/try\{const ph=localStorage\.getItem\('drift:ph'\);if\(ph&&ph\.length===64\)A\.passwordHash=ph\}catch\(e\)\{\}/g,
+		"try{localStorage.removeItem('drift:ph');localStorage.removeItem('drift:unlocked')}catch(e){} if(window.DRIFT_ACCESS){window.DRIFT_ACCESS.passwordHash='" +
+			TEMP_PASS_HASH +
+			"';}"
+	);
+
+	// Inject early wipe + force hash before gate runs
+	const boot =
+		"<script>(function(){try{localStorage.removeItem('drift:ph');}catch(e){}" +
+		"window.__DRIFT_FORCE_HASH='" +
+		TEMP_PASS_HASH +
+		"';})();</script>";
+	if (html.includes("</head>")) html = html.replace("</head>", boot + "</head>");
+	else html = boot + html;
+
 	return html;
 }
 
