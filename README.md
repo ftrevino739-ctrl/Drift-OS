@@ -33,11 +33,28 @@ Open http://localhost:8080 (Railway injects `PORT`).
 
 ## Apps
 
-Chat (Discord-style channels), Games + local leaderboard, Gimkit join, Classroom, Canva, Roblox, Netflix-style Movies.
+Chat (Discord-style channels) 
+Games 
+local leaderboard
+Gimkit join (modified)
+Classroom
+Canva
+Roblox, 
+Netflix-style
+Movies
+Camera
+Music
+Github
+- Gmail 
+Working Browser (Bing, DuckDuckGo and Google)
 
-## Gimkit cheat
+AI: 4 Drift AI models,  LLama 3.1 8B, Gemma 2 9B, Mistral Mini, Qwen Flash, Gemma 2 (LOCAL) and Gemini Nano all this with custom instructions, Effort; Medium, High and Low.
 
-The userscript from TheLazySquid needs **Tampermonkey** in a normal browser tab (`GM_*` APIs). It cannot fully run inside a locked iframe.
+## Gimkit and Wayground Cheat
+
+Gimkit: The userscript from TheLazySquid needs **Tampermonkey** in a normal browser tab (`GM_*` APIs). It cannot fully run inside a locked iframe.
+Wayground: Same as gimkit it uses a Userscript ByOSCARPINE that requieres a API key from Gemini AI studio but we modified taht so it uses Drift AI
+
 
 ## Worker secrets (Cloudflare)
 
