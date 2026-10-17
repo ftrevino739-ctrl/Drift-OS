@@ -1,6 +1,9 @@
-/* Drift fixup: logos, games, injector dedupe, wayground, taskbar corners, vscode */
+/* Drift fixup: logos, games thumbs, models, profile nudge */
 (function () {
   'use strict';
+  window.DRIFT_BEST_MODEL = window.DRIFT_BEST_MODEL || 'mistralai/mistral-large-4-0';
+  window.DRIFT_CODE_MODEL = window.DRIFT_CODE_MODEL || 'qwen/qwen3-coder-plus:free';
+  window.DRIFT_BEST_NAME = 'Drift 2.0';
 
   function onReady(fn) {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn);
@@ -51,17 +54,21 @@
       '<path d="M14 16h20v3H14zm0 7h14v3H14zm0 7h9v3h-9z" fill="#38BDF8"/>' +
       '<path d="M30 30l7 4-7 4z" fill="#FBBF24"/>'
     );
+    // Gemini original 4-point star gradient
     IC.gem = svg(
-      '<rect width="48" height="48" rx="11" fill="#1a73e8"/>' +
-      '<path d="M24 10l3 8 8 3-8 3-3 8-3-8-8-3 8-3z" fill="#fff"/>'
+      '<defs><linearGradient id="gemi" x1="0" y1="0" x2="1" y2="1">' +
+      '<stop offset="0%" stop-color="#1BA1E3"/><stop offset="35%" stop-color="#8E48CD"/>' +
+      '<stop offset="70%" stop-color="#D62546"/><stop offset="100%" stop-color="#F9AB00"/></linearGradient></defs>' +
+      '<rect width="48" height="48" rx="11" fill="#0b0b0f"/>' +
+      '<path d="M24 8c2.5 6.5 7.5 11.5 14 14-6.5 2.5-11.5 7.5-14 14-2.5-6.5-7.5-11.5-14-14 6.5-2.5 11.5-7.5 14-14z" fill="url(#gemi)"/>'
     );
+    IC.ai = IC.gem;
   }
 
   function fixInjectorDupes() {
     try {
       var apps = window.APPS;
       var x = window.XAPPS;
-      var IC = window.IC;
       if (!apps) return;
       Object.keys(apps).forEach(function (id) {
         if (id === 'injector') return;
@@ -97,9 +104,7 @@
       } catch (e) {}
       if (typeof tiles === 'function') tiles();
       if (typeof rend === 'function') rend();
-    } catch (e) {
-      console.warn('fixInjector', e);
-    }
+    } catch (e) {}
   }
 
   function noahGamesApp(root) {
@@ -109,7 +114,7 @@
       '<b style="flex:none">Games</b>' +
       '<input id="ng-q" placeholder="Search games…" style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid #333;background:#15151f;color:#eee">' +
       '<span id="ng-count" style="font-size:11px;opacity:.6"></span></div>' +
-      '<div id="ng-grid" style="flex:1;overflow:auto;padding:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px"></div>' +
+      '<div id="ng-grid" style="flex:1;overflow:auto;padding:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px"></div>' +
       '<div id="ng-play" style="display:none;flex:1;flex-direction:column;min-height:0">' +
       '<div style="padding:8px;display:flex;gap:8px;align-items:center;border-bottom:1px solid #222">' +
       '<button type="button" id="ng-back" style="padding:6px 12px;border-radius:8px;border:1px solid #333;background:#1a1a24;color:#fff;cursor:pointer">← Back</button>' +
@@ -125,21 +130,20 @@
       var el = document.createElement('button');
       el.type = 'button';
       el.style.cssText =
-        'border:0;padding:0;background:#15151f;border-radius:12px;overflow:hidden;cursor:pointer;text-align:left;color:#eee;display:flex;flex-direction:column';
+        'border:0;padding:0;background:#14141c;border-radius:14px;overflow:hidden;cursor:pointer;text-align:left;color:#f3f3f5;' +
+        'display:flex;flex-direction:column;box-shadow:0 2px 10px rgba(0,0,0,.35);min-height:0';
       var img = document.createElement('img');
       img.loading = 'lazy';
-      img.alt = '';
-      img.src = 'https://noahstutoring.academy/' + g.i;
-      img.style.cssText = 'width:100%;aspect-ratio:16/10;object-fit:cover;background:#222;display:block';
+      img.alt = g.t || '';
+      img.src = '/api/noah-asset?u=' + encodeURIComponent('https://noahstutoring.academy/' + g.i);
+      img.style.cssText = 'width:100%;aspect-ratio:16/10;object-fit:cover;background:#1a1a22;display:block;flex:none';
       img.onerror = function () {
-        img.style.display = 'none';
-        el.insertAdjacentHTML(
-          'afterbegin',
-          '<div style="aspect-ratio:16/10;background:linear-gradient(135deg,#333,#111)"></div>'
-        );
+        this.onerror = null;
+        this.src = 'https://noahstutoring.academy/' + g.i;
       };
       var cap = document.createElement('div');
-      cap.style.cssText = 'padding:8px;font-size:12px;font-weight:600;line-height:1.3;min-height:40px';
+      cap.style.cssText =
+        'padding:10px 10px 12px;font-size:12px;font-weight:600;line-height:1.35;min-height:44px;color:#f3f3f5;background:#14141c';
       cap.textContent = g.t;
       el.appendChild(img);
       el.appendChild(cap);
@@ -162,11 +166,9 @@
       root.querySelector('#ng-title').textContent = g.t;
       frameBox.innerHTML = '<div class="ym" style="padding:16px">Loading…</div>';
       try {
-        if (typeof window.openProxied === 'function') {
-          await window.openProxied(url, frameBox);
-        } else if (typeof proxySite === 'function') {
-          proxySite(frameBox, url, g.t);
-        } else {
+        if (typeof window.openProxied === 'function') await window.openProxied(url, frameBox);
+        else if (typeof proxySite === 'function') proxySite(frameBox, url, g.t);
+        else {
           frameBox.innerHTML =
             '<iframe src="' + url.replace(/"/g, '') + '" style="width:100%;height:100%;border:0;background:#000" allowfullscreen></iframe>';
         }
@@ -222,34 +224,47 @@
     } catch (e) {}
   }
 
-  window.driftDo = async function (action, payload) {
-    action = String(action || '').toLowerCase();
-    payload = payload || {};
-    if (action === 'open' || action === 'openapp') {
-      var id = String(payload.app || payload.id || payload.name || '').toLowerCase();
-      var map = {
-        'vs code': 'code', vscode: 'code', code: 'code', browser: 'browser',
-        youtube: 'yt', ai: 'ai', games: 'games', wayground: 'wayground', gimkit: 'gimkit'
-      };
-      var app = map[id] || id;
-      if (typeof openApp === 'function') openApp(app);
-      return { ok: true, opened: app };
-    }
-    if (action === 'vscode-write' || action === 'write-code') {
-      if (typeof openApp === 'function') openApp('code');
-      await new Promise(function (r) { setTimeout(r, 400); });
-      var code = payload.code || payload.text || '';
-      var wins = document.querySelectorAll('.win');
-      var last = wins[wins.length - 1];
-      var ta = last && last.querySelector('textarea, [data-code]');
-      if (ta) {
-        ta.value = code;
-        ta.dispatchEvent(new Event('input', { bubbles: true }));
-      }
-      return { ok: !!ta, wrote: code.length };
-    }
-    return { ok: false, error: 'unknown action' };
-  };
+  function injectXkiroModels() {
+    try {
+      if (typeof MODELS === 'undefined' || !Array.isArray(MODELS)) return;
+      var has = MODELS.some(function (m) {
+        return m && (m[0] === 'mistralai/mistral-large-4-0' || m[1] === 'Drift 2.0');
+      });
+      if (has) return;
+      MODELS.unshift([
+        'mistralai/mistral-large-4-0',
+        'Drift 2.0',
+        'Recommended · xKiro free · best',
+        'default',
+        'Mistral Large 4 via xKiro: vision, tools, reasoning. Top free general model.',
+        { code: 1, vision: 1, files: 0, think: 1, fast: 0 }
+      ]);
+      MODELS.splice(1, 0, [
+        'qwen/qwen3-coder-plus:free',
+        'Drift Code',
+        'Recommended · coding · VS Code',
+        'default',
+        'Qwen3 Coder Plus (free): best free coding model for VS Code & JS Injector.',
+        { code: 1, vision: 1, files: 0, think: 1, fast: 1 }
+      ]);
+      MODELS.splice(2, 0, [
+        'mistralai/codestral-2508',
+        'Codestral',
+        'xKiro free · code',
+        'default',
+        'Mistral Codestral free on xKiro.',
+        { code: 1, vision: 0, files: 0, think: 0, fast: 1 }
+      ]);
+      MODELS.splice(3, 0, [
+        'cohere/command-a-plus',
+        'Command A+',
+        'xKiro free',
+        'default',
+        'Cohere Command A+ free: vision, tools, reasoning.',
+        { code: 1, vision: 1, files: 0, think: 1, fast: 0 }
+      ]);
+    } catch (e) {}
+  }
 
   function enhanceVSCode() {
     if (typeof window.vscode !== 'function') return;
@@ -264,11 +279,9 @@
       editors.style.cssText = 'flex:1;min-height:0;position:relative';
       root.appendChild(tabsBar);
       root.appendChild(editors);
-
       var files = [{ name: 'main.js', lang: 'js', value: '// main.js\n' }];
       var active = 0;
       var ta = null;
-
       function renderTabs() {
         tabsBar.innerHTML = '';
         files.forEach(function (f, i) {
@@ -289,19 +302,14 @@
         var add = document.createElement('button');
         add.type = 'button';
         add.textContent = '+';
-        add.title = 'New file';
         add.style.cssText =
           'padding:4px 10px;border:0;border-radius:6px;background:#333;color:#fff;cursor:pointer;font-size:14px';
         add.onclick = function () {
           saveActive();
           var n = prompt('File name', 'file' + (files.length + 1) + '.js');
           if (!n) return;
-          var lang = /\.sql$/i.test(n) ? 'sql' : /\.html?$/i.test(n) ? 'html' : 'js';
-          files.push({
-            name: n,
-            lang: lang,
-            value: lang === 'sql' ? '-- SQL\nSELECT 1;\n' : '// ' + n + '\n'
-          });
+          var lang = /\.sql$/i.test(n) ? 'sql' : 'js';
+          files.push({ name: n, lang: lang, value: lang === 'sql' ? '-- SQL\nSELECT 1;\n' : '// ' + n + '\n' });
           active = files.length - 1;
           showEditor();
           renderTabs();
@@ -310,7 +318,6 @@
         var sql = document.createElement('button');
         sql.type = 'button';
         sql.textContent = 'SQL';
-        sql.title = 'New SQL tab';
         sql.style.cssText =
           'padding:4px 10px;border:0;border-radius:6px;background:#0e639c;color:#fff;cursor:pointer;font-size:12px;margin-left:4px';
         sql.onclick = function () {
@@ -326,7 +333,6 @@
         };
         tabsBar.appendChild(sql);
       }
-
       function saveActive() {
         if (ta && files[active]) files[active].value = ta.value;
       }
@@ -347,8 +353,7 @@
         ai.style.cssText =
           'flex:none;display:flex;gap:8px;padding:8px;border-top:1px solid #333;background:#252526;align-items:center';
         var inp = document.createElement('input');
-        inp.placeholder =
-          files[active] && files[active].lang === 'sql' ? 'Ask AI for SQL…' : 'Ask AI for code…';
+        inp.placeholder = files[active] && files[active].lang === 'sql' ? 'Ask AI for SQL…' : 'Ask AI for code…';
         inp.style.cssText =
           'flex:1;padding:8px;border-radius:8px;border:1px solid #444;background:#1e1e1e;color:#eee';
         var btn = document.createElement('button');
@@ -367,7 +372,7 @@
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                model: 'groq-llama',
+                model: window.DRIFT_CODE_MODEL || 'qwen/qwen3-coder-plus:free',
                 messages: [{ role: 'user', content: 'Write only ' + lang + ' code. No markdown.\n' + q }],
                 system: 'You write clean code for Drift VS Code. Output code only.'
               })
@@ -388,14 +393,50 @@
         wrap.appendChild(ai);
         editors.appendChild(wrap);
       }
-
       renderTabs();
       showEditor();
     }
     wrapped.__multi = true;
-    wrapped.__drift = true;
     try { window.vscode = wrapped; } catch (e) {}
     if (window.XAPPS && window.XAPPS.code) window.XAPPS.code.f = wrapped;
+  }
+
+  function installProfileNudge() {
+    if (document.getElementById('drift-profile-nudge')) return;
+    try {
+      if (localStorage.getItem('wos:acct-nudge') === '1') return;
+    } catch (e) {}
+    var box = document.createElement('div');
+    box.id = 'drift-profile-nudge';
+    box.style.cssText =
+      'position:fixed;right:16px;bottom:64px;z-index:2147483000;max-width:320px;' +
+      'background:#1c1c24;color:#eee;border:1px solid rgba(255,255,255,.12);border-radius:14px;' +
+      'padding:14px 16px;box-shadow:0 12px 40px rgba(0,0,0,.45);font:13px/1.45 system-ui,sans-serif';
+    box.innerHTML =
+      '<div style="display:flex;gap:10px;align-items:flex-start">' +
+      '<div style="width:28px;height:28px;border-radius:50%;background:#2a2a35;display:grid;place-items:center;flex:none">👤</div>' +
+      '<div style="flex:1">' +
+      '<b style="display:block;margin-bottom:4px">Save your progress</b>' +
+      '<div style="opacity:.8;font-size:12px;margin-bottom:12px">Make an account to track playtime and get on the leaderboard. Same account for games and chat.</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+      '<button type="button" data-create style="border:0;border-radius:999px;background:#ff7a00;color:#111;font-weight:700;padding:8px 14px;cursor:pointer">Create account</button>' +
+      '<button type="button" data-later style="border:1px solid rgba(255,255,255,.15);border-radius:999px;background:transparent;color:#ddd;padding:8px 14px;cursor:pointer">Maybe later</button>' +
+      '</div></div></div>';
+    box.querySelector('[data-later]').onclick = function () {
+      box.remove();
+      try { localStorage.setItem('wos:acct-nudge', '1'); } catch (e) {}
+    };
+    box.querySelector('[data-create]').onclick = function () {
+      try {
+        if (typeof acct === 'function') acct();
+        else {
+          var p = document.getElementById('prof');
+          if (p) p.click();
+        }
+      } catch (e) {}
+      box.remove();
+    };
+    document.body.appendChild(box);
   }
 
   function tightenCornerReveal() {
@@ -412,19 +453,22 @@
 
   function boot() {
     applyBrandLogos();
+    injectXkiroModels();
     fixInjectorDupes();
     wireGames();
     enhanceVSCode();
     tightenCornerReveal();
+    try { installProfileNudge(); } catch (e) {}
     setTimeout(function () {
       applyBrandLogos();
+      injectXkiroModels();
       fixInjectorDupes();
       wireGames();
       enhanceVSCode();
       if (typeof installChromeUI === 'function') try { installChromeUI(); } catch (e) {}
       tightenCornerReveal();
+      try { installProfileNudge(); } catch (e) {}
     }, 500);
-    setTimeout(fixInjectorDupes, 1500);
   }
 
   onReady(boot);
