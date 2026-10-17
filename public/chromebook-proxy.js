@@ -1,4 +1,4 @@
-/* ChromeOS + shared proxy fixes: TikTok, Gemini, Gimkit, faster BareMux — safe on Windows */
+/* ChromeOS + shared proxy fixes: TikTok, Gemini, Gimkit, taskbar, warning — safe on Windows */
 (function () {
   'use strict';
 
@@ -54,10 +54,7 @@
       '</div>';
   }
 
-  // Fix missing SJ() used by Gemini app
-  window.SJ = function SJ() {
-    return true;
-  };
+  window.SJ = function SJ() { return true; };
 
   var cache = null;
 
@@ -174,9 +171,7 @@
         if (u.pathname === '/' || u.pathname === '') u.pathname = '/foryou';
         return u.toString();
       }
-      if (h === 'gemini.google.com') {
-        return 'https://gemini.google.com/app';
-      }
+      if (h === 'gemini.google.com') return 'https://gemini.google.com/app';
       if (h === 'gimkit.com' || h === 'www.gimkit.com') {
         if (u.pathname === '/' || u.pathname === '') return 'https://www.gimkit.com/join';
       }
@@ -195,9 +190,7 @@
       f.frame.style.cssText = 'width:100%;height:100%;border:0;background:#fff';
       box.innerHTML = '';
       box.appendChild(f.frame);
-      try {
-        f.go(target);
-      } catch (e) {
+      try { f.go(target); } catch (e) {
         failBox(box, target, 'Could not navigate: ' + (e && e.message || e));
         return null;
       }
@@ -225,11 +218,8 @@
     go();
   };
 
-  window.ttApp = function ttAppFixed(root) {
-    window.proxySite(root, 'https://www.tiktok.com/foryou', 'TikTok');
-  };
-
-  window.gemApp = function gemAppFixed(root) {
+  window.ttApp = function (root) { window.proxySite(root, 'https://www.tiktok.com/foryou', 'TikTok'); };
+  window.gemApp = function (root) {
     root.innerHTML = '';
     var wrap = document.createElement('div');
     wrap.style.cssText = 'display:flex;flex-direction:column;height:100%;min-height:0';
@@ -242,20 +232,17 @@
     root.innerHTML =
       '<div style="display:flex;flex-direction:column;height:100%;min-height:0">' +
       '<div style="padding:8px 10px;border-bottom:1px solid var(--line);font-size:12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between">' +
-      '<span>Gimkit</span>' +
-      '<span style="display:flex;gap:6px;align-items:center">' +
+      '<span>Gimkit</span><span style="display:flex;gap:6px;align-items:center">' +
       '<input id="gk-code" placeholder="Join code" style="width:110px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--omni);color:var(--ink)"/>' +
       '<button type="button" id="gk-go" style="padding:6px 12px;border:0;border-radius:8px;background:var(--acc);color:#fff;cursor:pointer">Join</button>' +
       '<button type="button" id="gk-inj" style="padding:6px 12px;border:1px solid var(--line);border-radius:8px;background:var(--omni);color:inherit;cursor:pointer">Re-inject</button>' +
       '</span></div>' +
       '<div id="gk-status" style="padding:4px 10px;font-size:11px;opacity:.75">Loading Gimkit…</div>' +
       '<div class="sjt" style="flex:1;min-height:0;position:relative"></div></div>';
-
     var box = root.querySelector('.sjt');
     var st = root.querySelector('#gk-status');
     var frameObj = null;
     var cheatSrc = null;
-
     var gm =
       "window.GM_getValue=function(k,d){try{var v=localStorage.getItem('GM_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}};" +
       "window.GM_setValue=function(k,v){try{localStorage.setItem('GM_'+k,JSON.stringify(v))}catch(e){}};" +
@@ -263,7 +250,6 @@
       "window.GM_addStyle=function(css){var s=document.createElement('style');s.textContent=css;(document.head||document.documentElement).appendChild(s);return s};" +
       "window.GM_xmlhttpRequest=function(opts){fetch(opts.url,{method:(opts.method||'GET'),headers:opts.headers||{},body:opts.data,credentials:'include'}).then(function(r){return r.text().then(function(t){opts.onload&&opts.onload({status:r.status,responseText:t,response:t})})}).catch(function(e){opts.onerror&&opts.onerror(e)})};" +
       'window.unsafeWindow=window;';
-
     async function loadCheat() {
       if (cheatSrc) return cheatSrc;
       st.textContent = 'Downloading cheat…';
@@ -271,51 +257,32 @@
       if (!r.ok) r = await fetch(CHEAT, { cache: 'no-store' });
       if (!r.ok) throw new Error('Cheat download failed (' + r.status + ')');
       var t = await r.text();
-      t = t.replace(/^[\s\S]*?==\/UserScript==\s*/, '');
-      cheatSrc = t;
-      return t;
+      cheatSrc = t.replace(/^[\s\S]*?==\/UserScript==\s*/, '');
+      return cheatSrc;
     }
-
     function inject() {
       if (!frameObj || !frameObj.frame) return;
       try {
         var w = frameObj.frame.contentWindow;
         var d = frameObj.frame.contentDocument || (w && w.document);
         if (!w || !d) throw new Error('Frame not ready');
-        if (d.documentElement.getAttribute('data-gk-inj') === '1') {
-          st.textContent = 'Cheat already injected';
-          return;
-        }
-        var s1 = d.createElement('script');
-        s1.textContent = gm;
-        (d.head || d.documentElement).appendChild(s1);
-        var s2 = d.createElement('script');
-        s2.textContent = cheatSrc + '\n//# sourceURL=gimkit-cheat.js';
-        (d.head || d.documentElement).appendChild(s2);
+        if (d.documentElement.getAttribute('data-gk-inj') === '1') { st.textContent = 'Cheat already injected'; return; }
+        var s1 = d.createElement('script'); s1.textContent = gm; (d.head || d.documentElement).appendChild(s1);
+        var s2 = d.createElement('script'); s2.textContent = cheatSrc + '\n//# sourceURL=gimkit-cheat.js'; (d.head || d.documentElement).appendChild(s2);
         d.documentElement.setAttribute('data-gk-inj', '1');
         st.textContent = 'Gimkit loaded · cheat injected';
-      } catch (e) {
-        st.textContent = 'Page loaded · inject later: ' + (e.message || e);
-      }
+      } catch (e) { st.textContent = 'Page loaded · inject later: ' + (e.message || e); }
     }
-
     async function openUrl(url) {
       st.textContent = 'Opening ' + url + '…';
       box.innerHTML = '<div class="ym">Loading Gimkit…</div>';
       try {
-        await loadCheat().catch(function (e) {
-          st.textContent = String(e.message || e);
-        });
+        await loadCheat().catch(function (e) { st.textContent = String(e.message || e); });
         frameObj = await window.openProxied(url, box);
-        if (!frameObj) {
-          st.textContent = 'Proxy failed — use Open in new tab from the error box';
-          return;
-        }
+        if (!frameObj) { st.textContent = 'Proxy failed'; return; }
         if (frameObj.frame) {
           frameObj.frame.addEventListener('load', function () {
-            setTimeout(inject, 600);
-            setTimeout(inject, 2000);
-            setTimeout(inject, 4500);
+            setTimeout(inject, 600); setTimeout(inject, 2000); setTimeout(inject, 4500);
           });
         }
         setTimeout(inject, 1500);
@@ -325,15 +292,12 @@
         failBox(box, url, e && e.message || e);
       }
     }
-
     root.querySelector('#gk-go').onclick = function () {
       var code = (root.querySelector('#gk-code').value || '').trim();
       openUrl(code ? 'https://www.gimkit.com/join/' + encodeURIComponent(code) : 'https://www.gimkit.com/join');
     };
     root.querySelector('#gk-inj').onclick = function () {
-      loadCheat().then(inject).catch(function (e) {
-        st.textContent = String(e.message || e);
-      });
+      loadCheat().then(inject).catch(function (e) { st.textContent = String(e.message || e); });
     };
     openUrl('https://www.gimkit.com/join');
   };
@@ -345,16 +309,10 @@
       X.tt = { n: 'TikTok', f: window.ttApp };
       X.gem = { n: 'Gemini', f: window.gemApp };
       X.gimkit = { n: 'Gimkit', f: window.gimkitApp };
-      if (X.whatsapp) {
-        X.whatsapp.f = function (r) { window.proxySite(r, 'https://web.whatsapp.com/', 'WhatsApp'); };
-      }
-      if (X.github) {
-        X.github.f = function (r) { window.proxySite(r, 'https://github.com', 'GitHub'); };
-      }
+      if (X.whatsapp) X.whatsapp.f = function (r) { window.proxySite(r, 'https://web.whatsapp.com/', 'WhatsApp'); };
+      if (X.github) X.github.f = function (r) { window.proxySite(r, 'https://github.com', 'GitHub'); };
       if (window.APPS && !window.APPS.gem) window.APPS.gem = 'Gemini';
-    } catch (e) {
-      console.warn('wireApps', e);
-    }
+    } catch (e) { console.warn('wireApps', e); }
   }
 
   function guardYouTube() {
@@ -363,19 +321,103 @@
       var Y0 = window.youtube;
       if (Y0.__driftGuard) return;
       window.youtube = function (root) {
-        try {
-          if (root) root.innerHTML = '';
-        } catch (e) {}
+        try { if (root) root.innerHTML = ''; } catch (e) {}
         return Y0.apply(this, arguments);
       };
       window.youtube.__driftGuard = true;
     } catch (e) {}
   }
 
+  function showChromeOSWarning() {
+    if (!isChromeOS()) return;
+    try { if (sessionStorage.getItem('drift:cros-warn') === '1') return; } catch (e) {}
+    if (document.getElementById('drift-cros-warn')) return;
+    var el = document.createElement('div');
+    el.id = 'drift-cros-warn';
+    el.setAttribute('role', 'alert');
+    el.style.cssText =
+      'position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:2147483646;' +
+      'max-width:min(560px,92vw);background:#1a1a1f;color:#f5f5f7;border:1px solid #f5a524;' +
+      'border-radius:14px;padding:14px 40px 14px 16px;box-shadow:0 12px 40px rgba(0,0,0,.45);' +
+      'font:14px/1.45 system-ui,-apple-system,sans-serif';
+    el.innerHTML =
+      '<button type="button" aria-label="Close" style="position:absolute;top:8px;right:10px;border:0;background:transparent;color:#aaa;font-size:20px;cursor:pointer;line-height:1">×</button>' +
+      '<div style="font-weight:700;color:#f5a524;margin-bottom:6px">WARNING</div>' +
+      '<div>We detect you are using a Chromebook device (ChromeOS System). Some apps will not charge until you wait 3+ minutes so be patient — all is fine, just wait a while meanwhile we set up everything for you.</div>';
+    el.querySelector('button').onclick = function () {
+      el.remove();
+      try { sessionStorage.setItem('drift:cros-warn', '1'); } catch (e) {}
+    };
+    document.body.appendChild(el);
+  }
+
+  function installTaskbarToggle() {
+    var task = document.getElementById('task');
+    if (!task || task.dataset.driftTb === '1') return;
+    task.dataset.driftTb = '1';
+    var style = document.createElement('style');
+    style.id = 'drift-tb-style';
+    style.textContent =
+      '#task.drift-hidden{transform:translateY(110%);opacity:0;pointer-events:none;transition:transform .25s ease,opacity .2s ease}' +
+      '#task{transition:transform .25s ease,opacity .2s ease}' +
+      '#drift-tb-show{position:fixed;left:0;bottom:0;z-index:2147483645;width:28px;height:28px;' +
+      'display:none;align-items:center;justify-content:center;background:rgba(20,20,28,.92);' +
+      'color:#fff;border:1px solid rgba(255,255,255,.18);border-bottom:0;border-left:0;' +
+      'border-radius:0 10px 0 0;font:11px/1 system-ui,sans-serif;cursor:pointer;padding:0 8px;' +
+      'box-shadow:0 0 12px rgba(0,0,0,.35)}' +
+      '#drift-tb-show:hover,#drift-tb-show.reveal{display:flex;width:auto;min-width:28px;padding:0 10px;height:32px}' +
+      '#drift-tb-hide{margin-left:4px;height:28px;padding:0 8px;border:0;border-radius:8px;' +
+      'background:rgba(255,255,255,.1);color:#fff;font-size:11px;cursor:pointer;flex:none}';
+    document.head.appendChild(style);
+    var hideBtn = document.createElement('button');
+    hideBtn.id = 'drift-tb-hide';
+    hideBtn.type = 'button';
+    hideBtn.title = 'Hide taskbar';
+    hideBtn.textContent = '▾';
+    hideBtn.setAttribute('aria-label', 'Hide taskbar');
+    task.insertBefore(hideBtn, task.firstChild);
+    var showBtn = document.createElement('button');
+    showBtn.id = 'drift-tb-show';
+    showBtn.type = 'button';
+    showBtn.textContent = 'Show Task Bar';
+    showBtn.setAttribute('aria-label', 'Show Task Bar');
+    document.body.appendChild(showBtn);
+    function hide() {
+      task.classList.add('drift-hidden');
+      showBtn.style.display = 'flex';
+      try { localStorage.setItem('wos:tb-hidden', '1'); } catch (e) {}
+    }
+    function show() {
+      task.classList.remove('drift-hidden');
+      showBtn.style.display = 'none';
+      showBtn.classList.remove('reveal');
+      try { localStorage.setItem('wos:tb-hidden', '0'); } catch (e) {}
+    }
+    hideBtn.onclick = function (e) { e.stopPropagation(); hide(); };
+    showBtn.onclick = function (e) { e.stopPropagation(); show(); };
+    var corner = false;
+    window.addEventListener('mousemove', function (e) {
+      if (!task.classList.contains('drift-hidden')) return;
+      var near = e.clientX < 48 && e.clientY > (window.innerHeight - 48);
+      if (near) {
+        corner = true;
+        showBtn.classList.add('reveal');
+        showBtn.style.display = 'flex';
+      } else if (corner) {
+        corner = false;
+        showBtn.classList.remove('reveal');
+      }
+    });
+    try { if (localStorage.getItem('wos:tb-hidden') === '1') hide(); } catch (e) {}
+  }
+
   function boot() {
     wireApps();
     guardYouTube();
+    try { showChromeOSWarning(); } catch (e) {}
+    try { installTaskbarToggle(); } catch (e) {}
     setTimeout(wireApps, 300);
+    setTimeout(function () { try { installTaskbarToggle(); } catch (e) {} }, 800);
     setTimeout(wireApps, 1200);
   }
 
