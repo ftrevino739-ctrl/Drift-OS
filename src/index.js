@@ -70,7 +70,7 @@ function loadAndPatchIndex() {
 	);
 
 	const tag =
-		'<script src="/drift-extras.js" defer></script><script src="/chromebook-proxy.js" defer></script>' +
+		'<script src="/drift-extras.js" defer></script><script src="/chromebook-proxy.js" defer></script><script src="/wayground-ai.js" defer></script>' +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +
@@ -140,6 +140,7 @@ fastify.get("/health", async () => {
 		extras: true,
 		apis: true,
 		chromebook: true,
+		waygroundAi: true,
 	};
 });
 
@@ -217,6 +218,6 @@ fastify.setNotFoundHandler((_req, reply) => {
 let port = parseInt(process.env.PORT || "", 10);
 if (Number.isNaN(port)) port = 8080;
 await fastify.listen({ port, host: "0.0.0.0" });
-console.log("Drift listening", port, "| CORP + ChromeOS BareMux");
+console.log("Drift listening", port, "| CORP + ChromeOS + Wayground AI");
 process.on("SIGINT", () => process.exit(0));
 process.on("SIGTERM", () => process.exit(0));
