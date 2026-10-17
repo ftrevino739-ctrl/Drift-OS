@@ -18,6 +18,24 @@ function insertBeforeLast(html, marker, insertion) {
 	return html.slice(0, idx) + insertion + html.slice(idx);
 }
 
+function parseNoahGames(src) {
+	const games = [];
+	const re =
+		/\{\s*title:\s*"((?:\\.|[^"\\])*)"\s*,\s*desc:\s*"((?:\\.|[^"\\])*)"\s*,\s*url:\s*"([^"]+)"\s*,\s*image:\s*"([^"]+)"\s*\}/g;
+	let m;
+	while ((m = re.exec(src))) {
+		games.push({
+			t: m[1].replace(/\\"/g, '"'),
+			d: m[2].replace(/\\"/g, '"').slice(0, 160),
+			u: m[3],
+			i: m[4],
+		});
+	}
+	return games;
+}
+
+let noahCache = { at: 0, data: null };
+
 function loadAndPatchIndex() {
 	let file = null;
 	try {
@@ -49,7 +67,7 @@ function loadAndPatchIndex() {
 	);
 	html = html.replace(
 		"const defD=()=>({pins:['calc','browser','ai','yt'],desk:['calc','browser','ai','yt'],chats:[]});",
-		"const defD=()=>({pins:['calc','browser','ai','yt','gmail','gimkit'],desk:['browser','ai','yt','gmail','gimkit','movies','github','whatsapp'],chats:[]});"
+		"const defD=()=>({pins:['calc','browser','ai','yt','gmail','gimkit'],desk:['browser','ai','yt','gmail','gimkit','movies','github','whatsapp','games'],chats:[]});"
 	);
 
 	const xapps =
@@ -70,7 +88,10 @@ function loadAndPatchIndex() {
 	);
 
 	const tag =
-		'<script src="/drift-extras.js" defer></script><script src="/chromebook-proxy.js" defer></script><script src="/wayground-ai.js" defer></script>' +
+		'<script src="/drift-extras.js" defer></script>' +
+		'<script src="/chromebook-proxy.js" defer></script>' +
+		'<script src="/wayground-ai.js" defer></script>' +
+		'<script src="/drift-fixup.js" defer></script>' +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +
@@ -138,9 +159,8 @@ fastify.get("/health", async () => {
 		fullApps: !!(html && html.includes("gimkit:'Gimkit'")),
 		scramjet: !!scramjetPath,
 		extras: true,
-		apis: true,
-		chromebook: true,
-		waygroundAi: true,
+		fixup: true,
+		noahGames: true,
 	};
 });
 
@@ -207,6 +227,21 @@ fastify.get("/api/raw", async (req, reply) => {
 	return reply.send(await r.text());
 });
 
+fastify.get("/api/noah-games", async (_req, reply) => {
+	const now = Date.now();
+	if (noahCache.data && now - noahCache.at < 10 * 60 * 1000) {
+		return reply.header("Cross-Origin-Resource-Policy", "same-origin").send(noahCache.data);
+	}
+	const r = await fetch("https://noahstutoring.academy/js/games.js?v=194", {
+		headers: { "User-Agent": "Drift-OS" },
+	});
+	if (!r.ok) return reply.code(502).send({ error: "upstream" });
+	const src = await r.text();
+	const data = parseNoahGames(src);
+	noahCache = { at: now, data };
+	return reply.header("Cross-Origin-Resource-Policy", "same-origin").send(data);
+});
+
 fastify.setNotFoundHandler((_req, reply) => {
 	try {
 		if (fs.existsSync(path.join(publicPath, "404.html")))
@@ -218,6 +253,6 @@ fastify.setNotFoundHandler((_req, reply) => {
 let port = parseInt(process.env.PORT || "", 10);
 if (Number.isNaN(port)) port = 8080;
 await fastify.listen({ port, host: "0.0.0.0" });
-console.log("Drift listening", port, "| CORP + ChromeOS + Wayground AI");
+console.log("Drift listening", port, "| fixup + noah-games");
 process.on("SIGINT", () => process.exit(0));
 process.on("SIGTERM", () => process.exit(0));
