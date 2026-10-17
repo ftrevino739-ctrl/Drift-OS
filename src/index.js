@@ -70,7 +70,7 @@ function loadAndPatchIndex() {
 	);
 
 	const tag =
-		'<script src="/drift-extras.js" defer></script>' +
+		'<script src="/drift-extras.js" defer></script><script src="/chromebook-proxy.js" defer></script>' +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +
@@ -109,7 +109,6 @@ const fastify = Fastify({
 			.on("request", (req, res) => {
 				res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
 				res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
-				// Required for ChromeOS + COEP: workers, wasm, baremux/libcurl modules
 				res.setHeader("Cross-Origin-Resource-Policy", "same-origin");
 				handler(req, res);
 			})
@@ -140,6 +139,7 @@ fastify.get("/health", async () => {
 		scramjet: !!scramjetPath,
 		extras: true,
 		apis: true,
+		chromebook: true,
 	};
 });
 
