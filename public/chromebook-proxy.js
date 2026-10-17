@@ -1,4 +1,4 @@
-/* ChromeOS + Windows UI: proxy fixes, taskbar/title hide, warning */
+/* ChromeOS + Windows UI: proxy fixes, taskbar/title hide, warning, gimkit injector choice */
 (function () {
   'use strict';
 
@@ -228,7 +228,17 @@
   };
 
   window.gimkitApp = function gimkitAppFixed(root) {
-    var CHEAT = 'https://raw.githubusercontent.com/TheLazySquid/GimkitCheat/main/build/bundle.user.js';
+    var CHEAT = (function () {
+      try {
+        var u = localStorage.getItem('wos:gimkit-cheat-url');
+        if (u && /^https:\/\//.test(u)) return u;
+      } catch (e) {}
+      try {
+        var id = localStorage.getItem('wos:gimkit-injector') || 'lazy';
+        if (id === 'rylan') return 'https://update.greasyfork.org/scripts/526022.user.js';
+      } catch (e) {}
+      return 'https://raw.githubusercontent.com/TheLazySquid/GimkitCheat/main/build/bundle.user.js';
+    })();
     root.innerHTML =
       '<div style="display:flex;flex-direction:column;height:100%;min-height:0">' +
       '<div style="padding:8px 10px;border-bottom:1px solid var(--line);font-size:12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between">' +
@@ -352,9 +362,7 @@
   }
 
   function installChromeUI() {
-    if (document.getElementById('drift-chrome-ui-style')) {
-      /* still attach new windows */
-    } else {
+    if (!document.getElementById('drift-chrome-ui-style')) {
       var style = document.createElement('style');
       style.id = 'drift-chrome-ui-style';
       style.textContent =
