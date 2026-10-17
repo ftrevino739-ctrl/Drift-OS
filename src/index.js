@@ -87,7 +87,6 @@ function loadAndPatchIndex() {
 		"if(!sh.querySelector('#drift-modes')){const card=document.createElement('div');card.className='card';card.id='drift-modes';card.innerHTML='<div style=\"display:flex;align-items:center;justify-content:space-between;padding:10px 12px\"><b>Caveman</b><input id=\"drift-cav\" type=\"checkbox\"></div><div style=\"padding:0 12px 12px\"><div style=\"font-size:12px;font-weight:600;margin-bottom:6px\">Custom instructions</div><textarea id=\"drift-ins\" placeholder=\"How Drift should respond\" style=\"width:100%;min-height:84px;box-sizing:border-box;border-radius:8px;border:1px solid var(--line);background:var(--omni);color:var(--ink);padding:8px\"></textarea></div>';sh.appendChild(card);}var cav=sh.querySelector('#drift-cav'),ins=sh.querySelector('#drift-ins');if(cav){cav.checked=!!caveman;cav.onchange=function(){caveman=cav.checked};}if(ins){ins.value=customInstr||'';ins.oninput=function(){customInstr=ins.value;try{LS.set('wos:cinst',customInstr)}catch(e){}};}sh.classList.add('show');\n  sh.querySelectorAll('[data-tip]').forEach(btn=>{"
 	);
 
-	// Only auto-open apps when user explicitly asked to open/launch
 	html = html.replace(
 		"const openm=txt.match(/OPEN_APP:([a-z0-9_]+)/i);\n      if(openm){try{openApp(openm[1].toLowerCase())}catch(e){}txt=txt.replace(openm[0],'').trim()||('Opened '+openm[1])}",
 		"const openm=txt.match(/OPEN_APP:([a-z0-9_]+)/i);\n      if(openm){const __u=(mine.filter(m=>m.role==='user').pop()||{}).content||'';const __ok=/\\b(open|abre|abrir|launch|start)\\b/i.test(__u);if(__ok){try{openApp(openm[1].toLowerCase())}catch(e){}txt=txt.replace(openm[0],'').trim()||('Opened '+openm[1])}else{txt=txt.replace(openm[0],'').trim()}}"
@@ -228,8 +227,19 @@ fastify.get("/api/media", async (req, reply) => {
 
 fastify.get("/api/raw", async (req, reply) => {
 	const u = String((req.query && req.query.u) || "");
-	if (!u.startsWith("https://raw.githubusercontent.com/")) return reply.code(400).send("blocked");
-	const r = await fetch(u);
+	let host = "";
+	try {
+		host = new URL(u).hostname;
+	} catch {
+		return reply.code(400).send("bad url");
+	}
+	const allow =
+		host === "raw.githubusercontent.com" ||
+		host === "update.greasyfork.org" ||
+		host === "greasyfork.org" ||
+		host.endsWith(".greasyfork.org");
+	if (!allow || !u.startsWith("https://")) return reply.code(400).send("blocked");
+	const r = await fetch(u, { headers: { "User-Agent": "Drift-OS" }, redirect: "follow" });
 	if (!r.ok) return reply.code(r.status).send("upstream");
 	reply.header("Content-Type", "text/javascript; charset=utf-8");
 	reply.header("Cross-Origin-Resource-Policy", "same-origin");
@@ -282,6 +292,6 @@ fastify.setNotFoundHandler((_req, reply) => {
 let port = parseInt(process.env.PORT || "", 10);
 if (Number.isNaN(port)) port = 8080;
 await fastify.listen({ port, host: "0.0.0.0" });
-console.log("Drift listening", port, "| OPEN_APP gated");
+console.log("Drift listening", port);
 process.on("SIGINT", () => process.exit(0));
 process.on("SIGTERM", () => process.exit(0));
