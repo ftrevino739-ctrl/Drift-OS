@@ -152,17 +152,12 @@ const sendIndex = async (_req, reply) => {
 
 fastify.get("/", sendIndex);
 fastify.get("/index.html", sendIndex);
-fastify.get("/health", async () => {
-	const html = loadAndPatchIndex();
-	return {
-		ok: true,
-		fullApps: !!(html && html.includes("gimkit:'Gimkit'")),
-		scramjet: !!scramjetPath,
-		extras: true,
-		fixup: true,
-		noahGames: true,
-	};
-});
+fastify.get("/health", async () => ({
+	ok: true,
+	scramjet: !!scramjetPath,
+	noahGames: true,
+	noahAsset: true,
+}));
 
 await fastify.register(fastifyStatic, {
 	root: publicPath,
@@ -227,6 +222,26 @@ fastify.get("/api/raw", async (req, reply) => {
 	return reply.send(await r.text());
 });
 
+fastify.get("/api/noah-asset", async (req, reply) => {
+	const u = String((req.query && req.query.u) || "");
+	let host = "";
+	try {
+		host = new URL(u).hostname;
+	} catch {
+		return reply.code(400).send("bad url");
+	}
+	if (host !== "noahstutoring.academy" && !host.endsWith(".noahstutoring.academy")) {
+		return reply.code(400).send("blocked");
+	}
+	if (!u.startsWith("https://")) return reply.code(400).send("blocked");
+	const r = await fetch(u, { headers: { "User-Agent": "Drift-OS" } });
+	if (!r.ok) return reply.code(r.status).send("upstream");
+	reply.header("Cross-Origin-Resource-Policy", "same-origin");
+	reply.header("Content-Type", r.headers.get("content-type") || "image/jpeg");
+	reply.header("Cache-Control", "public, max-age=86400");
+	return reply.send(Buffer.from(await r.arrayBuffer()));
+});
+
 fastify.get("/api/noah-games", async (_req, reply) => {
 	const now = Date.now();
 	if (noahCache.data && now - noahCache.at < 10 * 60 * 1000) {
@@ -253,6 +268,6 @@ fastify.setNotFoundHandler((_req, reply) => {
 let port = parseInt(process.env.PORT || "", 10);
 if (Number.isNaN(port)) port = 8080;
 await fastify.listen({ port, host: "0.0.0.0" });
-console.log("Drift listening", port, "| fixup + noah-games");
+console.log("Drift listening", port, "| noah thumbs proxy");
 process.on("SIGINT", () => process.exit(0));
 process.on("SIGTERM", () => process.exit(0));
