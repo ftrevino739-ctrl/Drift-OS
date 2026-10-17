@@ -33,22 +33,31 @@ Open http://localhost:8080 (Railway injects `PORT`).
 
 ## Apps
 
-Chat (Discord-style channels) 
-Games 
-local leaderboard
-Gimkit join (modified)
-Classroom
-Canva
-Roblox, 
-Netflix-style
-Movies
-Camera
-Music
-Github
+- Chat (Discord-style channels) 
+- Games 
+- local leaderboard
+- Gimkit join (modified)
+- Classroom (SOON MODIFIED)
+- VS Code
+- Canva
+- Roblox,
+- Discord
+- Youtube (Shorts and Video Search)
+- Tiktok
+- Instagram
+- Gemini AI
+- Netflix-style
+- Movies
+- Camera
+- JS injector (injects .js just as tampermonkey without extension)
+- Music
+- Github
+- Wayground (Modified)
+- WhatsApp
+- Calculator (Basic, Scientific and Convert)
 - Gmail 
-Working Browser (Bing, DuckDuckGo and Google)
-
-AI: 4 Drift AI models,  LLama 3.1 8B, Gemma 2 9B, Mistral Mini, Qwen Flash, Gemma 2 (LOCAL) and Gemini Nano all this with custom instructions, Effort; Medium, High and Low.
+- Working Browser (Bing, DuckDuckGo and Google)
+- AI: 4 Drift AI models,  LLama 3.1 8B, Gemma 2 9B, Mistral Mini, Qwen Flash, Gemma 2 (LOCAL) and Gemini Nano all this with custom instructions, Effort; Medium, High and Low.
 
 ## Gimkit and Wayground Cheat
 
