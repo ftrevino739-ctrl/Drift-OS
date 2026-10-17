@@ -1,9 +1,26 @@
-/* Drift fixup */
+/* Drift fixup: switches, liquid glass, games, settings, oauth */
 (function () {
   'use strict';
   window.DRIFT_BEST_MODEL = window.DRIFT_BEST_MODEL || 'mistralai/mistral-large-4-0';
   window.DRIFT_CODE_MODEL = window.DRIFT_CODE_MODEL || 'qwen/qwen3-coder-plus:free';
-  window.DRIFT_BEST_NAME = 'Drift 2.0';
+
+  var GIMKIT_INJECTORS = {
+    lazy: {
+      id: 'lazy',
+      name: 'TheLazySquid (default)',
+      url: 'https://raw.githubusercontent.com/TheLazySquid/GimkitCheat/main/build/bundle.user.js'
+    },
+    rylan: {
+      id: 'rylan',
+      name: 'Rylan Rude / Colin (GreasyFork)',
+      url: 'https://update.greasyfork.org/scripts/526022.user.js'
+    },
+    scribd: {
+      id: 'scribd',
+      name: 'SCRIBD notes (doc only — not auto-injectable)',
+      url: ''
+    }
+  };
 
   function onReady(fn) {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn);
@@ -11,6 +28,35 @@
   }
   function svg(inner) {
     return '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">' + inner + '</svg>';
+  }
+  function switchHTML(id, checked) {
+    return (
+      '<button type="button" role="switch" id="' +
+      id +
+      '" aria-checked="' +
+      (checked ? 'true' : 'false') +
+      '" data-on="' +
+      (checked ? '1' : '0') +
+      '" style="position:relative;width:46px;height:28px;border-radius:999px;border:0;cursor:pointer;flex:none;padding:0;' +
+      'background:' +
+      (checked ? '#34c759' : 'rgba(120,120,128,.32)') +
+      ';transition:background .2s">' +
+      '<span style="position:absolute;top:2px;left:' +
+      (checked ? '20px' : '2px') +
+      ';width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left .2s"></span></button>'
+    );
+  }
+  function wireSwitch(btn, onChange) {
+    if (!btn) return;
+    btn.onclick = function () {
+      var on = btn.getAttribute('data-on') !== '1';
+      btn.setAttribute('data-on', on ? '1' : '0');
+      btn.setAttribute('aria-checked', on ? 'true' : 'false');
+      btn.style.background = on ? '#34c759' : 'rgba(120,120,128,.32)';
+      var knob = btn.querySelector('span');
+      if (knob) knob.style.left = on ? '20px' : '2px';
+      onChange(on);
+    };
   }
 
   function applyBrandLogos() {
@@ -52,84 +98,74 @@
     IC.games = svg(
       '<rect width="48" height="48" rx="11" fill="#111827"/><rect x="8" y="14" width="14" height="10" rx="2" fill="#34d399"/><rect x="26" y="14" width="14" height="10" rx="2" fill="#60a5fa"/><rect x="8" y="28" width="14" height="10" rx="2" fill="#f472b6"/><rect x="26" y="28" width="14" height="10" rx="2" fill="#fbbf24"/>'
     );
-    IC.injector = svg(
-      '<rect width="48" height="48" rx="11" fill="#0F172A"/><path d="M14 16h20v3H14zm0 7h14v3H14zm0 7h9v3h-9z" fill="#38BDF8"/><path d="M30 30l7 4-7 4z" fill="#FBBF24"/>'
-    );
-  }
-
-  function fixInjectorDupes() {
-    try {
-      var apps = window.APPS,
-        x = window.XAPPS;
-      if (!apps) return;
-      Object.keys(apps).forEach(function (id) {
-        if (id === 'injector') return;
-        if (/^us_/.test(id) && String(apps[id]).toLowerCase().indexOf('injector') >= 0) {
-          delete apps[id];
-          if (x) delete x[id];
-        }
-        if (apps[id] == null || apps[id] === 'undefined') {
-          delete apps[id];
-          if (x) delete x[id];
-        }
-      });
-      if (typeof tiles === 'function') tiles();
-      if (typeof rend === 'function') rend();
-    } catch (e) {}
   }
 
   function noahGamesApp(root) {
     root.innerHTML =
-      '<div style="display:flex;flex-direction:column;height:100%;min-height:0;background:#0b0b12;color:#eee">' +
-      '<div style="padding:10px 12px;display:flex;gap:8px;align-items:center;border-bottom:1px solid #222">' +
-      '<b>Games</b><input id="ng-q" placeholder="Search games…" style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid #333;background:#15151f;color:#eee">' +
-      '<span id="ng-count" style="font-size:11px;opacity:.6"></span></div>' +
-      '<div id="ng-grid" style="flex:1;overflow:auto;padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px"></div>' +
+      '<div style="display:flex;flex-direction:column;height:100%;min-height:0;background:#0a0a0f;color:#eee">' +
+      '<div style="padding:12px 16px;display:flex;gap:10px;align-items:center;border-bottom:1px solid #1f1f28;flex:none">' +
+      '<b style="font-size:15px">Games</b>' +
+      '<input id="ng-q" placeholder="Search games…" style="flex:1;padding:10px 12px;border-radius:10px;border:1px solid #2a2a35;background:#14141c;color:#eee">' +
+      '<span id="ng-count" style="font-size:12px;opacity:.6;white-space:nowrap"></span></div>' +
+      '<div id="ng-grid" style="flex:1;overflow:auto;padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;align-content:start"></div>' +
       '<div id="ng-play" style="display:none;flex:1;flex-direction:column;min-height:0">' +
-      '<div style="padding:8px;display:flex;gap:8px;align-items:center;border-bottom:1px solid #222">' +
+      '<div style="padding:8px 12px;display:flex;gap:8px;align-items:center;border-bottom:1px solid #1f1f28;flex:none">' +
       '<button type="button" id="ng-back" style="padding:6px 12px;border-radius:8px;border:1px solid #333;background:#1a1a24;color:#fff;cursor:pointer">← Back</button>' +
-      '<b id="ng-title" style="font-size:13px"></b></div><div id="ng-frame" style="flex:1;min-height:0;position:relative"></div></div></div>';
-    var grid = root.querySelector('#ng-grid'),
-      play = root.querySelector('#ng-play'),
-      frameBox = root.querySelector('#ng-frame'),
-      all = [];
+      '<b id="ng-title" style="font-size:13px"></b></div>' +
+      '<div id="ng-frame" style="flex:1;min-height:0;position:relative"></div></div></div>';
+
+    var grid = root.querySelector('#ng-grid');
+    var play = root.querySelector('#ng-play');
+    var frameBox = root.querySelector('#ng-frame');
+    var all = [];
+
     function card(g) {
       var el = document.createElement('button');
       el.type = 'button';
       el.style.cssText =
-        'border:0;padding:0;background:#14141c;border-radius:16px;overflow:hidden;cursor:pointer;text-align:left;color:#f3f3f5;display:flex;flex-direction:column;box-shadow:0 4px 16px rgba(0,0,0,.35)';
+        'border:0;padding:0;margin:0;background:#12121a;border-radius:14px;overflow:hidden;cursor:pointer;text-align:left;color:#f3f3f5;' +
+        'display:flex;flex-direction:column;width:100%;box-shadow:0 4px 14px rgba(0,0,0,.4)';
+      var thumb = document.createElement('div');
+      thumb.style.cssText =
+        'width:100%;aspect-ratio:16/10;background:#1a1a24;overflow:hidden;flex:none;position:relative';
       var img = document.createElement('img');
       img.loading = 'lazy';
       img.alt = g.t || '';
+      img.decoding = 'async';
       img.src = '/api/noah-asset?u=' + encodeURIComponent('https://noahstutoring.academy/' + g.i);
-      img.style.cssText =
-        'width:100%;aspect-ratio:16/10;object-fit:cover;background:#1a1a22;display:block;min-height:120px';
+      img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block';
       img.onerror = function () {
         this.onerror = null;
         this.src = 'https://noahstutoring.academy/' + g.i;
       };
+      thumb.appendChild(img);
       var cap = document.createElement('div');
       cap.style.cssText =
-        'padding:12px 14px 14px;font-size:13px;font-weight:600;line-height:1.35;min-height:52px;color:#f3f3f5';
+        'padding:10px 12px 12px;font-size:13px;font-weight:600;line-height:1.35;color:#f3f3f5;' +
+        'display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.7em';
       cap.textContent = g.t;
-      el.appendChild(img);
+      el.appendChild(thumb);
       el.appendChild(cap);
       el.onclick = function () {
         openGame(g);
       };
       return el;
     }
+
     function render(list) {
       grid.innerHTML = '';
+      var frag = document.createDocumentFragment();
       list.forEach(function (g) {
-        grid.appendChild(card(g));
+        frag.appendChild(card(g));
       });
+      grid.appendChild(frag);
       root.querySelector('#ng-count').textContent = list.length + ' games';
     }
+
     async function openGame(g) {
       var url = g.u;
       if (!/^https?:/i.test(url)) url = 'https://noahstutoring.academy/' + url.replace(/^\//, '');
-      root.querySelector('#ng-grid').style.display = 'none';
+      grid.style.display = 'none';
       root.querySelector('#ng-q').parentElement.style.display = 'none';
       play.style.display = 'flex';
       root.querySelector('#ng-title').textContent = g.t;
@@ -143,13 +179,19 @@
             url.replace(/"/g, '') +
             '" style="width:100%;height:100%;border:0;background:#000" allowfullscreen></iframe>';
       } catch (e) {
-        frameBox.innerHTML = '<div class="ym" style="padding:16px">' + String(e.message || e) + '</div>';
+        frameBox.innerHTML =
+          '<div class="ym" style="padding:16px">' +
+          String(e.message || e) +
+          '<br><a href="' +
+          url +
+          '" target="_blank" rel="noopener">Open in new tab</a></div>';
       }
     }
+
     root.querySelector('#ng-back').onclick = function () {
       play.style.display = 'none';
       frameBox.innerHTML = '';
-      root.querySelector('#ng-grid').style.display = 'grid';
+      grid.style.display = 'grid';
       root.querySelector('#ng-q').parentElement.style.display = 'flex';
     };
     root.querySelector('#ng-q').oninput = function () {
@@ -162,7 +204,8 @@
             })
       );
     };
-    grid.innerHTML = '<div class="ym" style="grid-column:1/-1;padding:20px">Loading catalog…</div>';
+
+    grid.innerHTML = '<div class="ym" style="grid-column:1/-1;padding:24px">Loading catalog…</div>';
     fetch('/api/noah-games')
       .then(function (r) {
         if (!r.ok) throw new Error('catalog ' + r.status);
@@ -174,7 +217,7 @@
       })
       .catch(function (e) {
         grid.innerHTML =
-          '<div class="ym" style="grid-column:1/-1;padding:20px">' + String(e.message || e) + '</div>';
+          '<div class="ym" style="grid-column:1/-1;padding:24px">' + String(e.message || e) + '</div>';
       });
   }
 
@@ -183,29 +226,6 @@
       if (window.APPS) window.APPS.games = 'Games';
       if (window.XAPPS) window.XAPPS.games = { n: 'Games', f: noahGamesApp };
       applyBrandLogos();
-    } catch (e) {}
-  }
-
-  function injectXkiroModels() {
-    try {
-      if (typeof MODELS === 'undefined' || !Array.isArray(MODELS)) return;
-      if (MODELS.some(function (m) { return m && m[1] === 'Drift 2.0'; })) return;
-      MODELS.unshift([
-        'mistralai/mistral-large-4-0',
-        'Drift 2.0',
-        'Recommended · xKiro free · best',
-        'default',
-        'Mistral Large 4 via xKiro.',
-        { code: 1, vision: 1, files: 0, think: 1, fast: 0 }
-      ]);
-      MODELS.splice(1, 0, [
-        'qwen/qwen3-coder-plus:free',
-        'Drift Code',
-        'Recommended · coding · VS Code',
-        'default',
-        'Best free coding model for VS Code & JS Injector.',
-        { code: 1, vision: 1, files: 0, think: 1, fast: 1 }
-      ]);
     } catch (e) {}
   }
 
@@ -223,13 +243,48 @@
     if (on) {
       document.body.classList.add('drift-liquid');
       st.textContent =
-        'body.drift-liquid #task{background:rgba(255,255,255,.22)!important;backdrop-filter:saturate(180%) blur(28px)!important;-webkit-backdrop-filter:saturate(180%) blur(28px)!important;border-top:1px solid rgba(255,255,255,.35)!important;box-shadow:0 -8px 32px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.4)!important}' +
-        'body.drift-liquid #task .tb,body.drift-liquid #task button{background:rgba(255,255,255,.14)!important;border:1px solid rgba(255,255,255,.18)!important;border-radius:12px!important}' +
-        'body.drift-liquid .win{background:rgba(30,30,36,.55)!important;backdrop-filter:blur(24px) saturate(160%)!important;border:1px solid rgba(255,255,255,.16)!important}' +
-        'body.drift-liquid .win>.title{background:rgba(255,255,255,.08)!important}';
+        'body.drift-liquid #task{' +
+        'background:rgba(255,255,255,.2)!important;backdrop-filter:saturate(180%) blur(28px)!important;' +
+        '-webkit-backdrop-filter:saturate(180%) blur(28px)!important;border-top:1px solid rgba(255,255,255,.32)!important;' +
+        'box-shadow:0 -8px 32px rgba(0,0,0,.15),inset 0 1px 0 rgba(255,255,255,.35)!important}' +
+        'body.drift-liquid #task .tb,body.drift-liquid #task button,body.drift-liquid #drift-tb-hide,body.drift-liquid #drift-tb-show{' +
+        'background:rgba(255,255,255,.16)!important;border:1px solid rgba(255,255,255,.2)!important;border-radius:12px!important;' +
+        'backdrop-filter:blur(12px)!important}' +
+        'body.drift-liquid #drift-tb-show,body.drift-liquid #drift-title-show{' +
+        'background:rgba(30,30,36,.55)!important;backdrop-filter:blur(20px)!important;border:1px solid rgba(255,255,255,.22)!important}' +
+        'body.drift-liquid .win{' +
+        'background:rgba(28,28,34,.55)!important;backdrop-filter:blur(28px) saturate(160%)!important;' +
+        '-webkit-backdrop-filter:blur(28px) saturate(160%);border:1px solid rgba(255,255,255,.16)!important;box-shadow:0 12px 40px rgba(0,0,0,.28)!important}' +
+        'body.drift-liquid .win>.title{' +
+        'background:rgba(255,255,255,.1)!important;backdrop-filter:blur(16px)!important;border-bottom:1px solid rgba(255,255,255,.08)!important}' +
+        'body.drift-liquid .win .wb,body.drift-liquid .title button,body.drift-liquid .drift-title-hide-btn{' +
+        'background:rgba(255,255,255,.14)!important;border-radius:999px!important;border:1px solid rgba(255,255,255,.12)!important}' +
+        'body.drift-liquid #menu,.menu,body.drift-liquid .sheet,body.drift-liquid #sh,body.drift-liquid .card,' +
+        'body.drift-liquid #drift-settings-panel,body.drift-liquid #drift-profile-nudge{' +
+        'background:rgba(28,28,34,.62)!important;backdrop-filter:blur(24px) saturate(150%)!important;' +
+        'border:1px solid rgba(255,255,255,.14)!important}' +
+        'body.drift-liquid .ai-msg,body.drift-liquid #ain,body.drift-liquid [class*="ai-"] textarea,' +
+        'body.drift-liquid .ai-tools,body.drift-liquid #ai-models,body.drift-liquid .models{' +
+        'background:rgba(255,255,255,.08)!important;backdrop-filter:blur(12px)!important;border-color:rgba(255,255,255,.12)!important}';
     } else {
       document.body.classList.remove('drift-liquid');
       st.textContent = '';
+    }
+  }
+
+  function styleCavemanAsSwitch() {
+    var st = document.getElementById('drift-switch-style');
+    if (!st) {
+      st = document.createElement('style');
+      st.id = 'drift-switch-style';
+      document.head.appendChild(st);
+      st.textContent =
+        '#drift-cav{appearance:none;-webkit-appearance:none;width:46px;height:28px;border-radius:999px;background:rgba(120,120,128,.32);' +
+        'position:relative;outline:none;cursor:pointer;vertical-align:middle;border:0;transition:background .2s}' +
+        '#drift-cav:checked{background:#34c759}' +
+        '#drift-cav::after{content:"";position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;background:#fff;' +
+        'box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left .2s}' +
+        '#drift-cav:checked::after{left:20px}';
     }
   }
 
@@ -242,27 +297,67 @@
     var panel = document.createElement('div');
     panel.id = 'drift-settings-panel';
     panel.style.cssText =
-      'position:fixed;right:16px;bottom:70px;z-index:2147483001;width:min(340px,92vw);background:#1c1c24;color:#eee;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px 16px;box-shadow:0 12px 40px rgba(0,0,0,.45);font:13px/1.45 system-ui,sans-serif';
-    var on = false;
+      'position:fixed;right:16px;bottom:70px;z-index:2147483001;width:min(360px,94vw);max-height:min(70vh,520px);overflow:auto;' +
+      'background:#1c1c24;color:#eee;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px 16px;' +
+      'box-shadow:0 12px 40px rgba(0,0,0,.45);font:13px/1.45 system-ui,sans-serif';
+    var liquidOn = false;
+    var gk = 'lazy';
     try {
-      on = localStorage.getItem('wos:liquid-glass') === '1';
+      liquidOn = localStorage.getItem('wos:liquid-glass') === '1';
+      gk = localStorage.getItem('wos:gimkit-injector') || 'lazy';
     } catch (e) {}
+
+    var opts = '';
+    Object.keys(GIMKIT_INJECTORS).forEach(function (k) {
+      var it = GIMKIT_INJECTORS[k];
+      opts +=
+        '<label style="display:flex;gap:8px;align-items:flex-start;margin:6px 0;cursor:pointer">' +
+        '<input type="radio" name="gk-inj" value="' +
+        it.id +
+        '"' +
+        (gk === it.id ? ' checked' : '') +
+        ' style="margin-top:3px"/>' +
+        '<span><b>' +
+        it.name +
+        '</b>' +
+        (it.url
+          ? ''
+          : '<div style="opacity:.65;font-size:11px">Scribd is a document link, not a .user.js — pick Lazy or GreasyFork for injection.</div>') +
+        '</span></label>';
+    });
+
     panel.innerHTML =
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><b>Settings</b><button type="button" data-x style="border:0;background:transparent;color:#aaa;font-size:18px;cursor:pointer">×</button></div>' +
-      '<label style="display:flex;gap:12px;align-items:flex-start;cursor:pointer">' +
-      '<input id="drift-liquid-tog" type="checkbox" style="margin-top:3px"' +
-      (on ? ' checked' : '') +
-      '/>' +
-      '<span><b>Enable Liquid Glass (experimental)</b><div style="opacity:.75;font-size:12px;margin-top:4px">Make Drift OS look like an iOS device with the new liquid glass UI applied on the task bar.</div></span></label>';
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">' +
+      '<b>Settings</b><button type="button" data-x style="border:0;background:transparent;color:#aaa;font-size:18px;cursor:pointer">×</button></div>' +
+      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px">' +
+      '<div style="flex:1"><b>Enable Liquid Glass (experimental)</b>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Make Drift OS look like an iOS device with the new liquid glass UI applied on the task bar.</div></div>' +
+      switchHTML('drift-liquid-sw', liquidOn) +
+      '</div>' +
+      '<div style="border-top:1px solid rgba(255,255,255,.08);padding-top:12px">' +
+      '<b style="display:block;margin-bottom:8px">Gimkit injection default</b>' +
+      opts +
+      '<div style="opacity:.65;font-size:11px;margin-top:8px">Tip: host large injectors as Release assets (.js) for more stable loads.</div></div>';
+
     panel.querySelector('[data-x]').onclick = function () {
       panel.remove();
     };
-    panel.querySelector('#drift-liquid-tog').onchange = function () {
+    wireSwitch(panel.querySelector('#drift-liquid-sw'), function (on) {
       try {
-        localStorage.setItem('wos:liquid-glass', this.checked ? '1' : '0');
+        localStorage.setItem('wos:liquid-glass', on ? '1' : '0');
       } catch (e) {}
       installLiquidGlass();
-    };
+    });
+    panel.querySelectorAll('input[name="gk-inj"]').forEach(function (r) {
+      r.onchange = function () {
+        if (!r.checked) return;
+        try {
+          localStorage.setItem('wos:gimkit-injector', r.value);
+          var src = (GIMKIT_INJECTORS[r.value] && GIMKIT_INJECTORS[r.value].url) || GIMKIT_INJECTORS.lazy.url;
+          if (src) localStorage.setItem('wos:gimkit-cheat-url', src);
+        } catch (e) {}
+      };
+    });
     document.body.appendChild(panel);
   }
 
@@ -291,17 +386,22 @@
       return function (root) {
         root.innerHTML =
           '<div style="display:flex;flex-direction:column;height:100%;min-height:0">' +
-          '<div style="padding:8px 10px;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
-          '<span style="font-size:12px;opacity:.8">' +
+          '<div style="padding:8px 10px;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center;flex-wrap:wrap;' +
+          'background:var(--bar, rgba(255,255,255,.04));color:var(--ink, inherit)">' +
+          '<span style="font-size:12px;opacity:.85">' +
           label +
           '</span>' +
-          '<button type="button" data-popup style="padding:6px 10px;border-radius:8px;border:0;background:var(--acc);color:#fff;cursor:pointer;font-size:12px">Sign in (popup)</button>' +
-          '<button type="button" data-retry style="padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:transparent;color:inherit;cursor:pointer;font-size:12px">Load in window</button>' +
-          '<span style="font-size:11px;opacity:.65">Popup reduces Chrome phishing warnings on ChromeOS</span></div>' +
+          '<button type="button" data-popup style="padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:var(--omni, transparent);color:inherit;cursor:pointer;font-size:12px">Sign in (popup)</button>' +
+          '<button type="button" data-retry style="padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:transparent;color:inherit;cursor:pointer;font-size:12px">Load in window</button>' +
+          '<span style="font-size:11px;opacity:.6">Use popup on ChromeOS if login is blocked</span></div>' +
           '<div class="sjt" style="flex:1;min-height:0;position:relative"></div></div>';
         var box = root.querySelector('.sjt');
         root.querySelector('[data-popup]').onclick = function () {
-          window.open(url, '_blank', 'noopener,noreferrer,width=980,height=720');
+          var login =
+            label === 'Gmail' || label === 'Classroom'
+              ? 'https://accounts.google.com/ServiceLogin?continue=' + encodeURIComponent(url)
+              : url;
+          window.open(login, '_blank', 'noopener,noreferrer,width=980,height=720');
         };
         root.querySelector('[data-retry]').onclick = function () {
           if (typeof window.proxySite === 'function') window.proxySite(box, url, label);
@@ -332,55 +432,33 @@
     document.head.appendChild(s);
   }
 
-  function installProfileNudge() {
-    if (document.getElementById('drift-profile-nudge')) return;
-    try {
-      if (localStorage.getItem('wos:acct-nudge') === '1') return;
-    } catch (e) {}
-    var box = document.createElement('div');
-    box.id = 'drift-profile-nudge';
-    box.style.cssText =
-      'position:fixed;right:16px;bottom:64px;z-index:2147483000;max-width:320px;background:#1c1c24;color:#eee;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px 16px;box-shadow:0 12px 40px rgba(0,0,0,.45);font:13px/1.45 system-ui,sans-serif';
-    box.innerHTML =
-      '<b style="display:block;margin-bottom:4px">Save your progress</b>' +
-      '<div style="opacity:.8;font-size:12px;margin-bottom:12px">Make an account to track playtime and get on the leaderboard. Same account for games and chat.</div>' +
-      '<div style="display:flex;gap:8px">' +
-      '<button type="button" data-create style="border:0;border-radius:999px;background:#ff7a00;color:#111;font-weight:700;padding:8px 14px;cursor:pointer">Create account</button>' +
-      '<button type="button" data-later style="border:1px solid rgba(255,255,255,.15);border-radius:999px;background:transparent;color:#ddd;padding:8px 14px;cursor:pointer">Maybe later</button></div>';
-    box.querySelector('[data-later]').onclick = function () {
-      box.remove();
-      try {
-        localStorage.setItem('wos:acct-nudge', '1');
-      } catch (e) {}
-    };
-    box.querySelector('[data-create]').onclick = function () {
-      try {
-        var p = document.getElementById('prof');
-        if (p) p.click();
-      } catch (e) {}
-      box.remove();
-    };
-    document.body.appendChild(box);
-  }
-
   function boot() {
     applyBrandLogos();
-    injectXkiroModels();
-    fixInjectorDupes();
     wireGames();
     tightenCornerReveal();
     installLiquidGlass();
-    try { installSettingsButton(); } catch (e) {}
-    try { oauthFriendlyApps(); } catch (e) {}
-    try { installProfileNudge(); } catch (e) {}
-    if (typeof installChromeUI === 'function') try { installChromeUI(); } catch (e) {}
+    styleCavemanAsSwitch();
+    try {
+      installSettingsButton();
+    } catch (e) {}
+    try {
+      oauthFriendlyApps();
+    } catch (e) {}
+    if (typeof installChromeUI === 'function')
+      try {
+        installChromeUI();
+      } catch (e) {}
     setTimeout(function () {
       applyBrandLogos();
       wireGames();
       installSettingsButton();
       oauthFriendlyApps();
       installLiquidGlass();
-      if (typeof installChromeUI === 'function') try { installChromeUI(); } catch (e) {}
+      styleCavemanAsSwitch();
+      if (typeof installChromeUI === 'function')
+        try {
+          installChromeUI();
+        } catch (e) {}
     }, 600);
     setTimeout(installSettingsButton, 1500);
   }
