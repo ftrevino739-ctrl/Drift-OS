@@ -109,6 +109,8 @@ const fastify = Fastify({
 			.on("request", (req, res) => {
 				res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
 				res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+				// Required for ChromeOS + COEP: workers, wasm, baremux/libcurl modules
+				res.setHeader("Cross-Origin-Resource-Policy", "same-origin");
 				handler(req, res);
 			})
 			.on("upgrade", (req, socket, head) => {
@@ -215,6 +217,6 @@ fastify.setNotFoundHandler((_req, reply) => {
 let port = parseInt(process.env.PORT || "", 10);
 if (Number.isNaN(port)) port = 8080;
 await fastify.listen({ port, host: "0.0.0.0" });
-console.log("Drift listening", port, "| extras + itunes + wayground inject");
+console.log("Drift listening", port, "| CORP + ChromeOS BareMux");
 process.on("SIGINT", () => process.exit(0));
 process.on("SIGTERM", () => process.exit(0));
