@@ -75,7 +75,7 @@ function loadAndPatchIndex() {
 		"classroom:{n:'Classroom',f:function(r){proxySite(r,'https://classroom.google.com','Classroom')}}," +
 		"canva:{n:'Canva',f:function(r){proxySite(r,'https://www.canva.com','Canva')}}," +
 		"roblox:{n:'Roblox',f:function(r){proxySite(r,'https://www.roblox.com/login','Roblox')}}," +
-		"gimkit:{n:'Gimkit',f:gimkitApp},games:{n:'Games',f:gamesHub},chat:{n:'Chat',f:noahChat}};" +
+		"gimkit:{n:'Gimkit',f:gimkitApp},games:{n:'Games',f:function(r){return (window.noahGamesApp||gamesHub)(r)}},chat:{n:'Chat',f:noahChat}};" +
 		"window.XAPPS=XAPPS;window.APPS=APPS;try{window.IC=IC}catch(e){}try{window.proxySite=proxySite}catch(e){}try{window.vscode=vscode}catch(e){}try{window.S=S}catch(e){}try{window.discordApp=discordApp}catch(e){};";
 	html = html.replace(
 		/const XAPPS=\{cam:\{n:'Camera',f:camera\}[\s\S]*?roblox:\{n:'Roblox',f:robloxApp\}\};/,
@@ -237,7 +237,11 @@ fastify.get("/api/raw", async (req, reply) => {
 		host === "raw.githubusercontent.com" ||
 		host === "update.greasyfork.org" ||
 		host === "greasyfork.org" ||
-		host.endsWith(".greasyfork.org");
+		host.endsWith(".greasyfork.org") ||
+		host === "github.com" ||
+		host === "objects.githubusercontent.com" ||
+		host === "release-assets.githubusercontent.com" ||
+		host.endsWith(".githubusercontent.com");
 	if (!allow || !u.startsWith("https://")) return reply.code(400).send("blocked");
 	const r = await fetch(u, { headers: { "User-Agent": "Drift-OS" }, redirect: "follow" });
 	if (!r.ok) return reply.code(r.status).send("upstream");
