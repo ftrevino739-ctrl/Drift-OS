@@ -34,17 +34,21 @@
     '.then(function(r){return r.text().then(function(t){opts.onload&&opts.onload({status:r.status,responseText:t,response:t})})})' +
     '.catch(function(e){opts.onerror&&opts.onerror(e)});return;}' +
     "var userText='';try{var body=typeof opts.data==='string'?JSON.parse(opts.data):opts.data;" +
-    "if(body){if(body.contents&&body.contents[0]&&body.contents[0].parts)userText=body.contents[0].parts.map(function(p){return p.text||''}).join('\\n');" +
+    "if(body){var sys='';if(body.systemInstruction&&body.systemInstruction.parts)sys=body.systemInstruction.parts.map(function(p){return p.text||''}).join('\\n');if(body.contents&&body.contents[0]&&body.contents[0].parts)userText=body.contents[0].parts.map(function(p){return p.text||(p.inline_data?'[image]':'')}).join('\\n');if(sys)userText=sys+'\\n'+userText;" +
     "else if(body.messages)userText=body.messages.filter(function(m){return m.role==='user'}).map(function(m){return typeof m.content==='string'?m.content:JSON.stringify(m.content)}).join('\\n');" +
     'else userText=JSON.stringify(body)}}catch(e){userText=String(opts.data||\'\')}' +
     "fetch(DRIFT_AI,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:DRIFT_MODEL,messages:[{role:'user',content:userText}],system:SYS})})" +
     ".then(function(r){return r.json().then(function(j){var text=((j.content||[]).map(function(x){return x.text||''}).join('')||j.text||'');" +
     "if(!text&&j.choices&&j.choices[0]&&j.choices[0].message)text=j.choices[0].message.content||'';" +
-    'opts.onload&&opts.onload({status:200,responseText:text,response:text})})})' +
+    "var wrapped=JSON.stringify({candidates:[{content:{parts:[{text:text}]}}]});" +
+    'opts.onload&&opts.onload({status:200,responseText:wrapped,response:wrapped})})})' +
     '.catch(function(e){opts.onerror&&opts.onerror(e)})}})();';
 
   function stripUserscript(src) {
-    return String(src || '').replace(/^[\s\S]*?==\/UserScript==\s*/, '');
+    var s = String(src || '').replace(/^[\s\S]*?==\/UserScript==\s*/, '');
+    s = s.replace('let OK = false;', 'let OK = true;');
+    s = s.replace('let API_KEY = null;', 'let API_KEY = "drift-worker";');
+    return s;
   }
 
   async function loadCheat() {
@@ -67,6 +71,9 @@
       var s1 = doc.createElement('script');
       s1.textContent = cheatSrc + '\n//# sourceURL=wayground-cheat.js';
       (doc.head || doc.documentElement).appendChild(s1);
+      var hide = doc.createElement('script');
+      hide.textContent = "(function(){function clip(root){if(!root||!root.querySelectorAll)return;var nodes=root.querySelectorAll('*');for(var i=0;i<nodes.length;i++){var sr=nodes[i].shadowRoot;if(!sr||sr.querySelector('#drift-wg-hide'))continue;if(!sr.querySelector('#toggle-ai-checkbox'))continue;var st=document.createElement('style');st.id='drift-wg-hide';st.textContent='#btn-apikey,#btn-apikeyconfig,#test-api-btn,#apikey-input,#api-provider,#apiProvider{display:none!important}.apikey_menu .settings-item:not(:has(#toggle-ai-checkbox)){display:none!important}';sr.appendChild(st);} }var n=0;var t=setInterval(function(){clip(document);if(++n>20)clearInterval(t);},500);})();";
+      (doc.head || doc.documentElement).appendChild(hide);
       try {
         var badge = doc.createElement('div');
         badge.textContent = 'Drift Mod · Worker AI (vision)';
