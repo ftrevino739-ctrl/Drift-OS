@@ -2,15 +2,15 @@
 (function () {
   'use strict';
 
-  // Never load BareMux/Scramjet from third-party CDNs (breaks SharedWorker + Unity)
   (function () {
     var _append = Node.prototype.appendChild;
     Node.prototype.appendChild = function (n) {
       try {
         if (n && n.tagName === 'SCRIPT' && n.src && /jsdelivr|unpkg|cdnjs/i.test(n.src) && /bare|scram|libcurl/i.test(n.src)) {
           console.warn('[Drift] blocked CDN script', n.src);
-          n.src = '';
-          return n;
+          var local = '/baremux/worker.js';
+          if (/scramjet/i.test(n.src)) local = '/scram/scramjet.all.js';
+          n.src = local;
         }
       } catch (e) {}
       return _append.call(this, n);
@@ -250,8 +250,7 @@
       } catch (e) {}
       try {
         var id = localStorage.getItem('wos:gimkit-injector') || 'lazy';
-        if (id === 'rylan') return 'https://github.com/ftrevino739-ctrl/Drift-OS/releases/download/gimkit/rylanrude.js';
-        if (id === 'colin') return 'https://github.com/ftrevino739-ctrl/Drift-OS/releases/download/gimkit/colin.js';
+        if (id === 'rylan') return 'https://update.greasyfork.org/scripts/526022.user.js';
       } catch (e) {}
       return 'https://raw.githubusercontent.com/TheLazySquid/GimkitCheat/main/build/bundle.user.js';
     })();
@@ -378,14 +377,172 @@
   }
 
   function installChromeUI() {
-    // Title/task hide is owned by drift-fixup corner UI — only keep Cros warning here
+    if (!document.getElementById('drift-chrome-ui-style')) {
+      var style = document.createElement('style');
+      style.id = 'drift-chrome-ui-style';
+      style.textContent =
+        '#task.drift-hidden{transform:translateY(110%);opacity:0;pointer-events:none!important;transition:transform .25s ease,opacity .2s ease}' +
+        '#task{transition:transform .25s ease,opacity .2s ease}' +
+        'body.drift-tb-off .win.max{inset:0 0 0 0!important;top:0!important;bottom:0!important;height:auto!important}' +
+        '.win.drift-title-off>.title{display:none!important;height:0!important;min-height:0!important;overflow:hidden!important;pointer-events:none!important;padding:0!important;border:0!important}' +
+        '.win.drift-title-off>.body{flex:1!important;min-height:0!important}' +
+        '#drift-tb-hide{margin-left:4px;height:28px;min-width:28px;padding:0 8px;border:0;border-radius:8px;' +
+        'background:rgba(255,255,255,.12);color:#fff;font-size:12px;cursor:pointer;flex:none;line-height:1}' +
+        '#drift-tb-hide:hover{background:rgba(255,255,255,.22)}' +
+        '#drift-tb-show,#drift-title-show{position:fixed;z-index:2147483645;display:none;align-items:center;justify-content:center;' +
+        'background:rgba(20,20,28,.94);color:#fff;border:1px solid rgba(255,255,255,.2);font:11px/1 system-ui,sans-serif;' +
+        'cursor:pointer;padding:0 10px;box-shadow:0 4px 16px rgba(0,0,0,.4)}' +
+        '#drift-tb-show{left:0;bottom:0;height:32px;border-radius:0 10px 0 0;border-bottom:0;border-left:0}' +
+        '#drift-title-show{left:0;top:0;height:32px;border-radius:0 0 10px 0;border-top:0;border-left:0}' +
+        '#drift-tb-show.reveal,#drift-title-show.reveal{display:flex!important}' +'#drift-tb-hide,.drift-title-hide-btn{display:none!important}';
+      document.head.appendChild(style);
+    }
+
+    var task = document.getElementById('task');
+    if (task && task.dataset.driftTb !== '1') {
+      task.dataset.driftTb = '1';
+      var hideTb = document.createElement('button');
+      hideTb.id = 'drift-tb-hide';
+      hideTb.type = 'button';
+      hideTb.title = 'Hide taskbar';
+      hideTb.setAttribute('aria-label', 'Hide taskbar');
+      hideTb.textContent = '▾';
+      task.insertBefore(hideTb, task.firstChild);
+
+      var showTb = document.createElement('button');
+      showTb.id = 'drift-tb-show';
+      showTb.type = 'button';
+      showTb.textContent = 'Show Task Bar';
+      showTb.setAttribute('aria-label', 'Show Task Bar');
+      document.body.appendChild(showTb);
+
+      function hideTaskbar() {
+        task.classList.add('drift-hidden');
+        document.body.classList.add('drift-tb-off');
+        showTb.classList.remove('reveal');
+        showTb.style.display = 'none';
+        try { localStorage.setItem('wos:tb-hidden', '1'); } catch (e) {}
+      }
+      function showTaskbar() {
+        task.classList.remove('drift-hidden');
+        document.body.classList.remove('drift-tb-off');
+        showTb.style.display = 'none';
+        showTb.classList.remove('reveal');
+        try { localStorage.setItem('wos:tb-hidden', '0'); } catch (e) {}
+      }
+      hideTb.onclick = function (e) { e.stopPropagation(); hideTaskbar(); };
+      showTb.onclick = function (e) { e.stopPropagation(); showTaskbar(); };
+
+      window.addEventListener('mousemove', function (e) {
+        var near = e.clientX < 72 && e.clientY > (window.innerHeight - 64);
+        var hidden = task.classList.contains('drift-hidden');
+        if (near) {
+          showTb.classList.add('reveal');
+          showTb.style.display = 'flex';
+          showTb.textContent = hidden ? 'Show Task Bar' : 'Hide Task Bar';
+          showTb.onclick = function (ev) {
+            ev.stopPropagation();
+            if (task.classList.contains('drift-hidden')) showTaskbar();
+            else hideTaskbar();
+            showTb.classList.remove('reveal');
+            showTb.style.display = 'none';
+          };
+        } else if (!showTb.matches(':hover')) {
+          showTb.classList.remove('reveal');
+          showTb.style.display = 'none';
+        }
+      });
+
+      try {
+        if (localStorage.getItem('wos:tb-hidden') === '1') hideTaskbar();
+      } catch (e) {}
+    }
+
+    function attachTitleHide(win) {
+      if (!win || !win.classList || !win.classList.contains('win')) return;
+      if (win.dataset.driftTitleCtl === '1') return;
+      var title = win.querySelector(':scope > .title');
+      if (!title) return;
+      win.dataset.driftTitleCtl = '1';
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'drift-title-hide-btn';
+      btn.title = 'Hide title bar';
+      btn.setAttribute('aria-label', 'Hide title bar');
+      btn.textContent = '▴';
+      btn.style.cssText =
+        'height:26px;min-width:26px;padding:0 7px;margin-right:6px;border:0;border-radius:8px;' +
+        'background:rgba(255,255,255,.12);color:inherit;font-size:12px;cursor:pointer;flex:none;order:-1';
+      btn.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+      btn.onclick = function (e) {
+        e.stopPropagation();
+        win.classList.add('drift-title-off');
+        ensureTitleShow();
+      };
+      title.insertBefore(btn, title.firstChild);
+    }
+
+    function scanWindows() {
+      document.querySelectorAll('.win').forEach(attachTitleHide);
+    }
+
+    var showTitle = document.getElementById('drift-title-show');
+    function ensureTitleShow() {
+      if (!showTitle) {
+        showTitle = document.createElement('button');
+        showTitle.id = 'drift-title-show';
+        showTitle.type = 'button';
+        showTitle.textContent = 'Show Title Bar';
+        showTitle.setAttribute('aria-label', 'Show Title Bar');
+        document.body.appendChild(showTitle);
+        showTitle.onclick = function (e) {
+          e.stopPropagation();
+          document.querySelectorAll('.win.drift-title-off').forEach(function (w) {
+            w.classList.remove('drift-title-off');
+          });
+          showTitle.style.display = 'none';
+          showTitle.classList.remove('reveal');
+        };
+        window.addEventListener('mousemove', function (e) {
+          var anyHidden = document.querySelector('.win.drift-title-off');
+          if (!anyHidden) {
+            showTitle.style.display = 'none';
+            showTitle.classList.remove('reveal');
+            return;
+          }
+          var near = e.clientX < 56 && e.clientY < 56;
+          if (near) {
+            showTitle.classList.add('reveal');
+            showTitle.style.display = 'flex';
+            showTitle.textContent = 'Show Title Bar';
+          } else if (!showTitle.matches(':hover')) {
+            showTitle.classList.remove('reveal');
+            showTitle.style.display = 'none';
+          }
+        });
+      }
+    }
+
+    scanWindows();
+    try {
+      if (!window.__driftWinObs) {
+        window.__driftWinObs = true;
+        var desk = document.getElementById('desk') || document.body;
+        var mo = new MutationObserver(function () { scanWindows(); });
+        mo.observe(desk, { childList: true, subtree: true });
+      }
+    } catch (e) {
+      setInterval(scanWindows, 1500);
+    }
   }
 
   function boot() {
     wireApps();
     guardYouTube();
     try { showChromeOSWarning(); } catch (e) {}
+    try { installChromeUI(); } catch (e) {}
     setTimeout(wireApps, 300);
+    setTimeout(function () { try { installChromeUI(); } catch (e) {} }, 800);
     setTimeout(wireApps, 1200);
   }
 
