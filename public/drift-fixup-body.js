@@ -23,7 +23,7 @@
     scribd: { id: 'scribd', name: 'SCRIBD notes (doc only)', url: '' }
   };
 
-  var EDU_APPS = { classroom: 1, canva: 1, gimkit: 1, wayground: 1, browser: 1, calc: 1, gmail: 1, games: 1 };
+  var EDU_APPS = { classroom: 1, canva: 1, wayground: 1 };
 
   function onReady(fn) {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn);
@@ -72,7 +72,7 @@
     );
     IC.discord = svg(
       '<rect width="48" height="48" rx="11" fill="#5865F2"/>' +
-      '<path fill="#fff" d="M17.2 15.5c-1.3 0-2.4 1.1-2.4 2.5v11c0 1.4 1.1 2.5 2.4 2.5h1l.4 1.5c.2.6.8.8 1.3.5l2.5-1.5h5.2c1.3 0 2.4-1.1 2.4-2.5v-11c0-1.4-1.1-2.5-2.4-2.5H17.2zm2.2 3.9c.7 0 1.3.6 1.3 1.4s-.6 1.4-1.3 1.4-1.3-.6-1.3-1.4.6-1.4 1.3-1.4zm5.8 0c.7 0 1.3.6 1.3 1.4s-.6 1.4-1.3 1.4-1.3-.6-1.3-1.4.6-1.4 1.3-1.4z"/>'
+      '<path fill="#fff" transform="translate(6.5 7) scale(1.45)" d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>'
     );
     IC.canva =
       '<div style="width:100%;height:100%;border-radius:11px;background:linear-gradient(135deg,#00d4aa 0%,#3b8bff 45%,#9b5cff 100%);display:grid;place-items:center"><span style="font-family:Georgia,serif;font-style:italic;font-weight:700;font-size:15px;color:#fff">Canva</span></div>';
@@ -278,11 +278,7 @@
       '#drift-cav:checked{background:#34c759}' +
       '#drift-cav::after{content:"";position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left .2s}' +
       '#drift-cav:checked::after{left:20px}' +
-      'body.drift-edu [data-app="ai"],body.drift-edu [data-app="code"],body.drift-edu [data-app="injector"],' +
-      'body.drift-edu [data-app="discord"],body.drift-edu [data-app="yt"],body.drift-edu [data-app="ig"],' +
-      'body.drift-edu [data-app="tt"],body.drift-edu [data-app="movies"],body.drift-edu [data-app="mus"],' +
-      'body.drift-edu [data-app="cam"],body.drift-edu [data-app="github"],body.drift-edu [data-app="whatsapp"],' +
-      'body.drift-edu [data-app="chat"],body.drift-edu [data-app="roblox"]{display:none!important}';
+      'body.drift-edu [data-app]:not([data-app="classroom"]):not([data-app="canva"]):not([data-app="wayground"]){display:none!important}';
     document.head.appendChild(st);
   }
 
@@ -303,41 +299,70 @@
     } catch (e) {}
   }
 
+  var driftPressed = {};
+  function keyName(e) {
+    if (e.key === ' ') return 'Space';
+    if (e.key === 'Control') return 'Ctrl';
+    if (e.key === 'Alt') return 'Alt';
+    if (e.key === 'Shift') return 'Shift';
+    if (e.key === 'Meta') return 'Meta';
+    return e.key.length === 1 ? e.key.toUpperCase() : e.key;
+  }
+  function comboParts(combo) {
+    return String(combo || '').split('+').map(function (s) { return s.trim().toLowerCase(); }).filter(Boolean);
+  }
+  function downSet(e) {
+    var down = {};
+    Object.keys(driftPressed).forEach(function (k) { if (driftPressed[k]) down[k] = 1; });
+    if (e) {
+      if (e.ctrlKey) down.ctrl = 1;
+      if (e.altKey) down.alt = 1;
+      if (e.shiftKey) down.shift = 1;
+      if (e.metaKey) down.meta = 1;
+      var n = keyName(e).toLowerCase();
+      if (n !== 'ctrl' && n !== 'alt' && n !== 'shift' && n !== 'meta') down[n] = 1;
+    }
+    return down;
+  }
   function matchCombo(e, combo) {
-    if (!combo) return false;
-    var parts = String(combo).split('+').map(function (s) { return s.trim().toLowerCase(); });
-    var nc = parts.indexOf('ctrl') >= 0, na = parts.indexOf('alt') >= 0, ns = parts.indexOf('shift') >= 0, nm = parts.indexOf('meta') >= 0;
-    if (!!e.ctrlKey !== nc || !!e.altKey !== na || !!e.shiftKey !== ns || !!e.metaKey !== nm) return false;
-    var key = parts.filter(function (p) { return ['ctrl','alt','shift','meta'].indexOf(p) < 0; })[0] || '';
-    var k = e.key === ' ' ? 'space' : String(e.key).toLowerCase();
-    return k === key || String(e.code).toLowerCase() === key;
+    var parts = comboParts(combo);
+    if (!parts.length) return false;
+    var down = downSet(e);
+    for (var i = 0; i < parts.length; i++) if (!down[parts[i]]) return false;
+    return true;
   }
   function wireKeyCapture(input, storageKey, fallback) {
     if (!input || input.dataset.cap === '1') return;
     input.dataset.cap = '1';
     input.readOnly = true;
-    input.placeholder = 'Click, then press a key';
+    input.placeholder = 'Click, then press keys (T+Y, up to 8)';
     input.style.cursor = 'pointer';
-    input.addEventListener('focus', function () { input.value = 'Press a key…'; input.style.borderColor = '#34c759'; });
+    input.addEventListener('focus', function () {
+      input._keys = [];
+      input.value = 'Press keys…';
+      input.style.borderColor = '#34c759';
+    });
     input.addEventListener('keydown', function (e) {
       e.preventDefault(); e.stopPropagation();
-      var parts = [];
-      if (e.ctrlKey) parts.push('Ctrl');
-      if (e.altKey) parts.push('Alt');
-      if (e.shiftKey) parts.push('Shift');
-      if (e.metaKey) parts.push('Meta');
-      var k = e.key === ' ' ? 'Space' : e.key;
-      if (!/^(Control|Alt|Shift|Meta)$/i.test(k)) parts.push(k.length === 1 ? k.toUpperCase() : k);
-      input.value = parts.join('+') || e.code || fallback || '';
-      input.style.borderColor = '#333';
-      try { localStorage.setItem(storageKey, input.value); } catch (err) {}
-      input.blur();
+      if (!input._keys) input._keys = [];
+      var name = keyName(e);
+      if (input._keys.indexOf(name) < 0 && input._keys.length < 8) input._keys.push(name);
+      input.value = input._keys.join('+') || fallback || '';
+      clearTimeout(input._t);
+      input._t = setTimeout(function () {
+        try { localStorage.setItem(storageKey, input.value); } catch (err) {}
+        input.style.borderColor = '#333';
+        input._keys = [];
+        input.blur();
+      }, 750);
     });
   }
   function bindCustomKeybinds() {
     if (window.__driftKbBound) return;
     window.__driftKbBound = true;
     document.addEventListener('keydown', function (e) {
+      var nk = keyName(e).toLowerCase();
+      if (nk !== 'ctrl' && nk !== 'alt' && nk !== 'shift' && nk !== 'meta') driftPressed[nk] = 1;
       if (e.target && e.target.id && String(e.target.id).indexOf('kb-') === 0) return;
       var hideKey = 'F9', classKey = 'F10', disc = '', aleks = '', docs = '';
       try {
@@ -363,6 +388,10 @@
         e.preventDefault();
         window.location.href = 'https://docs.google.com/';
       }
+    }, true);
+    document.addEventListener('keyup', function (e) {
+      var nk = keyName(e).toLowerCase();
+      driftPressed[nk] = 0;
     }, true);
   }
 
@@ -461,6 +490,74 @@
       if (window.XAPPS.discord) window.XAPPS.discord = { n: 'Discord', f: loginShell('Discord', 'https://discord.com/login', 'wos:in:discord') };
     } catch (e) {}
   }
+  function protectorHit(why) {
+    var on = false;
+    try { on = localStorage.getItem('wos:protector') === '1'; } catch (e) {}
+    if (!on) return;
+    var now = Date.now();
+    if (window.__driftProtAt && now - window.__driftProtAt < 2500) return;
+    window.__driftProtAt = now;
+    try { console.warn('[Drift Protector] live view', why); } catch (e) {}
+    location.replace('https://classroom.google.com/');
+  }
+  function installProtector() {
+    if (window.__driftProtHook) return;
+    window.__driftProtHook = true;
+    var re = /StreamingClass|startStreamingClass|streaming[_ ]?class|live view started|teacher is viewing|viewing your screen|screen capture started|captureVisibleTab/i;
+    ['log', 'info', 'debug', 'warn', 'error'].forEach(function (m) {
+      var orig = console[m];
+      if (typeof orig !== 'function') return;
+      console[m] = function () {
+        try {
+          var s = Array.prototype.join.call(arguments, ' ');
+          if (re.test(s)) protectorHit(m);
+        } catch (e) {}
+        return orig.apply(console, arguments);
+      };
+    });
+    window.addEventListener('message', function (ev) {
+      try {
+        var s = typeof ev.data === 'string' ? ev.data : JSON.stringify(ev.data || '');
+        if (re.test(s)) protectorHit('message');
+      } catch (e) {}
+    });
+    try {
+      var po = new PerformanceObserver(function (list) {
+        list.getEntries().forEach(function (en) {
+          var n = en.name || '';
+          if (/classwize|linewize/i.test(n) && /stream|screenshot|liveview|livestream|capture|frames|streamingclass/i.test(n)) protectorHit('network');
+        });
+      });
+      po.observe({ type: 'resource', buffered: true });
+    } catch (e) {}
+  }
+  function openDriftDocs() {
+    var old = document.getElementById('drift-docs');
+    if (old) { old.remove(); return; }
+    var el = document.createElement('div');
+    el.id = 'drift-docs';
+    el.style.cssText = 'position:fixed;inset:24px;z-index:2147483002;overflow:auto;background:#12121a;color:#eee;border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:18px 20px;box-shadow:0 20px 60px rgba(0,0,0,.5);font:14px/1.5 system-ui';
+    el.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><b style="font-size:18px">Drift docs</b><button type="button" data-x style="border:0;background:transparent;color:#aaa;font-size:22px;cursor:pointer">×</button></div>' +
+      '<p style="opacity:.75;margin-top:0">Errors seen on ChromeOS and Windows, and what to do. After a deploy, hard refresh with Ctrl+Shift+R.</p>' +
+      '<h3>ChromeOS</h3>' +
+      '<p><b>BareMux no respondió / Scramjet server is down or blocked.</b> Render is waking up or the school network blocks the WebSocket. Wait 30–60 seconds, stay on the tab, then press Retry. Do not reload in a loop.</p>' +
+      '<p><b>Some apps stay blank for a few minutes.</b> The proxy is still connecting. Wait. TikTok, Gemini and Gimkit need that first connection.</p>' +
+      '<p><b>ServiceWorker script evaluation failed.</b> Hard refresh. If it stays, close the tab and open Drift again. Do not use an old bookmark to a Vercel preview.</p>' +
+      '<p><b>Robot check fails inside Classroom, Gmail, Canva or Roblox.</b> Use Sign in (popup). The check runs on Google’s real page, not inside the proxy. The login bar stays until you mark I signed in.</p>' +
+      '<p><b>SharedWorker / cdn.jsdelivr.net/baremux.</b> Unity cannot use a worker from another site. Drift blocks that CDN and uses /baremux on the same origin. If the game still fails, use Open outside proxy (Unity).</p>' +
+      '<h3>Windows</h3>' +
+      '<p><b>Same proxy errors as ChromeOS</b> (BareMux, cold start, Service Worker). Same fix: wait, then Ctrl+Shift+R.</p>' +
+      '<p><b>Games: Failed to fetch …/null or Ruffle movie null.</b> That game has no URL. Drift skips those. Pick another, or open a working one outside the proxy.</p>' +
+      '<p><b>Unity: Failed to construct SharedWorker.</b> Same as ChromeOS. Use Open outside proxy (Unity).</p>' +
+      '<p><b>Page looks like an old version after refresh or Wi-Fi drop.</b> The browser kept an old script. Ctrl+Shift+R. Drift sends the page with no-store so the next load is the current commit.</p>' +
+      '<p><b>Task bar or title bar gone.</b> Move the mouse to the bottom-left corner (task bar) or top-left corner (title). The Show button only appears there and disappears after you click it.</p>' +
+      '<h3>Both</h3>' +
+      '<p><b>Wayground bot asks for a Gemini API key.</b> It should not. Re-open Wayground so the mod re-injects. Only the Enable AI switch is used. Answers go through the Drift worker.</p>' +
+      '<p><b>Protector did nothing.</b> It does not react just because Linewize is installed. It leaves only when the console shows StreamingClass or Classwize starts a live screen request. Turn the switch on in Settings first.</p>';
+    el.querySelector('[data-x]').onclick = function () { el.remove(); };
+    document.body.appendChild(el);
+  }
   function openSettingsPanel() {
     var old = document.getElementById('drift-settings-panel');
     if (old) { old.remove(); return; }
@@ -520,11 +617,16 @@
       '<input id="kb-aleks" value="' + (localStorage.getItem('wos:kb-aleks') || '').replace(/"/g, '') + '" style="display:block;width:100%;margin-top:4px;padding:8px;border-radius:8px;border:1px solid #333;background:#14141c;color:#eee;box-sizing:border-box"/></label>' +
       '<label style="display:block;margin:8px 0">Google Docs' +
       '<input id="kb-docs" value="' + (localStorage.getItem('wos:kb-docs') || '').replace(/"/g, '') + '" style="display:block;width:100%;margin-top:4px;padding:8px;border-radius:8px;border:1px solid #333;background:#14141c;color:#eee;box-sizing:border-box"/></label>' +
-      '<div style="opacity:.75;font-size:12px;margin:6px 0 10px">Click a field, then press any key combo. It is saved when you release.</div>' +
+      '<div style="opacity:.75;font-size:12px;margin:6px 0 10px">Click a field, then press keys together or in a row (example T+Y). Up to 8 keys. It saves when you pause.</div>' +
       '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:10px">' +
       '<div style="flex:1"><b>Education mode now</b><div style="opacity:.7;font-size:11px">Hides non-edu icons immediately</div></div>' +
       switchHTML('drift-edu-sw', eduOn) + '</div>' +
-      '<button type="button" id="kb-class-go" style="margin-top:12px;width:100%;padding:10px;border:0;border-radius:10px;background:#1a73e8;color:#fff;font-weight:600;cursor:pointer">Open Classroom full page now</button></div>';
+      '<button type="button" id="kb-class-go" style="margin-top:12px;width:100%;padding:10px;border:0;border-radius:10px;background:#1a73e8;color:#fff;font-weight:600;cursor:pointer">Open Classroom full page now</button></div>' +
+      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:16px;border-top:1px solid rgba(255,255,255,.08);padding-top:14px">' +
+      '<div style="flex:1"><b>Protector</b>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">If Drift detects someone is viewing your screen on Linewize it instantly redirects you to classroom.google.com. The extension can stay on. It only leaves when a live view starts (StreamingClass in the console, or a Classwize live-view request).</div></div>' +
+      switchHTML('drift-prot-sw', localStorage.getItem('wos:protector') === '1') + '</div>' +
+      '<button type="button" id="drift-docs-btn" style="margin-top:12px;width:100%;padding:10px;border:1px solid rgba(255,255,255,.14);border-radius:10px;background:transparent;color:#fff;font-weight:600;cursor:pointer">Drift docs</button>';
     panel.querySelector('[data-x]').onclick = function () { panel.remove(); };
     wireSwitch(panel.querySelector('#drift-liquid-sw'), function (on) {
       try { localStorage.setItem('wos:liquid-glass', on ? '1' : '0'); } catch (e) {}
@@ -543,6 +645,10 @@
     wireKeyCapture(panel.querySelector('#kb-disc'), 'wos:kb-disc', '');
     wireKeyCapture(panel.querySelector('#kb-aleks'), 'wos:kb-aleks', '');
     wireKeyCapture(panel.querySelector('#kb-docs'), 'wos:kb-docs', '');
+    wireSwitch(panel.querySelector('#drift-prot-sw'), function (on) {
+      try { localStorage.setItem('wos:protector', on ? '1' : '0'); } catch (e) {}
+    });
+    panel.querySelector('#drift-docs-btn').onclick = function () { openDriftDocs(); };
     panel.querySelector('#kb-class-go').onclick = function () {
       window.location.href = 'https://classroom.google.com/';
     };
@@ -587,6 +693,7 @@
       if (localStorage.getItem('wos:no-dev') === '1') setNoDev(true);
     } catch (e) {}
     try { installSettingsButton(); } catch (e) {}
+    try { installProtector(); } catch (e) {}
     if (typeof installChromeUI === 'function') try { installChromeUI(); } catch (e) {}
     setTimeout(function () {
       applyBrandLogos();
