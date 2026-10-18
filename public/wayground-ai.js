@@ -12,7 +12,7 @@
     } catch (e) {}
     return 'https://holy-firefly-982c.fert0480.workers.dev/ai';
   })();
-  var DRIFT_MODEL = 'or-gemini';
+  var DRIFT_MODEL = 'mistralai/mistral-large-4-0'; // vision+reason via worker
 
   var GM_BOOT =
     "window.GM_getValue=function(k,d){try{var v=localStorage.getItem('GM_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}};" +
@@ -27,7 +27,7 @@
     JSON.stringify(DRIFT_AI) +
     ';var DRIFT_MODEL=' +
     JSON.stringify(DRIFT_MODEL) +
-    ";var SYS='You are an expert quiz assistant with vision and careful reasoning. Reply ONLY JSON {\\\"answers\\\":{\\\"QUESTION_ID\\\":\\\"optionId|text|[ids]\\\"}}.';" +
+    ";var SYS='You are an expert quiz assistant WITH VISION and careful reasoning. If images/screenshots are provided, read them. Reply ONLY JSON {\\\"answers\\\":{\\\"QUESTION_ID\\\":\\\"optionId|text|[ids]\\\"}}.';" +
     'window.GM_xmlhttpRequest=function(opts){var url=String(opts.url||\'\');' +
     'var isAI=/generativelanguage\\.googleapis\\.com|api\\.openai\\.com|openrouter\\.ai|api\\.xkiro\\.com/i.test(url);' +
     "if(!isAI){fetch(opts.url,{method:opts.method||'GET',headers:opts.headers||{},body:opts.data,credentials:'include'})" +
@@ -69,13 +69,13 @@
       (doc.head || doc.documentElement).appendChild(s1);
       try {
         var badge = doc.createElement('div');
-        badge.textContent = 'Drift Mod · Worker AI';
+        badge.textContent = 'Drift Mod · Worker AI (vision)';
         badge.style.cssText =
           'position:fixed;top:12px;right:12px;z-index:2147483646;background:#111827;color:#fff;padding:8px 12px;border-radius:10px;font:12px system-ui;box-shadow:0 8px 24px rgba(0,0,0,.35)';
         (doc.body || doc.documentElement).appendChild(badge);
       } catch (e) {}
       doc.documentElement.setAttribute('data-wg-inj', '1');
-      if (statusEl) statusEl.textContent = 'Mod menu injected · answers via Drift worker';
+      if (statusEl) statusEl.textContent = 'Mod menu injected · answers via Drift worker (vision)';
       return true;
     } catch (e) {
       if (statusEl) statusEl.textContent = 'Inject later: ' + (e.message || e);
@@ -88,9 +88,7 @@
       '<div style="display:flex;flex-direction:column;height:100%;min-height:0">' +
       '<div style="padding:8px 10px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between">' +
       '<span style="font-weight:600">Wayground</span>' +
-      '<span style="display:flex;gap:6px;align-items:center">' +
-      '<button type="button" id="wg-inj" style="padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:var(--omni);color:inherit;cursor:pointer">Re-inject mod</button>' +
-      '</span></div>' +
+      '<button type="button" id="wg-inj" style="padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:var(--omni);color:inherit;cursor:pointer">Re-inject mod</button></div>' +
       '<div id="wg-status" style="padding:6px 10px;font-size:12px;background:rgba(255,255,255,.04);border-bottom:1px solid var(--line)">Loading Wayground + mod menu…</div>' +
       '<div class="sjt" style="flex:1;min-height:0;position:relative"></div></div>';
     var box = root.querySelector('.sjt');
@@ -125,8 +123,7 @@
         } else if (typeof window.proxySite === 'function') {
           window.proxySite(box, 'https://wayground.com', 'Wayground');
         } else {
-          box.innerHTML =
-            '<iframe src="https://wayground.com" style="width:100%;height:100%;border:0"></iframe>';
+          box.innerHTML = '<iframe src="https://wayground.com" style="width:100%;height:100%;border:0"></iframe>';
         }
         if (frameObj && frameObj.frame) {
           frameObj.frame.addEventListener('load', function () {
@@ -142,13 +139,9 @@
     }
 
     root.querySelector('#wg-inj').onclick = function () {
-      ensureCheat()
-        .then(function () {
-          tryInject();
-        })
-        .catch(function (e) {
-          st.textContent = String(e.message || e);
-        });
+      ensureCheat().then(function () { tryInject(); }).catch(function (e) {
+        st.textContent = String(e.message || e);
+      });
     };
 
     go();
@@ -156,9 +149,7 @@
 
   function wire() {
     try {
-      if (window.XAPPS) {
-        window.XAPPS.wayground = { n: 'Wayground', f: window.waygroundApp };
-      }
+      if (window.XAPPS) window.XAPPS.wayground = { n: 'Wayground', f: window.waygroundApp };
     } catch (e) {}
   }
   wire();
