@@ -101,10 +101,10 @@ function loadAndPatchIndex() {
 	);
 
 	const tag =
-		'<script src="/drift-extras.js" defer></script>' +
-		'<script src="/chromebook-proxy.js" defer></script>' +
-		'<script src="/wayground-ai.js" defer></script>' +
-		'<script src="/drift-fixup.js" defer></script>' +
+		'<script src="/drift-extras.js?v=20261018" defer></script>' +
+		'<script src="/chromebook-proxy.js?v=20261018" defer></script>' +
+		'<script src="/wayground-ai.js?v=20261018" defer></script>' +
+		'<script src="/drift-fixup.js?v=20261018" defer></script>' +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +
@@ -160,6 +160,8 @@ const fastify = Fastify({
 const sendIndex = async (_req, reply) => {
 	const html = loadAndPatchIndex();
 	if (!html) return reply.code(500).send("Missing index.html");
+	reply.header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+	reply.header("Pragma", "no-cache");
 	return reply.type("text/html; charset=utf-8").send(html);
 };
 
