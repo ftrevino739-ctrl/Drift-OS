@@ -243,17 +243,20 @@
   };
 
   window.gimkitApp = function gimkitAppFixed(root) {
-    var CHEAT = (function () {
+    function cheatUrl() {
+      var map = {
+        lazy: 'https://raw.githubusercontent.com/TheLazySquid/GimkitCheat/main/build/bundle.user.js',
+        rylan: 'https://github.com/ftrevino739-ctrl/Drift-OS/releases/download/gimkit/rylanrude.js',
+        colin: 'https://github.com/ftrevino739-ctrl/Drift-OS/releases/download/gimkit/colin.js'
+      };
       try {
+        var id = localStorage.getItem('wos:gimkit-injector') || 'lazy';
+        if (map[id]) return map[id];
         var u = localStorage.getItem('wos:gimkit-cheat-url');
         if (u && /^https:\/\//.test(u)) return u;
       } catch (e) {}
-      try {
-        var id = localStorage.getItem('wos:gimkit-injector') || 'lazy';
-        if (id === 'rylan') return 'https://update.greasyfork.org/scripts/526022.user.js';
-      } catch (e) {}
-      return 'https://raw.githubusercontent.com/TheLazySquid/GimkitCheat/main/build/bundle.user.js';
-    })();
+      return map.lazy;
+    }
     root.innerHTML =
       '<div style="display:flex;flex-direction:column;height:100%;min-height:0">' +
       '<div style="padding:8px 10px;border-bottom:1px solid var(--line);font-size:12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between">' +
@@ -268,6 +271,8 @@
     var st = root.querySelector('#gk-status');
     var frameObj = null;
     var cheatSrc = null;
+    var cheatKey = '';
+    var seenHref = '';
     var gm =
       "window.GM_getValue=function(k,d){try{var v=localStorage.getItem('GM_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}};" +
       "window.GM_setValue=function(k,v){try{localStorage.setItem('GM_'+k,JSON.stringify(v))}catch(e){}};" +
@@ -276,41 +281,72 @@
       "window.GM_xmlhttpRequest=function(opts){fetch(opts.url,{method:(opts.method||'GET'),headers:opts.headers||{},body:opts.data,credentials:'include'}).then(function(r){return r.text().then(function(t){opts.onload&&opts.onload({status:r.status,responseText:t,response:t})})}).catch(function(e){opts.onerror&&opts.onerror(e)})};" +
       'window.unsafeWindow=window;';
     async function loadCheat() {
-      if (cheatSrc) return cheatSrc;
+      var url = cheatUrl();
+      if (cheatSrc && cheatKey === url) return cheatSrc;
+      cheatKey = url;
+      cheatSrc = null;
       st.textContent = 'Downloading cheat…';
-      var r = await fetch('/api/raw?u=' + encodeURIComponent(CHEAT), { cache: 'no-store' });
-      if (!r.ok) r = await fetch(CHEAT, { cache: 'no-store' });
+      var r = await fetch('/api/raw?u=' + encodeURIComponent(url), { cache: 'no-store' });
+      if (!r.ok) r = await fetch(url, { cache: 'no-store' });
       if (!r.ok) throw new Error('Cheat download failed (' + r.status + ')');
       var t = await r.text();
       cheatSrc = t.replace(/^[\s\S]*?==\/UserScript==\s*/, '');
       return cheatSrc;
     }
     function inject() {
-      if (!frameObj || !frameObj.frame) return;
+      if (!frameObj || !frameObj.frame || !cheatSrc) return;
       try {
         var w = frameObj.frame.contentWindow;
         var d = frameObj.frame.contentDocument || (w && w.document);
-        if (!w || !d) throw new Error('Frame not ready');
-        if (d.documentElement.getAttribute('data-gk-inj') === '1') { st.textContent = 'Cheat already injected'; return; }
+        if (!w || !d || !d.documentElement) throw new Error('Frame not ready');
+        if (d.documentElement.getAttribute('data-gk-inj') === '1') return;
+        d.documentElement.setAttribute('data-gk-inj', '1');
         var s1 = d.createElement('script'); s1.textContent = gm; (d.head || d.documentElement).appendChild(s1);
         var s2 = d.createElement('script'); s2.textContent = cheatSrc + '\n//# sourceURL=gimkit-cheat.js'; (d.head || d.documentElement).appendChild(s2);
-        d.documentElement.setAttribute('data-gk-inj', '1');
         st.textContent = 'Gimkit loaded · cheat injected';
       } catch (e) { st.textContent = 'Page loaded · inject later: ' + (e.message || e); }
+    }
+    function watchFrame() {
+      if (root.dataset.gkWatch === '1') return;
+      root.dataset.gkWatch = '1';
+      var timer = setInterval(function () {
+        if (!root.isConnected) { clearInterval(timer); return; }
+        if (!frameObj || !frameObj.frame) return;
+        var href = '';
+        var doc = null;
+        try { href = String(frameObj.frame.contentWindow.location.href || ''); } catch (e) { return; }
+        try { doc = frameObj.frame.contentDocument; } catch (e) { return; }
+        if (!doc || !doc.documentElement || !href) return;
+        if (href !== seenHref) {
+          seenHref = href;
+          try { doc.documentElement.removeAttribute('data-gk-inj'); } catch (e) {}
+          loadCheat().then(inject).catch(function (e) { st.textContent = String(e.message || e); });
+          return;
+        }
+        if (doc.documentElement.getAttribute('data-gk-inj') !== '1') {
+          loadCheat().then(inject).catch(function () {});
+        }
+      }, 1200);
     }
     async function openUrl(url) {
       st.textContent = 'Opening ' + url + '…';
       box.innerHTML = '<div class="ym">Loading Gimkit…</div>';
+      seenHref = '';
       try {
         await loadCheat().catch(function (e) { st.textContent = String(e.message || e); });
         frameObj = await window.openProxied(url, box);
         if (!frameObj) { st.textContent = 'Proxy failed'; return; }
+        watchFrame();
         if (frameObj.frame) {
           frameObj.frame.addEventListener('load', function () {
-            setTimeout(inject, 600); setTimeout(inject, 2000); setTimeout(inject, 4500);
+            try { seenHref = String(frameObj.frame.contentWindow.location.href || ''); } catch (e) { seenHref = ''; }
+            try {
+              var d = frameObj.frame.contentDocument;
+              if (d && d.documentElement) d.documentElement.removeAttribute('data-gk-inj');
+            } catch (e) {}
+            setTimeout(function () { loadCheat().then(inject); }, 500);
           });
         }
-        setTimeout(inject, 1500);
         st.textContent = 'Gimkit page loading…';
       } catch (e) {
         st.textContent = String(e.message || e);
@@ -322,6 +358,11 @@
       openUrl(code ? 'https://www.gimkit.com/join/' + encodeURIComponent(code) : 'https://www.gimkit.com/join');
     };
     root.querySelector('#gk-inj').onclick = function () {
+      try {
+        var d = frameObj && frameObj.frame && frameObj.frame.contentDocument;
+        if (d && d.documentElement) d.documentElement.removeAttribute('data-gk-inj');
+      } catch (e) {}
+      seenHref = '';
       loadCheat().then(inject).catch(function (e) { st.textContent = String(e.message || e); });
     };
     openUrl('https://www.gimkit.com/join');

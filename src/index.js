@@ -1,5 +1,6 @@
 import { createServer } from "node:http";
 import { fileURLToPath } from "url";
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import Fastify from "fastify";
@@ -101,10 +102,10 @@ function loadAndPatchIndex() {
 	);
 
 	const tag =
-		'<script src="/drift-extras.js?v=20261019a" defer></script>' +
-		'<script src="/chromebook-proxy.js?v=20261019a" defer></script>' +
-		'<script src="/wayground-ai.js?v=20261019a" defer></script>' +
-		'<script src="/drift-fixup.js?v=20261019a" defer></script>' +
+		'<script src="/drift-extras.js?v=20261019c" defer></script>' +
+		'<script src="/chromebook-proxy.js?v=20261019c" defer></script>' +
+		'<script src="/wayground-ai.js?v=20261019c" defer></script>' +
+		'<script src="/drift-fixup.js?v=20261019c" defer></script>' +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +
@@ -192,6 +193,153 @@ async function proxyMod(req, reply, pathname) {
 }
 fastify.post("/api/ask", (req, reply) => proxyMod(req, reply, "/api/ask"));
 fastify.post("/api/redeem", (req, reply) => proxyMod(req, reply, "/api/redeem"));
+fastify.post("/api/pulse", (req, reply) => proxyMod(req, reply, "/api/pulse"));
+
+function chatFile() {
+	const preferred = process.env.DATA_DIR ? path.join(process.env.DATA_DIR, "chat.json") : path.join(rootPath, "data", "chat.json");
+	const candidates = [preferred, path.join(rootPath, "data", "chat.json"), "/tmp/drift-chat.json"];
+	for (const file of candidates) {
+		try {
+			fs.mkdirSync(path.dirname(file), { recursive: true });
+			const probe = file + ".probe";
+			fs.writeFileSync(probe, "ok");
+			fs.unlinkSync(probe);
+			return file;
+		} catch {}
+	}
+	return "/tmp/drift-chat.json";
+}
+const CHAT_FILE = chatFile();
+function chatRead() {
+	try { return JSON.parse(fs.readFileSync(CHAT_FILE, "utf8")); }
+	catch { return { users: [], servers: [], messages: [] }; }
+}
+function chatWrite(db) {
+	const tmp = CHAT_FILE + ".tmp";
+	fs.writeFileSync(tmp, JSON.stringify(db));
+	fs.renameSync(tmp, CHAT_FILE);
+}
+function chatHash(s) { return crypto.createHash("sha256").update(String(s)).digest("hex"); }
+function chatUser(req, db) {
+	const tok = String(req.headers["x-drift-chat"] || "");
+	if (!tok) return null;
+	return db.users.find((u) => u.token === tok) || null;
+}
+fastify.post("/api/chat/register", async (req, reply) => {
+	const b = req.body || {};
+	const username = String(b.username || "").trim().slice(0, 32);
+	const password = String(b.password || "");
+	if (username.length < 2 || password.length < 4) return reply.code(400).send({ error: "Username and a password of 4 or more characters." });
+	const db = chatRead();
+	if (db.users.some((u) => u.username.toLowerCase() === username.toLowerCase())) return reply.code(400).send({ error: "That username is taken." });
+	const user = { id: crypto.randomBytes(8).toString("hex"), username, pass: chatHash(password), token: crypto.randomBytes(24).toString("hex") };
+	db.users.push(user);
+	chatWrite(db);
+	return { token: user.token, user: { id: user.id, username: user.username } };
+});
+fastify.post("/api/chat/login", async (req, reply) => {
+	const b = req.body || {};
+	const username = String(b.username || "").trim();
+	const password = String(b.password || "");
+	const db = chatRead();
+	const user = db.users.find((u) => u.username.toLowerCase() === username.toLowerCase() && u.pass === chatHash(password));
+	if (!user) return reply.code(401).send({ error: "Wrong username or password." });
+	user.token = crypto.randomBytes(24).toString("hex");
+	chatWrite(db);
+	return { token: user.token, user: { id: user.id, username: user.username } };
+});
+fastify.get("/api/chat/me", async (req, reply) => {
+	const db = chatRead();
+	const user = chatUser(req, db);
+	if (!user) return reply.code(401).send({ error: "Log in." });
+	const servers = db.servers.filter((s) => (s.members || []).includes(user.id)).map((s) => ({ id: s.id, name: s.name }));
+	return { user: { id: user.id, username: user.username }, servers };
+});
+fastify.get("/api/chat/servers", async (req, reply) => {
+	const db = chatRead();
+	const user = chatUser(req, db);
+	if (!user) return reply.code(401).send({ error: "Log in." });
+	const q = String(req.query.q || "").trim().toLowerCase();
+	const servers = db.servers
+		.filter((s) => !q || s.name.toLowerCase().includes(q))
+		.slice(0, 30)
+		.map((s) => ({ id: s.id, name: s.name, joined: (s.members || []).includes(user.id) }));
+	return { servers };
+});
+fastify.post("/api/chat/servers", async (req, reply) => {
+	const db = chatRead();
+	const user = chatUser(req, db);
+	if (!user) return reply.code(401).send({ error: "Log in." });
+	const name = String((req.body || {}).name || "").trim().slice(0, 48);
+	if (name.length < 2) return reply.code(400).send({ error: "Name the server." });
+	const server = { id: crypto.randomBytes(8).toString("hex"), name, owner: user.id, members: [user.id], channels: ["general"] };
+	db.servers.unshift(server);
+	chatWrite(db);
+	return { server: { id: server.id, name: server.name } };
+});
+fastify.post("/api/chat/servers/:id/join", async (req, reply) => {
+	const db = chatRead();
+	const user = chatUser(req, db);
+	if (!user) return reply.code(401).send({ error: "Log in." });
+	const server = db.servers.find((s) => s.id === req.params.id);
+	if (!server) return reply.code(404).send({ error: "Server not found." });
+	if (!(server.members || []).includes(user.id)) server.members.push(user.id);
+	chatWrite(db);
+	return { ok: true };
+});
+fastify.get("/api/chat/servers/:id/messages", async (req, reply) => {
+	const db = chatRead();
+	const user = chatUser(req, db);
+	if (!user) return reply.code(401).send({ error: "Log in." });
+	const server = db.servers.find((s) => s.id === req.params.id);
+	if (!server || !(server.members || []).includes(user.id)) return reply.code(404).send({ error: "Server not found." });
+	const channel = String(req.query.channel || "general");
+	const messages = db.messages.filter((m) => m.server === server.id && m.channel === channel).slice(-200);
+	return { messages };
+});
+fastify.post("/api/chat/servers/:id/messages", async (req, reply) => {
+	const db = chatRead();
+	const user = chatUser(req, db);
+	if (!user) return reply.code(401).send({ error: "Log in." });
+	const server = db.servers.find((s) => s.id === req.params.id);
+	if (!server || !(server.members || []).includes(user.id)) return reply.code(404).send({ error: "Server not found." });
+	const text = String((req.body || {}).text || "").trim().slice(0, 2000);
+	if (!text) return reply.code(400).send({ error: "Empty message." });
+	const channel = String((req.body || {}).channel || "general").slice(0, 32) || "general";
+	const message = { id: crypto.randomBytes(6).toString("hex"), server: server.id, channel, user: user.id, username: user.username, text, time: new Date().toISOString() };
+	db.messages.push(message);
+	db.messages = db.messages.slice(-4000);
+	chatWrite(db);
+	return { message };
+});
+
+fastify.get("/api/yt-play", async (req, reply) => {
+	const id = String(req.query.id || "").replace(/[^a-zA-Z0-9_-]/g, "");
+	if (!id || id.length > 16) return reply.code(400).send({ error: "missing id" });
+	const hosts = [
+		"https://pipedapi.kavin.rocks/streams/",
+		"https://pipedapi.adminforge.de/streams/",
+		"https://api.piped.private.coffee/streams/",
+		"https://pipedapi.reallyaweso.me/streams/",
+	];
+	const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+	for (const host of hosts) {
+		try {
+			const r = await fetch(host + id, { headers: { "user-agent": UA, accept: "application/json" } });
+			if (!r.ok) continue;
+			const j = await r.json();
+			const list = j.videoStreams || [];
+			const pick = list.find((s) => s && s.url && !s.videoOnly && /mp4/i.test(String(s.mimeType || s.mime || s.container || "")))
+				|| list.find((s) => s && s.url && !s.videoOnly)
+				|| list.find((s) => s && s.url);
+			if (pick && pick.url) {
+				reply.header("cache-control", "no-store");
+				return { url: pick.url, title: j.title || "" };
+			}
+		} catch {}
+	}
+	return reply.code(502).send({ error: "no stream" });
+});
 
 fastify.get("/health", async () => ({
 	ok: true,

@@ -610,7 +610,10 @@
   }
   function inAppPage(url) {
     return function (root) {
-      root.innerHTML = '<iframe src="' + url.replace(/"/g, '') + '" referrerpolicy="no-referrer-when-downgrade" allow="fullscreen; clipboard-read; clipboard-write; camera; microphone" style="width:100%;height:100%;border:0;background:#fff"></iframe>';
+      root.innerHTML = '<div class="sjt" style="height:100%;min-height:0;position:relative;background:#fff"></div>';
+      var box = root.querySelector('.sjt');
+      if (typeof window.openProxied === 'function') window.openProxied(url, box);
+      else box.textContent = 'This page could not be opened inside the app.';
     };
   }
   function chromeLaunch(label, url) {

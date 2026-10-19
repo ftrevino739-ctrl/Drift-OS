@@ -98,17 +98,19 @@
     root.innerHTML =
       '<div style="display:flex;flex-direction:column;height:100%;min-height:0;background:#11131a;color:#eee">' +
       '<div style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;flex-wrap:wrap;gap:8px;align-items:center">' +
-      '<b>Wayground</b><span style="font-size:12px;opacity:.75">Drift Intelligence · no proxy</span>' +
+      '<b>Wayground</b><span style="font-size:12px;opacity:.75">Drift Intelligence</span>' +
       '<button type="button" data-inj style="margin-left:auto;padding:6px 12px;border-radius:8px;border:0;background:#7c5cff;color:#fff;cursor:pointer">Inject mod</button>' +
       '<button type="button" data-read style="padding:6px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.16);background:transparent;color:#fff;cursor:pointer">Read screen</button></div>' +
       '<div data-status style="padding:6px 10px;font-size:12px;opacity:.85">Opening Wayground inside the app…</div>' +
       '<div data-ans style="display:none;max-height:160px;overflow:auto;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.08)"></div>' +
-      '<div style="flex:1;min-height:0;position:relative"><iframe data-frame referrerpolicy="no-referrer-when-downgrade" allow="fullscreen; clipboard-read; clipboard-write; camera; microphone" style="position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff"></iframe></div></div>';
+      '<div data-box style="flex:1;min-height:0;position:relative;background:#fff"></div></div>';
     var st = root.querySelector('[data-status]');
     var ans = root.querySelector('[data-ans]');
-    var frame = root.querySelector('[data-frame]');
+    var box = root.querySelector('[data-box]');
     var cheatSrc = null;
-    frame.src = 'https://wayground.com/';
+    var seen = '';
+
+    function frame() { return box.querySelector('iframe'); }
 
     function showAnswer(text) {
       ans.style.display = 'block';
@@ -123,16 +125,49 @@
       return cheatSrc;
     }
 
-    async function tryInject() {
+    async function tryInject(force) {
       try {
         await ensureCheat();
-        var doc = frame.contentDocument;
+        var el = frame();
+        var doc = el && el.contentDocument;
+        if (force && doc && doc.documentElement) doc.documentElement.removeAttribute('data-wg-inj');
         if (doc && injectInto(doc, cheatSrc, st)) {
           st.textContent = 'Mod menu injected · Drift Intelligence';
           return;
         }
       } catch (e) {}
-      st.textContent = 'Wayground is open in the app without the proxy. The browser blocked injecting into wayground.com. Read screen still uses Drift Intelligence.';
+      st.textContent = 'Wayground is open. Press Inject mod again if the menu is not there yet.';
+    }
+
+    if (typeof window.openProxied === 'function') {
+      window.openProxied('https://wayground.com/', box).then(function () {
+        var el = frame();
+        if (!el) { st.textContent = 'Wayground did not open. Press Inject mod after it loads.'; return; }
+        el.addEventListener('load', function () { seen = ''; setTimeout(function () { tryInject(true); }, 700); });
+        setTimeout(function () { tryInject(false); }, 1800);
+      });
+    } else {
+      st.textContent = 'Wayground could not be opened inside the app.';
+    }
+
+    if (!root.dataset.wgWatch) {
+      root.dataset.wgWatch = '1';
+      var timer = setInterval(function () {
+        if (!root.isConnected) { clearInterval(timer); return; }
+        var el = frame();
+        if (!el) return;
+        var href = '';
+        var doc = null;
+        try { href = String(el.contentWindow.location.href || ''); doc = el.contentDocument; } catch (e) { return; }
+        if (!doc || !doc.documentElement || !href) return;
+        if (href !== seen) {
+          seen = href;
+          try { doc.documentElement.removeAttribute('data-wg-inj'); } catch (e) {}
+          tryInject(false);
+        } else if (doc.documentElement.getAttribute('data-wg-inj') !== '1') {
+          tryInject(false);
+        }
+      }, 1500);
     }
 
     async function readScreen() {
@@ -174,10 +209,8 @@
       }
     }
 
-    frame.addEventListener('load', function () { setTimeout(tryInject, 600); });
-    root.querySelector('[data-inj]').onclick = function () { tryInject(); };
+    root.querySelector('[data-inj]').onclick = function () { tryInject(true); };
     root.querySelector('[data-read]').onclick = function () { readScreen(); };
-    setTimeout(tryInject, 1800);
   };
 
   function wire() {
