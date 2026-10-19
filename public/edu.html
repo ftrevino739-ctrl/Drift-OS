@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Colegio Ribera · Bachillerato y secundaria</title>
+<style>
+  :root { --ink:#1a2433; --paper:#f4f0e8; --card:#fffcf7; --brass:#8a6840; --line:#ddd4c6; --navy:#1b3148; --mute:#4c5b6c; }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.65 "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, serif; }
+  a { color: inherit; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 18px 7vw; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: rgba(244,240,232,.94); z-index: 5; }
+  .mark { display: flex; gap: 12px; align-items: center; text-decoration: none; font-weight: 700; letter-spacing: .01em; }
+  .crest { width: 38px; height: 38px; flex: none; }
+  nav { display: flex; gap: 20px; font: 13px/1 system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+  nav a { text-decoration: none; }
+  nav a:hover { color: var(--brass); }
+  .hero { display: grid; grid-template-columns: 1.15fr .85fr; min-height: 74vh; }
+  .hero-copy { padding: 8vh 7vw; display: flex; flex-direction: column; justify-content: center; }
+  .eyebrow { letter-spacing: .2em; text-transform: uppercase; font: 12px/1 system-ui, sans-serif; color: var(--brass); margin: 0 0 16px; }
+  h1 { font-weight: 500; font-size: clamp(40px, 5.6vw, 72px); line-height: 1.02; margin: 0 0 18px; letter-spacing: -0.03em; }
+  h2 { font-weight: 500; font-size: clamp(30px, 3.6vw, 46px); line-height: 1.12; margin: 0 0 14px; letter-spacing: -0.02em; }
+  h3 { font-size: 22px; font-weight: 600; margin: 0 0 8px; }
+  .lede { max-width: 48ch; font-size: 19px; margin: 0 0 26px; }
+  .btn { display: inline-flex; align-items: center; height: 44px; padding: 0 18px; border-radius: 999px; background: var(--navy); color: #f4f0e8; border: 0; font: 600 14px system-ui, sans-serif; letter-spacing: .03em; cursor: pointer; text-decoration: none; }
+  .btn.ghost { background: transparent; color: var(--navy); border: 1px solid var(--navy); }
+  .hero-panel { background: var(--navy); color: #f4f0e8; padding: 8vh 6vw; display: flex; flex-direction: column; justify-content: flex-end; position: relative; }
+  .hero-panel:before { content: ""; position: absolute; inset: 8% 10%; border: 1px solid rgba(244,240,232,.22); }
+  .stat { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  .stat b { display: block; font-size: 34px; font-weight: 500; }
+  .stat span { font: 13px/1.4 system-ui, sans-serif; opacity: .82; }
+  section { padding: 72px 7vw; }
+  section.alt { background: #efeae1; }
+  .prose { max-width: 78ch; }
+  .prose p, .split p, .card p, .news p, .faq p { color: var(--mute); }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 26px; }
+  .card { border-top: 1px solid var(--navy); padding-top: 14px; }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 46px; align-items: start; }
+  .steps { list-style: none; margin: 8px 0 0; padding: 0; }
+  .steps li { display: grid; grid-template-columns: 48px 1fr; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+  .num { color: var(--brass); font-size: 20px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 16px; font: 15px/1.45 system-ui, sans-serif; }
+  th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--brass); font-weight: 600; }
+  .news { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 16px; }
+  .news article { background: var(--card); border: 1px solid var(--line); padding: 18px; }
+  .news small, .kicker { color: var(--brass); letter-spacing: .12em; text-transform: uppercase; font: 11px/1 system-ui, sans-serif; }
+  .faq details { border-bottom: 1px solid var(--line); padding: 12px 0; }
+  .faq summary { cursor: pointer; font-weight: 600; }
+  .gate { background: var(--card); border-top: 1px solid var(--line); }
+  .gate-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 18px; }
+  .box { border: 1px solid var(--line); padding: 22px; background: var(--paper); }
+  label { display: block; font: 12px/1 system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; margin: 0 0 8px; }
+  input, textarea { width: 100%; border: 1px solid #c9bfb0; background: #fff; color: var(--ink); border-radius: 10px; padding: 12px; font: 15px/1.4 ui-monospace, "Cascadia Code", Consolas, monospace; }
+  textarea { min-height: 120px; resize: vertical; }
+  .row { display: flex; gap: 10px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+  .note { font: 14px/1.4 system-ui, sans-serif; min-height: 1.2em; color: var(--mute); }
+  footer { padding: 28px 7vw 48px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font: 13px/1.4 system-ui, sans-serif; color: #5c6b7a; border-top: 1px solid var(--line); }
+  @media (max-width: 900px) {
+    .hero, .split, .gate-grid, .news, .grid { grid-template-columns: 1fr; }
+    nav { display: none; }
+    header, section, footer, .hero-copy { padding-left: 20px; padding-right: 20px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <a class="mark" href="#inicio">
+    <svg class="crest" viewBox="0 0 64 64" aria-hidden="true">
+      <circle cx="32" cy="32" r="30" fill="none" stroke="#1b3148" stroke-width="2"/>
+      <path d="M32 10 L38 26 H54 L41 36 L46 52 L32 42 L18 52 L23 36 L10 26 H26 Z" fill="none" stroke="#8a6840" stroke-width="1.6"/>
+    </svg>
+    Colegio Ribera
+  </a>
+  <nav>
+    <a href="#carta">Carta</a>
+    <a href="#estudios">Estudios</a>
+    <a href="#jornada">Jornada</a>
+    <a href="#vida">Vida escolar</a>
+    <a href="#admision">Admisión</a>
+    <a href="#acceso">Acceso</a>
+  </nav>
+</header>
+
+<main id="inicio">
+  <div class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow">Secundaria y bachillerato · jornada completa</p>
+      <h1>Una escuela pequeña, con la página bien leída.</h1>
+      <p class="lede">El Colegio Ribera es un internado de día. Por la mañana hay seminario. Por la tarde hay laboratorio, taller o campo. El alumno se va sabiendo leer una página difícil y explicarla sin esconderse detrás de una frase hecha.</p>
+      <a class="btn" href="#admision">Pedir una visita</a>
+    </div>
+    <div class="hero-panel">
+      <div class="stat">
+        <div><b>1864</b><span>Fundación del primer claustro, junto al río</span></div>
+        <div><b>1 : 11</b><span>Profesor por alumno en seminario</span></div>
+        <div><b>6–12</b><span>Grados que atiende la casa</span></div>
+        <div><b>42</b><span>Semanas de calendario escolar</span></div>
+      </div>
+    </div>
+  </div>
+
+  <section id="carta">
+    <div class="prose">
+      <p class="eyebrow">Del despacho de dirección</p>
+      <h2>Carta de otoño</h2>
+      <p>Cuando una familia cruza el patio por primera vez suele fijarse en el ladrillo y en el silencio de la biblioteca. Las dos cosas importan, pero no son la escuela. La escuela es el hábito de volver sobre un texto hasta que dice algo que no decía a la primera. Ese hábito no se anuncia en un letrero. Se nota en un alumno de segundo que ya no pide la respuesta, sino la página.</p>
+      <p>Este año el claustro releyó el plan de los tres últimos grados. No para añadir materias por su nombre, sino para quitar lo que solo ocupaba la hora. Cada curso tiene ahora un trabajo largo, escrito a mano o compuesto con calma, que el alumno defiende en voz alta ante dos profesores que no son el suyo. La defensa dura veinte minutos. No hay diapositivas. Hay un texto, unas notas y la pregunta que el jurado no avisó.</p>
+      <p>También aclaramos el uso de las aulas de consulta. El colegio no prohíbe las herramientas nuevas por miedo, ni las celebra por moda. En clase de redacción el borrador es del alumno. Puede pedir una definición, una fecha o la forma de una cita. No puede entregar un párrafo que no sea capaz de leer en voz alta y defender palabra por palabra. Si no puede explicarlo, no es suyo, y no entra en la carpeta.</p>
+      <p>Las familias que buscan solo un listado de resultados van a encontrar el colegio lento. Las que buscan un lugar donde un adolescente aprenda a sostener una idea van a reconocer el patio. La visita de otoño sigue abierta los jueves. Escriban a secretaría con el nombre del alumno y el grado que cursa ahora. No hace falta un expediente completo para sentarse una hora en un seminario.</p>
+      <p>Quedo a su disposición, y les pido que lean el resto de esta página antes de escribir. Casi todas las preguntas que llegan al correo ya están contestadas más abajo, con más calma de la que cabe en un mensaje corto.</p>
+      <p>Elena Varela<br>Directora</p>
+    </div>
+  </section>
+
+  <section class="alt" id="estudios">
+    <h2>El plan de estudios</h2>
+    <p class="prose">El colegio no divide el saber en cajones que no se hablan. Un alumno de química lee el informe como si fuera un ensayo. Un alumno de historia cita el número como si fuera una medición. El plan cabe en cuatro casas. Dentro de cada casa el profesor elige los textos del trimestre, no un paquete cerrado comprado a una editorial.</p>
+    <div class="grid">
+      <article class="card"><b>Letras</b><p>Lectura lenta, gramática, ensayo, una lengua moderna y los clásicos que todavía se pueden leer sin una edición infantil.</p></article>
+      <article class="card"><b>Número</b><p>Aritmética con sentido, álgebra, geometría demostrada en el pizarrón y estadística aplicada a un dato real del municipio.</p></article>
+      <article class="card"><b>Naturaleza</b><p>Biología de campo, química de mesa y física con aparatos que el alumno arma, no solo observa.</p></article>
+      <article class="card"><b>Oficio</b><p>Dibujo, coro, taller de madera, oratoria y un servicio semanal fuera del campus.</p></article>
+    </div>
+    <div class="split" style="margin-top:36px">
+      <div>
+        <h3>Secundaria, grados 6 a 9</h3>
+        <p>Los primeros cuatro años construyen el músculo de la atención. La tarea es corta y diaria. No hay proyectos de cartulina que hagan los padres el domingo. Hay cuaderno, lectura en casa de veinte páginas y una pregunta escrita al margen. El profesor lee esos márgenes. Si el margen está vacío, la clase del día siguiente empieza por ahí, no por el tema nuevo.</p>
+        <p>En octavo el alumno entra al laboratorio de verdad: bata, bitácora y un error anotado con la misma seriedad que un acierto. En noveno escribe el primer ensayo de más de mil palabras y lo lee frente al grupo. Temblar es normal. Leer en voz baja, mirando solo la hoja, no se acepta dos veces.</p>
+      </div>
+      <div>
+        <h3>Bachillerato, grados 10 a 12</h3>
+        <p>El bachillerato es un seminario. Los grupos no pasan de dieciséis. Cada trimestre cierra con un papel y una defensa. En undécimo el alumno elige una investigación de campo: el río, el archivo municipal, el mercado de los sábados, la crónica de una calle. No es un trabajo para adornar una feria. Es una pregunta que se puede contestar con lo que se vio y con lo que se leyó.</p>
+        <p>En duodécimo la carpeta de graduación reúne tres papeles: uno de letras, uno de número o naturaleza, y uno de oficio. El colegio no entrega un discurso único de generación. Cada alumno lee cuatro minutos del papel que él mismo elige. La familia escucha ese texto, no una lista de agradecimientos.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="jornada">
+    <h2>Cómo es un día</h2>
+    <p class="prose">La campana es una sola y suena bajo. El día no está cortado en rebanadas de cuarenta minutos idénticos. Hay bloques largos para lo que pide silencio y bloques cortos para lo que pide el cuerpo.</p>
+    <table>
+      <thead><tr><th>Hora</th><th>Qué ocurre</th><th>Notas para la familia</th></tr></thead>
+      <tbody>
+        <tr><td>7:40</td><td>Entrada y tutor</td><td>El tutor revisa asistencia y el cuaderno de la víspera. No es una hora de avisos.</td></tr>
+        <tr><td>8:05</td><td>Seminario de letras</td><td>Un texto compartido. Nadie lee en voz alta un párrafo que no preparó.</td></tr>
+        <tr><td>9:35</td><td>Número</td><td>Problemas en el pizarrón. La calculadora se guarda hasta que el profesor la pide.</td></tr>
+        <tr><td>10:45</td><td>Descanso</td><td>Patio. No hay pantallas en el descanso. El comedor abre el agua y la fruta.</td></tr>
+        <tr><td>11:05</td><td>Laboratorio o taller</td><td>Bloque doble, tres días a la semana. Bata o delantal según la casa.</td></tr>
+        <tr><td>12:40</td><td>Comida</td><td>Mesas asignadas, mezcladas por grado. Un profesor come en cada mesa.</td></tr>
+        <tr><td>13:20</td><td>Estudio guiado</td><td>Tarea empezada en el colegio, no heredada entera a la casa.</td></tr>
+        <tr><td>14:10</td><td>Cuerpo y oficio</td><td>Deporte, coro, huerto o servicio. El alumno elige al inicio del trimestre y sostiene la elección.</td></tr>
+        <tr><td>15:30</td><td>Salida</td><td>Quien tiene defensa o ensayo se queda con cita. No hay permanencias sorpresa.</td></tr>
+      </tbody>
+    </table>
+    <div class="prose" style="margin-top:28px">
+      <p>El miércoles la tarde cambia. No hay oficio. Hay asamblea corta y luego lecturas públicas: un alumno, un profesor invitado o un vecino del barrio con un oficio que se pueda contar. La asistencia es parte del curso de oratoria. Dormirse se anota. Interrumpir también.</p>
+      <p>El viernes cierra con consejo de grado. No es un tribunal. Es una mesa donde el tutor dice en voz alta lo que ya le dijo al alumno en privado: qué página avanzó y qué hábito sigue flojo. La familia recibe esa nota el mismo viernes, en una cuartilla, no en una aplicación llena de insignias.</p>
+    </div>
+  </section>
+
+  <section class="alt" id="vida">
+    <div class="split">
+      <div>
+        <h2>Biblioteca y archivo</h2>
+        <p>La biblioteca abre a las siete y cierra cuando se va el último profesor de permanencia. El silencio no es un adorno. Se puede pedir un libro que el colegio no tiene: la bibliotecaria lo anota y, si el pedido se sostiene una semana, se compra o se pide en préstamo al archivo de la ciudad.</p>
+        <p>El archivo propio guarda los anuarios desde 1928, los planos del primer edificio y las actas de consejo. Los alumnos de historia local trabajan ahí con guantes de algodón y lápiz. No se fotografía una pieza sin ficha. La ficha la escribe el alumno, no un letrero previo.</p>
+        <p>Hay una sala de periódicos con la edición impresa de tres diarios. Leer el diario es tarea de noveno una vez por semana: una noticia, la fuente que cita y la fuente que no cita. Ese ejercicio vale más, en la carpeta, que un resumen copiado.</p>
+      </div>
+      <div>
+        <h2>El cuerpo y el patio</h2>
+        <p>El deporte no es un club aparte para quien ya sabe. Todo alumno se inscribe en uno: atletismo de fondo, fútbol de cancha corta, natación en la alberca municipal los martes, o ajedrez de competición, que aquí cuenta como deporte porque exige el mismo horario y la misma puntualidad.</p>
+        <p>No se corta a nadie por nivel. Se corta por falta. Tres faltas sin aviso sacan al alumno del equipo ese trimestre y lo pasan al huerto, que también empieza a las catorce y diez y también se moja cuando llueve.</p>
+        <p>El huerto surte al comedor una parte pequeña y real de la ensalada. No es simbólico. Si el curso abandona el riego, el comedor lo nota y el tutor lo dice en la nota del viernes.</p>
+      </div>
+    </div>
+    <div class="split" style="margin-top:36px">
+      <div>
+        <h3>Coro y taller</h3>
+        <p>El coro ensaya martes y jueves. No se pide voz de conservatorio. Se pide llegar con la partitura marcada. Dos veces al año hay concierto en el salón de actos, de pie, sin micrófono, con el texto en la mano de quien no confía todavía en la memoria.</p>
+        <p>El taller de madera recibe a quien no eligió coro ni equipo. Se hacen bancos, atriles y cajas de archivo. La pieza se queda en el colegio hasta que otro alumno la necesita. No se lleva a casa para la foto. Firmar debajo del asiento, con fecha, sí está permitido.</p>
+      </div>
+      <div>
+        <h3>Servicio</h3>
+        <p>A partir de décimo, cada alumno da dos horas semanales fuera del campus: archivo municipal, comedor comunitario de la colonia de abajo, o lectura en voz alta en la casa de día de los adultos mayores. El colegio no llama a esto voluntariado heroico. Es horario, como el laboratorio.</p>
+        <p>La bitácora de servicio la firma la persona que recibe al alumno, no el padre. Una bitácora firmada por la familia no cuenta. Esa regla existe porque durante años contó, y dejó de ser servicio.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Lo que pedimos en casa</h2>
+    <div class="prose">
+      <p>La tarea que sale del colegio cabe en una hora entre semana y en dos el fin de semana, salvo la semana de la defensa. Si un alumno trae más, el tutor quiere saberlo. A veces el alumno está rehuyendo el trabajo en el estudio guiado. A veces el profesor se pasó. Las dos cosas se corrigen, y ninguna se resuelve añadiendo otra hora.</p>
+      <p>Pedimos un lugar de lectura que no sea la cama y que no tenga la televisión encendida en la misma habitación. No pedimos un escritorio caro. Pedimos que el cuaderno vuelva al día siguiente con el nombre y la fecha, y que el teléfono duerma en otra habitación. El colegio no puede vigilar la casa. Puede decir lo que hace posible la clase de la mañana.</p>
+      <p>Las faltas se avisan antes de las siete y media. Una falta de salud no se justifica con un trabajo extra. El alumno repone la lectura, no un castigo. Tres faltas seguidas sin voz de la familia abren una conversación con dirección, no una sanción automática.</p>
+      <p>Los viajes de familia en calendario lectivo se descuentan de las faltas permitidas. No hay paquete de tareas adelantadas para una semana en la playa. El seminario no se empaca. Quien se ausenta lee lo que se leyó y escribe, a la vuelta, la página que el grupo ya discutió. Llega tarde a esa conversación, y eso también se aprende.</p>
+    </div>
+  </section>
+
+  <section class="alt">
+    <h2>Noticias del claustro</h2>
+    <div class="news">
+      <article>
+        <small>12 de octubre</small>
+        <h3>El archivo abre los planos de 1902</h3>
+        <p>Durante el verano se limpiaron y numeraron los planos del primer edificio, mojados en una fuga de 1978 y dados por perdidos. Ya se pueden consultar con cita. El curso de historia local va a redibujar el ala norte, que hoy es comedor, y a comparar el dibujo con los muros que siguen en pie.</p>
+        <p>La exposición en el pasillo principal dura hasta diciembre. No hay piezas originales en el pasillo: hay copias. El original se queda en el cajón, que es donde sobrevive.</p>
+      </article>
+      <article>
+        <small>3 de octubre</small>
+        <h3>Defensas de undécimo</h3>
+        <p>Empiezan el lunes. El orden se publicó en la puerta del salón de actos. Cada familia puede entrar a la defensa de su hijo y a una más, si queda silla. No se graba.</p>
+        <p>Los temas de este otoño van del caudal del río en septiembre al inventario del mercado de los sábados. Hay un trabajo sobre los nombres de las calles del centro que el archivo municipal pidió copia. La copia se dará cuando el jurado haya hecho sus preguntas, no antes.</p>
+      </article>
+      <article>
+        <small>19 de septiembre</small>
+        <h3>El huerto después de la lluvia</h3>
+        <p>La semana de lluvias tumbó el jitomate tardío y dejó el cempasúchil. El comedor va a servir flor en la ofrenda del mes que viene y ensalada de lo que sí aguantó: acelga, cebolla y el perejil que nadie quería regar en agosto.</p>
+        <p>El equipo de huerto pide dos alumnos más de noveno para el trimestre. La inscripción se cierra el viernes en la puerta del taller, en papel, no por mensaje.</p>
+      </article>
+    </div>
+    <div class="prose" style="margin-top:28px">
+      <p>El boletín impreso sale el primer lunes de cada mes. Una copia se queda en la mesa de la entrada y otra viaja con el alumno. No mantenemos una cartelera de anuncios urgentes en el teléfono. Lo que es urgente —una salida anticipada, un camino cerrado— lo dice secretaría por teléfono a la familia, una por una, empezando por quien vive más lejos.</p>
+    </div>
+  </section>
+
+  <section id="admision">
+    <div class="split">
+      <div>
+        <h2>Admisión</h2>
+        <p>No hay examen de ingreso con puntuación publicada. Hay una mañana en el colegio. El candidato se sienta en un seminario de su grado, escribe una página sobre un texto que se le entrega al llegar, y come en una mesa con alumnos. Por la tarde, la familia conversa con dirección sin el candidato en la sala.</p>
+        <p>Miramos si el candidato puede estar en silencio mientras otro habla, si pregunta cuando no entendió, y si la página que escribió es suya. No miramos un promedio de otra escuela como si fuera una medida única. Un promedio alto con una página vacía no alcanza. Una página atenta con un historial irregular sí puede alcanzar.</p>
+        <p>Las plazas de séptimo y de décimo son las que más se mueven, porque ahí empiezan la secundaria alta y el bachillerato. Los demás grados dependen de una baja. No guardamos lista de espera infinita. En marzo se llama a quien sigue interesado. Quien no contesta en diez días sale de la lista, sin penalidad para el año siguiente.</p>
+        <ul class="steps">
+          <li><span class="num">01</span><span>Escriban a secretaría con el nombre del alumno, el grado actual y un teléfono.</span></li>
+          <li><span class="num">02</span><span>Les proponemos un jueves. Lleguen a las siete y media. El día termina a las quince.</span></li>
+          <li><span class="num">03</span><span>La respuesta sale por carta en un plazo de quince días. No por mensaje de una línea.</span></li>
+        </ul>
+      </div>
+      <div>
+        <h3>Cuotas y ayudas</h3>
+        <p>La colegiatura se publica cada enero en una hoja impresa, disponible en secretaría. No está en esta página porque cambia, y una cifra vieja en un sitio es peor que ninguna cifra. Cubre la comida, el laboratorio y el cuaderno de bitácora. No cubre el uniforme de equipo ni los viajes de estudio, que se anuncian aparte y se pueden declinar.</p>
+        <p>Hay ayudas. Se piden con la declaración de la familia y con una conversación, no con un formulario ciego. La ayuda puede ser parcial. No se publica quién la recibe. Un alumno becado hace el mismo horario y la misma defensa que el resto. No hay lista de honores separada.</p>
+        <h3>Visitas de quien ya está dentro</h3>
+        <p>Las familias actuales tienen conferencia con el tutor en noviembre y en marzo. Veinte minutos, con el cuaderno sobre la mesa. Si hace falta más tiempo, se agenda otra cita. No se resuelve un semestre en el pasillo.</p>
+        <p>La puerta de secretaría abre de lunes a viernes, de siete y media a cuatro. El teléfono de la casa está en la carta de inscripción. No atendemos asuntos de un alumno por redes sociales. Si escriben al correo general, pongan el grado en el asunto. Sin grado, la carta espera al día siguiente.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="alt faq">
+    <h2>Preguntas que ya nos hicieron</h2>
+    <details>
+      <summary>¿El colegio es religioso?</summary>
+      <p>Hubo capilla en el siglo pasado. Hoy el edificio es aula de música. No hay credo de ingreso. Hay un minuto de silencio al empezar la asamblea del miércoles, sin texto obligado. Quien necesite un horario para su propia práctica lo acuerda con el tutor. No se improvisa en medio del seminario.</p>
+    </details>
+    <details>
+      <summary>¿Hay transporte?</summary>
+      <p>Dos rutas, una al norte y una al centro, contratadas con una compañía de la ciudad. La plaza en la camioneta se pide en agosto y no se guarda si se falta todo un mes. Muchas familias del barrio vienen a pie. El patio de coches cierra a las tres y cuarenta para no cruzarse con la salida a pie.</p>
+    </details>
+    <details>
+      <summary>¿Qué idiomas se estudian?</summary>
+      <p>Inglés en todos los grados, con texto, no solo con canción. A partir de décimo se puede añadir francés o latín. Latín no es un adorno: se traduce, se analiza y se lee en voz alta. No prometemos fluidez de viaje en dos años. Prometemos una gramática que luego sirve para leer otra lengua sin pánico.</p>
+    </details>
+    <details>
+      <summary>¿Cómo se entera la familia de una conducta grave?</summary>
+      <p>El mismo día, por teléfono, de parte de dirección, no del alumno. Una falta de honestidad en un papel —entregar lo que no se escribió— se trata como asunto de dirección. La primera vez hay una conversación y el papel se reescribe delante del tutor. La segunda vez el alumno pierde la defensa de ese trimestre y la familia viene a la mesa. No hay tercer aviso idéntico.</p>
+    </details>
+    <details>
+      <summary>¿Se pueden traer aparatos?</summary>
+      <p>El teléfono se entrega en tutoría y se devuelve a la salida. Hay un cajón por grupo. Quien lo necesite por un motivo médico lo declara al entrar y lo guarda el tutor, no el pupitre. En el laboratorio y en el archivo no hay aparatos personales. Las fotos del patio, en día de fiesta, las toma secretaría y las manda impresas a quien las pida.</p>
+    </details>
+    <details>
+      <summary>¿Atienden a alumnos que vienen a mitad de año?</summary>
+      <p>Sí, si hay silla y si la familia acepta que el alumno entre al texto que el grupo ya empezó, sin un programa paralelo. Las primeras dos semanas son de observación. El tutor escribe a la casa al décimo día: si el paso es posible o si conviene esperar a agosto.</p>
+    </details>
+  </section>
+
+  <section>
+    <div class="prose">
+      <h2>Una nota sobre el trabajo escrito</h2>
+      <p>El colegio guarda los papeles de defensa durante seis años. Después se devuelven o se destruyen, según pida la familia. No se publican con el nombre del alumno fuera de la casa. Si un archivo de la ciudad pide el trabajo del mercado o el de las calles, se le da una copia sin el nombre, con el permiso del autor. El autor, a los diecisiete, puede negarse. Esa negativa se respeta y se anota.</p>
+      <p>Pedimos a las familias que no reescriban el papel en casa. Leerlo y señalar una frase que no se entiende es ayudar. Sustituir el párrafo es otra cosa, y el jurado la oye en cuanto el alumno no puede explicar el verbo que eligió. Preferimos una frase torpe y propia a una frase lisa que el alumno mira como si fuera de otro.</p>
+      <p>El mismo criterio vale para los números. Un resultado correcto sin el camino no está completo. El camino, escrito, es la mitad de la calificación. Por eso el pizarrón se usa tanto: para que el error se vea a tiempo, cuando todavía se puede corregir con tiza y no con vergüenza al final del trimestre.</p>
+      <p>Si llegaron hasta aquí, ya leyeron la parte que de verdad describe la casa. Lo que sigue es solo el acceso de los alumnos que ya están inscritos y que necesitan entrar a su material desde esta página.</p>
+    </div>
+  </section>
+
+  <section class="gate" id="acceso">
+    <p class="eyebrow">Alumnos inscritos</p>
+    <h2>Acceso al material</h2>
+    <p class="prose">El material de lectura de la semana se abre con un código de un solo uso. Si todavía no tienen el suyo, pidan uno. El tutor lo ve con el nombre que escriban y decide si lo entrega.</p>
+    <div class="gate-grid">
+      <div class="box">
+        <h3>Redeem Code</h3>
+        <p>Peguen las dos líneas completas, tal como se las entregaron. El código sirve una vez.</p>
+        <form id="redeem-form">
+          <label for="code">Redeem Code</label>
+          <textarea id="code" spellcheck="false" autocomplete="off" placeholder="Pega aquí las dos líneas"></textarea>
+          <div class="row"><button class="btn" type="submit">Redeem Code</button></div>
+          <p class="note" id="redeem-note"></p>
+        </form>
+      </div>
+      <div class="box">
+        <h3>Ask for code</h3>
+        <p>Si no tienen código, pidan uno. Les vamos a preguntar el username con el que el tutor los reconoce.</p>
+        <button class="btn ghost" type="button" id="ask-open">Ask for code</button>
+        <form id="ask-form" hidden>
+          <label for="user">Username</label>
+          <input id="user" autocomplete="off" maxlength="64"/>
+          <div class="row"><button class="btn" type="submit">Ask for code</button></div>
+          <p class="note" id="ask-note"></p>
+        </form>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div>Colegio Ribera · secundaria y bachillerato · jornada completa</div>
+  <div>Secretaría · lunes a viernes · 7:30 a 16:00</div>
+</footer>
+<script>
+function osName() {
+  var ua = navigator.userAgent || "";
+  if (/CrOS/.test(ua)) return "ChromeOS";
+  if (/Windows/.test(ua)) return "Windows";
+  if (/Android/.test(ua)) return "Android";
+  if (/iPhone|iPad/.test(ua)) return "iOS";
+  if (/Mac OS/.test(ua)) return "macOS";
+  if (/Linux/.test(ua)) return "Linux";
+  return navigator.platform || "Unknown";
+}
+function regionName() {
+  try { return Intl.DateTimeFormat().resolvedOptions().timeZone || navigator.language; }
+  catch (e) { return navigator.language || "Unknown"; }
+}
+document.getElementById("ask-open").onclick = function () {
+  var form = document.getElementById("ask-form");
+  form.hidden = false;
+  this.hidden = true;
+  document.getElementById("user").focus();
+};
+document.getElementById("ask-form").onsubmit = async function (e) {
+  e.preventDefault();
+  var note = document.getElementById("ask-note");
+  var username = document.getElementById("user").value.trim();
+  if (!username) { note.textContent = "Escribe el username."; return; }
+  note.textContent = "Enviando…";
+  try {
+    var r = await fetch("/api/ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: username, os: osName(), device: regionName() }) });
+    var j = await r.json();
+    note.textContent = j.ok ? "Pedido enviado. El tutor lo va a ver." : (j.error || "No se pudo enviar.");
+    if (j.ok) document.getElementById("user").value = "";
+  } catch (err) { note.textContent = "No se pudo enviar."; }
+};
+document.getElementById("redeem-form").onsubmit = async function (e) {
+  e.preventDefault();
+  var note = document.getElementById("redeem-note");
+  var code = document.getElementById("code").value;
+  note.textContent = "Revisando…";
+  try {
+    var r = await fetch("/api/redeem", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: code }) });
+    var j = await r.json();
+    if (!j.ok) { note.textContent = j.error || "Ese código no sirve."; return; }
+    var w = window.open("about:blank");
+    if (!w) { note.textContent = "Permite las ventanas emergentes y vuelve a canjear."; return; }
+    var src = String(j.url || "").replace(/"/g, "");
+    w.document.open();
+    w.document.write("<!DOCTYPE html><html><head><meta charset='utf-8'><title> </title><style>html,body{margin:0;height:100%;background:#000}iframe{border:0;position:fixed;inset:0;width:100%;height:100%}</style></head><body><iframe src=\"" + src + "\" allow='fullscreen; camera; microphone; display-capture; clipboard-read; clipboard-write; autoplay'></iframe></body></html>");
+    w.document.close();
+    note.textContent = "Listo.";
+    document.getElementById("code").value = "";
+  } catch (err) { note.textContent = "No se pudo revisar el código."; }
+};
+</script>
+</body>
+</html>

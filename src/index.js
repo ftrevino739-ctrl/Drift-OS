@@ -165,8 +165,34 @@ const sendIndex = async (_req, reply) => {
 	return reply.type("text/html; charset=utf-8").send(html);
 };
 
-fastify.get("/", sendIndex);
+fastify.get("/", async (_req, reply) => {
+	const edu = path.join(publicPath, "edu.html");
+	if (!fs.existsSync(edu)) return sendIndex(_req, reply);
+	reply.header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+	return reply.type("text/html; charset=utf-8").send(fs.readFileSync(edu, "utf8"));
+});
+fastify.get("/os", sendIndex);
 fastify.get("/index.html", sendIndex);
+const MOD = process.env.DRIFT_MOD_URL || "https://drift-mod.onrender.com";
+async function proxyMod(req, reply, pathname) {
+	try {
+		const r = await fetch(MOD + pathname, {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify(req.body || {}),
+		});
+		const text = await r.text();
+		reply.code(r.status);
+		reply.header("content-type", "application/json; charset=utf-8");
+		reply.header("cache-control", "no-store");
+		return reply.send(text);
+	} catch {
+		return reply.code(502).send({ error: "El escritorio de solicitudes todavía no responde." });
+	}
+}
+fastify.post("/api/ask", (req, reply) => proxyMod(req, reply, "/api/ask"));
+fastify.post("/api/redeem", (req, reply) => proxyMod(req, reply, "/api/redeem"));
+
 fastify.get("/health", async () => ({
 	ok: true,
 	scramjet: !!scramjetPath,
