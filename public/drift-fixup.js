@@ -608,6 +608,11 @@
       } catch (e) {}
     }, 1500);
   }
+  function inAppPage(url) {
+    return function (root) {
+      root.innerHTML = '<iframe src="' + url.replace(/"/g, '') + '" referrerpolicy="no-referrer-when-downgrade" allow="fullscreen; clipboard-read; clipboard-write; camera; microphone" style="width:100%;height:100%;border:0;background:#fff"></iframe>';
+    };
+  }
   function chromeLaunch(label, url) {
     return function (root) {
       root.innerHTML =
@@ -629,8 +634,8 @@
   function wireLoginApps() {
     try {
       if (!window.XAPPS) return;
-      window.XAPPS.gmail = { n: 'Gmail', f: chromeLaunch('Gmail', 'https://mail.google.com/mail/u/0/#inbox') };
-      window.XAPPS.classroom = { n: 'Classroom', f: chromeLaunch('Classroom', 'https://classroom.google.com/') };
+      window.XAPPS.gmail = { n: 'Gmail', f: inAppPage('https://mail.google.com/mail/u/0/#inbox') };
+      window.XAPPS.classroom = { n: 'Classroom', f: inAppPage('https://classroom.google.com/') };
       window.XAPPS.canva = { n: 'Canva', f: chromeLaunch('Canva', 'https://www.canva.com/') };
       window.XAPPS.roblox = { n: 'Roblox', f: robloxShell };
     } catch (e) {}
@@ -736,7 +741,7 @@
       '<p><b>BareMux no respondió / Scramjet server is down or blocked.</b> Render is waking up or the school network blocks the WebSocket. Wait 30–60 seconds, stay on the tab, then press Retry. Do not reload in a loop.</p>' +
       '<p><b>Some apps stay blank for a few minutes.</b> The proxy is still connecting. Wait. TikTok, Gemini and Gimkit need that first connection.</p>' +
       '<p><b>ServiceWorker script evaluation failed.</b> Hard refresh. If it stays, close the tab and open Drift again. Do not use an old bookmark to a Vercel preview.</p>' +
-      '<p><b>Gmail, Classroom and Canva.</b> They open in Google Chrome, not the proxy, so sign-in is not blocked with “this browser may not be secure.” Roblox still has Verify you are human, which opens the real Roblox page.</p>' +
+      '<p><b>Gmail and Classroom.</b> They open inside the app and do not use the proxy. Canva still opens in Google Chrome. Roblox still has Verify you are human.</p>' +
       '<p><b>SharedWorker / cdn.jsdelivr.net/baremux.</b> Unity cannot use a worker from another site. Drift blocks that CDN and uses /baremux on the same origin. If the game still fails, use Open outside proxy (Unity).</p>' +
       '<h3>Windows</h3>' +
       '<p><b>Same proxy errors as ChromeOS</b> (BareMux, cold start, Service Worker). Same fix: wait, then Ctrl+Shift+R.</p>' +
@@ -745,7 +750,7 @@
       '<p><b>Page looks like an old version after refresh or Wi-Fi drop.</b> The browser kept an old script. Ctrl+Shift+R. Drift sends the page with no-store so the next load is the current commit.</p>' +
       '<p><b>Task bar or title bar gone.</b> Move the mouse to the bottom-left corner (task bar) or top-left corner (title). The Show button only appears there and disappears after you click it.</p>' +
       '<h3>Both</h3>' +
-      '<p><b>Wayground.</b> It opens in Google Chrome with no proxy so sign-in works. The mod in the Drift window uses Drift 2.1. Inject runs only if Chrome allows it; otherwise use Read screen.</p>' +
+      '<p><b>Wayground.</b> It opens inside the app with no proxy. Drift Intelligence injects the mod when the page allows it. Answers that arrive as markdown are shown as tables or code, not asterisks.</p>' +
       '<p><b>Protector did nothing.</b> Turn it on in Settings. A website cannot see the Linewize icon, the teacher popup, the ChromeOS camera dot, the fan, or the address-bar spinner. Drift can see Class started, Streaming screen, Heartbeat sent, and screenshot uploads only if they show up in this page (console, a request, or a socket). It does not leave just because the extension is installed.</p>';
     el.querySelector('[data-x]').onclick = function () { el.remove(); };
     document.body.appendChild(el);
@@ -780,7 +785,7 @@
       kbClass = localStorage.getItem('wos:kb-class') || 'F10';
       appSize = localStorage.getItem('wos:size-apps') || 'lg';
       tbSize = localStorage.getItem('wos:size-tb') || 'lg';
-      orbOn = localStorage.getItem('wos:ai-orb') !== '0';
+      orbOn = localStorage.getItem('wos:ai-orb') === '1';
     } catch (e) {}
     var opts = '';
     Object.keys(GIMKIT_INJECTORS).forEach(function (k) {
@@ -814,7 +819,7 @@
       '<div style="font-size:12px;font-weight:650;margin:8px 0 4px">Task bar</div>' + sizeRadios('size-tb', tbSize) + '</div>' +
       '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px">' +
       '<div style="flex:1"><b>AI assistant</b>' +
-      '<div style="opacity:.75;font-size:12px;margin-top:4px">A circular Drift logo. Tap it and Gemini 3.6 looks at your screen. Google Lens cannot be started from a page on a managed Chromebook.</div></div>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Off until you turn this on. Then the Drift ball appears. Drag it anywhere. Each reply has an X to dismiss it.</div></div>' +
       switchHTML('drift-orb-sw', orbOn) + '</div>' +
       '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px">' +
       '<div style="flex:1"><b>NO dev apps</b>' +
@@ -930,35 +935,213 @@
     var drift = '<img src="/drift-mark.png" alt="" width="28" height="28" style="width:28px;height:28px;border-radius:7px;display:block;object-fit:cover">';
     start.innerHTML = which === 'mac' ? mac : which === 'win' ? win : drift;
   }
+  function driftPaint(el, raw) {
+    var text = String(raw || '');
+    el.innerHTML = '';
+    function esc(s) { return String(s).replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>'); }
+    function inline(s) {
+      var h = esc(s);
+      h = h.replace(/`([^`]+)`/g, '<code>$1</code>');
+      h = h.replace(/\*\*([\s\S]+?)\*\*/g, '<strong>$1</strong>');
+      h = h.replace(/(^|[\s(])\*([^*\n]+)\*/g, '$1<em>$2</em>');
+      return h;
+    }
+    var re = /```(\w*)\n?([\s\S]*?)```/g, last = 0, m;
+    function blocks(chunk) {
+      var lines = String(chunk || '').split('\n'), i = 0, buf = [];
+      function flush() {
+        if (!buf.length) return;
+        var joined = buf.join('\n').trim();
+        buf = [];
+        if (!joined) return;
+        if (/^(\*{3,}|_{3,}|-{3,})$/.test(joined)) { var hr = document.createElement('hr'); hr.style.cssText = 'border:0;border-top:1px solid rgba(255,255,255,.2);margin:8px 0'; el.appendChild(hr); return; }
+        var p = document.createElement('div');
+        p.style.cssText = 'white-space:pre-wrap;margin:0 0 8px';
+        p.innerHTML = inline(joined);
+        el.appendChild(p);
+      }
+      while (i < lines.length) {
+        if (/^\s*\|.+\|/.test(lines[i]) && i + 1 < lines.length && /^\s*\|?\s*[-:| ]+\|/.test(lines[i + 1])) {
+          flush();
+          var rows = [];
+          while (i < lines.length && /^\s*\|/.test(lines[i])) {
+            if (!/^\s*\|?\s*[-:| ]+\|\s*$/.test(lines[i])) rows.push(lines[i].split('|').slice(1, -1).map(function (c) { return c.trim(); }));
+            i++;
+          }
+          if (rows.length) {
+            var table = document.createElement('table');
+            table.style.cssText = 'width:100%;border-collapse:collapse;margin:8px 0;font-size:12px';
+            rows.forEach(function (r, ri) {
+              var tr = document.createElement('tr');
+              r.forEach(function (c) {
+                var cell = document.createElement(ri === 0 ? 'th' : 'td');
+                cell.style.cssText = 'border:1px solid rgba(255,255,255,.2);padding:6px 8px;text-align:left';
+                cell.innerHTML = inline(c);
+                tr.appendChild(cell);
+              });
+              table.appendChild(tr);
+            });
+            el.appendChild(table);
+          }
+          continue;
+        }
+        if (/^#{1,3}\s+/.test(lines[i])) {
+          flush();
+          var h = document.createElement('div');
+          h.style.cssText = 'font-weight:700;margin:8px 0 4px';
+          h.innerHTML = inline(lines[i].replace(/^#+\s+/, ''));
+          el.appendChild(h);
+          i++;
+          continue;
+        }
+        if (/^\s*[-*]\s+/.test(lines[i])) {
+          flush();
+          var ul = document.createElement('ul');
+          ul.style.cssText = 'margin:0 0 8px 18px;padding:0';
+          while (i < lines.length && /^\s*[-*]\s+/.test(lines[i])) {
+            var li = document.createElement('li');
+            li.innerHTML = inline(lines[i].replace(/^\s*[-*]\s+/, ''));
+            ul.appendChild(li);
+            i++;
+          }
+          el.appendChild(ul);
+          continue;
+        }
+        buf.push(lines[i]);
+        i++;
+      }
+      flush();
+    }
+    while ((m = re.exec(text))) {
+      blocks(text.slice(last, m.index));
+      last = m.index + m[0].length;
+      var cap = document.createElement('div');
+      cap.style.cssText = 'font-size:11px;opacity:.65;margin-top:6px';
+      cap.textContent = m[1] || 'code';
+      var pre = document.createElement('pre');
+      pre.style.cssText = 'background:#0d0d12;border-radius:8px;padding:8px;overflow:auto;font:12px/1.45 ui-monospace,monospace;margin:4px 0 8px';
+      pre.textContent = (m[2] || '').replace(/\n$/, '');
+      el.appendChild(cap);
+      el.appendChild(pre);
+    }
+    blocks(text.slice(last));
+  }
   function installOrb() {
-    var on = true;
-    try { on = localStorage.getItem('wos:ai-orb') !== '0'; } catch (e) {}
+    var on = false;
+    try { on = localStorage.getItem('wos:ai-orb') === '1'; } catch (e) {}
     var btn = document.getElementById('drift-orb');
-    if (!on) { if (btn) btn.remove(); var old = document.getElementById('drift-orb-panel'); if (old) old.remove(); return; }
-    if (!btn) {
-      btn = document.createElement('button');
-      btn.id = 'drift-orb';
-      btn.type = 'button';
-      btn.title = 'AI assistant';
-      btn.setAttribute('aria-label', 'AI assistant');
-      btn.style.cssText = 'position:fixed;z-index:2147483000;right:18px;bottom:calc(var(--tbh, 76px) + 18px);width:68px;height:68px;padding:0;border-radius:50%;overflow:hidden;border:2px solid rgba(255,255,255,.45);background:#071226;box-shadow:0 8px 24px rgba(0,0,0,.4);cursor:pointer';
-      btn.innerHTML = '<img src="/drift-mark.png" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;transform:scale(1.18)">';
-      btn.onclick = function (e) { e.stopPropagation(); orbAsk(); };
-      document.body.appendChild(btn);
+    if (!on) {
+      if (btn) btn.remove();
+      var old = document.getElementById('drift-orb-panel');
+      if (old) old.remove();
+      return;
+    }
+    if (btn) return;
+    btn = document.createElement('button');
+    btn.id = 'drift-orb';
+    btn.type = 'button';
+    btn.title = 'AI assistant';
+    btn.setAttribute('aria-label', 'AI assistant');
+    btn.style.cssText = 'position:fixed;z-index:2147483000;right:18px;bottom:calc(var(--tbh, 76px) + 18px);width:68px;height:68px;padding:0;border-radius:50%;overflow:hidden;border:2px solid rgba(255,255,255,.45);background:#071226;box-shadow:0 8px 24px rgba(0,0,0,.4);cursor:grab;touch-action:none';
+    btn.innerHTML = '<img src="/drift-mark.png" alt="" draggable="false" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;transform:scale(1.18);pointer-events:none">';
+    try {
+      var saved = JSON.parse(localStorage.getItem('wos:orb-pos') || 'null');
+      if (saved && typeof saved.x === 'number') {
+        btn.style.right = 'auto';
+        btn.style.bottom = 'auto';
+        btn.style.left = saved.x + 'px';
+        btn.style.top = saved.y + 'px';
+      }
+    } catch (e) {}
+    var drag = null, skipClick = false;
+    btn.addEventListener('pointerdown', function (e) {
+      if (e.button > 0) return;
+      drag = { x: e.clientX, y: e.clientY, l: btn.offsetLeft, t: btn.offsetTop, moved: false, id: e.pointerId };
+      btn.setPointerCapture(e.pointerId);
+    });
+    btn.addEventListener('pointermove', function (e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      if (Math.abs(dx) + Math.abs(dy) > 5) drag.moved = true;
+      if (!drag.moved) return;
+      btn.style.right = 'auto';
+      btn.style.bottom = 'auto';
+      btn.style.left = Math.max(4, Math.min(window.innerWidth - 72, drag.l + dx)) + 'px';
+      btn.style.top = Math.max(4, Math.min(window.innerHeight - 72, drag.t + dy)) + 'px';
+    });
+    function endDrag(e) {
+      if (!drag || (e && e.pointerId !== drag.id)) return;
+      var moved = drag.moved;
+      drag = null;
+      if (moved) {
+        skipClick = true;
+        try { localStorage.setItem('wos:orb-pos', JSON.stringify({ x: btn.offsetLeft, y: btn.offsetTop })); } catch (err) {}
+      }
+    }
+    btn.addEventListener('pointerup', endDrag);
+    btn.addEventListener('pointercancel', endDrag);
+    btn.addEventListener('click', function (e) {
+      if (skipClick) { skipClick = false; e.preventDefault(); e.stopPropagation(); return; }
+      orbAsk();
+    });
+    document.body.appendChild(btn);
+  }
+  function orbPanel() {
+    var panel = document.getElementById('drift-orb-panel');
+    if (panel) return panel;
+    panel = document.createElement('div');
+    panel.id = 'drift-orb-panel';
+    panel.style.cssText = 'position:fixed;z-index:2147483002;width:min(360px,92vw);max-height:46vh;overflow:auto;background:#14141c;color:#eee;border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:10px;font:13px/1.45 system-ui,sans-serif;box-shadow:0 12px 40px rgba(0,0,0,.45)';
+    document.body.appendChild(panel);
+    return panel;
+  }
+  function placeOrbPanel() {
+    var panel = document.getElementById('drift-orb-panel');
+    var btn = document.getElementById('drift-orb');
+    if (!panel || !btn) return;
+    var r = btn.getBoundingClientRect();
+    var left = Math.max(8, Math.min(window.innerWidth - 376, r.left - 300));
+    var top = r.top - 12;
+    panel.style.left = left + 'px';
+    panel.style.top = Math.max(8, top) + 'px';
+    panel.style.right = 'auto';
+    panel.style.bottom = 'auto';
+    if (panel.getBoundingClientRect().bottom > window.innerHeight - 8) {
+      panel.style.top = Math.max(8, r.bottom - panel.offsetHeight - r.height - 12) + 'px';
     }
   }
+  function orbMessage(text) {
+    var panel = orbPanel();
+    var row = document.createElement('div');
+    row.style.cssText = 'position:relative;padding:8px 28px 8px 8px;margin:0 0 8px;background:rgba(255,255,255,.04);border-radius:10px';
+    var x = document.createElement('button');
+    x.type = 'button';
+    x.textContent = '×';
+    x.setAttribute('aria-label', 'Dismiss message');
+    x.style.cssText = 'position:absolute;top:2px;right:4px;border:0;background:transparent;color:#ddd;font-size:20px;line-height:1;cursor:pointer';
+    x.onclick = function (e) {
+      e.stopPropagation();
+      row.remove();
+      if (!panel.querySelector('[data-msg]')) panel.remove();
+    };
+    var body = document.createElement('div');
+    body.dataset.msg = '1';
+    driftPaint(body, text);
+    row.append(x, body);
+    panel.appendChild(row);
+    placeOrbPanel();
+    panel.scrollTop = panel.scrollHeight;
+    return body;
+  }
   async function orbAsk() {
-    var panel = document.getElementById('drift-orb-panel');
-    if (!panel) {
-      panel = document.createElement('div');
-      panel.id = 'drift-orb-panel';
-      panel.style.cssText = 'position:fixed;right:18px;bottom:calc(var(--tbh, 76px) + 96px);z-index:2147483002;width:min(360px,92vw);max-height:42vh;overflow:auto;background:#14141c;color:#eee;border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:12px;font:13px/1.45 system-ui,sans-serif;box-shadow:0 12px 40px rgba(0,0,0,.45)';
-      document.body.appendChild(panel);
-    }
-    panel.textContent = 'Pick this screen in the share dialog. Gemini 3.6 will look at it. Google Lens cannot be opened onto your screen from a page.';
+    var status = orbMessage('Pick this screen in the share dialog. Gemini 3.6 will look at it.');
     var stream;
     try { stream = await navigator.mediaDevices.getDisplayMedia({ video: { displaySurface: 'monitor' }, audio: false }); }
-    catch (e) { panel.textContent = 'Screen share was blocked, so the assistant cannot see the screen. Allow the prompt and tap the Drift ball again.'; return; }
+    catch (e) {
+      status.parentNode.remove();
+      orbMessage('Screen share was blocked, so the assistant cannot see the screen. Allow the prompt and tap the Drift ball again.');
+      return;
+    }
     var video = document.createElement('video');
     video.srcObject = stream; video.muted = true;
     try { await video.play(); } catch (e) {}
@@ -970,8 +1153,8 @@
     canvas.getContext('2d').drawImage(video, 0, 0, w, h);
     stream.getTracks().forEach(function (t) { try { t.stop(); } catch (e) {} });
     var q = prompt('What do you want to know about this screen?', 'What is on my screen?');
-    if (!q) { panel.textContent = 'Cancelled.'; return; }
-    panel.textContent = 'Gemini 3.6 is looking…';
+    if (!q) { if (status.parentNode) status.parentNode.remove(); return; }
+    driftPaint(status, 'Gemini 3.6 is looking…');
     var data = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
     var ep = 'https://holy-firefly-982c.fert0480.workers.dev';
     try { if (typeof EP === 'function') ep = String(EP()).replace(/\/$/, ''); } catch (e) {}
@@ -984,19 +1167,22 @@
           max_tokens: 2048,
           messages: [{ role: 'user', content: [
             { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: data } },
-            { type: 'text', text: q }
+            { type: 'text', text: q + '\n\nIf you use markdown, write real tables and fenced code blocks. Do not wrap the whole answer in asterisks.' }
           ]}],
-          system: 'You are Gemini 3.6 inside Drift. The user is showing you a screenshot of their screen. Answer only about what is visible.'
+          system: 'You are Gemini 3.6 inside Drift. The user is showing you a screenshot. Answer about what is visible. Use markdown tables for rows and fenced code blocks for code. Do not fill the answer with asterisks.'
         })
       });
       var j = await r.json();
       var text = ((j.content || []).map(function (x) { return x.text || ''; }).join('')) || (j.error && (j.error.message || JSON.stringify(j.error))) || 'No answer.';
-      panel.textContent = text;
+      if (status.parentNode) status.parentNode.remove();
+      orbMessage(text);
     } catch (e) {
-      panel.textContent = String(e.message || e);
+      if (status.parentNode) status.parentNode.remove();
+      orbMessage(String(e.message || e));
     }
   }
   function boot() {
+    window.driftPaint = driftPaint;
     applyBrandLogos();
     try { applyHomeLogo(localStorage.getItem('wos:home-btn') || 'drift'); } catch (e) { applyHomeLogo('drift'); }
     injectXkiroModels();

@@ -20,14 +20,15 @@
     "window.GM_deleteValue=function(k){try{localStorage.removeItem('GM_'+k)}catch(e){}};" +
     "window.GM_listValues=function(){var o=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf('GM_')===0)o.push(k.slice(3))}return o};" +
     "window.GM_addStyle=function(css){var s=document.createElement('style');s.textContent=css;(document.head||document.documentElement).appendChild(s);return s};" +
-    'window.unsafeWindow=window;';
+    'window.unsafeWindow=window;' +
+    'window.driftPaintAnswer=function(v){var s=String(v==null?"":v);function esc(x){return String(x).replace(/&/g,"&").replace(/</g,"<").replace(/>/g,">");}function inline(x){var h=esc(x);h=h.replace(/`([^`]+)`/g,"<code>$1</code>");h=h.replace(/\\*\\*([\\s\\S]+?)\\*\\*/g,"<strong>$1</strong>");h=h.replace(/(^|[\\s(])\\*([^*\\n]+)\\*/g,"$1<em>$2</em>");return h;}var html="";var re=/```(\\w*)\\n?([\\s\\S]*?)```/g,last=0,m;function blocks(chunk){var lines=String(chunk||"").split("\\n"),i=0,buf=[];function flush(){if(!buf.length)return;var j=buf.join("\\n").trim();buf=[];if(!j)return;if(/^(\\*{3,}|-{3,})$/.test(j)){html+="<hr>";return;}html+="<div style=\\"white-space:pre-wrap;margin:0 0 8px\\">"+inline(j)+"</div>";}while(i<lines.length){if(/^\\s*\\|/.test(lines[i])&&i+1<lines.length&&/[-:]/.test(lines[i+1])){flush();var rows=[];while(i<lines.length&&/^\\s*\\|/.test(lines[i])){if(!/^\\s*\\|?\\s*[-:| ]+\\|\\s*$/.test(lines[i]))rows.push(lines[i].split("|").slice(1,-1));i++;}if(rows.length){html+="<table style=\\"border-collapse:collapse;width:100%\\">";rows.forEach(function(r,ri){html+="<tr>";r.forEach(function(c){html+="<"+(ri?"td":"th")+" style=\\"border:1px solid #444;padding:4px 6px\\">"+inline(c.trim())+"</"+(ri?"td":"th")+">";});html+="</tr>";});html+="</table>";}continue;}if(/^#{1,3}\\s+/.test(lines[i])){flush();html+="<div style=\\"font-weight:700\\">"+inline(lines[i].replace(/^#+\\s+/,""))+"</div>";i++;continue;}buf.push(lines[i]);i++;}flush();}while((m=re.exec(s))){blocks(s.slice(last,m.index));last=m.index+m[0].length;html+="<div style=\\"font-size:11px;opacity:.7\\">"+(m[1]||"code")+"</div><pre style=\\"white-space:pre-wrap;background:#111;padding:8px;border-radius:8px\\">"+esc(m[2])+"</pre>";}blocks(s.slice(last));return "<div>Possible answer</div>"+html;};';
 
   var GM_AI =
     '(function(){var DRIFT_AI=' +
     JSON.stringify(DRIFT_AI) +
     ';var DRIFT_MODEL=' +
     JSON.stringify(DRIFT_MODEL) +
-    ";var SYS='You are an expert quiz assistant WITH VISION and careful reasoning. If images/screenshots are provided, read them. Reply ONLY JSON {\\\"answers\\\":{\\\"QUESTION_ID\\\":\\\"optionId|text|[ids]\\\"}}.';" +
+    ";var SYS='You are Drift Intelligence. Reply with raw JSON only. No markdown, no asterisks, no code fences. Shape: {\\\"answers\\\":{\\\"QUESTION_ID\\\":\\\"option id or plain text\\\"}}.';" +
     'window.GM_xmlhttpRequest=function(opts){var url=String(opts.url||\'\');' +
     'var isAI=/generativelanguage\\.googleapis\\.com|api\\.openai\\.com|openrouter\\.ai|api\\.xkiro\\.com/i.test(url);' +
     "if(!isAI){fetch(opts.url,{method:opts.method||'GET',headers:opts.headers||{},body:opts.data,credentials:'include'})" +
@@ -40,6 +41,7 @@
     "fetch(DRIFT_AI,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:DRIFT_MODEL,messages:[{role:'user',content:userText}],system:SYS})})" +
     ".then(function(r){return r.json().then(function(j){var text=((j.content||[]).map(function(x){return x.text||''}).join('')||j.text||'');" +
     "if(!text&&j.choices&&j.choices[0]&&j.choices[0].message)text=j.choices[0].message.content||'';" +
+    "text=(function(t){t=String(t||'').trim();var f=t.match(/```(?:json)?\\s*([\\s\\S]*?)```/i);if(f)t=f[1].trim();t=t.replace(/^\\*\\*([\\s\\S]*)\\*\\*$/,'$1').trim();function walk(v){if(typeof v==='string')return v.replace(/\\*\\*([\\s\\S]*?)\\*\\*/g,'$1').replace(/(^|\\s)\\*([^*\\n]+)\\*(?=\\s|$)/g,'$1$2').replace(/`([^`]+)`/g,'$1').trim();if(Array.isArray(v))return v.map(walk);if(v&&typeof v==='object'){var o={};for(var k in v)o[k]=walk(v[k]);return o;}return v;}try{var o=walk(JSON.parse(t));return JSON.stringify(o);}catch(e){var plain=t.replace(/```[\\w]*\\n?/g,'').replace(/```/g,'').replace(/\\*\\*([\\s\\S]*?)\\*\\*/g,'$1');try{var box=document.getElementById('drift-md')||document.createElement('div');box.id='drift-md';box.style.cssText='position:fixed;right:12px;bottom:12px;z-index:2147483646;max-width:min(440px,92vw);max-height:50vh;overflow:auto;background:#111;color:#fff;padding:12px;border-radius:12px;font:13px/1.45 system-ui';box.innerHTML=window.driftPaintAnswer?window.driftPaintAnswer(t):plain;document.body.appendChild(box);}catch(err){}return JSON.stringify({answers:{}});}})(text);" +
     "var wrapped=JSON.stringify({candidates:[{content:{parts:[{text:text}]}}]});" +
     'opts.onload&&opts.onload({status:200,responseText:wrapped,response:wrapped})})})' +
     '.catch(function(e){opts.onerror&&opts.onerror(e)})}})();';
@@ -48,6 +50,8 @@
     var s = String(src || '').replace(/^[\s\S]*?==\/UserScript==\s*/, '');
     s = s.replace('let OK = false;', 'let OK = true;');
     s = s.replace('let API_KEY = null;', 'let API_KEY = "drift-worker";');
+    s = s.replace(/answerDiv\.textContent\s*=\s*`Possible answer: \$\{formattedAnswer\}`;/g,
+      'answerDiv.innerHTML = (window.driftPaintAnswer ? window.driftPaintAnswer(formattedAnswer) : ("Possible answer: "+formattedAnswer));');
     return s;
   }
 
@@ -93,24 +97,23 @@
   window.waygroundApp = async function waygroundApp(root) {
     root.innerHTML =
       '<div style="display:flex;flex-direction:column;height:100%;min-height:0;background:#11131a;color:#eee">' +
-      '<div style="padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;flex-wrap:wrap;gap:8px;align-items:center">' +
-      '<b>Wayground</b><span style="font-size:12px;opacity:.75">Drift 2.1 · no proxy</span></div>' +
-      '<div style="padding:10px 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)">' +
-      '<label style="font-size:12px;display:flex;gap:6px;align-items:center"><input type="checkbox" checked disabled/> AI · Drift 2.1</label>' +
-      '<button type="button" data-open style="padding:6px 12px;border-radius:8px;border:0;background:#7c5cff;color:#fff;cursor:pointer">Open in Chrome</button>' +
-      '<button type="button" data-read style="padding:6px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.16);background:transparent;color:#fff;cursor:pointer">Read screen</button>' +
-      '<button type="button" data-inj style="padding:6px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.16);background:transparent;color:#fff;cursor:pointer">Inject mod</button></div>' +
-      '<div data-status style="padding:8px 12px;font-size:12px;opacity:.85">Opening wayground.com in Google Chrome…</div>' +
-      '<pre data-ans style="flex:1;margin:0;padding:12px;overflow:auto;white-space:pre-wrap;font:13px/1.45 ui-monospace,monospace"></pre></div>';
+      '<div style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;flex-wrap:wrap;gap:8px;align-items:center">' +
+      '<b>Wayground</b><span style="font-size:12px;opacity:.75">Drift Intelligence · no proxy</span>' +
+      '<button type="button" data-inj style="margin-left:auto;padding:6px 12px;border-radius:8px;border:0;background:#7c5cff;color:#fff;cursor:pointer">Inject mod</button>' +
+      '<button type="button" data-read style="padding:6px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.16);background:transparent;color:#fff;cursor:pointer">Read screen</button></div>' +
+      '<div data-status style="padding:6px 10px;font-size:12px;opacity:.85">Opening Wayground inside the app…</div>' +
+      '<div data-ans style="display:none;max-height:160px;overflow:auto;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.08)"></div>' +
+      '<div style="flex:1;min-height:0;position:relative"><iframe data-frame referrerpolicy="no-referrer-when-downgrade" allow="fullscreen; clipboard-read; clipboard-write; camera; microphone" style="position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff"></iframe></div></div>';
     var st = root.querySelector('[data-status]');
     var ans = root.querySelector('[data-ans]');
-    var popup = null;
+    var frame = root.querySelector('[data-frame]');
     var cheatSrc = null;
+    frame.src = 'https://wayground.com/';
 
-    function openChrome() {
-      popup = window.open('https://wayground.com/', 'drift-wayground', 'width=1200,height=800');
-      if (!popup) st.textContent = 'Allow pop-ups, then press Open in Chrome. Wayground does not use the proxy.';
-      else st.textContent = 'Wayground is open in Chrome so sign-in works. The mod uses Drift 2.1. Inject only works if the page allows it; otherwise use Read screen.';
+    function showAnswer(text) {
+      ans.style.display = 'block';
+      if (typeof window.driftPaint === 'function') window.driftPaint(ans, text);
+      else ans.textContent = text;
     }
 
     async function ensureCheat() {
@@ -123,14 +126,13 @@
     async function tryInject() {
       try {
         await ensureCheat();
-        if (!popup || popup.closed) openChrome();
-        var doc = popup && popup.document;
+        var doc = frame.contentDocument;
         if (doc && injectInto(doc, cheatSrc, st)) {
-          st.textContent = 'Mod menu injected · Drift 2.1';
+          st.textContent = 'Mod menu injected · Drift Intelligence';
           return;
         }
       } catch (e) {}
-      st.textContent = 'Chrome blocked injecting into wayground.com (that needs the proxy, which breaks sign-in). Use Read screen — Drift 2.1 looks at the quiz.';
+      st.textContent = 'Wayground is open in the app without the proxy. The browser blocked injecting into wayground.com. Read screen still uses Drift Intelligence.';
     }
 
     async function readScreen() {
@@ -148,11 +150,9 @@
       canvas.getContext('2d').drawImage(video, 0, 0, w, h);
       stream.getTracks().forEach(function (t) { t.stop(); });
       var data = canvas.toDataURL('image/jpeg', 0.72).split(',')[1];
-      st.textContent = 'Drift 2.1 is reading the screen…';
-      ans.textContent = '';
-      var ep = DRIFT_AI;
+      st.textContent = 'Drift Intelligence is reading the screen…';
       try {
-        var r = await fetch(ep, {
+        var r = await fetch(DRIFT_AI, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -160,23 +160,24 @@
             max_tokens: 2048,
             messages: [{ role: 'user', content: [
               { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: data } },
-              { type: 'text', text: 'This is a screenshot of a quiz. Reply with the correct option text only, then one short reason.' }
-            ]}]
+              { type: 'text', text: 'This is a screenshot of a quiz. If the answer is a list, use a markdown table. If it is code, use a fenced code block. Do not wrap the answer in asterisks. Then one short reason.' }
+            ]}],
+            system: 'You are Drift Intelligence. Render real markdown tables and fenced code. Never answer with only asterisks.'
           })
         });
         var j = await r.json();
         var text = ((j.content || []).map(function (x) { return x.text || ''; }).join('')) || (j.error && (j.error.message || j.error)) || 'No answer.';
-        ans.textContent = text;
-        st.textContent = 'Answer from Drift 2.1';
+        showAnswer(text);
+        st.textContent = 'Answer from Drift Intelligence';
       } catch (e) {
         st.textContent = String(e.message || e);
       }
     }
 
-    root.querySelector('[data-open]').onclick = openChrome;
+    frame.addEventListener('load', function () { setTimeout(tryInject, 600); });
     root.querySelector('[data-inj]').onclick = function () { tryInject(); };
     root.querySelector('[data-read]').onclick = function () { readScreen(); };
-    openChrome();
+    setTimeout(tryInject, 1800);
   };
 
   function wire() {
