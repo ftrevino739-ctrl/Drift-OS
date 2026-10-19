@@ -241,7 +241,7 @@
     try {
       if (typeof MODELS === 'undefined' || !Array.isArray(MODELS)) return;
       if (!MODELS.some(function (m) { return m && (m[1] === 'Drift 2.1' || m[0] === 'google/gemini-3.8-flash'); })) {
-        MODELS.unshift(['google/gemini-3.8-flash', 'Drift 2.1', 'Recommended · Gemini · best web', 'default', 'Gemini 3.8 Flash, the best Gemini on the web, emulated in Drift. Writes and fixes code, reads images you attach, understands pasted files, can show its reasoning, and answers quickly.', { code: 1, vision: 1, files: 1, think: 1, fast: 1 }]);
+        MODELS.unshift(['google/gemini-3.8-flash', 'Drift 2.1', 'Recommended · Gemini', 'default', 'Gemini itself, shown in Drift as Drift 2.1. It writes the full script you ask for, including long Luau files.', { code: 1, vision: 1, files: 1, think: 1, fast: 1 }]);
         if (typeof AI_ABOUT === 'object' && AI_ABOUT) AI_ABOUT['google/gemini-3.8-flash'] = MODELS[0][4];
       }
       if (MODELS.some(function (m) { return m && (m[1] === 'Drift 2.0' || m[0] === 'mistralai/mistral-large-4-0'); })) return;

@@ -136,19 +136,22 @@
           return;
         }
       } catch (e) {}
-      st.textContent = 'Wayground is open. Press Inject mod again if the menu is not there yet.';
+      st.textContent = 'Wayground is open in this app. It does not use the proxy.';
     }
 
-    if (typeof window.openProxied === 'function') {
-      window.openProxied('https://wayground.com/', box).then(function () {
-        var el = frame();
-        if (!el) { st.textContent = 'Wayground did not open. Press Inject mod after it loads.'; return; }
-        el.addEventListener('load', function () { seen = ''; setTimeout(function () { tryInject(true); }, 700); });
-        setTimeout(function () { tryInject(false); }, 1800);
-      });
-    } else {
-      st.textContent = 'Wayground could not be opened inside the app.';
-    }
+    box.innerHTML = '';
+    var frameEl = document.createElement('iframe');
+    frameEl.title = 'Wayground';
+    frameEl.setAttribute('referrerpolicy', 'no-referrer');
+    frameEl.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals');
+    frameEl.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';
+    frameEl.src = 'https://wayground.com/';
+    box.appendChild(frameEl);
+    st.textContent = 'Wayground is open in this app. It does not use the proxy.';
+    frameEl.addEventListener('load', function () {
+      seen = '';
+      setTimeout(function () { tryInject(false); }, 700);
+    });
 
     if (!root.dataset.wgWatch) {
       root.dataset.wgWatch = '1';

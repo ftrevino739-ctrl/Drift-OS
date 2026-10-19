@@ -102,10 +102,10 @@ function loadAndPatchIndex() {
 	);
 
 	const tag =
-		'<script src="/drift-extras.js?v=20261019c" defer></script>' +
-		'<script src="/chromebook-proxy.js?v=20261019c" defer></script>' +
-		'<script src="/wayground-ai.js?v=20261019c" defer></script>' +
-		'<script src="/drift-fixup.js?v=20261019c" defer></script>' +
+		'<script src="/drift-extras.js?v=20261019d" defer></script>' +
+		'<script src="/chromebook-proxy.js?v=20261019d" defer></script>' +
+		'<script src="/wayground-ai.js?v=20261019d" defer></script>' +
+		'<script src="/drift-fixup.js?v=20261019d" defer></script>' +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +
@@ -195,6 +195,24 @@ fastify.post("/api/ask", (req, reply) => proxyMod(req, reply, "/api/ask"));
 fastify.post("/api/redeem", (req, reply) => proxyMod(req, reply, "/api/redeem"));
 fastify.post("/api/pulse", (req, reply) => proxyMod(req, reply, "/api/pulse"));
 
+fastify.post("/api/gemini", async (req, reply) => {
+	const key = process.env.GEMINI_API_KEY || "";
+	if (!key) return reply.code(404).send({ error: "no-key" });
+	const r = await fetch(
+		"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=" + encodeURIComponent(key),
+		{
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify(req.body || {}),
+		}
+	);
+	const text = await r.text();
+	reply.code(r.status);
+	reply.header("content-type", "application/json; charset=utf-8");
+	reply.header("cache-control", "no-store");
+	return reply.send(text);
+});
+
 function chatFile() {
 	const preferred = process.env.DATA_DIR ? path.join(process.env.DATA_DIR, "chat.json") : path.join(rootPath, "data", "chat.json");
 	const candidates = [preferred, path.join(rootPath, "data", "chat.json"), "/tmp/drift-chat.json"];
@@ -225,87 +243,360 @@ function chatUser(req, db) {
 	if (!tok) return null;
 	return db.users.find((u) => u.token === tok) || null;
 }
+function publicUser(u) {
+	return { id: u.id, username: u.username, displayName: u.displayName || u.username, avatar: u.avatar || "" };
+}
+function ensureChat(db) {
+	let dirty = false;
+	if (!Array.isArray(db.users)) { db.users = []; dirty = true; }
+	if (!Array.isArray(db.servers)) { db.servers = []; dirty = true; }
+	if (!Array.isArray(db.messages)) { db.messages = []; dirty = true; }
+	if (!Array.isArray(db.friends)) { db.friends = []; dirty = true; }
+	if (!Array.isArray(db.dms)) { db.dms = []; dirty = true; }
+	if (!Array.isArray(db.dmMessages)) { db.dmMessages = []; dirty = true; }
+	if (!Array.isArray(db.voice)) { db.voice = []; dirty = true; }
+	const now = Date.now();
+	const voice = db.voice.filter((v) => now - (v.at || 0) < 25000);
+	if (voice.length !== db.voice.length) { db.voice = voice; dirty = true; }
+	for (const u of db.users) {
+		if (!u.displayName) { u.displayName = u.username; dirty = true; }
+		if (!u.settings) {
+			u.settings = { desktop: true, sounds: true, badges: true, whoFriends: "everyone", whoDMs: "everyone" };
+			dirty = true;
+		}
+		if (!u.mutes) { u.mutes = {}; dirty = true; }
+	}
+	for (const s of db.servers) {
+		if (!Array.isArray(s.members)) { s.members = []; dirty = true; }
+		const raw = s.channels;
+		const needs = !raw || !raw.length || typeof raw[0] === "string" || !raw.some((c) => c && c.type === "voice");
+		if (needs) {
+			const base = !raw || !raw.length ? ["general"] : raw;
+			s.channels = base.map((c) => (typeof c === "string" ? { id: c, name: c, type: "text" } : { id: c.id || c.name, name: c.name, type: c.type || "text" }));
+			if (!s.channels.some((c) => c.type === "voice")) s.channels.push({ id: "voice", name: "Voice", type: "voice" });
+			dirty = true;
+		}
+	}
+	if (dirty) chatWrite(db);
+	return db;
+}
+function areFriends(db, a, b) {
+	return db.friends.some((f) => f.status === "accepted" && ((f.from === a && f.to === b) || (f.from === b && f.to === a)));
+}
+function friendsOf(db, user) {
+	return db.friends.filter((f) => f.from === user.id || f.to === user.id).map((f) => {
+		const other = db.users.find((u) => u.id === (f.from === user.id ? f.to : f.from));
+		if (!other) return null;
+		return { id: f.id, status: f.status, incoming: f.to === user.id && f.status === "pending", user: publicUser(other) };
+	}).filter(Boolean);
+}
+function chatState(db, user) {
+	const servers = db.servers.filter((s) => s.members.includes(user.id)).map((s) => ({
+		id: s.id,
+		name: s.name,
+		owner: s.owner === user.id,
+		channels: s.channels,
+		members: s.members.map((id) => db.users.find((u) => u.id === id)).filter(Boolean).map(publicUser),
+		mute: user.mutes[s.id] || { mute: false, mentionsOnly: false },
+	}));
+	const dms = db.dms.filter((d) => (d.users || []).includes(user.id) && !(d.closed || []).includes(user.id)).map((d) => {
+		const otherId = d.users.find((id) => id !== user.id);
+		const other = db.users.find((u) => u.id === otherId);
+		const last = [...db.dmMessages].reverse().find((m) => m.dm === d.id);
+		const request = !areFriends(db, user.id, otherId) && d.from !== user.id && !(d.ok || []).includes(user.id);
+		return { id: d.id, request, with: other ? publicUser(other) : { id: otherId, username: "unknown", displayName: "unknown", avatar: "" }, last: last ? last.text : "" };
+	});
+	return {
+		user: Object.assign(publicUser(user), { settings: user.settings }),
+		servers,
+		friends: friendsOf(db, user),
+		dms,
+		voice: db.voice.map((v) => ({ server: v.server, channel: v.channel, user: v.user, username: v.username })),
+	};
+}
+function decorateMessages(db, list) {
+	return list.map((m) => {
+		const u = db.users.find((x) => x.id === m.user);
+		return Object.assign({}, m, { displayName: (u && (u.displayName || u.username)) || m.username, avatar: (u && u.avatar) || "" });
+	});
+}
 fastify.post("/api/chat/register", async (req, reply) => {
 	const b = req.body || {};
 	const username = String(b.username || "").trim().slice(0, 32);
 	const password = String(b.password || "");
 	if (username.length < 2 || password.length < 4) return reply.code(400).send({ error: "Username and a password of 4 or more characters." });
-	const db = chatRead();
+	const db = ensureChat(chatRead());
 	if (db.users.some((u) => u.username.toLowerCase() === username.toLowerCase())) return reply.code(400).send({ error: "That username is taken." });
-	const user = { id: crypto.randomBytes(8).toString("hex"), username, pass: chatHash(password), token: crypto.randomBytes(24).toString("hex") };
+	const user = {
+		id: crypto.randomBytes(8).toString("hex"), username, displayName: username, avatar: "",
+		pass: chatHash(password), token: crypto.randomBytes(24).toString("hex"),
+		settings: { desktop: true, sounds: true, badges: true, whoFriends: "everyone", whoDMs: "everyone" }, mutes: {},
+	};
 	db.users.push(user);
 	chatWrite(db);
-	return { token: user.token, user: { id: user.id, username: user.username } };
+	return { token: user.token, user: publicUser(user) };
 });
 fastify.post("/api/chat/login", async (req, reply) => {
 	const b = req.body || {};
 	const username = String(b.username || "").trim();
 	const password = String(b.password || "");
-	const db = chatRead();
+	const db = ensureChat(chatRead());
 	const user = db.users.find((u) => u.username.toLowerCase() === username.toLowerCase() && u.pass === chatHash(password));
 	if (!user) return reply.code(401).send({ error: "Wrong username or password." });
 	user.token = crypto.randomBytes(24).toString("hex");
 	chatWrite(db);
-	return { token: user.token, user: { id: user.id, username: user.username } };
+	return { token: user.token, user: publicUser(user) };
 });
 fastify.get("/api/chat/me", async (req, reply) => {
-	const db = chatRead();
+	const db = ensureChat(chatRead());
 	const user = chatUser(req, db);
 	if (!user) return reply.code(401).send({ error: "Log in." });
-	const servers = db.servers.filter((s) => (s.members || []).includes(user.id)).map((s) => ({ id: s.id, name: s.name }));
-	return { user: { id: user.id, username: user.username }, servers };
+	return chatState(db, user);
+});
+fastify.post("/api/chat/profile", async (req, reply) => {
+	const db = ensureChat(chatRead());
+	const user = chatUser(req, db);
+	if (!user) return reply.code(401).send({ error: "Log in." });
+	const b = req.body || {};
+	if (b.displayName != null) {
+		const name = String(b.displayName || "").trim().slice(0, 32);
+		if (name.length < 1) return reply.code(400).send({ error: "Display name cannot be empty." });
+		user.displayName = name;
+	}
+	if (b.avatar != null) {
+		const avatar = String(b.avatar || "");
+		if (avatar && !/^data:image\//.test(avatar)) return reply.code(400).send({ error: "Avatar must be an image." });
+		if (avatar.length > 140000) return reply.code(400).send({ error: "That image is too large." });
+		user.avatar = avatar;
+	}
+	if (b.settings && typeof b.settings === "object") {
+		const s = user.settings;
+		if (typeof b.settings.desktop === "boolean") s.desktop = b.settings.desktop;
+		if (typeof b.settings.sounds === "boolean") s.sounds = b.settings.sounds;
+		if (typeof b.settings.badges === "boolean") s.badges = b.settings.badges;
+		if (b.settings.whoFriends === "everyone" || b.settings.whoFriends === "nobody") s.whoFriends = b.settings.whoFriends;
+		if (b.settings.whoDMs === "everyone" || b.settings.whoDMs === "friends") s.whoDMs = b.settings.whoDMs;
+	}
+	chatWrite(db);
+	return chatState(db, user);
+});
+fastify.get("/api/chat/users", async (req, reply) => {
+	const db = ensureChat(chatRead());
+	const user = chatUser(req, db);
+	if (!user) return reply.code(401).send({ error: "Log in." });
+	const q = String(req.query.q || "").trim().toLowerCase();
+	const users = db.users.filter((u) => u.id !== user.id && (!q || u.username.toLowerCase().includes(q) || (u.displayName || "").toLowerCase().includes(q))).slice(0, 20).map(publicUser);
+	return { users };
+});
+fastify.post("/api/chat/friends", async (req, reply) => {
+	const db = ensureChat(chatRead());
+	const user = chatUser(req, db);
+	if (!user) return reply.code(401).send({ error: "Log in." });
+	const username = String((req.body || {}).username || "").trim();
+	const other = db.users.find((u) => u.username.toLowerCase() === username.toLowerCase());
+	if (!other || other.id === user.id) return reply.code(404).send({ error: "No account with that username." });
+	if ((other.settings || {}).whoFriends === "nobody") return reply.code(400).send({ error: "That person is not accepting friend requests." });
+	const row = db.friends.find((f) => (f.from === user.id && f.to === other.id) || (f.from === other.id && f.to === user.id));
+	if (row && row.status === "accepted") return reply.code(400).send({ error: "You are already friends." });
+	if (row && row.status === "pending") return reply.code(400).send({ error: "That request is already pending." });
+	db.friends.push({ id: crypto.randomBytes(6).toString("hex"), from: user.id, to: other.id, status: "pending" });
+	chatWrite(db);
+	return chatState(db, user);
+});
+fastify.post("/api/chat/friends/:id/accept", async (req, reply) => {
+	const db = ensureChat(chatRead());
+	const user = chatUser(req, db);
+	if (!user) return reply.code(401).send({ error: "Log in." });
+	const row = db.friends.find((f) => f.id === req.params.id && f.to === user.id && f.status === "pending");
+	if (!row) return reply.code(404).send({ error: "Request not found." });
+	row.status = "accepted";
+	chatWrite(db);
+	return { ok: true };
+});
+fastify.post("/api/chat/friends/:id/decline", async (req, reply) => {
+	const db = ensureChat(chatRead());
+	const user = chatUser(req, db);
+	if (!user) return reply.code(401).send({ error: "Log in." });
+	const i = db.friends.findIndex((f) => f.id === req.params.id && (f.to === user.id || f.from === user.id));
+	if (i < 0) return reply.code(404).send({ error: "Request not found." });
+	db.friends.splice(i, 1);
+	chatWrite(db);
+	return { ok: true };
+});
+fastify.post("/api/chat/dms", async (req, reply) => {
+	const db = ensureChat(chatRead());
+	const user = chatUser(req, db);
+	if (!user) return reply.code(401).send({ error: "Log in." });
+	const username = String((req.body || {}).username || "").trim();
+	const other = db.users.find((u) => u.username.toLowerCase() === username.toLowerCase());
+	if (!other || other.id === user.id) return reply.code(404).send({ error: "No account with that username." });
+	if ((other.settings || {}).whoDMs === "friends" && !areFriends(db, user.id, other.id)) return reply.code(400).send({ error: "That person only accepts messages from friends." });
+	let dm = db.dms.find((d) => d.users.includes(user.id) && d.users.includes(other.id));
+	if (!dm) {
+		dm = { id: crypto.randomBytes(8).toString("hex"), users: [user.id, other.id], from: user.id, ok: [user.id], closed: [] };
+		db.dms.unshift(dm);
+	} else {
+		dm.closed = (dm.closed || []).filter((id) => id !== user.id);
+	}
+	chatWrite(db);
+	return { dm: { id: dm.id } };
+});
+fastify.post("/api/chat/dms/:id/accept", async (req, reply) => {
+	const db = ensureChat(chatRead());
+	const user = chatUser(req, db);
+	if (!user) return reply.code(401).send({ error: "Log in." });
+	const dm = db.dms.find((d) => d.id === req.params.id && (d.users || []).includes(user.id));
+	if (!dm) return reply.code(404).send({ error: "Conversation not found." });
+	dm.ok = dm.ok || [];
+	if (!dm.ok.includes(user.id)) dm.ok.push(user.id);
+	chatWrite(db);
+	return { ok: true };
+});
+fastify.post("/api/chat/dms/:id/close", async (req, reply) => {
+	const db = ensureChat(chatRead());
+	const user = chatUser(req, db);
+	if (!user) return reply.code(401).send({ error: "Log in." });
+	const dm = db.dms.find((d) => d.id === req.params.id && (d.users || []).includes(user.id));
+	if (!dm) return reply.code(404).send({ error: "Conversation not found." });
+	dm.closed = dm.closed || [];
+	if (!dm.closed.includes(user.id)) dm.closed.push(user.id);
+	chatWrite(db);
+	return { ok: true };
+});
+fastify.get("/api/chat/dms/:id/messages", async (req, reply) => {
+	const db = ensureChat(chatRead());
+	const user = chatUser(req, db);
+	if (!user) return reply.code(401).send({ error: "Log in." });
+	const dm = db.dms.find((d) => d.id === req.params.id && (d.users || []).includes(user.id));
+	if (!dm) return reply.code(404).send({ error: "Conversation not found." });
+	return { messages: decorateMessages(db, db.dmMessages.filter((m) => m.dm === dm.id).slice(-200)) };
+});
+fastify.post("/api/chat/dms/:id/messages", async (req, reply) => {
+	const db = ensureChat(chatRead());
+	const user = chatUser(req, db);
+	if (!user) return reply.code(401).send({ error: "Log in." });
+	const dm = db.dms.find((d) => d.id === req.params.id && (d.users || []).includes(user.id));
+	if (!dm) return reply.code(404).send({ error: "Conversation not found." });
+	const text = String((req.body || {}).text || "").trim().slice(0, 2000);
+	if (!text) return reply.code(400).send({ error: "Empty message." });
+	db.dmMessages.push({ id: crypto.randomBytes(6).toString("hex"), dm: dm.id, user: user.id, username: user.username, text, time: new Date().toISOString() });
+	db.dmMessages = db.dmMessages.slice(-4000);
+	chatWrite(db);
+	return { ok: true };
 });
 fastify.get("/api/chat/servers", async (req, reply) => {
-	const db = chatRead();
+	const db = ensureChat(chatRead());
 	const user = chatUser(req, db);
 	if (!user) return reply.code(401).send({ error: "Log in." });
 	const q = String(req.query.q || "").trim().toLowerCase();
 	const servers = db.servers
-		.filter((s) => !q || s.name.toLowerCase().includes(q))
+		.filter((s) => !q || s.name.toLowerCase().includes(q) || s.id === q)
 		.slice(0, 30)
-		.map((s) => ({ id: s.id, name: s.name, joined: (s.members || []).includes(user.id) }));
+		.map((s) => ({ id: s.id, name: s.name, joined: s.members.includes(user.id) }));
 	return { servers };
 });
 fastify.post("/api/chat/servers", async (req, reply) => {
-	const db = chatRead();
+	const db = ensureChat(chatRead());
 	const user = chatUser(req, db);
 	if (!user) return reply.code(401).send({ error: "Log in." });
 	const name = String((req.body || {}).name || "").trim().slice(0, 48);
 	if (name.length < 2) return reply.code(400).send({ error: "Name the server." });
-	const server = { id: crypto.randomBytes(8).toString("hex"), name, owner: user.id, members: [user.id], channels: ["general"] };
+	const server = {
+		id: crypto.randomBytes(8).toString("hex"), name, owner: user.id, members: [user.id],
+		channels: [{ id: "general", name: "general", type: "text" }, { id: "voice", name: "Voice", type: "voice" }],
+	};
 	db.servers.unshift(server);
 	chatWrite(db);
 	return { server: { id: server.id, name: server.name } };
 });
 fastify.post("/api/chat/servers/:id/join", async (req, reply) => {
-	const db = chatRead();
+	const db = ensureChat(chatRead());
 	const user = chatUser(req, db);
 	if (!user) return reply.code(401).send({ error: "Log in." });
 	const server = db.servers.find((s) => s.id === req.params.id);
 	if (!server) return reply.code(404).send({ error: "Server not found." });
-	if (!(server.members || []).includes(user.id)) server.members.push(user.id);
+	if (!server.members.includes(user.id)) server.members.push(user.id);
+	chatWrite(db);
+	return { ok: true };
+});
+fastify.post("/api/chat/servers/:id/leave", async (req, reply) => {
+	const db = ensureChat(chatRead());
+	const user = chatUser(req, db);
+	if (!user) return reply.code(401).send({ error: "Log in." });
+	const server = db.servers.find((s) => s.id === req.params.id);
+	if (!server || !server.members.includes(user.id)) return reply.code(404).send({ error: "Server not found." });
+	server.members = server.members.filter((id) => id !== user.id);
+	db.voice = db.voice.filter((v) => !(v.server === server.id && v.user === user.id));
+	if (!server.members.length) db.servers = db.servers.filter((s) => s.id !== server.id);
+	else if (server.owner === user.id) server.owner = server.members[0];
+	chatWrite(db);
+	return { ok: true };
+});
+fastify.post("/api/chat/servers/:id/channels", async (req, reply) => {
+	const db = ensureChat(chatRead());
+	const user = chatUser(req, db);
+	if (!user) return reply.code(401).send({ error: "Log in." });
+	const server = db.servers.find((s) => s.id === req.params.id);
+	if (!server || !server.members.includes(user.id)) return reply.code(404).send({ error: "Server not found." });
+	const name = String((req.body || {}).name || "").trim().replace(/^#/, "").slice(0, 32);
+	const type = (req.body || {}).type === "voice" ? "voice" : "text";
+	if (name.length < 1) return reply.code(400).send({ error: "Name the channel." });
+	const id = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || crypto.randomBytes(3).toString("hex");
+	if (server.channels.some((c) => c.id === id)) return reply.code(400).send({ error: "That channel already exists." });
+	server.channels.push({ id, name, type });
+	chatWrite(db);
+	return { channel: { id, name, type } };
+});
+fastify.post("/api/chat/servers/:id/notify", async (req, reply) => {
+	const db = ensureChat(chatRead());
+	const user = chatUser(req, db);
+	if (!user) return reply.code(401).send({ error: "Log in." });
+	const server = db.servers.find((s) => s.id === req.params.id);
+	if (!server || !server.members.includes(user.id)) return reply.code(404).send({ error: "Server not found." });
+	const prev = user.mutes[server.id] || { mute: false, mentionsOnly: false };
+	const b = req.body || {};
+	user.mutes[server.id] = { mute: typeof b.mute === "boolean" ? b.mute : !!prev.mute, mentionsOnly: typeof b.mentionsOnly === "boolean" ? b.mentionsOnly : !!prev.mentionsOnly };
+	chatWrite(db);
+	return { ok: true };
+});
+fastify.post("/api/chat/servers/:id/voice", async (req, reply) => {
+	const db = ensureChat(chatRead());
+	const user = chatUser(req, db);
+	if (!user) return reply.code(401).send({ error: "Log in." });
+	const server = db.servers.find((s) => s.id === req.params.id);
+	if (!server || !server.members.includes(user.id)) return reply.code(404).send({ error: "Server not found." });
+	const action = String((req.body || {}).action || "");
+	db.voice = db.voice.filter((v) => v.user !== user.id);
+	if (action === "join") {
+		const channel = String((req.body || {}).channel || "");
+		const row = server.channels.find((c) => c.id === channel && c.type === "voice");
+		if (!row) return reply.code(404).send({ error: "Voice channel not found." });
+		db.voice.push({ server: server.id, channel, user: user.id, username: user.displayName || user.username, at: Date.now() });
+	}
 	chatWrite(db);
 	return { ok: true };
 });
 fastify.get("/api/chat/servers/:id/messages", async (req, reply) => {
-	const db = chatRead();
+	const db = ensureChat(chatRead());
 	const user = chatUser(req, db);
 	if (!user) return reply.code(401).send({ error: "Log in." });
 	const server = db.servers.find((s) => s.id === req.params.id);
-	if (!server || !(server.members || []).includes(user.id)) return reply.code(404).send({ error: "Server not found." });
+	if (!server || !server.members.includes(user.id)) return reply.code(404).send({ error: "Server not found." });
 	const channel = String(req.query.channel || "general");
-	const messages = db.messages.filter((m) => m.server === server.id && m.channel === channel).slice(-200);
+	const messages = decorateMessages(db, db.messages.filter((m) => m.server === server.id && m.channel === channel).slice(-200));
 	return { messages };
 });
 fastify.post("/api/chat/servers/:id/messages", async (req, reply) => {
-	const db = chatRead();
+	const db = ensureChat(chatRead());
 	const user = chatUser(req, db);
 	if (!user) return reply.code(401).send({ error: "Log in." });
 	const server = db.servers.find((s) => s.id === req.params.id);
-	if (!server || !(server.members || []).includes(user.id)) return reply.code(404).send({ error: "Server not found." });
+	if (!server || !server.members.includes(user.id)) return reply.code(404).send({ error: "Server not found." });
 	const text = String((req.body || {}).text || "").trim().slice(0, 2000);
 	if (!text) return reply.code(400).send({ error: "Empty message." });
 	const channel = String((req.body || {}).channel || "general").slice(0, 32) || "general";
+	const ch = server.channels.find((c) => c.id === channel);
+	if (!ch || ch.type !== "text") return reply.code(400).send({ error: "That is not a text channel." });
 	const message = { id: crypto.randomBytes(6).toString("hex"), server: server.id, channel, user: user.id, username: user.username, text, time: new Date().toISOString() };
 	db.messages.push(message);
 	db.messages = db.messages.slice(-4000);
