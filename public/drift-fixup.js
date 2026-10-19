@@ -246,7 +246,9 @@
       }
       if (MODELS.some(function (m) { return m && (m[1] === 'Drift 2.0' || m[0] === 'mistralai/mistral-large-4-0'); })) return;
       MODELS.unshift(['mistralai/mistral-large-4-0', 'Drift 2.0', 'Recommended · xKiro free · best', 'default', 'Mistral Large 4 via xKiro.', { code: 1, vision: 1, files: 0, think: 1, fast: 0 }]);
-      MODELS.splice(1, 0, ['qwen/qwen3-coder-plus:free', 'Drift Code', 'Recommended · coding · VS Code', 'default', 'Best free coding model for VS Code & JS Injector.', { code: 1, vision: 1, files: 0, think: 1, fast: 1 }]);
+      if (!MODELS.some(function (m) { return m && m[0] === 'qwen/qwen3-coder-plus:free'; })) {
+        MODELS.splice(1, 0, ['qwen/qwen3-coder-plus:free', 'Drift Code', 'Recommended · coding · VS Code', 'default', 'Best free coding model for VS Code & JS Injector.', { code: 1, vision: 1, files: 0, think: 1, fast: 1 }]);
+      }
       MODELS.splice(2, 0, ['mistralai/codestral-2508', 'Codestral', 'xKiro free · code', 'default', 'Mistral Codestral free on xKiro.', { code: 1, vision: 0, files: 0, think: 0, fast: 1 }]);
       MODELS.splice(3, 0, ['cohere/command-a-plus', 'Command A+', 'xKiro free', 'default', 'Cohere Command A+ free.', { code: 1, vision: 1, files: 0, think: 1, fast: 0 }]);
       MODELS.splice(4, 0, ['mistralai/mistral-medium-3.5', 'Mistral Medium 3.5', 'xKiro free', 'default', 'Mistral Medium 3.5 free.', { code: 1, vision: 1, files: 0, think: 1, fast: 1 }]);
@@ -399,26 +401,45 @@
     }, true);
   }
 
+  var SIZE_MAP = { xl: 3, lg: 2, sm: 0.7, xs: 0.5 };
+  function readSize(key) {
+    var v = 'lg';
+    try { v = localStorage.getItem(key) || 'lg'; } catch (e) {}
+    return SIZE_MAP[v] ? v : 'lg';
+  }
+  function applySize() {
+    var app = SIZE_MAP[readSize('wos:size-apps')];
+    var tb = SIZE_MAP[readSize('wos:size-tb')];
+    if (document.body.classList.contains('drift-cros')) {
+      tb *= 0.82;
+      app *= 0.86;
+    }
+    var tbh = Math.max(28, Math.round(38 * tb));
+    document.documentElement.style.setProperty('--drift-app', String(Math.round(app * 1000) / 1000));
+    document.documentElement.style.setProperty('--drift-tb', String(Math.round(tb * 1000) / 1000));
+    document.documentElement.style.setProperty('--tbh', tbh + 'px');
+    var st = document.getElementById('drift-size-style');
+    if (!st) { st = document.createElement('style'); st.id = 'drift-size-style'; document.head.appendChild(st); }
+    st.textContent =
+      '.icons .ico{width:calc(38px * var(--drift-app, 2))!important;font-size:calc(6px * var(--drift-app, 2))!important}' +
+      '.icons .ico i{width:calc(23px * var(--drift-app, 2))!important;height:calc(23px * var(--drift-app, 2))!important}' +
+      '#task .tb{height:calc(25px * var(--drift-tb, 2))!important;font-size:calc(7px * var(--drift-tb, 2))!important}' +
+      '#pins button .mi{width:calc(18px * var(--drift-tb, 2));height:calc(18px * var(--drift-tb, 2))}';
+    try { if (typeof layout === 'function') layout(); } catch (e) {}
+  }
   function setChromeOSAdapt(on) {
     try { localStorage.setItem('wos:cros-adapt', on ? '1' : '0'); } catch (e) {}
     document.body.classList.toggle('drift-cros', !!on);
     var task = document.getElementById('task');
-    if (on) {
-      document.body.classList.add('drift-tb-off');
-      if (task) task.classList.add('drift-hidden');
-    } else {
-      var keep = false;
-      try { keep = localStorage.getItem('wos:tb-hidden') === '1'; } catch (e) {}
-      if (!keep) {
-        document.body.classList.remove('drift-tb-off');
-        if (task) task.classList.remove('drift-hidden');
-      }
+    var keep = false;
+    try { keep = localStorage.getItem('wos:tb-hidden') === '1'; } catch (e) {}
+    if (!keep) {
+      document.body.classList.remove('drift-tb-off');
+      if (task) task.classList.remove('drift-hidden');
     }
     var st = document.getElementById('drift-cros-style');
-    if (!st) { st = document.createElement('style'); st.id = 'drift-cros-style'; document.head.appendChild(st); }
-    st.textContent = on
-      ? 'body.drift-cros .win:not(.max){width:min(620px,92vw)!important;height:min(400px,70vh)!important}body.drift-cros .win>.title{height:28px!important;min-height:28px!important;font-size:12px!important;padding:0 8px!important}body.drift-cros .tabs .tab{max-height:26px!important;font-size:11px!important;padding:2px 8px!important}body.drift-cros.drift-tb-off .win.max{inset:0!important;top:0!important;right:0!important;bottom:0!important;height:auto!important;width:auto!important}'
-      : '';
+    if (st) st.textContent = '';
+    applySize();
   }
   function setNoDev(on) {
     try { localStorage.setItem('wos:no-dev', on ? '1' : '0'); } catch (e) {}
@@ -587,12 +608,30 @@
       } catch (e) {}
     }, 1500);
   }
+  function chromeLaunch(label, url) {
+    return function (root) {
+      root.innerHTML =
+        '<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center">' +
+        '<b style="font-size:18px">' + label + '</b>' +
+        '<div style="max-width:440px;opacity:.8;font-size:13px">Opened in Google Chrome. This app does not use the proxy, so Google will not show “This browser or app may not be secure.”</div>' +
+        '<button type="button" data-open style="padding:10px 16px;border:0;border-radius:10px;background:#1a73e8;color:#fff;font-weight:650;cursor:pointer">Open in Chrome</button></div>';
+      function open() {
+        var w = window.open(url, 'drift-' + label.toLowerCase().replace(/[^a-z]+/g, ''), 'width=1200,height=800');
+        if (!w) {
+          var n = root.querySelector('[data-open]');
+          if (n) n.textContent = 'Allow pop-ups, then press Open in Chrome';
+        }
+      }
+      root.querySelector('[data-open]').onclick = open;
+      open();
+    };
+  }
   function wireLoginApps() {
     try {
       if (!window.XAPPS) return;
-      window.XAPPS.gmail = { n: 'Gmail', f: loginShell('Gmail', 'https://mail.google.com', 'wos:in:gmail', /mail\.google\.com\/mail\//i) };
-      window.XAPPS.classroom = { n: 'Classroom', f: loginShell('Classroom', 'https://classroom.google.com', 'wos:in:classroom', /classroom\.google\.com\/(u\/|c\/|h|w\/)/i) };
-      window.XAPPS.canva = { n: 'Canva', f: loginShell('Canva', 'https://www.canva.com', 'wos:in:canva', /canva\.com\/(?!login|signup)/i) };
+      window.XAPPS.gmail = { n: 'Gmail', f: chromeLaunch('Gmail', 'https://mail.google.com/mail/u/0/#inbox') };
+      window.XAPPS.classroom = { n: 'Classroom', f: chromeLaunch('Classroom', 'https://classroom.google.com/') };
+      window.XAPPS.canva = { n: 'Canva', f: chromeLaunch('Canva', 'https://www.canva.com/') };
       window.XAPPS.roblox = { n: 'Roblox', f: robloxShell };
     } catch (e) {}
   }
@@ -697,7 +736,7 @@
       '<p><b>BareMux no respondió / Scramjet server is down or blocked.</b> Render is waking up or the school network blocks the WebSocket. Wait 30–60 seconds, stay on the tab, then press Retry. Do not reload in a loop.</p>' +
       '<p><b>Some apps stay blank for a few minutes.</b> The proxy is still connecting. Wait. TikTok, Gemini and Gimkit need that first connection.</p>' +
       '<p><b>ServiceWorker script evaluation failed.</b> Hard refresh. If it stays, close the tab and open Drift again. Do not use an old bookmark to a Vercel preview.</p>' +
-      '<p><b>Robot check fails inside Classroom, Gmail, Canva or Roblox.</b> Use Sign in (popup). The check runs on Google’s real page, not inside the proxy. The login bar stays until you mark I signed in.</p>' +
+      '<p><b>Gmail, Classroom and Canva.</b> They open in Google Chrome, not the proxy, so sign-in is not blocked with “this browser may not be secure.” Roblox still has Verify you are human, which opens the real Roblox page.</p>' +
       '<p><b>SharedWorker / cdn.jsdelivr.net/baremux.</b> Unity cannot use a worker from another site. Drift blocks that CDN and uses /baremux on the same origin. If the game still fails, use Open outside proxy (Unity).</p>' +
       '<h3>Windows</h3>' +
       '<p><b>Same proxy errors as ChromeOS</b> (BareMux, cold start, Service Worker). Same fix: wait, then Ctrl+Shift+R.</p>' +
@@ -706,10 +745,22 @@
       '<p><b>Page looks like an old version after refresh or Wi-Fi drop.</b> The browser kept an old script. Ctrl+Shift+R. Drift sends the page with no-store so the next load is the current commit.</p>' +
       '<p><b>Task bar or title bar gone.</b> Move the mouse to the bottom-left corner (task bar) or top-left corner (title). The Show button only appears there and disappears after you click it.</p>' +
       '<h3>Both</h3>' +
-      '<p><b>Wayground bot asks for a Gemini API key.</b> It should not. Re-open Wayground so the mod re-injects. Only the Enable AI switch is used. Answers go through the Drift worker.</p>' +
+      '<p><b>Wayground.</b> It opens in Google Chrome with no proxy so sign-in works. The mod in the Drift window uses Drift 2.1. Inject runs only if Chrome allows it; otherwise use Read screen.</p>' +
       '<p><b>Protector did nothing.</b> Turn it on in Settings. A website cannot see the Linewize icon, the teacher popup, the ChromeOS camera dot, the fan, or the address-bar spinner. Drift can see Class started, Streaming screen, Heartbeat sent, and screenshot uploads only if they show up in this page (console, a request, or a socket). It does not leave just because the extension is installed.</p>';
     el.querySelector('[data-x]').onclick = function () { el.remove(); };
     document.body.appendChild(el);
+  }
+  function sizeRadios(name, current) {
+    if (!SIZE_MAP[current]) current = 'lg';
+    var items = [
+      ['xl', 'Extra large (x3 larger than the normal apps)'],
+      ['lg', 'Large (x2 larger than normal apps) (Default)'],
+      ['sm', 'Small (x0.7 smaller than the normal apps)'],
+      ['xs', 'Extra small (0.5x smaller than your apps)']
+    ];
+    return items.map(function (it) {
+      return '<label style="display:flex;gap:8px;align-items:flex-start;margin:4px 0;cursor:pointer"><input type="radio" name="' + name + '" value="' + it[0] + '"' + (current === it[0] ? ' checked' : '') + ' style="margin-top:3px"/> <span>' + it[1] + '</span></label>';
+    }).join('');
   }
   function openSettingsPanel() {
     var old = document.getElementById('drift-settings-panel');
@@ -720,13 +771,16 @@
       'position:fixed;right:16px;bottom:70px;z-index:2147483001;width:min(380px,94vw);max-height:min(75vh,560px);overflow:auto;' +
       'background:#1c1c24;color:#eee;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px 16px;' +
       'box-shadow:0 12px 40px rgba(0,0,0,.45);font:13px/1.45 system-ui,sans-serif';
-    var liquidOn = false, eduOn = false, gk = 'lazy', kbHide = 'F9', kbClass = 'F10';
+    var liquidOn = false, eduOn = false, gk = 'lazy', kbHide = 'F9', kbClass = 'F10', appSize = 'lg', tbSize = 'lg', orbOn = true;
     try {
       liquidOn = localStorage.getItem('wos:liquid-glass') === '1';
       eduOn = localStorage.getItem('wos:edu-mode') === '1';
       gk = localStorage.getItem('wos:gimkit-injector') || 'lazy';
       kbHide = localStorage.getItem('wos:kb-hide') || 'F9';
       kbClass = localStorage.getItem('wos:kb-class') || 'F10';
+      appSize = localStorage.getItem('wos:size-apps') || 'lg';
+      tbSize = localStorage.getItem('wos:size-tb') || 'lg';
+      orbOn = localStorage.getItem('wos:ai-orb') !== '0';
     } catch (e) {}
     var opts = '';
     Object.keys(GIMKIT_INJECTORS).forEach(function (k) {
@@ -752,8 +806,16 @@
       '</div></div>' +
       '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px">' +
       '<div style="flex:1"><b>Adapt Drift OS for ChromeOS</b>' +
-      '<div style="opacity:.75;font-size:12px;margin-top:4px">Adapts all apps and minimizes task bar and apps so you have space and settings so Drift OS on Chromebook doesnt Lag.</div></div>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Makes the taskbar a little smaller so a maximized app uses that space, and makes windows that are not fullscreen a little smaller. The taskbar stays on screen.</div></div>' +
       switchHTML('drift-cros-sw', localStorage.getItem('wos:cros-adapt') === '1') + '</div>' +
+      '<div style="margin-bottom:14px;border-top:1px solid rgba(255,255,255,.08);padding-top:12px"><b>Customize Task Bar and Apps Size</b>' +
+      '<div style="opacity:.75;font-size:12px;margin:4px 0 8px">Apps and the task bar are separate. Large is the normal Drift size.</div>' +
+      '<div style="font-size:12px;font-weight:650;margin:6px 0">Apps</div>' + sizeRadios('size-apps', appSize) +
+      '<div style="font-size:12px;font-weight:650;margin:8px 0 4px">Task bar</div>' + sizeRadios('size-tb', tbSize) + '</div>' +
+      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px">' +
+      '<div style="flex:1"><b>AI assistant</b>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">A circular Drift logo. Tap it and Gemini 3.6 looks at your screen. Google Lens cannot be started from a page on a managed Chromebook.</div></div>' +
+      switchHTML('drift-orb-sw', orbOn) + '</div>' +
       '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px">' +
       '<div style="flex:1"><b>NO dev apps</b>' +
       '<div style="opacity:.75;font-size:12px;margin-top:4px">This deletes VS Code, JS Injector and GitHub.</div></div>' +
@@ -804,6 +866,17 @@
     });
     wireSwitch(panel.querySelector('#drift-edu-sw'), function (on) { setEducationMode(on); });
     wireSwitch(panel.querySelector('#drift-cros-sw'), function (on) { setChromeOSAdapt(on); });
+    panel.querySelectorAll('input[name="size-apps"],input[name="size-tb"]').forEach(function (r) {
+      r.onchange = function () {
+        if (!r.checked) return;
+        try { localStorage.setItem(r.name === 'size-apps' ? 'wos:size-apps' : 'wos:size-tb', r.value); } catch (e) {}
+        applySize();
+      };
+    });
+    wireSwitch(panel.querySelector('#drift-orb-sw'), function (on) {
+      try { localStorage.setItem('wos:ai-orb', on ? '1' : '0'); } catch (e) {}
+      installOrb();
+    });
     wireSwitch(panel.querySelector('#drift-nodev-sw'), function (on) { setNoDev(on); });
     wireSwitch(panel.querySelector('#drift-delapps-sw'), function (on) {
       if (on && confirm('Delete all created apps?')) deleteCreatedApps();
@@ -857,6 +930,72 @@
     var drift = '<img src="/drift-mark.png" alt="" width="28" height="28" style="width:28px;height:28px;border-radius:7px;display:block;object-fit:cover">';
     start.innerHTML = which === 'mac' ? mac : which === 'win' ? win : drift;
   }
+  function installOrb() {
+    var on = true;
+    try { on = localStorage.getItem('wos:ai-orb') !== '0'; } catch (e) {}
+    var btn = document.getElementById('drift-orb');
+    if (!on) { if (btn) btn.remove(); var old = document.getElementById('drift-orb-panel'); if (old) old.remove(); return; }
+    if (!btn) {
+      btn = document.createElement('button');
+      btn.id = 'drift-orb';
+      btn.type = 'button';
+      btn.title = 'AI assistant';
+      btn.setAttribute('aria-label', 'AI assistant');
+      btn.style.cssText = 'position:fixed;z-index:2147483000;right:18px;bottom:calc(var(--tbh, 76px) + 18px);width:68px;height:68px;padding:0;border-radius:50%;overflow:hidden;border:2px solid rgba(255,255,255,.45);background:#071226;box-shadow:0 8px 24px rgba(0,0,0,.4);cursor:pointer';
+      btn.innerHTML = '<img src="/drift-mark.png" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;transform:scale(1.18)">';
+      btn.onclick = function (e) { e.stopPropagation(); orbAsk(); };
+      document.body.appendChild(btn);
+    }
+  }
+  async function orbAsk() {
+    var panel = document.getElementById('drift-orb-panel');
+    if (!panel) {
+      panel = document.createElement('div');
+      panel.id = 'drift-orb-panel';
+      panel.style.cssText = 'position:fixed;right:18px;bottom:calc(var(--tbh, 76px) + 96px);z-index:2147483002;width:min(360px,92vw);max-height:42vh;overflow:auto;background:#14141c;color:#eee;border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:12px;font:13px/1.45 system-ui,sans-serif;box-shadow:0 12px 40px rgba(0,0,0,.45)';
+      document.body.appendChild(panel);
+    }
+    panel.textContent = 'Pick this screen in the share dialog. Gemini 3.6 will look at it. Google Lens cannot be opened onto your screen from a page.';
+    var stream;
+    try { stream = await navigator.mediaDevices.getDisplayMedia({ video: { displaySurface: 'monitor' }, audio: false }); }
+    catch (e) { panel.textContent = 'Screen share was blocked, so the assistant cannot see the screen. Allow the prompt and tap the Drift ball again.'; return; }
+    var video = document.createElement('video');
+    video.srcObject = stream; video.muted = true;
+    try { await video.play(); } catch (e) {}
+    await new Promise(function (res) { if (video.videoWidth) res(); else video.onloadeddata = function () { res(); }; setTimeout(res, 700); });
+    var w = Math.min(1280, video.videoWidth || 1280);
+    var h = Math.max(1, Math.round(w * ((video.videoHeight || 720) / (video.videoWidth || 1280))));
+    var canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(video, 0, 0, w, h);
+    stream.getTracks().forEach(function (t) { try { t.stop(); } catch (e) {} });
+    var q = prompt('What do you want to know about this screen?', 'What is on my screen?');
+    if (!q) { panel.textContent = 'Cancelled.'; return; }
+    panel.textContent = 'Gemini 3.6 is looking…';
+    var data = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
+    var ep = 'https://holy-firefly-982c.fert0480.workers.dev';
+    try { if (typeof EP === 'function') ep = String(EP()).replace(/\/$/, ''); } catch (e) {}
+    try {
+      var r = await fetch(ep + '/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'google/gemini-3.6-flash',
+          max_tokens: 2048,
+          messages: [{ role: 'user', content: [
+            { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: data } },
+            { type: 'text', text: q }
+          ]}],
+          system: 'You are Gemini 3.6 inside Drift. The user is showing you a screenshot of their screen. Answer only about what is visible.'
+        })
+      });
+      var j = await r.json();
+      var text = ((j.content || []).map(function (x) { return x.text || ''; }).join('')) || (j.error && (j.error.message || JSON.stringify(j.error))) || 'No answer.';
+      panel.textContent = text;
+    } catch (e) {
+      panel.textContent = String(e.message || e);
+    }
+  }
   function boot() {
     applyBrandLogos();
     try { applyHomeLogo(localStorage.getItem('wos:home-btn') || 'drift'); } catch (e) { applyHomeLogo('drift'); }
@@ -867,11 +1006,13 @@
     styleCavemanAsSwitch();
     bindCustomKeybinds();
     installCustomAppContextMenu();
+    try { applySize(); } catch (e) {}
     try {
       if (localStorage.getItem('wos:edu-mode') === '1') setEducationMode(true);
       if (localStorage.getItem('wos:cros-adapt') === '1') setChromeOSAdapt(true);
       if (localStorage.getItem('wos:no-dev') === '1') setNoDev(true);
     } catch (e) {}
+    try { installOrb(); } catch (e) {}
     try { installSettingsButton(); } catch (e) {}
     try { installProtector(); } catch (e) {}
     if (typeof installChromeUI === 'function') try { installChromeUI(); } catch (e) {}

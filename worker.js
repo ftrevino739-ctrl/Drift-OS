@@ -24,7 +24,7 @@ const MODEL_MAP = {
 };
 
 const XKIRO_FALLBACKS = ["mistralai/ministral-14b", "qwen/qwen3.7-flash:free", "qwen/qwen3.8-max:free"];
-const BASE = "Eres el asistente de Drift. Haz lo que el usuario te pida. Dilo con claridad.";
+const BASE = "Eres el asistente de Drift. Haz lo que el usuario te pida. Dilo con claridad. Si piden código, escribe el archivo completo, sin cortes, sin puntos suspensivos y sin decir que el resto continúa.";
 
 function cors(res) {
   const h = new Headers(res.headers);
@@ -37,53 +37,87 @@ function j(o, s) {
   s = s || 200;
   return cors(new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json" } }));
 }
+function partToOpenAI(p) {
+  if (typeof p === "string") return { type: "text", text: p };
+  if (!p || typeof p !== "object") return null;
+  if (p.type === "text") return { type: "text", text: p.text || "" };
+  if (p.type === "image_url") return p;
+  if (p.type === "image" && p.source && p.source.data) {
+    var mime = p.source.media_type || "image/jpeg";
+    return { type: "image_url", image_url: { url: "data:" + mime + ";base64," + p.source.data } };
+  }
+  if (p.inline_data && p.inline_data.data) {
+    return { type: "image_url", image_url: { url: "data:" + (p.inline_data.mime_type || "image/jpeg") + ";base64," + p.inline_data.data } };
+  }
+  return null;
+}
 function toOpenAIMessages(messages, system) {
   const out = [{ role: "system", content: system || BASE }];
   for (const m of messages || []) {
     const role = m.role === "assistant" ? "assistant" : "user";
     let content = m.content;
     if (Array.isArray(content)) {
-      content = content.map(function (p) {
-        if (typeof p === "string") return p;
-        if (p.type === "text") return p.text || "";
-        return "";
-      }).filter(Boolean).join("\n");
+      content = content.map(partToOpenAI).filter(Boolean);
+      if (content.length === 1 && content[0].type === "text") content = content[0].text;
     }
-    if (content) out.push({ role: role, content: String(content) });
+    if (content && (typeof content === "string" ? content : content.length)) out.push({ role: role, content: content });
   }
   return out;
 }
-async function callGroq(env, model, messages) {
+function textOnly(messages) {
+  return (messages || []).map(function (m) {
+    if (!Array.isArray(m.content)) return m;
+    var t = m.content.map(function (p) { return p.type === "text" ? (p.text || "") : "[image]"; }).join("\n");
+    return { role: m.role, content: t };
+  });
+}
+function tokenBudget(raw, requested) {
+  var n = Number(requested);
+  if (n >= 256) return Math.min(n, 32768);
+  var blob = "";
+  try { blob = JSON.stringify(raw || "").slice(0, 8000); } catch (e) {}
+  if (/\b(1000|2000|3000|mil l[ií]neas|thousand lines|archivo completo|full script|todo el c[oó]digo|entire file)\b/i.test(blob)) return 32768;
+  return 4096;
+}
+async function postJSON(url, headers, body) {
+  const r = await fetch(url, { method: "POST", headers: headers, body: JSON.stringify(body) });
+  let d = {};
+  try { d = await r.json(); } catch (e) { d = { error: { message: "Bad response" } }; }
+  return { ok: r.ok, status: r.status, d: d };
+}
+async function callGroq(env, model, messages, maxTokens) {
   const key = (env && env.GROQ_KEY) || EMBEDDED.GROQ;
-  const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: { Authorization: "Bearer " + key, "Content-Type": "application/json" },
-    body: JSON.stringify({ model: model, messages: messages, temperature: 0.7, max_tokens: 4096 }),
+  return postJSON("https://api.groq.com/openai/v1/chat/completions", { Authorization: "Bearer " + key, "Content-Type": "application/json" }, {
+    model: model, messages: textOnly(messages), temperature: 0.35, max_tokens: Math.min(maxTokens || 4096, 8192),
   });
-  return { ok: r.ok, status: r.status, d: await r.json() };
 }
-async function callOpenRouter(env, model, messages) {
+async function callOpenRouter(env, model, messages, maxTokens) {
   const key = (env && env.OPENROUTER_KEY) || EMBEDDED.OPENROUTER;
-  const r = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: "Bearer " + key,
-      "Content-Type": "application/json",
-      "HTTP-Referer": "https://github.com/ftrevino739-ctrl/Drift-OS",
-      "X-Title": "Drift-OS",
-    },
-    body: JSON.stringify({ model: model, messages: messages, temperature: 0.7, max_tokens: 4096 }),
-  });
-  return { ok: r.ok, status: r.status, d: await r.json() };
+  const headers = {
+    Authorization: "Bearer " + key,
+    "Content-Type": "application/json",
+    "HTTP-Referer": "https://github.com/ftrevino739-ctrl/Drift-OS",
+    "X-Title": "Drift-OS",
+  };
+  var cap = Math.min(maxTokens || 4096, 32768);
+  var last = await postJSON("https://openrouter.ai/api/v1/chat/completions", headers, { model: model, messages: messages, temperature: 0.35, max_tokens: cap });
+  if (!last.ok && (last.status === 400 || last.status === 422) && cap > 8192) {
+    last = await postJSON("https://openrouter.ai/api/v1/chat/completions", headers, { model: model, messages: messages, temperature: 0.35, max_tokens: 8192 });
+  }
+  return last;
 }
-async function callXkiro(env, model, messages) {
+async function callXkiro(env, model, messages, maxTokens) {
   const key = (env && env.XKIRO_KEY) || EMBEDDED.XKIRO;
-  const r = await fetch("https://api.xkiro.com/v1/chat/completions", {
-    method: "POST",
-    headers: { Authorization: "Bearer " + key, "Content-Type": "application/json" },
-    body: JSON.stringify({ model: model, messages: messages, temperature: 0.7, max_tokens: 4096 }),
-  });
-  return { ok: r.ok, status: r.status, d: await r.json() };
+  const headers = { Authorization: "Bearer " + key, "Content-Type": "application/json" };
+  var caps = [Math.min(maxTokens || 4096, 32768)];
+  if (caps[0] > 16384) caps.push(16384);
+  if (caps[0] > 8192) caps.push(8192);
+  var last = null;
+  for (var i = 0; i < caps.length; i++) {
+    last = await postJSON("https://api.xkiro.com/v1/chat/completions", headers, { model: model, messages: messages, temperature: 0.35, max_tokens: caps[i] });
+    if (last.ok || (last.status !== 400 && last.status !== 422)) return last;
+  }
+  return last;
 }
 function extractText(d) {
   if (!d) return "";
@@ -91,6 +125,12 @@ function extractText(d) {
   if (d.content && Array.isArray(d.content)) return d.content.map(function (x) { return x.text || ""; }).join("");
   if (typeof d.content === "string") return d.content;
   return "";
+}
+function routeModel(name) {
+  if (MODEL_MAP[name]) return MODEL_MAP[name];
+  if (/^(google\/gemini|qwen\/|mistralai\/|cohere\/)/.test(name)) return { p: "xkiro", m: name };
+  if (name.indexOf("/") >= 0) return { p: "openrouter", m: name };
+  return { p: "groq", m: "llama-3.3-70b-versatile" };
 }
 
 export default {
@@ -100,17 +140,19 @@ export default {
     try {
       if (u.pathname === "/ai" && request.method === "POST") {
         const b = await request.json();
+        const budget = tokenBudget(b.messages, b.max_tokens);
         const msgs = toOpenAIMessages(b.messages, (b.system && String(b.system)) || BASE);
         const name = String(b.model || "groq-llama");
-        let route = MODEL_MAP[name];
-        if (!route && name.indexOf("/") >= 0) route = { p: "openrouter", m: name };
-        if (!route) route = { p: "groq", m: "llama-3.3-70b-versatile" };
+        let route = routeModel(name);
         const tried = [];
         let last = null;
         const attempts = [{ p: route.p, m: route.m }];
         if (route.p === "groq") {
           attempts.push({ p: "openrouter", m: "meta-llama/llama-3.3-70b-instruct:free" });
           attempts.push({ p: "xkiro", m: XKIRO_FALLBACKS[0] });
+        } else if (route.p === "xkiro") {
+          attempts.push({ p: "xkiro", m: "qwen/qwen3-coder-plus:free" });
+          attempts.push({ p: "openrouter", m: route.m });
         } else if (route.p === "openrouter") {
           attempts.push({ p: "groq", m: "llama-3.3-70b-versatile" });
         }
@@ -118,9 +160,9 @@ export default {
           const a = attempts[i];
           tried.push(a.p + ":" + a.m);
           try {
-            if (a.p === "groq") last = await callGroq(env, a.m, msgs);
-            else if (a.p === "openrouter") last = await callOpenRouter(env, a.m, msgs);
-            else last = await callXkiro(env, a.m, msgs);
+            if (a.p === "groq") last = await callGroq(env, a.m, msgs, budget);
+            else if (a.p === "openrouter") last = await callOpenRouter(env, a.m, msgs, budget);
+            else last = await callXkiro(env, a.m, msgs, budget);
             if (last.ok) {
               const text = extractText(last.d);
               if (text) return j({ content: [{ type: "text", text: text }], model: a.m, provider: a.p });

@@ -394,7 +394,9 @@
         'cursor:pointer;padding:0 10px;box-shadow:0 4px 16px rgba(0,0,0,.4)}' +
         '#drift-tb-show{left:0;bottom:0;height:32px;border-radius:0 10px 0 0;border-bottom:0;border-left:0}' +
         '#drift-title-show{left:0;top:0;height:32px;border-radius:0 0 10px 0;border-top:0;border-left:0}' +
-        '#drift-tb-show.reveal,#drift-title-show.reveal{display:flex!important}' +'#drift-tb-hide,.drift-title-hide-btn{display:none!important}';
+        '#drift-tb-show.reveal,#drift-title-show.reveal{display:flex!important}' +
+        '#drift-tb-hide{display:none!important}' +
+        '.drift-title-hide-btn{display:inline-flex!important;align-items:center;justify-content:center}';
       document.head.appendChild(style);
     }
 
@@ -471,15 +473,17 @@
       btn.setAttribute('aria-label', 'Hide title bar');
       btn.textContent = '▴';
       btn.style.cssText =
-        'height:26px;min-width:26px;padding:0 7px;margin-right:6px;border:0;border-radius:8px;' +
-        'background:rgba(255,255,255,.12);color:inherit;font-size:12px;cursor:pointer;flex:none;order:-1';
+        'height:26px;min-width:26px;padding:0 7px;margin-right:2px;border:0;border-radius:8px;' +
+        'background:rgba(255,255,255,.12);color:inherit;font-size:12px;cursor:pointer;flex:none';
       btn.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
       btn.onclick = function (e) {
         e.stopPropagation();
         win.classList.add('drift-title-off');
         ensureTitleShow();
       };
-      title.insertBefore(btn, title.firstChild);
+      var firstWb = title.querySelector('.wb');
+      if (firstWb) title.insertBefore(btn, firstWb);
+      else title.appendChild(btn);
     }
 
     function scanWindows() {

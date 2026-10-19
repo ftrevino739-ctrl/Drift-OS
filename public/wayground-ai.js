@@ -12,7 +12,7 @@
     } catch (e) {}
     return 'https://holy-firefly-982c.fert0480.workers.dev/ai';
   })();
-  var DRIFT_MODEL = 'mistralai/mistral-large-4-0'; // vision+reason via worker
+  var DRIFT_MODEL = 'google/gemini-3.8-flash'; // Drift 2.1
 
   var GM_BOOT =
     "window.GM_getValue=function(k,d){try{var v=localStorage.getItem('GM_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}};" +
@@ -92,66 +92,91 @@
 
   window.waygroundApp = async function waygroundApp(root) {
     root.innerHTML =
-      '<div style="display:flex;flex-direction:column;height:100%;min-height:0">' +
-      '<div style="padding:8px 10px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between">' +
-      '<span style="font-weight:600">Wayground</span>' +
-      '<button type="button" id="wg-inj" style="padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:var(--omni);color:inherit;cursor:pointer">Re-inject mod</button></div>' +
-      '<div id="wg-status" style="padding:6px 10px;font-size:12px;background:rgba(255,255,255,.04);border-bottom:1px solid var(--line)">Loading Wayground + mod menu…</div>' +
-      '<div class="sjt" style="flex:1;min-height:0;position:relative"></div></div>';
-    var box = root.querySelector('.sjt');
-    var st = root.querySelector('#wg-status');
-    var frameObj = null;
+      '<div style="display:flex;flex-direction:column;height:100%;min-height:0;background:#11131a;color:#eee">' +
+      '<div style="padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;flex-wrap:wrap;gap:8px;align-items:center">' +
+      '<b>Wayground</b><span style="font-size:12px;opacity:.75">Drift 2.1 · no proxy</span></div>' +
+      '<div style="padding:10px 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)">' +
+      '<label style="font-size:12px;display:flex;gap:6px;align-items:center"><input type="checkbox" checked disabled/> AI · Drift 2.1</label>' +
+      '<button type="button" data-open style="padding:6px 12px;border-radius:8px;border:0;background:#7c5cff;color:#fff;cursor:pointer">Open in Chrome</button>' +
+      '<button type="button" data-read style="padding:6px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.16);background:transparent;color:#fff;cursor:pointer">Read screen</button>' +
+      '<button type="button" data-inj style="padding:6px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.16);background:transparent;color:#fff;cursor:pointer">Inject mod</button></div>' +
+      '<div data-status style="padding:8px 12px;font-size:12px;opacity:.85">Opening wayground.com in Google Chrome…</div>' +
+      '<pre data-ans style="flex:1;margin:0;padding:12px;overflow:auto;white-space:pre-wrap;font:13px/1.45 ui-monospace,monospace"></pre></div>';
+    var st = root.querySelector('[data-status]');
+    var ans = root.querySelector('[data-ans]');
+    var popup = null;
     var cheatSrc = null;
+
+    function openChrome() {
+      popup = window.open('https://wayground.com/', 'drift-wayground', 'width=1200,height=800');
+      if (!popup) st.textContent = 'Allow pop-ups, then press Open in Chrome. Wayground does not use the proxy.';
+      else st.textContent = 'Wayground is open in Chrome so sign-in works. The mod uses Drift 2.1. Inject only works if the page allows it; otherwise use Read screen.';
+    }
 
     async function ensureCheat() {
       if (cheatSrc) return cheatSrc;
-      st.textContent = 'Downloading Wayground cheat…';
+      st.textContent = 'Downloading mod menu…';
       cheatSrc = await loadCheat();
       return cheatSrc;
     }
 
-    function tryInject() {
-      if (!frameObj || !frameObj.frame) return;
-      try {
-        var w = frameObj.frame.contentWindow;
-        var d = frameObj.frame.contentDocument || (w && w.document);
-        if (d) injectInto(d, cheatSrc, st);
-      } catch (e) {
-        st.textContent = 'Page loaded · use Re-inject when ready: ' + (e.message || e);
-      }
-    }
-
-    async function go() {
+    async function tryInject() {
       try {
         await ensureCheat();
-        st.textContent = 'Opening wayground.com…';
-        if (typeof window.openProxied === 'function') {
-          frameObj = await window.openProxied('https://wayground.com', box);
-        } else if (typeof window.proxySite === 'function') {
-          window.proxySite(box, 'https://wayground.com', 'Wayground');
-        } else {
-          box.innerHTML = '<iframe src="https://wayground.com" style="width:100%;height:100%;border:0"></iframe>';
+        if (!popup || popup.closed) openChrome();
+        var doc = popup && popup.document;
+        if (doc && injectInto(doc, cheatSrc, st)) {
+          st.textContent = 'Mod menu injected · Drift 2.1';
+          return;
         }
-        if (frameObj && frameObj.frame) {
-          frameObj.frame.addEventListener('load', function () {
-            setTimeout(tryInject, 800);
-            setTimeout(tryInject, 2500);
-            setTimeout(tryInject, 5000);
-          });
-        }
-        setTimeout(tryInject, 2000);
+      } catch (e) {}
+      st.textContent = 'Chrome blocked injecting into wayground.com (that needs the proxy, which breaks sign-in). Use Read screen — Drift 2.1 looks at the quiz.';
+    }
+
+    async function readScreen() {
+      var stream;
+      try { stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false }); }
+      catch (e) { st.textContent = 'Screen share was blocked. Allow it and press Read screen again.'; return; }
+      var video = document.createElement('video');
+      video.srcObject = stream; video.muted = true;
+      try { await video.play(); } catch (e) {}
+      await new Promise(function (res) { if (video.videoWidth) res(); else video.onloadeddata = res; setTimeout(res, 800); });
+      var w = Math.min(1280, video.videoWidth || 1280);
+      var h = Math.round(w * ((video.videoHeight || 720) / (video.videoWidth || 1280)));
+      var canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(video, 0, 0, w, h);
+      stream.getTracks().forEach(function (t) { t.stop(); });
+      var data = canvas.toDataURL('image/jpeg', 0.72).split(',')[1];
+      st.textContent = 'Drift 2.1 is reading the screen…';
+      ans.textContent = '';
+      var ep = DRIFT_AI;
+      try {
+        var r = await fetch(ep, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: DRIFT_MODEL,
+            max_tokens: 2048,
+            messages: [{ role: 'user', content: [
+              { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: data } },
+              { type: 'text', text: 'This is a screenshot of a quiz. Reply with the correct option text only, then one short reason.' }
+            ]}]
+          })
+        });
+        var j = await r.json();
+        var text = ((j.content || []).map(function (x) { return x.text || ''; }).join('')) || (j.error && (j.error.message || j.error)) || 'No answer.';
+        ans.textContent = text;
+        st.textContent = 'Answer from Drift 2.1';
       } catch (e) {
         st.textContent = String(e.message || e);
       }
     }
 
-    root.querySelector('#wg-inj').onclick = function () {
-      ensureCheat().then(function () { tryInject(); }).catch(function (e) {
-        st.textContent = String(e.message || e);
-      });
-    };
-
-    go();
+    root.querySelector('[data-open]').onclick = openChrome;
+    root.querySelector('[data-inj]').onclick = function () { tryInject(); };
+    root.querySelector('[data-read]').onclick = function () { readScreen(); };
+    openChrome();
   };
 
   function wire() {

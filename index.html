@@ -345,6 +345,13 @@ h1{font-weight:500;margin:0 0 8px}
 .vsapp .vsbar select,.vsapp .vsbar button{height:30px;border-radius:6px;border:1px solid #444;background:#333;color:#ddd;padding:0 10px;font-size:12px;cursor:pointer}
 .vsapp .vsbar button:hover{background:#404040}
 .vsapp #monaco-host{flex:1;min-height:0}
+.vsapp .vstabs{display:flex;gap:4px;flex:1;min-width:0;overflow-x:auto}
+.vsapp .vstab{display:flex;align-items:center;gap:6px;height:28px;padding:0 8px;border-radius:6px;background:#2d2d2d;color:#ccc;border:1px solid transparent;cursor:pointer;font:12px/1 system-ui,sans-serif}
+.vsapp .vstab.on{background:#1e1e1e;color:#fff;border-color:#007acc}
+.vsapp .vstab .dot{width:8px;height:8px;border-radius:50%;flex:none;display:block}
+.vsapp .vstab .x{border:0;background:transparent;color:#aaa;cursor:pointer;font-size:14px;line-height:1;padding:0 2px}
+.vsapp .vsout{max-height:140px;overflow:auto;margin:0;padding:8px 10px;background:#111;color:#d4d4d4;font:12px/1.4 ui-monospace,monospace;flex:none;white-space:pre-wrap}
+.vsapp .vsbar [data-a="run"]{background:#007acc;color:#fff;border-color:#007acc;min-width:36px;font-weight:700}
 .vsapp .vsstatus{height:22px;background:#007acc;color:#fff;font-size:11px;display:flex;align-items:center;padding:0 10px;flex:none;gap:12px}
 
 /* Movies */
@@ -607,7 +614,10 @@ const small=()=>innerWidth<700&&!document.body.classList.contains('drift-cros');
 function openApp(app){
   const id='w'+(++n),w=document.createElement('div');
   w.className='win';w.id=id;
-  const __cros=document.body.classList.contains('drift-cros');const W=Math.min(innerWidth-20,app==='calc'?300:(__cros?620:860)),H=Math.min(innerHeight-90,app==='calc'?480:(__cros?400:560));
+  const sc=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--drift-app'))||2;
+  const tbh=parseInt(getComputedStyle(document.documentElement).getPropertyValue('--tbh'))||76;
+  const baseW=app==='calc'?150:430, baseH=app==='calc'?240:280;
+  const W=Math.max(260,Math.min(innerWidth-16,Math.round(baseW*sc))),H=Math.max(200,Math.min(innerHeight-tbh-16,Math.round(baseH*sc)));
   w.style.cssText=`width:${W}px;height:${H}px;left:${Math.max(10,(innerWidth-W)/2+n*18-40)}px;top:${50+n*18}px;z-index:${++z}`;
   const name='<span class="mi">'+IC[app]+'</span> '+{calc:'Calculator',browser:'Browser',ai:'AI',yt:'YouTube'}[app];
   w.innerHTML=`<div class="title"><b style="display:flex;align-items:center;gap:8px">${name}</b><button class="wb" data-a="min" aria-label="Minimize">–</button><button class="wb" data-a="max" aria-label="Maximize">▢</button><button class="wb x" data-a="x" aria-label="Close">✕</button></div><div class="body"></div>`;
@@ -870,10 +880,28 @@ function youtube(root){
       b.append(im,t,c);b.onclick=()=>play(it.id);g.appendChild(b);
     });
   }
+  function ytPlayBox(box, id){
+    const url='https://www.youtube.com/watch?v='+id;
+    box.innerHTML='<div class="ym">Opening YouTube through Drift…</div>';
+    (async()=>{
+      try{
+        if(typeof sjInit==='function'){
+          await sjInit();
+          const f=SJC.createFrame();
+          f.frame.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#000';
+          box.innerHTML='';
+          box.appendChild(f.frame);
+          f.go(url);
+          return;
+        }
+      }catch(e){}
+      box.innerHTML='<iframe src="https://www.youtube-nocookie.com/embed/'+id+'?autoplay=1&rel=0" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0;background:#000"></iframe>';
+    })();
+  }
   function play(id){
-    yb.innerHTML=`<button class="ybk">← Volver</button><div class="yp"><iframe allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>`;
-    $('iframe',yb).src='https://www.youtube.com/embed/'+id+'?autoplay=1&rel=0';
+    yb.innerHTML='<button class="ybk">← Volver</button><div class="yp" style="position:relative;height:min(70vh,640px)"></div>';
     $('.ybk',yb).onclick=()=>{if(last.length)grid(last);else setTab(mode)};
+    ytPlayBox($('.yp',yb), id);
   }
   async function showChannel(channelId){
     yb.innerHTML='<div class="ym">Loading channel…</div>';
@@ -915,27 +943,21 @@ function youtube(root){
     const addItems=list=>{
       list.forEach((it,idx)=>{
         const s=document.createElement('div');s.className='ss';
-        const f=document.createElement('iframe');
-        f.allow='autoplay; encrypted-media; picture-in-picture; fullscreen';
-        f.referrerPolicy='strict-origin-when-cross-origin';
-        f.setAttribute('allowfullscreen','');
-        const src='https://www.youtube.com/embed/'+it.id+'?autoplay=0&mute=1&playsinline=1&rel=0&loop=1&playlist='+it.id+'&enablejsapi=1';
-        if(items.length+idx<2)f.src=src;else f.dataset.src=src;
+        const frameBox=document.createElement('div');
+        frameBox.className='yt-proxy';
+        frameBox.dataset.yt=it.id;
+        frameBox.style.cssText='position:absolute;inset:0;background:#000';
         const meta=document.createElement('div');meta.className='meta';
         meta.innerHTML='<b>'+dec(it.title)+'</b><small>@'+dec(it.channel)+'</small>';
         const side=document.createElement('div');side.className='side';
         side.innerHTML='<button type="button" title="Like">♥</button><button type="button" title="Comentarios">💬</button><button type="button" title="Compartir">↗</button>';
-        s.append(f,meta,side);feed.appendChild(s);
+        s.append(frameBox,meta,side);feed.appendChild(s);
       });
       items=items.concat(list);
       const io=new IntersectionObserver(ents=>{
         ents.forEach(en=>{
-          const fr=en.target.querySelector('iframe');if(!fr)return;
-          if(en.isIntersecting){
-            if(fr.dataset.src){fr.src=fr.dataset.src;delete fr.dataset.src}
-            // autoplay attempt
-            try{fr.contentWindow&&fr.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}','*')}catch(e){}
-          }
+          const fr=en.target.querySelector('.yt-proxy');if(!fr||fr.dataset.on)return;
+          if(en.isIntersecting){fr.dataset.on='1';ytPlayBox(fr, fr.dataset.yt)}
         });
       },{root:feed,threshold:0.6});
       feed.querySelectorAll('.ss').forEach(s=>io.observe(s));
@@ -984,6 +1006,7 @@ async function go(){
 }
 
 const MODELS=[
+['qwen/qwen3-coder-plus:free','Drift Code','Recommended · coding · default','default','Best free coding model. Writes complete scripts and new VS Code files.',{code:1,vision:1,files:0,think:1,fast:1}],
 ['groq-llama','Drift 1.0','Recommended · Groq · fast','default','Code, fast chat, reasoning. Great for general tasks and programming.',{code:1,vision:0,files:0,think:0,fast:1}],
 ['or-deepseek','Drift 1.1','Recommended · OpenRouter','default','Deep reasoning. Shows thinking steps. Strong for hard problems and code.',{code:1,vision:0,files:0,think:1,fast:0}],
 ['or-gemini','Drift 1.2','Recommended · OpenRouter free','default','Multimodal-capable routing, quick answers, balanced quality.',{code:1,vision:1,files:0,think:0,fast:1}],
@@ -1005,7 +1028,7 @@ const EFF=['Low','Medium','High'],EFI={Low:'Reply very briefly and directly.',Me
 function ai(root){
   root.innerHTML=`<div class="ai"><div class="ah"><button class="hb" data-a="menu" aria-label="Chats">☰</button><b class="at">New chat</b><button class="hb" data-a="new" aria-label="New chat">＋</button></div><div class="ai-tools"><button type="button" data-t="caveman" title="Minimal answers only">Caveman</button><button type="button" data-t="instr" title="Custom instructions">Instructions</button></div><div class="am"></div><div class="cmp"><textarea rows="1" placeholder="Ask anything — try: open Browser" aria-label="Message"></textarea><div class="thumbs"></div><div class="cr"><button class="rb" data-a="att" aria-label="Adjuntar fotos">＋</button><input type="file" accept="image/*" multiple hidden><button class="pill" data-a="mdl"></button><span style="flex:1"></span><button class="rb mic" data-a="mic" aria-label="Dictar"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg></button><button class="rb snd" data-a="send" aria-label="Enviar">↑</button></div></div><div class="drw"><div class="dh"><b>Chats</b><button class="hb" data-a="cl" aria-label="Close">✕</button></div><button class="nw" data-a="new">＋ Chat nuevo</button><div class="cl"></div></div><div class="sheet"></div></div>`;
   const am=$('.am',root),ta=$('textarea',root),th=$('.thumbs',root),pill=$('.pill',root),sd=$('.snd',root),drw=$('.drw',root),cl=$('.cl',root),sh=$('.sheet',root),fi=$('input[type=file]',root),mic=$('[data-a=mic]',root),title=$('.at',root);
-  let hist=[],curId=null,busy=false,sample=null,ctl=null,pend=[],model='groq-llama',eff='Medium',caveman=false,customInstr=LS.get('wos:cinst','');
+  let hist=[],curId=null,busy=false,sample=null,ctl=null,pend=[],model='qwen/qwen3-coder-plus:free',eff='Medium',caveman=false,customInstr=LS.get('wos:cinst','');
   const cur=()=>S.d.chats.find(c=>c.id===curId);
   const setPill=()=>{const M=MODELS.find(m=>m[0]===model)||MODELS[0];pill.innerHTML=M[1]+' <span>'+eff+'</span>'};
   root.querySelectorAll('[data-t]').forEach(b=>{
@@ -1169,7 +1192,8 @@ function ai(root){
       'You are Drift, the assistant inside this web OS. Reply in the user language.',
       caveman?'CAVEMAN MODE: answer in the fewest words possible. No filler. No markdown tables unless asked.':'',
       customInstr?'User custom instructions: '+customInstr:'',
-      'If the user asks to open an app (Browser, YouTube, Camera, Music, Discord, Gmail, etc.), reply with a single line exactly: OPEN_APP:<id> where id is browser|yt|cam|mus|discord|gmail|ig|tt|classroom|canva|roblox|movies|code|calc|ai',
+      'If the user asks for code, write the complete code. Never stop halfway, never say the rest continues, and never replace lines with "...".',
+      'Only when the user explicitly asks to open or launch an app, reply with a single line exactly: OPEN_APP:<id> where id is browser|yt|cam|mus|discord|gmail|ig|tt|classroom|canva|roblox|movies|code|calc|ai',
       EFI[eff]||''
     ].filter(Boolean).join(' ');
     const input=mine.map((m,i)=>i===0?{role:m.role,content:pre+'\n\n'+m.content}:m);
@@ -1223,7 +1247,7 @@ function ai(root){
       }
       // merge system-ish first user preamble is already in messages
       const url='https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent?key='+encodeURIComponent(GKEY);
-      const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents,generationConfig:{maxOutputTokens:2048}}),signal:o.signal});
+      const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents,generationConfig:{maxOutputTokens:8192}}),signal:o.signal});
       const j=await r.json();
       if(!r.ok||j.error)throw {message:(j.error&&j.error.message)||j.error||'Error de Gemini'};
       const text=((j.candidates||[])[0]&&(j.candidates[0].content||{}).parts||[]).map(x=>x.text||'').join('')||'';
@@ -1421,15 +1445,18 @@ addEventListener('pointermove',e=>{
   dg.g.style.left=e.clientX-28+'px';dg.g.style.top=e.clientY-28+'px';
   const el=document.elementFromPoint(e.clientX,e.clientY);$('#task').classList.toggle('dt',!!(el&&el.closest('#task')))});
 /* posición libre en el escritorio (con cuadrícula) */
-const CW=84,CH=96,GX=12,top0=()=>(parseFloat(getComputedStyle(document.documentElement).paddingTop)||0)+14;
-const dims=()=>({cols:Math.max(1,Math.floor((innerWidth-GX)/CW)),rows:Math.max(1,Math.floor((innerHeight-top0()-8)/CH))});
+const GX=12,top0=()=>(parseFloat(getComputedStyle(document.documentElement).paddingTop)||0)+14;
+const gridStep=()=>{const sc=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--drift-app'))||2;return {CW:Math.round(42*sc),CH:Math.round(48*sc)}};
+const dims=()=>{const g=gridStep();return {cols:Math.max(1,Math.floor((innerWidth-GX)/g.CW)),rows:Math.max(1,Math.floor((innerHeight-top0()-8)/g.CH))}};
 function layout(){
-  const D=S.d,{cols,rows}=dims(),P=D.pos=D.pos||{},cells={},at={},t=top0();
-  const maxX=Math.max(8,innerWidth-76),maxY=Math.max(t+8,innerHeight-(document.body.classList.contains('drift-tb-off')?12:70)-80);
+  const D=S.d,{cols,rows}=dims(),P=D.pos=D.pos||{},cells={},at={},t=top0(),g=gridStep();
+  const tbh=parseInt(getComputedStyle(document.documentElement).getPropertyValue('--tbh'))||76;
+  const iconW=Math.round(38*(parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--drift-app'))||2));
+  const maxX=Math.max(8,innerWidth-iconW),maxY=Math.max(t+8,innerHeight-(document.body.classList.contains('drift-tb-off')?12:tbh)-iconW);
   D.desk.forEach(a=>{const p=P[a];if(p&&p[2]===1){at[a]=p;return}if(p){const c=Math.min(Math.max(p[0],0),cols-1),r=Math.min(Math.max(p[1],0),rows-1);if(!cells[c+','+r]){cells[c+','+r]=a;at[a]=[c,r]}}});
   let c=0,r=0;
   D.desk.forEach(a=>{if(at[a])return;while(cells[c+','+r]){r++;if(r>=rows){r=0;c++}}if(c>=cols)c=0;cells[c+','+r]=a;at[a]=[c,r]});
-  document.querySelectorAll('.icons .ico').forEach(b=>{const p=at[b.dataset.app];if(!p)return;if(p[2]===1){b.style.left=Math.max(4,Math.min(maxX,p[0]))+'px';b.style.top=Math.max(t,Math.min(maxY,p[1]))+'px'}else{b.style.left=GX+p[0]*CW+'px';b.style.top=t+p[1]*CH+'px'}})}
+  document.querySelectorAll('.icons .ico').forEach(b=>{const p=at[b.dataset.app];if(!p)return;if(p[2]===1){b.style.left=Math.max(4,Math.min(maxX,p[0]))+'px';b.style.top=Math.max(t,Math.min(maxY,p[1]))+'px'}else{b.style.left=GX+p[0]*g.CW+'px';b.style.top=t+p[1]*g.CH+'px'}})}
 const R1=rend;rend=()=>{R1();layout()};
 addEventListener('resize',layout);
 const endDrag=(e,ok)=>{
@@ -1734,32 +1761,91 @@ function movies(root){
 }
 
 function vscode(root){
+  const langOf=name=>{
+    const ext=(String(name).split('.').pop()||'').toLowerCase();
+    return ({js:'javascript',mjs:'javascript',cjs:'javascript',ts:'typescript',tsx:'typescript',jsx:'javascript',html:'html',htm:'html',css:'css',py:'python',lua:'lua',luau:'lua',json:'json',md:'markdown',sql:'sql',sh:'shell',bash:'shell',txt:'plaintext',xml:'xml',yml:'yaml',yaml:'yaml'})[ext]||'plaintext';
+  };
+  const dotOf=name=>{let h=0;const s=String(name);for(let i=0;i<s.length;i++)h=(h*33+s.charCodeAt(i))>>>0;return ['#c586c0','#4fc1ff','#dcdcaa','#ce9178','#6a9955','#569cd6','#d7ba7d'][h%7]};
+  let files=[];
+  try{const saved=JSON.parse(localStorage.getItem('wos:vscode-files')||'[]');if(Array.isArray(saved)&&saved.length)files=saved.filter(f=>f&&f.name)}catch(e){}
+  if(!files.length)files=[{name:'main.js',text:'// Drift VS Code\nconsole.log("hello");\n'}];
+  let active=0,editor=null,pending=[];
+  const saveFiles=()=>{try{if(editor&&files[active])files[active].text=editor.getValue();localStorage.setItem('wos:vscode-files',JSON.stringify(files))}catch(e){}};
   root.innerHTML=`<div class="vsapp">
     <div class="vsbar">
-      <select id="vslang" aria-label="Lenguaje">
-        <option value="javascript">JavaScript</option>
-        <option value="typescript">TypeScript</option>
-        <option value="html">HTML</option>
-        <option value="css">CSS</option>
-        <option value="python">Python</option>
-        <option value="lua">Lua</option>
-        <option value="json">JSON</option>
-        <option value="markdown">Markdown</option>
-        <option value="sql">SQL</option>
-        <option value="shell">Shell</option>
-      </select>
-      <button type="button" data-a="run">Ejecutar</button>
-      <button type="button" data-a="copy">Copy</button>
-      <button type="button" data-a="dl">Download</button>
-      <button type="button" data-a="fmt">Formato</button>
+      <button type="button" data-a="run" title="Run" aria-label="Run">▶</button>
+      <button type="button" data-a="add" title="New file">+</button>
+      <button type="button" data-a="del" title="Delete file">Delete</button>
+      <div class="vstabs" data-tabs></div>
     </div>
     <div id="monaco-host"></div>
-    <div class="vsstatus"><span>Monaco Editor</span><span id="vspos">Ln 1, Col 1</span></div>
+    <pre class="vsout" data-out></pre>
+    <div class="vsstatus"><span data-lang></span><span id="vspos">Ln 1, Col 1</span></div>
   </div>`;
-  const host=$('#monaco-host',root);
+  const host=$('#monaco-host',root), tabs=root.querySelector('[data-tabs]'), out=root.querySelector('[data-out]');
   host.innerHTML='<div class="ym" style="color:#888;padding:20px">Cargando Monaco (VS Code)…</div>';
-  let editor=null;
-  const boot=()=>{
+  function paint(){
+    tabs.innerHTML='';
+    files.forEach((f,i)=>{
+      const b=document.createElement('button');
+      b.type='button';b.className='vstab'+(i===active?' on':'');
+      const dot=document.createElement('i');dot.className='dot';dot.style.background=dotOf(f.name);
+      const label=document.createElement('span');label.textContent=f.name;
+      const x=document.createElement('button');
+      x.type='button';x.className='x';x.textContent='×';x.setAttribute('aria-label','Delete '+f.name);
+      x.onclick=e=>{e.stopPropagation();removeAt(i)};
+      b.append(dot,label,x);
+      b.onclick=()=>show(i);
+      tabs.appendChild(b);
+    });
+    const langEl=root.querySelector('[data-lang]');
+    if(langEl&&files[active])langEl.textContent=files[active].name;
+  }
+  function show(i){
+    if(editor&&files[active])files[active].text=editor.getValue();
+    active=Math.max(0,Math.min(i,files.length-1));
+    paint();
+    if(!editor||!window.monaco)return;
+    const f=files[active];
+    const model=monaco.editor.createModel(f.text||'',langOf(f.name));
+    const old=editor.getModel();
+    editor.setModel(model);
+    if(old&&old!==model)old.dispose();
+    saveFiles();
+  }
+  function addFile(name,text){
+    name=String(name||'file.js').replace(/[\\/]/g,'').trim()||'file.js';
+    if(!/\.[A-Za-z0-9]+$/.test(name))name+='.js';
+    let n=name,k=2;
+    while(files.some(f=>f.name===n)){const dot=name.lastIndexOf('.');const base=dot>0?name.slice(0,dot):name;const ext=dot>0?name.slice(dot):'';n=base+'-'+k+ext;k++}
+    files.push({name:n,text:text||''});
+    saveFiles();
+    if(editor)show(files.length-1);else{active=files.length-1;paint()}
+    return n;
+  }
+  function removeAt(i){
+    if(editor&&files[active])files[active].text=editor.getValue();
+    files.splice(i,1);
+    if(!files.length)files.push({name:'untitled.js',text:''});
+    if(active>=files.length)active=files.length-1;
+    saveFiles();
+    if(editor)show(active);else paint();
+  }
+  window.DriftVS={
+    addFile:function(name,text){if(!editor){pending.push([name,text]);return name}return addFile(name,text)},
+    getFiles:function(){saveFiles();return files.map(f=>({name:f.name,text:f.text}))}
+  };
+  function create(){
+    host.innerHTML='';
+    const f=files[active]||files[0];
+    editor=monaco.editor.create(host,{value:f.text||'',language:langOf(f.name),theme:'vs-dark',automaticLayout:true,fontSize:14,minimap:{enabled:true},scrollBeyondLastLine:false,tabSize:2});
+    editor.onDidChangeCursorPosition(e=>{const pos=e.position;$('#vspos',root).textContent='Ln '+pos.lineNumber+', Col '+pos.column});
+    editor.onDidChangeModelContent(()=>{if(files[active])files[active].text=editor.getValue();saveFiles()});
+    paint();
+    const queued=pending.splice(0);
+    queued.forEach(pair=>addFile(pair[0],pair[1]));
+  }
+  function bootMonaco(){
     if(window.require&&window.monaco){create();return}
     if(document.querySelector('script[data-monaco]')){
       const wait=setInterval(()=>{if(window.monaco){clearInterval(wait);create()}},100);
@@ -1775,74 +1861,49 @@ function vscode(root){
     };
     s.onerror=()=>{host.innerHTML='<div class="ym" style="color:#f88;padding:20px">No se pudo cargar Monaco desde el CDN.</div>'};
     document.head.appendChild(s);
-  };
-  const samples={
-    javascript:'// WebOS VS Code\nfunction hello(name){\n  console.log("Hola, " + name);\n  return name.length;\n}\nhello("WebOS");\n',
-    html:'<!DOCTYPE html>\n<html>\n<head><meta charset="utf-8"><title>Demo</title>\n<style>body{font-family:system-ui;padding:24px}</style>\n</head>\n<body>\n  <h1>Hola WebOS</h1>\n  <p>Edita y pulsa Ejecutar.</p>\n</body>\n</html>\n',
-    python:'# Python (vista)\ndef fib(n):\n    a, b = 0, 1\n    for _ in range(n):\n        print(a)\n        a, b = b, a + b\nfib(10)\n',
-    lua:'-- Lua\nlocal function greet(name)\n  print("Hola, " .. name)\nend\ngreet("WebOS")\n',
-    css:'body {\n  margin: 0;\n  font-family: system-ui;\n  background: #111;\n  color: #eee;\n}\n',
-    json:'{\n  "name": "webos",\n  "version": "1.0"\n}\n',
-    markdown:'# WebOS\n\nEditor **Monaco** (mismo motor que VS Code).\n',
-    typescript:'const msg: string = "Hola";\nconsole.log(msg);\n',
-    sql:'SELECT id, name FROM users WHERE active = 1;\n',
-    shell:'#!/bin/bash\necho "Hola WebOS"\n'
-  };
-  function create(){
-    host.innerHTML='';
-    const lang=$('#vslang',root).value;
-    editor=monaco.editor.create(host,{
-      value:samples[lang]||samples.javascript,
-      language:lang,
-      theme:'vs-dark',
-      automaticLayout:true,
-      fontSize:14,
-      minimap:{enabled:true},
-      scrollBeyondLastLine:false,
-      tabSize:2
-    });
-    editor.onDidChangeCursorPosition(e=>{
-      const p=e.position;$('#vspos',root).textContent='Ln '+p.lineNumber+', Col '+p.column;
-    });
-    $('#vslang',root).onchange=()=>{
-      const l=$('#vslang',root).value;
-      monaco.editor.setModelLanguage(editor.getModel(),l);
-      if(!editor.getValue().trim()||Object.values(samples).includes(editor.getValue()))editor.setValue(samples[l]||'');
-    };
   }
-  root.querySelector('[data-a="copy"]').onclick=async()=>{
-    if(!editor)return;
-    try{await navigator.clipboard.writeText(editor.getValue())}catch{}
+  root.querySelector('[data-a="add"]').onclick=()=>{
+    const name=prompt('File name with extension, for example notes.py, data.json or app.js','file.js');
+    if(!name)return;
+    addFile(name,'');
   };
-  root.querySelector('[data-a="dl"]').onclick=()=>{
-    if(!editor)return;
-    const l=$('#vslang',root).value;
-    const ext={javascript:'js',typescript:'ts',html:'html',css:'css',python:'py',lua:'lua',json:'json',markdown:'md',sql:'sql',shell:'sh'}[l]||'txt';
-    const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([editor.getValue()],{type:'text/plain'}));
-    a.download='code.'+ext;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2e3);
-  };
-  root.querySelector('[data-a="fmt"]').onclick=()=>{
-    if(!editor)return;
-    editor.getAction('editor.action.formatDocument')?.run();
+  root.querySelector('[data-a="del"]').onclick=()=>{
+    if(!files[active])return;
+    if(!confirm('Delete '+files[active].name+'?'))return;
+    removeAt(active);
   };
   root.querySelector('[data-a="run"]').onclick=()=>{
-    if(!editor)return;
-    const l=$('#vslang',root).value, code=editor.getValue();
-    if(l==='html'){
-      const w=window.open('','_blank');if(!w)return alert('Permite ventanas emergentes');
-      w.document.write(code);w.document.close();return;
-    }
-    if(l==='javascript'||l==='typescript'){
-      try{const r=Function('"use strict";\n'+code)();console.log('VS run:',r);alert('Ejecutado. Revisa la consola del navegador (F12).')}
-      catch(e){alert('Error: '+e.message)}
+    if(!editor||!files[active])return;
+    files[active].text=editor.getValue();
+    const name=files[active].name, code=files[active].text, lang=langOf(name);
+    out.textContent='';
+    if(lang==='html'){
+      const frame=document.createElement('iframe');
+      frame.setAttribute('sandbox','allow-scripts allow-modals');
+      frame.style.cssText='width:100%;height:180px;border:0;background:#fff';
+      out.appendChild(frame);
+      frame.srcdoc=code;
       return;
     }
-    alert('Ejecutar en el navegador solo para JS/TS/HTML. Para '+l+' usa copiar/descargar.');
+    if(lang==='javascript'||lang==='typescript'){
+      const logs=[];
+      const fake={
+        log:function(){logs.push(Array.prototype.map.call(arguments,function(x){return String(x)}).join(' '))},
+        error:function(){logs.push('error: '+Array.prototype.map.call(arguments,function(x){return String(x)}).join(' '))},
+        warn:function(){logs.push('warn: '+Array.prototype.map.call(arguments,function(x){return String(x)}).join(' '))}
+      };
+      try{
+        const r=Function('console','"use strict";\n'+code).call(window,fake);
+        if(r!==undefined)logs.push(String(r));
+        out.textContent=logs.join('\n')||'Ran. No console output.';
+      }catch(e){out.textContent='Error: '+(e&&e.message||e)}
+      return;
+    }
+    out.textContent='Run works for .js, .ts and .html. '+name+' stays in the editor.';
   };
-  boot();
+  paint();
+  bootMonaco();
 }
-
-
 
 function noahChat(root){
   const rooms=['general','homework','random','voice-text'];

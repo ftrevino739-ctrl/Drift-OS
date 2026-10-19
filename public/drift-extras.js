@@ -201,12 +201,9 @@
   }
 
   function waygroundApp(root) {
-    proxyInject(
-      root,
-      'https://wayground.com',
-      'Wayground',
-      'https://raw.githubusercontent.com/ByOscarPINE/Wayground-Quizizz-Cheat/main/wayground.user.js'
-    );
+    if (typeof window.waygroundApp === 'function') return window.waygroundApp(root);
+    root.innerHTML = '<div style="padding:16px">Opening Wayground in Chrome…</div>';
+    window.open('https://wayground.com/', 'drift-wayground', 'width=1200,height=800');
   }
 
   function whatsappApp(root) {
@@ -346,7 +343,7 @@
       side.innerHTML =
         '<div style="padding:10px;font-weight:700">AI</div>' +
         '<textarea data-ai placeholder="Ask AI to write code…" style="flex:1;margin:0 8px 8px;border:1px solid #444;border-radius:8px;background:#1e1e1e;color:#eee;padding:8px"></textarea>' +
-        '<button type="button" data-gen style="margin:0 8px 8px;padding:8px;border:0;border-radius:8px;background:#007acc;color:#fff;cursor:pointer">Insert code</button>' +
+        '<button type="button" data-gen style="margin:0 8px 8px;padding:8px;border:0;border-radius:8px;background:#007acc;color:#fff;cursor:pointer">New file</button>' +
         '<pre data-out style="margin:0 8px 8px;font-size:11px;color:#9cdcfe;white-space:pre-wrap"></pre>';
       var main = document.createElement('div');
       main.style.cssText = 'flex:1;min-width:0;min-height:0;display:flex;flex-direction:column';
@@ -357,23 +354,36 @@
         var q = side.querySelector('[data-ai]').value.trim();
         var out = side.querySelector('[data-out]');
         if (!q) return;
-        out.textContent = 'Generating…';
+        out.textContent = 'Writing a new file…';
         try {
-          var ep = (window.DDG0 || 'https://holy-firefly-982c.fert0480.workers.dev').replace(/\/$/, '');
+          var ep = (typeof EP === 'function' ? EP() : (window.DDG0 || 'https://holy-firefly-982c.fert0480.workers.dev')).replace(/\/$/, '');
           var r = await fetch(ep + '/ai', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              model: 'groq-llama',
-              messages: [{ role: 'user', content: 'Write code only, no markdown.\n' + q }],
-              system: 'You are a coding assistant inside Drift VS Code.'
+              model: 'qwen/qwen3-coder-plus:free',
+              max_tokens: 32768,
+              messages: [{ role: 'user', content: q }],
+              system: 'You are the coding assistant inside Drift VS Code. When the user asks you to create something, reply with one or more new files. For each file use exactly:\nFILE: name.ext\n```\ncomplete code\n```\nPick the real extension (.py .json .js .ts .lua .luau .html .css .md .sql). Write the COMPLETE file. Never truncate, never say the rest continues.'
             })
           });
           var j = await r.json();
-          var text = ((j.content || []).map(function (x) { return x.text || ''; }).join('') || '');
-          var ta = main.querySelector('textarea');
-          if (ta) ta.value = text.replace(/^```[a-z]*\n?/i, '').replace(/```$/, '');
-          out.textContent = ta ? 'Inserted.' : 'No editor field found.';
+          var text = ((j.content || []).map(function (x) { return x.text || ''; }).join('')) || (j.error && (j.error.message || String(j.error))) || '';
+          var re = /FILE:\s*([^\n]+)\n```[^\n]*\n([\s\S]*?)```/g, m, made = [], hit;
+          while ((m = re.exec(text))) made.push([m[1].trim(), m[2].replace(/\s+$/, '')]);
+          if (!made.length) {
+            var fence = text.match(/```([a-z0-9.+#-]*)\n([\s\S]*?)```/i);
+            var ext = 'js';
+            if (fence) {
+              var map = { python: 'py', py: 'py', javascript: 'js', js: 'js', typescript: 'ts', ts: 'ts', json: 'json', lua: 'lua', luau: 'lua', html: 'html', css: 'css', sql: 'sql', markdown: 'md', md: 'md', shell: 'sh', bash: 'sh' };
+              ext = map[(fence[1] || '').toLowerCase()] || 'js';
+              made.push(['ai-' + Date.now() + '.' + ext, fence[2].replace(/\s+$/, '')]);
+            } else if (text) made.push(['ai-' + Date.now() + '.txt', text]);
+          }
+          if (window.DriftVS && made.length) {
+            made.forEach(function (pair) { window.DriftVS.addFile(pair[0], pair[1]); });
+            out.textContent = 'Created ' + made.map(function (p) { return p[0]; }).join(', ');
+          } else out.textContent = text ? 'Editor not ready yet.' : 'No code returned.';
         } catch (e) {
           out.textContent = String(e.message || e);
         }
