@@ -602,12 +602,12 @@ ai:'<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="11" fill="#d97757"
 document.querySelectorAll('[data-ic]').forEach(e=>e.innerHTML=IC[e.dataset.ic]);
 IC.yt='<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="11" fill="#fff"/><rect x="6" y="12" width="36" height="24" rx="8" fill="#ff0033"/><path d="M20 18l10 6-10 6z" fill="#fff"/></svg>';
 let z=10,n=0;const wins={};
-const small=()=>innerWidth<700;
+const small=()=>innerWidth<700&&!document.body.classList.contains('drift-cros');
 
 function openApp(app){
   const id='w'+(++n),w=document.createElement('div');
   w.className='win';w.id=id;
-  const W=Math.min(innerWidth-20,app==='calc'?340:860),H=Math.min(innerHeight-90,app==='calc'?640:560);
+  const __cros=document.body.classList.contains('drift-cros');const W=Math.min(innerWidth-20,app==='calc'?300:(__cros?620:860)),H=Math.min(innerHeight-90,app==='calc'?480:(__cros?400:560));
   w.style.cssText=`width:${W}px;height:${H}px;left:${Math.max(10,(innerWidth-W)/2+n*18-40)}px;top:${50+n*18}px;z-index:${++z}`;
   const name='<span class="mi">'+IC[app]+'</span> '+{calc:'Calculator',browser:'Browser',ai:'AI',yt:'YouTube'}[app];
   w.innerHTML=`<div class="title"><b style="display:flex;align-items:center;gap:8px">${name}</b><button class="wb" data-a="min" aria-label="Minimize">–</button><button class="wb" data-a="max" aria-label="Maximize">▢</button><button class="wb x" data-a="x" aria-label="Close">✕</button></div><div class="body"></div>`;
@@ -1244,7 +1244,7 @@ const S={user:null,d:null};
 const defD=()=>({pins:['calc','browser','ai','yt'],desk:['calc','browser','ai','yt'],chats:[]});
 const save=()=>LS.set('wos:u:'+(S.user||'_g'),S.d);
 const H=async(u,p)=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(u+':'+p)))].map(b=>b.toString(16).padStart(2,'0')).join('');
-function loadU(u){S.user=u;S.d=LS.get('wos:u:'+(u||'_g'),null)||defD();['pins','desk'].forEach(k=>S.d[k]=(S.d[k]||[]).filter(a=>APPS[a]));S.d.chats=S.d.chats||[];if(!S.d.v2){S.d.v2=1;['pins','desk'].forEach(k=>{if(!S.d[k].includes('yt'))S.d[k].push('yt')});save()}LS.set('wos:cur',u);rend()}
+function loadU(u){S.user=u;S.d=LS.get('wos:u:'+(u||'_g'),null)||defD();['pins','desk'].forEach(k=>S.d[k]=(S.d[k]||[]).filter(a=>!!a));S.d.chats=S.d.chats||[];if(!S.d.v2){S.d.v2=1;['pins','desk'].forEach(k=>{if(!S.d[k].includes('yt'))S.d[k].push('yt')});save()}LS.set('wos:cur',u);rend()}
 function sw(u){Object.keys(wins).forEach(k=>{wins[k].w.remove();wins[k].tb.remove();delete wins[k]});loadU(u)}
 function tiles(){const f=($('#lq').value||'').toLowerCase(),D=S.d;
   $('#apps').innerHTML=Object.keys(APPS).filter(a=>APPS[a].toLowerCase().includes(f)).map(a=>`<div class="tl" draggable="true" data-d="${a}"><button data-app="${a}"><span class="mi">${IC[a]}</span>${APPS[a]}</button></div>`).join('')}
@@ -1255,12 +1255,12 @@ function rend(){const D=S.d,nm=S.user||'Invitado';
 function tog(){const m=$('#menu');m.classList.toggle('show');if(m.classList.contains('show')){$('#lq').value='';tiles();$('#lq').focus()}}
 function modal(h){const m=document.createElement('div');m.className='modal';m.innerHTML='<div class="box">'+h+'</div>';document.body.appendChild(m);return m}
 function acct(){
-  const m=modal(S.user?`<b>${esc(S.user)}</b><button data-x="sw">Cambiar de cuenta</button><button data-x="out">Close sesión</button>`:`<b>Invitado</b><button class="pri" data-x="sw">Iniciar sesión o crear cuenta</button>`);
+  const m=modal(S.user?`<b>${esc(S.user)}</b><button data-x="sw">Cambiar de cuenta</button><button data-x="out">Close sesión</button>`:`<b>Invitado</b><button class="pri" data-x="sw">Drift OS</button>`);
   m.onclick=e=>{const x=e.target.dataset.x;if(e.target===m||x)m.remove();if(x==='sw')authUI();if(x==='out')sw(null)};
 }
 function authUI(mode='in'){
   const up=mode==='up',m=document.createElement('div');m.className='auth';
-  m.innerHTML=`<button class="ax" aria-label="Close">✕</button><div class="ab"><div class="lg">Web<span>OS</span></div><h2>${up?'Crea tu cuenta':'Bienvenido de nuevo'}</h2><p>${up?'Regístrate para guardar tus chats.':'Inicia sesión para guardar tus chats.'}</p><input id="au" placeholder="Usuario" autocomplete="username" autocapitalize="none"><input id="ap" type="password" placeholder="Contraseña" autocomplete="${up?'new-password':'current-password'}">${up?'<input id="ac" type="password" placeholder="Confirmar contraseña" autocomplete="new-password">':''}<small id="am">Las cuentas se guardan solo en este dispositivo.</small><button class="go">${up?'Registrarme':'Iniciar sesión'}</button><a class="sw">${up?'¿Ya tienes cuenta? Inicia sesión':'¿Necesitas una cuenta? Regístrate'}</a></div>`;
+  m.innerHTML=`<button class="ax" aria-label="Close">✕</button><div class="ab"><div class="lg">Web<span>OS</span></div><h2>Drift OS</h2><p>${up?'Regístrate para guardar tus chats.':'Inicia sesión para guardar tus chats.'}</p><input id="au" placeholder="Usuario" autocomplete="username" autocapitalize="none"><input id="ap" type="password" placeholder="Contraseña" autocomplete="${up?'new-password':'current-password'}">${up?'<input id="ac" type="password" placeholder="Confirmar contraseña" autocomplete="new-password">':''}<small id="am">Las cuentas se guardan solo en este dispositivo.</small><button class="go">${up?'Registrarme':'Iniciar sesión'}</button><a class="sw">${up?'¿Ya tienes cuenta? Inicia sesión':'¿Necesitas una cuenta? Regístrate'}</a></div>`;
   document.body.appendChild(m);
   const ok=async()=>{
     const u=$('#au',m).value.trim().toLowerCase(),p=$('#ap',m).value,msg=$('#am',m),U=LS.get('wos:users',{});
@@ -1422,13 +1422,14 @@ addEventListener('pointermove',e=>{
   const el=document.elementFromPoint(e.clientX,e.clientY);$('#task').classList.toggle('dt',!!(el&&el.closest('#task')))});
 /* posición libre en el escritorio (con cuadrícula) */
 const CW=84,CH=96,GX=12,top0=()=>(parseFloat(getComputedStyle(document.documentElement).paddingTop)||0)+14;
-const dims=()=>({cols:Math.max(1,Math.floor((innerWidth-GX)/CW)),rows:Math.max(1,Math.floor((innerHeight-top0()-92)/CH))});
+const dims=()=>({cols:Math.max(1,Math.floor((innerWidth-GX)/CW)),rows:Math.max(1,Math.floor((innerHeight-top0()-8)/CH))});
 function layout(){
   const D=S.d,{cols,rows}=dims(),P=D.pos=D.pos||{},cells={},at={},t=top0();
-  D.desk.forEach(a=>{if(P[a]){const c=Math.min(Math.max(P[a][0],0),cols-1),r=Math.min(Math.max(P[a][1],0),rows-1);if(!cells[c+','+r]){cells[c+','+r]=a;at[a]=[c,r]}}});
+  const maxX=Math.max(8,innerWidth-76),maxY=Math.max(t+8,innerHeight-(document.body.classList.contains('drift-tb-off')?12:70)-80);
+  D.desk.forEach(a=>{const p=P[a];if(p&&p[2]===1){at[a]=p;return}if(p){const c=Math.min(Math.max(p[0],0),cols-1),r=Math.min(Math.max(p[1],0),rows-1);if(!cells[c+','+r]){cells[c+','+r]=a;at[a]=[c,r]}}});
   let c=0,r=0;
-  D.desk.forEach(a=>{if(at[a])return;while(cells[c+','+r]){r++;if(r>=rows){r=0;c++}}cells[c+','+r]=a;at[a]=[c,r]});
-  document.querySelectorAll('.icons .ico').forEach(b=>{const p=at[b.dataset.app];if(p){b.style.left=GX+p[0]*CW+'px';b.style.top=t+p[1]*CH+'px'}})}
+  D.desk.forEach(a=>{if(at[a])return;while(cells[c+','+r]){r++;if(r>=rows){r=0;c++}}if(c>=cols)c=0;cells[c+','+r]=a;at[a]=[c,r]});
+  document.querySelectorAll('.icons .ico').forEach(b=>{const p=at[b.dataset.app];if(!p)return;if(p[2]===1){b.style.left=Math.max(4,Math.min(maxX,p[0]))+'px';b.style.top=Math.max(t,Math.min(maxY,p[1]))+'px'}else{b.style.left=GX+p[0]*CW+'px';b.style.top=t+p[1]*CH+'px'}})}
 const R1=rend;rend=()=>{R1();layout()};
 addEventListener('resize',layout);
 const endDrag=(e,ok)=>{
@@ -1443,14 +1444,14 @@ const endDrag=(e,ok)=>{
     if(from>-1){L.splice(from,1);if(from<at)at--}
     L.splice(at,0,d.a);
   }else{
-    const {cols,rows}=dims(),P=S.d.pos=S.d.pos||{},busy={};
-    document.querySelectorAll('.icons .ico').forEach(b=>{const c=Math.round((parseFloat(b.style.left)-GX)/CW),r=Math.round((parseFloat(b.style.top)-top0())/CH);P[b.dataset.app]=[c,r];if(b.dataset.app!==d.a)busy[c+','+r]=1});
-    let c=Math.min(cols-1,Math.max(0,Math.round((e.clientX-GX-CW/2)/CW))),r=Math.min(rows-1,Math.max(0,Math.round((e.clientY-top0()-CH/2)/CH)));
-    if(busy[c+','+r]){let best=null,bd=1e9;for(let cc=0;cc<cols;cc++)for(let rr=0;rr<rows;rr++)if(!busy[cc+','+rr]){const dd=(cc-c)**2+(rr-r)**2;if(dd<bd){bd=dd;best=[cc,rr]}}if(best){c=best[0];r=best[1]}}
-    P[d.a]=[c,r];if(!S.d.desk.includes(d.a))S.d.desk.push(d.a);
+    const t=top0(),P=S.d.pos=S.d.pos||{};
+    const maxX=Math.max(8,innerWidth-76),maxY=Math.max(t+8,innerHeight-18);
+    const x=Math.max(4,Math.min(maxX,(e.clientX||0)-36));
+    const y=Math.max(t,Math.min(maxY,(e.clientY||0)-28));
+    P[d.a]=[x,y,1];if(!S.d.desk.includes(d.a))S.d.desk.push(d.a);
   }
   save();rend()};
-addEventListener('pointerup',e=>endDrag(e,true));addEventListener('pointercancel',e=>endDrag(e,false));
+addEventListener('pointerup',e=>endDrag(e,true));addEventListener('pointercancel',e=>endDrag(e,true));
 document.addEventListener('click',e=>{if(blk){e.stopPropagation();e.preventDefault()}},true);
 /* clic derecho sobre un icono de barra o escritorio = quitarlo (en táctil, usa los botones Barra/Inicio del menú) */
 document.addEventListener('contextmenu',e=>{const b=e.target.closest('#pins [data-app],.icons [data-app]');if(!b||!matchMedia('(hover:hover)').matches)return;e.preventDefault();

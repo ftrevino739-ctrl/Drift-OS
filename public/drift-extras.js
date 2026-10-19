@@ -48,12 +48,35 @@
     try { if (typeof rend === 'function') rend(); } catch (e) {}
   }
 
-  function scrubUndefined() {
+  function healIcons() {
     var apps = A();
     if (!apps || !window.S || !window.S.d) return;
-    var d = window.S.d;
-    if (Array.isArray(d.desk)) d.desk = d.desk.filter(function (id) { return apps[id]; });
-    if (Array.isArray(d.pins)) d.pins = d.pins.filter(function (id) { return apps[id]; });
+    var list = [];
+    try { list = JSON.parse(localStorage.getItem('wos:myapps') || '[]'); } catch (e) {}
+    list.forEach(function (app) {
+      if (!app || !app.id || !apps[app.id]) return;
+      if (Array.isArray(window.S.d.desk) && window.S.d.desk.indexOf(app.id) < 0) window.S.d.desk.push(app.id);
+    });
+    ['desk', 'pins'].forEach(function (k) {
+      if (!Array.isArray(window.S.d[k])) return;
+      window.S.d[k] = window.S.d[k].filter(function (id, i, arr) { return id && arr.indexOf(id) === i; });
+    });
+  }
+
+  function keepLogos() {
+    if (typeof rend !== 'function' || rend.__driftLogos) return;
+    var orig = rend;
+    var guard = false;
+    function wrapped() {
+      if (!guard) {
+        guard = true;
+        try { applyLogos(); } catch (e) {}
+        guard = false;
+      }
+      return orig.apply(this, arguments);
+    }
+    wrapped.__driftLogos = true;
+    try { window.rend = wrapped; rend = wrapped; } catch (e) {}
   }
 
   function media(u) {
@@ -413,7 +436,8 @@
     loadCustomApps();
     wrapVscode();
     applyLogos();
-    scrubUndefined();
+    keepLogos();
+    healIcons();
     refreshUI();
   }
 
