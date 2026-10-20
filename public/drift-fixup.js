@@ -593,30 +593,11 @@
     };
   }
   function robloxShell(root) {
-    var cros = /CrOS/i.test(navigator.userAgent || '');
-    if (!cros) {
-      root.innerHTML = '<div class="sjt" style="height:100%;min-height:0;position:relative"></div>';
-      var box = root.querySelector('.sjt');
-      var url = 'https://www.roblox.com/';
-      if (typeof window.openProxied === 'function') window.openProxied(url, box);
-      else if (typeof window.proxySite === 'function') window.proxySite(box, url, 'Roblox');
-      return;
-    }
-    root.innerHTML =
-      '<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center">' +
-      '<b style="font-size:18px">Roblox</b>' +
-      '<div style="max-width:460px;opacity:.8;font-size:13px">On ChromeOS the human check opens in Chrome, where it can finish like on Windows. Drift stays on this tab.</div>' +
-      '<button type="button" data-open style="padding:10px 16px;border:0;border-radius:10px;background:#0089EF;color:#fff;font-weight:650;cursor:pointer">Open Roblox</button></div>';
-    function open() {
-      var w = window.open('https://www.roblox.com/login', '_blank');
-      if (!w) {
-        var n = root.querySelector('[data-open]');
-        if (n) n.textContent = 'Allow pop-ups, then press Open Roblox';
-      }
-    }
-    var btn = root.querySelector('[data-open]');
-    if (btn) btn.onclick = open;
-    open();
+    root.innerHTML = '<div class="sjt" style="height:100%;min-height:0;position:relative"></div>';
+    var box = root.querySelector('.sjt');
+    var url = 'https://www.roblox.com/';
+    if (typeof window.openProxied === 'function') window.openProxied(url, box);
+    else if (typeof window.proxySite === 'function') window.proxySite(box, url, 'Roblox');
   }
   function inAppPage(url) {
     return function (root) {
@@ -777,7 +758,7 @@
   function wireLoginApps() {
     try {
       if (!window.XAPPS) return;
-      window.XAPPS.gmail = { n: 'Gmail', f: operaPage('https://mail.google.com/mail/u/0/#inbox', 'edge') };
+      window.XAPPS.gmail = { n: 'Gmail', f: operaPage('https://mail.google.com/mail/u/0/#inbox', 'firefox') };
       window.XAPPS.classroom = { n: 'Classroom', f: sessionChooser('https://accounts.google.com/ServiceLogin?service=classroom&continue=https%3A%2F%2Fclassroom.google.com%2F&passive=1209600', 'https://accounts.google.com/ServiceLogin?service=classroom&continue=https%3A%2F%2Fclassroom.google.com%2F', false, false, 'classroom') };
       window.XAPPS.canva = { n: 'Canva', f: sessionChooser('https://www.canva.com/', 'https://www.canva.com/login', true, true) };
       window.XAPPS.roblox = { n: 'Roblox', f: robloxShell };
@@ -884,7 +865,7 @@
       '<p><b>BareMux no respondió / Scramjet server is down or blocked.</b> Render is waking up or the school network blocks the WebSocket. Wait 30–60 seconds, stay on the tab, then press Retry. Do not reload in a loop.</p>' +
       '<p><b>Some apps stay blank for a few minutes.</b> The proxy is still connecting. Wait. TikTok, Gemini and Gimkit need that first connection.</p>' +
       '<p><b>ServiceWorker script evaluation failed.</b> Hard refresh. If it stays, close the tab and open Drift again. Do not use an old bookmark to a Vercel preview.</p>' +
-      '<p><b>Gmail and Classroom login.</b> Gmail stays inside the app as Edge. Continue no longer reloads the email step. Classroom login stays as Edge. Classroom Oauth opens the sign-in on another page and, when you close it, Classroom loads here. Canva still opens in this Chromebook’s Chrome, because Canva blocks the server. On ChromeOS, Roblox’s human check opens in Chrome so it can finish like on Windows. On Windows, Roblox stays inside the app.</p>' +
+      '<p><b>Gmail and Classroom login.</b> Gmail stays inside the app as Firefox. Continue no longer reloads the email step. Classroom login stays as Edge. Classroom Oauth opens the sign-in on another page and, when you close it, Classroom loads here. Canva still opens in this Chromebook’s Chrome, because Canva blocks the server. Roblox opens inside Drift on Windows and ChromeOS. It does not open Chrome.</p>' +
       '<p><b>SharedWorker / cdn.jsdelivr.net/baremux.</b> Unity cannot use a worker from another site. Drift blocks that CDN and uses /baremux on the same origin. If the game still fails, use Open outside proxy (Unity).</p>' +
       '<h3>Windows</h3>' +
       '<p><b>Same proxy errors as ChromeOS</b> (BareMux, cold start, Service Worker). Same fix: wait, then Ctrl+Shift+R.</p>' +
