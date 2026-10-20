@@ -110,10 +110,10 @@ function loadAndPatchIndex() {
 	);
 
 	const tag =
-		'<script src="/drift-extras.js?v=20261019f" defer></script>' +
-		'<script src="/chromebook-proxy.js?v=20261019f" defer></script>' +
-		'<script src="/wayground-ai.js?v=20261019f" defer></script>' +
-		'<script src="/drift-fixup.js?v=20261019f" defer></script>' +
+		'<script src="/drift-extras.js?v=20261019g" defer></script>' +
+		'<script src="/chromebook-proxy.js?v=20261019g" defer></script>' +
+		'<script src="/wayground-ai.js?v=20261019g" defer></script>' +
+		'<script src="/drift-fixup.js?v=20261019g" defer></script>' +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +
@@ -203,22 +203,26 @@ fastify.post("/api/ask", (req, reply) => proxyMod(req, reply, "/api/ask"));
 fastify.post("/api/redeem", (req, reply) => proxyMod(req, reply, "/api/redeem"));
 fastify.post("/api/pulse", (req, reply) => proxyMod(req, reply, "/api/pulse"));
 
-fastify.post("/api/gemini", async (req, reply) => {
+fastify.post("/api/gemini", { bodyLimit: 6 * 1024 * 1024 }, async (req, reply) => {
 	const key = process.env.GEMINI_API_KEY || "";
 	if (!key) return reply.code(404).send({ error: "no-key" });
-	const r = await fetch(
-		"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=" + encodeURIComponent(key),
-		{
-			method: "POST",
-			headers: { "content-type": "application/json" },
-			body: JSON.stringify(req.body || {}),
-		}
-	);
-	const text = await r.text();
-	reply.code(r.status);
-	reply.header("content-type", "application/json; charset=utf-8");
-	reply.header("cache-control", "no-store");
-	return reply.send(text);
+	try {
+		const r = await fetch(
+			"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=" + encodeURIComponent(key),
+			{
+				method: "POST",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify(req.body || {}),
+			}
+		);
+		const text = await r.text();
+		reply.code(r.status);
+		reply.header("content-type", "application/json; charset=utf-8");
+		reply.header("cache-control", "no-store");
+		return reply.send(text);
+	} catch {
+		return reply.code(502).send({ error: "Gemini did not answer." });
+	}
 });
 
 function decodeSearchHref(href) {
@@ -418,23 +422,6 @@ const OPERA_BOOT = `(function(){
       .then(function(t){ document.open(); document.write(t); document.close(); })
       .catch(function(){ hop(f.action); });
   }, true);
-  function via(u, method, body, headers){
-    return fetch(ours("/api/opera"), { method:"POST", credentials:"same-origin", headers:{"content-type":"application/json"}, body: JSON.stringify({ u:u, method:method || "GET", form: body || "", raw:1, headers: headers || {} }) });
-  }
-  var ofetch = window.fetch;
-  window.fetch = function(input, init){
-    var u = typeof input === "string" ? input : (input && input.url) || "";
-    var absu = abs(u);
-    if (!/^https?:/i.test(absu) || absu.indexOf(location.origin) === 0) return ofetch.apply(this, arguments);
-    init = init || {};
-    var headers = {};
-    try { new Headers(init.headers || (input && input.headers) || {}).forEach(function(v,k){ if (/^content-type$/i.test(k)) headers[k] = v; }); } catch (e) {}
-    var body = "";
-    var src = init.body;
-    if (typeof src === "string") body = src;
-    else if (typeof URLSearchParams !== "undefined" && src instanceof URLSearchParams) body = src.toString();
-    return via(absu, init.method || (input && input.method) || "GET", body, headers);
-  };
 })();`;
 function operaInject(html, pageUrl) {
 	const boot = "<base href=\"" + String(pageUrl).replace(/"/g, "") + "\"><script>" + OPERA_BOOT + "</script>";
@@ -494,9 +481,14 @@ async function operaReply(req, reply, target, method, form, raw, contentType) {
 	const ct = got.response.headers.get("content-type") || "application/octet-stream";
 	reply.header("cache-control", "no-store");
 	if (!raw && /text\/html|application\/xhtml/i.test(ct)) {
+		const html = await got.response.text();
+		if (/canva\.com$/i.test(u.hostname) && /designing again soon|cf-challenge|challenge-platform|Just a moment/i.test(html)) {
+			reply.type("text/html; charset=utf-8");
+			return reply.send("<!doctype html><meta charset=utf-8><body style=\"margin:0;height:100vh;display:grid;place-items:center;background:#111;color:#eee;font:14px system-ui\">Opening Chrome…<script>parent.postMessage({driftOpen:" + JSON.stringify(u.toString()) + "},location.origin)<" + "/script></body>");
+		}
 		reply.header("content-security-policy", "default-src * data: blob: 'unsafe-inline' 'unsafe-eval'; script-src * data: blob: 'unsafe-inline' 'unsafe-eval'; style-src * 'unsafe-inline' data: blob:; img-src * data: blob:; connect-src *; frame-src *; media-src *");
 		reply.type("text/html; charset=utf-8");
-		return reply.send(operaInject(await got.response.text(), got.final));
+		return reply.send(operaInject(html, got.final));
 	}
 	reply.header("content-type", ct.split(";")[0] || ct);
 	return reply.send(Buffer.from(await got.response.arrayBuffer()));

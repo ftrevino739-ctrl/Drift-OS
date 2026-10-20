@@ -646,12 +646,38 @@
       open();
     };
   }
+  function openInChrome(url) {
+    return function (root) {
+      root.innerHTML =
+        '<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center">' +
+        '<b style="font-size:18px">Chrome</b>' +
+        '<div style="max-width:440px;opacity:.8;font-size:13px">Opened in Chrome on this Chromebook, with the accounts already on this device.</div>' +
+        '<button type="button" data-open style="padding:10px 16px;border:0;border-radius:10px;background:#1a73e8;color:#fff;font-weight:650;cursor:pointer">Open in Chrome</button></div>';
+      function open() {
+        var w = window.open(url, '_blank');
+        if (!w) {
+          var n = root.querySelector('[data-open]');
+          if (n) n.textContent = 'Allow pop-ups, then press Open in Chrome';
+        }
+      }
+      var btn = root.querySelector('[data-open]');
+      if (btn) btn.onclick = open;
+      open();
+    };
+  }
   function operaPage(url) {
     return function (root) {
       root.innerHTML = '<div class="sjt" style="height:100%;min-height:0;position:relative;background:#fff"></div>';
       var frame = document.createElement('iframe');
       frame.setAttribute('referrerpolicy', 'no-referrer');
       frame.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';
+      function onMsg(ev) {
+        if (!ev.data || ev.data.driftOpen !== url) return;
+        window.removeEventListener('message', onMsg);
+        openInChrome(url)(root);
+      }
+      window.addEventListener('message', onMsg);
+      setTimeout(function () { window.removeEventListener('message', onMsg); }, 20000);
       frame.src = '/api/opera?u=' + encodeURIComponent(url);
       root.querySelector('.sjt').appendChild(frame);
     };
@@ -666,7 +692,7 @@
         '<button type="button" data-oauth style="min-width:200px;padding:12px 16px;border-radius:12px;border:0;background:#1a73e8;color:#fff;cursor:pointer"><b>Oauth</b><div style="font-size:12px;opacity:.9;margin-top:4px">the accounts on your browser (recommended)</div></button>' +
         '</div></div>';
       root.querySelector('[data-login]').onclick = function () { operaPage(loginUrl)(root); };
-      root.querySelector('[data-oauth]').onclick = function () { operaPage(url)(root); };
+      root.querySelector('[data-oauth]').onclick = function () { openInChrome(url)(root); };
     };
   }
   function wireLoginApps() {
@@ -779,7 +805,7 @@
       '<p><b>BareMux no respondió / Scramjet server is down or blocked.</b> Render is waking up or the school network blocks the WebSocket. Wait 30–60 seconds, stay on the tab, then press Retry. Do not reload in a loop.</p>' +
       '<p><b>Some apps stay blank for a few minutes.</b> The proxy is still connecting. Wait. TikTok, Gemini and Gimkit need that first connection.</p>' +
       '<p><b>ServiceWorker script evaluation failed.</b> Hard refresh. If it stays, close the tab and open Drift again. Do not use an old bookmark to a Vercel preview.</p>' +
-      '<p><b>Gmail, Classroom and Canva.</b> Login and Oauth stay inside the app as Opera. They do not use Scramjet and they do not open another tab. A managed Chromebook can still block a non-school Google account. Roblox still has Verify you are human.</p>' +
+      '<p><b>Gmail and Classroom login.</b> They open inside the app as Opera, so Google does not mark the browser as insecure. Classroom and Canva Oauth open in Chrome on this Chromebook. Canva blocks the in-app page, so that login opens in Chrome too. Roblox still has Verify you are human.</p>' +
       '<p><b>SharedWorker / cdn.jsdelivr.net/baremux.</b> Unity cannot use a worker from another site. Drift blocks that CDN and uses /baremux on the same origin. If the game still fails, use Open outside proxy (Unity).</p>' +
       '<h3>Windows</h3>' +
       '<p><b>Same proxy errors as ChromeOS</b> (BareMux, cold start, Service Worker). Same fix: wait, then Ctrl+Shift+R.</p>' +
@@ -1129,7 +1155,7 @@
     if (panel) return panel;
     panel = document.createElement('div');
     panel.id = 'drift-orb-panel';
-    panel.style.cssText = 'position:fixed;z-index:2147483002;width:min(360px,92vw);max-height:46vh;overflow:auto;background:#14141c;color:#eee;border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:10px;font:13px/1.45 system-ui,sans-serif;box-shadow:0 12px 40px rgba(0,0,0,.45)';
+    panel.style.cssText = 'position:fixed;z-index:2147483002;width:min(520px,94vw);max-height:70vh;overflow:auto;background:#14141c;color:#eee;border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:10px;font:14px/1.5 system-ui,sans-serif;box-shadow:0 12px 40px rgba(0,0,0,.45)';
     document.body.appendChild(panel);
     return panel;
   }
@@ -1184,7 +1210,7 @@
     video.srcObject = stream; video.muted = true;
     try { await video.play(); } catch (e) {}
     await new Promise(function (res) { if (video.videoWidth) res(); else video.onloadeddata = function () { res(); }; setTimeout(res, 700); });
-    var w = Math.min(1280, video.videoWidth || 1280);
+    var w = Math.min(960, video.videoWidth || 960);
     var h = Math.max(1, Math.round(w * ((video.videoHeight || 720) / (video.videoWidth || 1280))));
     var canvas = document.createElement('canvas');
     canvas.width = w; canvas.height = h;
@@ -1194,53 +1220,25 @@
     if (!q) { if (status.parentNode) status.parentNode.remove(); return; }
     var click = /pantalla|on screen|selecci[oó]n|selection|\bclick\b|p[uú]lsa|responde lo que/i.test(q);
     driftPaint(status, 'Drift 2.1 is looking…');
-    var data = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
-    var ep = 'https://holy-firefly-982c.fert0480.workers.dev';
-    try { if (typeof EP === 'function') ep = String(EP()).replace(/\/$/, ''); } catch (e) {}
-    var ask = q + '\n\nIf you use markdown, write real tables and fenced code blocks. Do not wrap the whole answer in asterisks.';
+    var ask = q + '\n\nWrite a complete, well-organized answer. If you use markdown, write real tables and fenced code blocks. Do not wrap the whole answer in asterisks.';
     if (click) ask += '\n\nThe user wants the selection on this screen answered or clicked. End your reply with one final line exactly CLICK: percentX percentY where both numbers are from 0 to 100 and mark the point that should be clicked. Do not explain that line.';
+    var blob = await new Promise(function (res) { canvas.toBlob(function (b) { res(b); }, 'image/jpeg', 0.62); });
     try {
-      var text = '';
-      var body = {
-        systemInstruction: { parts: [{ text: 'You are Drift 2.1. The user is showing you a screenshot. Answer about what is visible. Never say Gemini. Use markdown tables for rows and fenced code blocks for code.' }] },
-        contents: [{ role: 'user', parts: [
-          { inline_data: { mime_type: 'image/jpeg', data: data } },
-          { text: ask }
-        ]}],
-        generationConfig: { maxOutputTokens: 2048, temperature: 0.4 }
-      };
-      var r = await fetch('/api/gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      var j = await r.json().catch(function () { return {}; });
-      if (r.ok) {
-        text = ((((j.candidates || [])[0] || {}).content || {}).parts || []).filter(function (p) { return !p.thought; }).map(function (p) { return p.text || ''; }).join('');
-      } else {
-        var r2 = await fetch(ep + '/ai', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: 'google/gemini-3.8-flash',
-            max_tokens: 2048,
-            messages: [{ role: 'user', content: [
-              { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: data } },
-              { type: 'text', text: ask }
-            ]}],
-            system: 'You are Drift 2.1. Answer about the screenshot. Never say Gemini.'
-          })
-        });
-        var j2 = await r2.json();
-        text = ((j2.content || []).map(function (x) { return x.text || ''; }).join('')) || (j2.error && (j2.error.message || JSON.stringify(j2.error))) || 'No answer.';
+      for (var i = 0; i < 20 && typeof window.driftAsk !== 'function'; i++) {
+        await new Promise(function (res) { setTimeout(res, 150); });
       }
-      text = String(text || 'No answer.').replace(/Gemini said/gi, 'Drift said');
+      if (typeof window.driftAsk !== 'function') throw new Error('Drift 2.1 is still loading. Ask again in a moment.');
+      var text = String(await window.driftAsk(ask, blob) || '').replace(/Gemini said/gi, 'Drift said');
       var cm = text.match(/CLICK:\s*(\d{1,3}(?:\.\d+)?)\s+(\d{1,3}(?:\.\d+)?)\s*$/i);
       if (cm && click) {
         text = text.replace(cm[0], '').trim();
         driftClickAt(Number(cm[1]), Number(cm[2]));
       }
       if (status.parentNode) status.parentNode.remove();
-      orbMessage(text);
+      orbMessage(text || 'Drift 2.1 did not answer. Ask again in a moment.');
     } catch (e) {
       if (status.parentNode) status.parentNode.remove();
-      orbMessage(String(e.message || e));
+      orbMessage(/failed to fetch/i.test(String(e && e.message || e)) ? 'Drift 2.1 could not reach Gemini. Ask again in a moment.' : String((e && e.message) || e));
     }
   }
   function driftClickAt(px, py) {

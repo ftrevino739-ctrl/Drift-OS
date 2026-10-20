@@ -1223,7 +1223,7 @@ function ai(root){
     const out=add('a','');out.classList.add('think');
     const pre=[
       'You are Drift 2.1 inside this web OS. Never say you are Gemini. Never write "Gemini said". If you refer to yourself, say Drift.',
-      'Reply immediately and directly. Do not spend a long time thinking.',
+      'Reply in the user language with a complete, well-written answer. Do not stall, and do not stop at one vague line.',
       caveman?'CAVEMAN MODE: answer in the fewest words possible. No filler.':'',
       customInstr?'User custom instructions: '+customInstr:'',
       'If the user asks for code, in any language, put the code in one fenced block with the language tag, for example ```luau. The app adds Copy, Download and Preview. Write the complete code.',
@@ -1258,7 +1258,7 @@ function ai(root){
     }catch(e){try{clearInterval(thinkTimer);think.remove()}catch(x){}out.className='e';out.textContent=(e&&e.message)||'No se pudo obtener respuesta.';mine.pop()}
     if(mine===hist){busy=false;sd.disabled=false}
   }
-  if(S.d.chats.length)load(S.d.chats[0].id);else newChat();
+  if(root.isConnected){if(S.d.chats.length)load(S.d.chats[0].id);else newChat();}
   const b64=b=>new Promise(r=>{const f=new FileReader();f.onload=()=>r(f.result.split(',')[1]);f.readAsDataURL(b)});
   let real=null;
   sample=async(input,o)=>{
@@ -1311,13 +1311,25 @@ function ai(root){
   }
   async function geminiCall(body, signal){
     const key=LS.get('wos:gk','');
-    const url=key?('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key='+encodeURIComponent(key)):'/api/gemini';
-    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal});
-    const j=await r.json().catch(()=>({}));
-    return {ok:r.ok,status:r.status,j};
+    const urls=['/api/gemini'];
+    if(key) urls.push('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key='+encodeURIComponent(key));
+    let last={ok:false,status:0,j:{}};
+    for(const url of urls){
+      try{
+        const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal});
+        const j=await r.json().catch(()=>({}));
+        if(r.ok) return {ok:true,status:r.status,j};
+        last={ok:false,status:r.status,j};
+        const msg=JSON.stringify(j||{});
+        if(r.status!==404 && !/no-key/i.test(msg)) return last;
+      }catch(e){
+        last={ok:false,status:0,j:{error:{message:(e&&e.message)||'Failed to fetch'}}};
+      }
+    }
+    return last;
   }
   async function geminiOfficial(list, o){
-    const sys={parts:[{text:'You are Drift 2.1. Never say you are Gemini and never write "Gemini said". If you refer to yourself, say Drift. Reply in the user language, immediately. When the user asks for code, put it in one fenced block with the language tag, such as ```luau, and write every line.'}]};
+    const sys={parts:[{text:'You are Drift 2.1. Never say you are Gemini and never write "Gemini said". If you refer to yourself, say Drift. Reply in the user language with a complete, well-written answer: the explanation, the steps, and one fenced block when they ask for code. Do not stop at one vague line.'}]};
     const body={systemInstruction:sys,contents:geminiContents(list),generationConfig:{maxOutputTokens:65536,temperature:0.4}};
     let res=await geminiCall(body, o.signal);
     if(!res.ok && /thinkingConfig|Unknown name|invalid/i.test(JSON.stringify(res.j&&res.j.error||''))){
@@ -1326,7 +1338,7 @@ function ai(root){
     }
     if(!res.ok){
       const msg=(res.j&&res.j.error&&(res.j.error.message||res.j.error))||'';
-      if(!LS.get('wos:gk','') && (res.status===404 || /no-key/i.test(String(msg)))) return null;
+      if(res.status===404 || res.status===0 || /no-key|failed to fetch/i.test(String(msg))) return null;
       throw {message:String(msg||'Gemini did not answer.')};
     }
     const splitParts=j=>{const parts=((((j.candidates||[])[0]||{}).content||{}).parts||[]);return {text:parts.filter(p=>!p.thought).map(p=>p.text||'').join(''),think:parts.filter(p=>p.thought).map(p=>p.text||'').join('\n').trim()}};
@@ -1405,7 +1417,7 @@ function ai(root){
     const frame=box.querySelector('iframe');
     if(!frame) return {text:'Drift 2.1 is Gemini, and the Gemini window did not open.'};
     let doc=null, promptEl=null, n=0;
-    while(n<40 && !o.signal.aborted){
+    while(n<40 && !(o.signal&&o.signal.aborted)){
       n++;
       try{doc=frame.contentDocument; promptEl=doc&&geminiPromptEl(doc);}catch(e){doc=null}
       if(promptEl) break;
@@ -1416,7 +1428,7 @@ function ai(root){
     geminiType(promptEl, ask);
     geminiSend(doc, promptEl);
     let text='', stable=0, last='', ticks=0;
-    while(ticks<90 && !o.signal.aborted){
+    while(ticks<90 && !(o.signal&&o.signal.aborted)){
       ticks++;
       await new Promise(res=>setTimeout(res,1000));
       let now='';
@@ -1430,6 +1442,27 @@ function ai(root){
     if(text && text.length>40){host.remove(); return {text};}
     return {text:text||'Drift 2.1 did not return the answer yet. Ask again.'};
   }
+  window.driftAsk=async function(question, imageBlob){
+    const q=String(question||'').trim();
+    const pre='You are Drift 2.1. Never say you are Gemini and never write "Gemini said". Write the full answer in the user language, well organized, with the detail of a long answer: a short heading, the explanation, and a fenced code block when they ask for code. Do not stop at one vague line.';
+    const msg={role:'user',content:pre+'\n\n'+q};
+    if(imageBlob){
+      try{
+        const data=await b64(imageBlob);
+        msg.content=[{type:'image',source:{type:'base64',media_type:imageBlob.type||'image/jpeg',data}},{type:'text',text:pre+'\n\n'+q}];
+      }catch(e){}
+    }
+    const o={model:'google/gemini-3.8-flash',signal:{aborted:false}};
+    try{
+      const official=await geminiOfficial([msg], o);
+      if(official&&official.text) return official.text;
+    }catch(e){}
+    try{
+      const site=await geminiSite([{role:'user',content:pre+'\n\n'+q}], o);
+      if(site&&site.text) return site.text;
+    }catch(e){}
+    throw new Error('Drift 2.1 did not answer. Ask again in a moment.');
+  };
   if(window.claude)claude.use('sample').then(s=>{real=s}).catch(()=>{});
 }
 
@@ -1440,7 +1473,7 @@ const S={user:null,d:null};
 const defD=()=>({pins:['calc','browser','ai','yt'],desk:['calc','browser','ai','yt'],chats:[]});
 const save=()=>LS.set('wos:u:'+(S.user||'_g'),S.d);
 const H=async(u,p)=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(u+':'+p)))].map(b=>b.toString(16).padStart(2,'0')).join('');
-function loadU(u){S.user=u;S.d=LS.get('wos:u:'+(u||'_g'),null)||defD();['pins','desk'].forEach(k=>S.d[k]=(S.d[k]||[]).filter(a=>!!a));S.d.chats=S.d.chats||[];if(!S.d.v2){S.d.v2=1;['pins','desk'].forEach(k=>{if(!S.d[k].includes('yt'))S.d[k].push('yt')});save()}LS.set('wos:cur',u);rend()}
+function loadU(u){S.user=u;S.d=LS.get('wos:u:'+(u||'_g'),null)||defD();['pins','desk'].forEach(k=>S.d[k]=(S.d[k]||[]).filter(a=>!!a));S.d.chats=S.d.chats||[];if(!S.d.v2){S.d.v2=1;['pins','desk'].forEach(k=>{if(!S.d[k].includes('yt'))S.d[k].push('yt')});save()}LS.set('wos:cur',u);rend();if(typeof window.driftAsk!=='function'){try{ai(document.createElement('div'))}catch(e){}}}
 function sw(u){Object.keys(wins).forEach(k=>{wins[k].w.remove();wins[k].tb.remove();delete wins[k]});loadU(u)}
 function tiles(){const f=($('#lq').value||'').toLowerCase(),D=S.d;
   $('#apps').innerHTML=Object.keys(APPS).filter(a=>APPS[a].toLowerCase().includes(f)).map(a=>`<div class="tl" draggable="true" data-d="${a}"><button data-app="${a}"><span class="mi">${IC[a]}</span>${APPS[a]}</button></div>`).join('')}
