@@ -1743,17 +1743,6 @@ openApp=a=>{
   const i=$('input',root),yb=$('.yb',root),[v,f]=root.querySelectorAll('.yh button');
   const go=()=>{const m=i.value.match(c.re);yb.innerHTML=m?`<iframe src="${c.e(m)}" ${FR}></iframe>`:'<div class="ym">Ese enlace no es válido.</div>'};
   v.onclick=go;i.onkeydown=e=>{if(e.key==='Enter')go()};f.onclick=()=>full(yb,c.home,c.n)};
-window.openDriftPage=function(url,label){
-  skipYT=true;O0('yt');skipYT=false;
-  const o=wins['w'+n];if(!o)return;
-  const name=String(label||'Tab').slice(0,40);
-  const nm='<span class="mi">'+(IC.browser||'')+'</span> '+esc(name);
-  $('.title b',o.w).innerHTML=nm;o.tb.innerHTML=nm;
-  const root=$('.body',o.w);
-  root.innerHTML='';root.style.cssText='position:relative;height:100%;min-height:0';
-  if(typeof openProxied==='function')openProxied(url,root);
-  else root.textContent='This page could not be opened inside Drift.';
-};
 const Y0=youtube;
 youtube=root=>{if(skipYT)return;Y0(root);
   const b=document.createElement('button');b.textContent='Completo';b.style.background='#555';b.onclick=()=>full($('.yb',root),'https://m.youtube.com','YouTube');$('.yh',root).appendChild(b);
@@ -2890,7 +2879,11 @@ function sjBrowser(root){
       if(u&&/^https?:/.test(u))t.url=u;
       const ti=w.document&&w.document.title;if(ti)t.title=ti.slice(0,30)}catch{}});
     bar()},800);
-  add();
+  const queued=Array.isArray(window.__driftBrowserOpen)?window.__driftBrowserOpen.slice():null;
+  window.__driftBrowserOpen=null;
+  if(queued&&queued.length){
+    (async()=>{for(let i=0;i<queued.length;i++){add();try{await openFrame(queued[i])}catch(e){}}})();
+  }else add();
 }
 const B1=browser;
 browser=(root,w)=>{

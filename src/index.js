@@ -111,10 +111,10 @@ function loadAndPatchIndex() {
 	);
 
 	const tag =
-		'<script src="/drift-extras.js?v=20261020d" defer></script>' +
-		'<script src="/chromebook-proxy.js?v=20261020d" defer></script>' +
-		'<script src="/wayground-ai.js?v=20261020d" defer></script>' +
-		'<script src="/drift-fixup.js?v=20261020d" defer></script>' +
+		'<script src="/drift-extras.js?v=20261020e" defer></script>' +
+		'<script src="/chromebook-proxy.js?v=20261020e" defer></script>' +
+		'<script src="/wayground-ai.js?v=20261020e" defer></script>' +
+		'<script src="/drift-fixup.js?v=20261020e" defer></script>' +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +
@@ -560,28 +560,9 @@ function operaBoot(browser) {
   document.addEventListener("click", function(e){
     armed = true;
     var a = e.target && e.target.closest && e.target.closest("a[href]");
-    if (a) {
-      var u = abs(a.getAttribute("href"));
-      if (/^https?:/i.test(u)) { e.preventDefault(); hop(u); return; }
-    }
-    var btn = e.target && e.target.closest && e.target.closest("#identifierNext, button, [role='button']");
-    if (!btn) return;
-    var label = ((btn.innerText || "") + " " + (btn.getAttribute("aria-label") || "")).toLowerCase();
-    if (btn.id !== "identifierNext" && label.indexOf("next") < 0 && label.indexOf("siguiente") < 0) return;
-    var emailEl = document.querySelector("#identifierId, input[name='identifier'], input[type='email']");
-    if (!emailEl || !emailEl.value) return;
-    var email = emailEl.value;
-    setTimeout(function(){
-      var still = document.querySelector("#identifierId, input[type='email']");
-      if (!still || !still.value) return;
-      var action = abs((document.querySelector("form") && document.querySelector("form").action) || "https://accounts.google.com/ServiceLogin");
-      proxy(action, "POST", "Email=" + encodeURIComponent(email) + "&identifier=" + encodeURIComponent(email), { "content-type": "application/x-www-form-urlencoded" })
-        .then(function(r){ return r.text(); })
-        .then(function(t){
-          if (!t || t.length < 80) return;
-          document.open(); document.write(t); document.close();
-        }).catch(function(){});
-    }, 900);
+    if (!a) return;
+    var u = abs(a.getAttribute("href"));
+    if (/^https?:/i.test(u)) { e.preventDefault(); hop(u); }
   }, true);
   document.addEventListener("keydown", function(){ armed = true; }, true);
   document.addEventListener("submit", function(e){
@@ -594,6 +575,8 @@ function operaBoot(browser) {
     var emailEl = document.querySelector("#identifierId, input[name='identifier'], input[type='email']");
     if (emailEl && emailEl.value && !body.get("identifier")) body.set("identifier", emailEl.value);
     proxy(abs(f.action), (f.method || "POST").toUpperCase(), body.toString(), {}).then(function(r){ return r.text(); }).then(function(t){
+      if (!t || t.length < 80) return;
+      if (/identifierId/i.test(t) && !/password|Passwd/i.test(t)) return;
       document.open(); document.write(t); document.close();
     }).catch(function(){ if (navigator.onLine !== false) hop(f.action); });
   }, true);

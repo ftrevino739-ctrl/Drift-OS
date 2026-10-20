@@ -593,11 +593,30 @@
     };
   }
   function robloxShell(root) {
-    root.innerHTML = '<div class="sjt" style="height:100%;min-height:0;position:relative"></div>';
-    var box = root.querySelector('.sjt');
-    var url = 'https://www.roblox.com/';
-    if (typeof window.openProxied === 'function') window.openProxied(url, box);
-    else if (typeof window.proxySite === 'function') window.proxySite(box, url, 'Roblox');
+    var cros = /CrOS/i.test(navigator.userAgent || '');
+    if (!cros) {
+      root.innerHTML = '<div class="sjt" style="height:100%;min-height:0;position:relative"></div>';
+      var box = root.querySelector('.sjt');
+      var url = 'https://www.roblox.com/';
+      if (typeof window.openProxied === 'function') window.openProxied(url, box);
+      else if (typeof window.proxySite === 'function') window.proxySite(box, url, 'Roblox');
+      return;
+    }
+    root.innerHTML =
+      '<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center">' +
+      '<b style="font-size:18px">Roblox</b>' +
+      '<div style="max-width:460px;opacity:.8;font-size:13px">On ChromeOS the human check opens in Chrome, where it can finish like on Windows. Drift stays on this tab.</div>' +
+      '<button type="button" data-open style="padding:10px 16px;border:0;border-radius:10px;background:#0089EF;color:#fff;font-weight:650;cursor:pointer">Open Roblox</button></div>';
+    function open() {
+      var w = window.open('https://www.roblox.com/login', '_blank');
+      if (!w) {
+        var n = root.querySelector('[data-open]');
+        if (n) n.textContent = 'Allow pop-ups, then press Open Roblox';
+      }
+    }
+    var btn = root.querySelector('[data-open]');
+    if (btn) btn.onclick = open;
+    open();
   }
   function inAppPage(url) {
     return function (root) {
@@ -758,7 +777,7 @@
   function wireLoginApps() {
     try {
       if (!window.XAPPS) return;
-      window.XAPPS.gmail = { n: 'Gmail', f: operaPage('https://mail.google.com/mail/u/0/#inbox', 'brave') };
+      window.XAPPS.gmail = { n: 'Gmail', f: operaPage('https://mail.google.com/mail/u/0/#inbox', 'edge') };
       window.XAPPS.classroom = { n: 'Classroom', f: sessionChooser('https://accounts.google.com/ServiceLogin?service=classroom&continue=https%3A%2F%2Fclassroom.google.com%2F&passive=1209600', 'https://accounts.google.com/ServiceLogin?service=classroom&continue=https%3A%2F%2Fclassroom.google.com%2F', false, false, 'classroom') };
       window.XAPPS.canva = { n: 'Canva', f: sessionChooser('https://www.canva.com/', 'https://www.canva.com/login', true, true) };
       window.XAPPS.roblox = { n: 'Roblox', f: robloxShell };
@@ -865,7 +884,7 @@
       '<p><b>BareMux no respondió / Scramjet server is down or blocked.</b> Render is waking up or the school network blocks the WebSocket. Wait 30–60 seconds, stay on the tab, then press Retry. Do not reload in a loop.</p>' +
       '<p><b>Some apps stay blank for a few minutes.</b> The proxy is still connecting. Wait. TikTok, Gemini and Gimkit need that first connection.</p>' +
       '<p><b>ServiceWorker script evaluation failed.</b> Hard refresh. If it stays, close the tab and open Drift again. Do not use an old bookmark to a Vercel preview.</p>' +
-      '<p><b>Gmail and Classroom login.</b> Gmail stays inside the app as Brave, one browser, and if the internet drops it stays on a reconnect message instead of a search page. Classroom login stays as Edge. Classroom Oauth opens the sign-in on another page and, when you close it, Classroom loads here. Canva still opens in this Chromebook’s Chrome, because Canva blocks the server. Roblox opens inside Drift again, not on the broken sign-in page.</p>' +
+      '<p><b>Gmail and Classroom login.</b> Gmail stays inside the app as Edge. Continue no longer reloads the email step. Classroom login stays as Edge. Classroom Oauth opens the sign-in on another page and, when you close it, Classroom loads here. Canva still opens in this Chromebook’s Chrome, because Canva blocks the server. On ChromeOS, Roblox’s human check opens in Chrome so it can finish like on Windows. On Windows, Roblox stays inside the app.</p>' +
       '<p><b>SharedWorker / cdn.jsdelivr.net/baremux.</b> Unity cannot use a worker from another site. Drift blocks that CDN and uses /baremux on the same origin. If the game still fails, use Open outside proxy (Unity).</p>' +
       '<h3>Windows</h3>' +
       '<p><b>Same proxy errors as ChromeOS</b> (BareMux, cold start, Service Worker). Same fix: wait, then Ctrl+Shift+R.</p>' +
@@ -978,7 +997,7 @@
       '<button type="button" id="kb-class-go" style="margin-top:12px;width:100%;padding:10px;border:0;border-radius:10px;background:#1a73e8;color:#fff;font-weight:600;cursor:pointer">Open Classroom full page now</button></div>' +
       '<div style="margin-top:16px;border-top:1px solid rgba(255,255,255,.08);padding-top:14px">' +
       '<b>Clean search history Bypass</b>' +
-      '<div style="opacity:.75;font-size:12px;margin-top:4px">choose the tabs and the website you want to be open. The tabs stay inside Drift.</div>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">choose the tabs and the website you want to be open. They open in the Browser, not as Drift windows.</div>' +
       '<label style="display:block;margin:8px 0">Website' +
       '<select id="drift-clean-site" style="display:block;width:100%;margin-top:4px;padding:8px;border-radius:8px;border:1px solid #333;background:#14141c;color:#eee">' +
       '<option value="docs">Google Docs</option>' +
@@ -1055,11 +1074,8 @@
     };
     var cleanNames = { docs: 'Google Docs', discovery: 'Discovery Education', classroom: 'Classroom', canva: 'Canva', other: 'Wikipedia' };
     function openClean(items) {
-      items.forEach(function (it, i) {
-        setTimeout(function () {
-          if (typeof window.openDriftPage === 'function') window.openDriftPage(it.url, it.label);
-        }, i * 40);
-      });
+      window.__driftBrowserOpen = items.map(function (it) { return it.url; });
+      if (typeof openApp === 'function') openApp('browser');
     }
     var cleanOpen = panel.querySelector('#drift-clean-open');
     if (cleanOpen) cleanOpen.onclick = function () {
