@@ -676,40 +676,106 @@
       open();
     };
   }
-  function operaPage(url) {
+  function operaPage(url, browser) {
+    browser = browser || "edge";
     return function (root) {
       root.innerHTML = '<div class="sjt" style="height:100%;min-height:0;position:relative;background:#fff"></div>';
-      var frame = document.createElement('iframe');
-      frame.setAttribute('referrerpolicy', 'no-referrer');
-      frame.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';
-      frame.src = '/api/opera?u=' + encodeURIComponent(url);
-      root.querySelector('.sjt').appendChild(frame);
+      var frame = document.createElement("iframe");
+      frame.setAttribute("referrerpolicy", "no-referrer");
+      frame.style.cssText = "position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff";
+      frame.src = "/api/opera?u=" + encodeURIComponent(url) + "&b=" + encodeURIComponent(browser);
+      root.querySelector(".sjt").appendChild(frame);
     };
   }
-  function sessionChooser(url, loginUrl, oauthInChrome, loginInChrome) {
+  function classroomInside(root) {
+    var tries = [
+      "/api/opera?u=" + encodeURIComponent("https://classroom.google.com/") + "&b=edge",
+      "/api/opera?u=" + encodeURIComponent("https://classroom.google.com/") + "&b=firefox",
+      "/api/opera?u=" + encodeURIComponent("https://accounts.google.com/ServiceLogin?service=classroom&continue=" + encodeURIComponent("https://classroom.google.com/")) + "&b=chrome",
+      "/api/opera?u=" + encodeURIComponent("https://classroom.google.com/u/0/") + "&b=opera"
+    ];
+    var i = 0;
+    root.innerHTML = '<div class="sjt" style="height:100%;min-height:0;position:relative;background:#fff"></div>';
+    var box = root.querySelector(".sjt");
+    function direct() {
+      box.innerHTML = "";
+      var frame = document.createElement("iframe");
+      frame.setAttribute("referrerpolicy", "no-referrer");
+      frame.style.cssText = "position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff";
+      frame.src = "https://classroom.google.com/";
+      box.appendChild(frame);
+    }
+    function attempt() {
+      if (i >= tries.length) { direct(); return; }
+      var src = tries[i++];
+      box.innerHTML = "";
+      var frame = document.createElement("iframe");
+      frame.setAttribute("referrerpolicy", "no-referrer");
+      frame.style.cssText = "position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff";
+      var settled = false;
+      var timer = setTimeout(function () { if (!settled) { settled = true; attempt(); } }, 4500);
+      frame.onload = function () {
+        if (settled) return;
+        var ok = false;
+        try {
+          var doc = frame.contentDocument;
+          var text = doc && doc.body ? String(doc.body.innerText || "").slice(0, 900) : "";
+          if (doc && doc.querySelector && doc.querySelector("#identifierId, input[type=email], input[name=identifier]")) ok = true;
+          if (/Sign in|Classroom|identifier/i.test(text) && !/Classroom Management Tools|designing again soon|blocked this server|Just a moment/i.test(text)) ok = true;
+        } catch (e) { ok = false; }
+        settled = true;
+        clearTimeout(timer);
+        if (!ok) attempt();
+      };
+      frame.src = src;
+      box.appendChild(frame);
+    }
+    attempt();
+  }
+  function classroomOauth(root) {
+    var login = "https://accounts.google.com/ServiceLogin?service=classroom&continue=" + encodeURIComponent("https://classroom.google.com/") + "&passive=1209600";
+    root.innerHTML = '<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center">' +
+      '<b style="font-size:18px">Classroom</b>' +
+      '<div style="max-width:460px;opacity:.8;font-size:13px">Sign in on the other page with the account on this Chromebook. When you close it, Classroom opens here.</div>' +
+      '<button type="button" data-back style="padding:10px 16px;border:0;border-radius:10px;background:#1a73e8;color:#fff;font-weight:650;cursor:pointer">I am back — open Classroom here</button></div>';
+    var w = null;
+    try { w = window.open(login, "_blank"); } catch (e) { w = null; }
+    var btn = root.querySelector("[data-back]");
+    function back() { classroomInside(root); }
+    if (btn) btn.onclick = back;
+    if (!w && btn) btn.textContent = "Allow pop-ups, then press the button";
+    var timer = setInterval(function () {
+      var closed = false;
+      try { closed = !w || w.closed; } catch (e) { closed = false; }
+      if (w && closed) { clearInterval(timer); back(); }
+    }, 700);
+  }
+  function sessionChooser(url, loginUrl, oauthInChrome, loginInChrome, kind) {
     return function (root) {
       root.innerHTML =
         '<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center">' +
         '<b style="font-size:18px">How do you want to inicialize sesión</b>' +
         '<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">' +
-        '<button type="button" data-login style="min-width:140px;padding:12px 16px;border-radius:12px;border:1px solid var(--line);background:var(--omni);color:inherit;cursor:pointer"><b>Log in</b><div style="font-size:12px;opacity:.75;margin-top:4px">' + (loginInChrome ? "this Chromebook's Chrome" : 'manual') + '</div></button>' +
-        '<button type="button" data-oauth style="min-width:200px;padding:12px 16px;border-radius:12px;border:0;background:#1a73e8;color:#fff;cursor:pointer"><b>Oauth</b><div style="font-size:12px;opacity:.9;margin-top:4px">' + (oauthInChrome ? "this Chromebook's Chrome" : 'inside this app') + '</div></button>' +
+        '<button type="button" data-login style="min-width:140px;padding:12px 16px;border-radius:12px;border:1px solid var(--line);background:var(--omni);color:inherit;cursor:pointer"><b>Log in</b><div style="font-size:12px;opacity:.75;margin-top:4px">' + (kind === "classroom" ? "Edge, inside this app" : (loginInChrome ? "this Chromebook's Chrome" : "manual")) + '</div></button>' +
+        '<button type="button" data-oauth style="min-width:200px;padding:12px 16px;border-radius:12px;border:0;background:#1a73e8;color:#fff;cursor:pointer"><b>Oauth</b><div style="font-size:12px;opacity:.9;margin-top:4px">' + (kind === "classroom" ? "another page, then here" : (oauthInChrome ? "this Chromebook's Chrome" : "inside this app")) + '</div></button>' +
         '</div></div>';
       root.querySelector('[data-login]').onclick = function () {
-        if (loginInChrome) openInChrome(loginUrl)(root);
-        else operaPage(loginUrl)(root);
+        if (kind === "classroom") operaPage(loginUrl, "edge")(root);
+        else if (loginInChrome) openInChrome(loginUrl)(root);
+        else operaPage(loginUrl, "edge")(root);
       };
       root.querySelector('[data-oauth]').onclick = function () {
-        if (oauthInChrome) openInChrome(url)(root);
-        else operaPage(url)(root);
+        if (kind === "classroom") classroomOauth(root);
+        else if (oauthInChrome) openInChrome(url)(root);
+        else operaPage(url, "edge")(root);
       };
     };
   }
   function wireLoginApps() {
     try {
       if (!window.XAPPS) return;
-      window.XAPPS.gmail = { n: 'Gmail', f: operaPage('https://mail.google.com/mail/u/0/#inbox') };
-      window.XAPPS.classroom = { n: 'Classroom', f: sessionChooser('https://accounts.google.com/ServiceLogin?service=classroom&continue=https%3A%2F%2Fclassroom.google.com%2F&passive=1209600', 'https://accounts.google.com/ServiceLogin?service=classroom&continue=https%3A%2F%2Fclassroom.google.com%2F', true, false) };
+      window.XAPPS.gmail = { n: 'Gmail', f: operaPage('https://mail.google.com/mail/u/0/#inbox', 'edge') };
+      window.XAPPS.classroom = { n: 'Classroom', f: sessionChooser('https://accounts.google.com/ServiceLogin?service=classroom&continue=https%3A%2F%2Fclassroom.google.com%2F&passive=1209600', 'https://accounts.google.com/ServiceLogin?service=classroom&continue=https%3A%2F%2Fclassroom.google.com%2F', false, false, 'classroom') };
       window.XAPPS.canva = { n: 'Canva', f: sessionChooser('https://www.canva.com/', 'https://www.canva.com/login', true, true) };
       window.XAPPS.roblox = { n: 'Roblox', f: robloxShell };
     } catch (e) {}
@@ -815,7 +881,7 @@
       '<p><b>BareMux no respondió / Scramjet server is down or blocked.</b> Render is waking up or the school network blocks the WebSocket. Wait 30–60 seconds, stay on the tab, then press Retry. Do not reload in a loop.</p>' +
       '<p><b>Some apps stay blank for a few minutes.</b> The proxy is still connecting. Wait. TikTok, Gemini and Gimkit need that first connection.</p>' +
       '<p><b>ServiceWorker script evaluation failed.</b> Hard refresh. If it stays, close the tab and open Drift again. Do not use an old bookmark to a Vercel preview.</p>' +
-      '<p><b>Gmail and Classroom login.</b> Log in stays inside the app as Opera, so Google does not mark the browser as insecure. Classroom Oauth opens Chrome on this Chromebook and uses the Google account already signed in there. Canva opens in that same Chrome, because Canva blocks this server. Roblox still has Verify you are human.</p>' +
+      '<p><b>Gmail and Classroom login.</b> Log in stays inside the app as Edge, so the Next button can send the email. Classroom Oauth opens the sign-in on another page and, when you close it, Classroom loads here. Canva still opens in this Chromebook’s Chrome, because Canva blocks the server. Roblox still has Verify you are human.</p>' +
       '<p><b>SharedWorker / cdn.jsdelivr.net/baremux.</b> Unity cannot use a worker from another site. Drift blocks that CDN and uses /baremux on the same origin. If the game still fails, use Open outside proxy (Unity).</p>' +
       '<h3>Windows</h3>' +
       '<p><b>Same proxy errors as ChromeOS</b> (BareMux, cold start, Service Worker). Same fix: wait, then Ctrl+Shift+R.</p>' +
@@ -1259,25 +1325,21 @@
         if (!String(text).trim()) text = parts.filter(function (p) { return p.thought; }).map(function (p) { return p.text || ''; }).join('\n');
       }
       if (!String(text).trim()) {
-        var rawErr = JSON.stringify(j || {});
-        var noKey = !r.ok && (r.status === 404 || r.status === 0 || /no-key|failed to fetch/i.test(rawErr));
-        if (noKey) {
-          var r2 = await fetch(ep + '/ai', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              model: 'google/gemini-3.8-flash',
-              max_tokens: 2048,
-              messages: [{ role: 'user', content: [
-                { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: data } },
-                { type: 'text', text: ask }
-              ]}],
-              system: 'You are Drift 2.1. Answer about the screenshot. Never say Gemini.'
-            })
-          });
-          var j2 = await r2.json().catch(function () { return {}; });
-          text = ((j2.content || []).map(function (x) { return x.text || ''; }).join('')) || '';
-        }
+        var r2 = await fetch(ep + '/ai', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'google/gemini-3.8-flash',
+            max_tokens: 2048,
+            messages: [{ role: 'user', content: [
+              { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: data } },
+              { type: 'text', text: ask }
+            ]}],
+            system: 'You are Drift 2.1. Answer about the screenshot. Never say Gemini.'
+          })
+        });
+        var j2 = await r2.json().catch(function () { return {}; });
+        text = ((j2.content || []).map(function (x) { return x.text || ''; }).join('')) || '';
       }
       text = String(text || '').replace(/Gemini said/gi, 'Drift said');
       if (window.driftAct) {

@@ -1065,6 +1065,8 @@ function ai(root){
   
   const formatInline=(s)=>{
     let h=s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    h=h.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,'<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+    h=h.replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g,function(_,a,u){return a+'<a href="'+u+'" target="_blank" rel="noopener noreferrer">'+u+'</a>'});
     h=h.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/\*([^*]+)\*/g,'<em>$1</em>').replace(/`([^`]+)`/g,'<code>$1</code>');
     return h;
   };
@@ -1259,7 +1261,7 @@ function ai(root){
         const lang=/luau/i.test(q)?'luau':/lua/i.test(q)?'lua':/python|\bpy\b/i.test(q)?'python':/html/i.test(q)?'html':/css/i.test(q)?'css':/javascript|\bjs\b/i.test(q)?'javascript':'txt';
         txt='```'+lang+'\n'+txt.trim()+'\n```';
       }
-      if(txt.includes('```')||txt.includes('|')||txt.includes('**')||txt.includes('##')){renderMD(out,txt)}else out.textContent=txt;
+      if(txt.includes('```')||txt.includes('|')||txt.includes('**')||txt.includes('##')||/https?:\/\//.test(txt)||/\[[^\]]+\]\(https?:/.test(txt)){renderMD(out,txt)}else out.textContent=txt;
       mine.push({role:'assistant',content:txt});save();
     }catch(e){try{clearInterval(thinkTimer);think.remove()}catch(x){}out.className='e';out.textContent=(e&&e.message)||'No se pudo obtener respuesta.';mine.pop()}
     if(mine===hist){busy=false;sd.disabled=false}
@@ -1271,14 +1273,17 @@ function ai(root){
     const msgs=input.map(m=>({role:m.role,content:m.content}));
     if(o.images&&o.images.length){const last=msgs[msgs.length-1];const text=typeof last.content==='string'?last.content:'';last.content=[...await Promise.all(o.images.map(async b=>({type:'image',source:{type:'base64',media_type:b.type||'image/jpeg',data:await b64(b)}}))),{type:'text',text}]}
     if(o.model==='google/gemini-3.8-flash'){
-      const official=await geminiOfficial(msgs,o);
-      if(official&&official.text)return official;
-      if(official)return official;
+      const site=await geminiSite(msgs,o);
+      if(site&&String(site.text||'').trim()) return site;
+      let official=null;
+      try{ official=await geminiOfficial(msgs,o); }catch(err){ throw err; }
+      if(official&&official.text) return official;
+      if(official) return official;
       const r=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'google/gemini-3.8-flash',max_tokens:4096,messages:msgs,system:'You are Drift 2.1. Reply in the user language with the full answer. Never say you are Gemini. Do not say you are a text AI.'}),signal:o.signal});
       const j=await r.json().catch(()=>({}));
       const text=((j.content||[]).map(x=>x.text||'').join(''))||'';
       if(text)return {text};
-      return geminiSite(msgs,o);
+      return {text:''};
     }
     if(real)return real(input,o);
     const GKEY=LS.get('wos:gk','');
@@ -1402,54 +1407,57 @@ function ai(root){
   async function geminiSite(list, o){
     const ask=geminiPlain(list);
     am.style.position='relative';
-    let host=am.querySelector('.drift-gem');
+    let host=document.querySelector('.drift-gem');
     if(!host){
       host=document.createElement('div');
       host.className='drift-gem';
       host.style.cssText='position:fixed;left:-5200px;top:0;width:900px;height:700px;opacity:0;pointer-events:none;overflow:hidden';
-      const bar=document.createElement('div');
-      bar.textContent='Drift 2.1';
-      bar.style.cssText='display:none';
       const box=document.createElement('div');
       box.className='drift-gem-box';
       box.style.cssText='width:900px;height:700px;position:relative';
-      host.append(bar, box);
+      host.appendChild(box);
       document.body.appendChild(host);
     }
     host.style.display='block';
     const box=host.querySelector('.drift-gem-box');
     if(!box.querySelector('iframe')){
-      if(typeof openProxied!=='function') return {text:'Drift 2.1 is Gemini, and it could not be opened from here.'};
-      await openProxied('https://gemini.google.com/app', box);
+      if(typeof openProxied!=='function') return {text:''};
+      try{ await openProxied('https://gemini.google.com/app', box); }catch(e){ return {text:''}; }
     }
+    if(o&&o.preload) return {text:''};
     const frame=box.querySelector('iframe');
-    if(!frame) return {text:'Drift 2.1 is Gemini, and the Gemini window did not open.'};
+    if(!frame) return {text:''};
     let doc=null, promptEl=null, n=0;
-    while(n<40 && !(o.signal&&o.signal.aborted)){
+    while(n<16 && !(o.signal&&o.signal.aborted)){
       n++;
       try{doc=frame.contentDocument; promptEl=doc&&geminiPromptEl(doc);}catch(e){doc=null}
+      if(!promptEl && doc){
+        const nested=[...doc.querySelectorAll('iframe')];
+        for(const fr of nested){ try{ const d=fr.contentDocument; const p=d&&geminiPromptEl(d); if(p){doc=d; promptEl=p; break;} }catch(e){} }
+      }
       if(promptEl) break;
-      await new Promise(res=>setTimeout(res,500));
+      await new Promise(res=>setTimeout(res,350));
     }
-    if(!promptEl) return {text:'Drift 2.1 could not reach Gemini yet. Ask again in a moment.'};
+    if(!promptEl) return {text:''};
     const before=geminiAnswer(doc);
     geminiType(promptEl, ask);
     geminiSend(doc, promptEl);
     let text='', stable=0, last='', ticks=0;
-    while(ticks<90 && !(o.signal&&o.signal.aborted)){
+    while(ticks<24 && !(o.signal&&o.signal.aborted)){
       ticks++;
-      await new Promise(res=>setTimeout(res,1000));
+      await new Promise(res=>setTimeout(res,400));
       let now='';
       try{now=geminiAnswer(frame.contentDocument||doc)}catch(e){now=''}
+      if(!now && doc){ try{ now=geminiAnswer(doc); }catch(e){ now=''; } }
       if(now && now!==before && now.length>last.length){text=now; last=now; stable=0; if(o.onText)o.onText({text});}
       else if(text) stable++;
       let stopping=false;
       try{stopping=[...(frame.contentDocument||doc).querySelectorAll('button')].some(b=>/stop|detener/i.test(b.getAttribute('aria-label')||''));}catch(e){}
-      if(text && stable>=3 && !stopping) break;
+      if(text && stable>=2 && !stopping) break;
     }
-    if(text && text.length>40){host.remove(); return {text};}
-    return {text:text||'Drift 2.1 did not return the answer yet. Ask again.'};
+    return {text:String(text||'').trim()};
   }
+  if(root.isConnected) setTimeout(function(){ try{ geminiSite([{role:'user',content:' '}],{signal:{aborted:false},preload:true}); }catch(e){} }, 400);
   window.driftAsk=async function(question, imageBlob){
     const q=String(question||'').trim();
     const pre='You are Drift 2.1. Never say you are Gemini and never write "Gemini said". Write the full answer in the user language, well organized, with the detail of a long answer: a short heading, the explanation, and a fenced code block when they ask for code. Do not stop at one vague line.';
