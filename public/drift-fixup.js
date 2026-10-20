@@ -435,6 +435,10 @@
   function applySize() {
     var app = SIZE_MAP[readSize('wos:size-apps')];
     var tb = SIZE_MAP[readSize('wos:size-tb')];
+    if (document.body.classList.contains('drift-cros')) {
+      tb *= 0.82;
+      app *= 0.86;
+    }
     var tbh = Math.max(28, Math.round(38 * tb));
     document.documentElement.style.setProperty('--drift-app', String(Math.round(app * 1000) / 1000));
     document.documentElement.style.setProperty('--drift-tb', String(Math.round(tb * 1000) / 1000));
@@ -596,10 +600,9 @@
       '<div style="display:flex;flex-direction:column;height:100%;min-height:0">' +
       '<div data-loginbar style="padding:8px 10px;border-bottom:1px solid var(--line);display:' + (signed ? 'none' : 'flex') + ';gap:8px;align-items:center;flex-wrap:wrap">' +
       '<span style="font-size:12px;font-weight:650">Roblox · Sign in</span>' +
-      '<button type="button" data-human style="padding:6px 12px;border-radius:8px;border:0;background:#0089EF;color:#fff;cursor:pointer;font-size:12px">Verify you are human</button>' +
       '<button type="button" data-retry style="padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:transparent;color:inherit;cursor:pointer;font-size:12px">Reload login</button>' +
       '<label style="font-size:11px;opacity:.8;margin-left:auto;display:flex;gap:6px;align-items:center"><input type="checkbox" data-signed' + (signed ? ' checked' : '') + '/> I signed in</label>' +
-      '<span style="font-size:11px;opacity:.65;width:100%">The human check opens on the real Roblox page so it can finish like on Windows. This tab stays until you are signed in, even if you close the window or reload.</span></div>' +
+      '<span style="font-size:11px;opacity:.65;width:100%">Sign in stays in this window as Firefox so the human check can run. It does not open a second browser.</span></div>' +
       '<div class="sjt" style="flex:1;min-height:0;position:relative"></div></div>';
     var box = root.querySelector('.sjt');
     var bar = root.querySelector('[data-loginbar]');
@@ -608,13 +611,17 @@
       if (bar) bar.style.display = on ? 'none' : 'flex';
     }
     function load() {
-      var url = 'https://www.roblox.com/login';
-      if (typeof window.proxySite === 'function') window.proxySite(box, url, 'Roblox');
-      else if (typeof window.openProxied === 'function') window.openProxied(url, box);
+      if (navigator.onLine === false) {
+        box.innerHTML = '<div style="height:100%;display:grid;place-items:center;text-align:center;padding:24px;font:14px system-ui"><div><b>No internet</b><p>Reconnect, then press Reload login.</p></div></div>';
+        return;
+      }
+      box.innerHTML = '';
+      var frame = document.createElement('iframe');
+      frame.setAttribute('referrerpolicy', 'no-referrer');
+      frame.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';
+      frame.src = '/api/opera?u=' + encodeURIComponent('https://www.roblox.com/login') + '&b=firefox';
+      box.appendChild(frame);
     }
-    root.querySelector('[data-human]').onclick = function () {
-      window.open('https://www.roblox.com/login', 'drift-roblox', 'width=1024,height=800');
-    };
     root.querySelector('[data-signed]').onchange = function () { mark(this.checked); };
     root.querySelector('[data-retry]').onclick = load;
     load();
@@ -680,11 +687,27 @@
     browser = browser || "edge";
     return function (root) {
       root.innerHTML = '<div class="sjt" style="height:100%;min-height:0;position:relative;background:#fff"></div>';
-      var frame = document.createElement("iframe");
-      frame.setAttribute("referrerpolicy", "no-referrer");
-      frame.style.cssText = "position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff";
-      frame.src = "/api/opera?u=" + encodeURIComponent(url) + "&b=" + encodeURIComponent(browser);
-      root.querySelector(".sjt").appendChild(frame);
+      var box = root.querySelector(".sjt");
+      function showOff() {
+        box.innerHTML = '<div style="height:100%;display:grid;place-items:center;text-align:center;padding:24px;color:#111;font:14px system-ui"><div><b>No internet</b><p>Reconnect, then press Reload. This stays in the app. It does not open a search.</p><button type="button" data-reload style="margin-top:8px;padding:8px 14px;border:0;border-radius:8px;background:#1a73e8;color:#fff;cursor:pointer">Reload</button></div></div>';
+        var b = box.querySelector("[data-reload]");
+        if (b) b.onclick = load;
+      }
+      function load() {
+        if (navigator.onLine === false) { showOff(); return; }
+        box.innerHTML = "";
+        var frame = document.createElement("iframe");
+        frame.setAttribute("referrerpolicy", "no-referrer");
+        frame.style.cssText = "position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff";
+        frame.src = "/api/opera?u=" + encodeURIComponent(url) + "&b=" + encodeURIComponent(browser);
+        box.appendChild(frame);
+      }
+      load();
+      function onOff() {
+        if (root.isConnected) showOff();
+        else window.removeEventListener("offline", onOff);
+      }
+      window.addEventListener("offline", onOff);
     };
   }
   function classroomInside(root) {
@@ -774,7 +797,7 @@
   function wireLoginApps() {
     try {
       if (!window.XAPPS) return;
-      window.XAPPS.gmail = { n: 'Gmail', f: operaPage('https://mail.google.com/mail/u/0/#inbox', 'edge') };
+      window.XAPPS.gmail = { n: 'Gmail', f: operaPage('https://mail.google.com/mail/u/0/#inbox', 'brave') };
       window.XAPPS.classroom = { n: 'Classroom', f: sessionChooser('https://accounts.google.com/ServiceLogin?service=classroom&continue=https%3A%2F%2Fclassroom.google.com%2F&passive=1209600', 'https://accounts.google.com/ServiceLogin?service=classroom&continue=https%3A%2F%2Fclassroom.google.com%2F', false, false, 'classroom') };
       window.XAPPS.canva = { n: 'Canva', f: sessionChooser('https://www.canva.com/', 'https://www.canva.com/login', true, true) };
       window.XAPPS.roblox = { n: 'Roblox', f: robloxShell };
@@ -881,7 +904,7 @@
       '<p><b>BareMux no respondió / Scramjet server is down or blocked.</b> Render is waking up or the school network blocks the WebSocket. Wait 30–60 seconds, stay on the tab, then press Retry. Do not reload in a loop.</p>' +
       '<p><b>Some apps stay blank for a few minutes.</b> The proxy is still connecting. Wait. TikTok, Gemini and Gimkit need that first connection.</p>' +
       '<p><b>ServiceWorker script evaluation failed.</b> Hard refresh. If it stays, close the tab and open Drift again. Do not use an old bookmark to a Vercel preview.</p>' +
-      '<p><b>Gmail and Classroom login.</b> Log in stays inside the app as Edge, so the Next button can send the email. Classroom Oauth opens the sign-in on another page and, when you close it, Classroom loads here. Canva still opens in this Chromebook’s Chrome, because Canva blocks the server. Roblox still has Verify you are human.</p>' +
+      '<p><b>Gmail and Classroom login.</b> Gmail stays inside the app as Brave, one browser, and if the internet drops it stays on a reconnect message instead of a search page. Classroom login stays as Edge. Classroom Oauth opens the sign-in on another page and, when you close it, Classroom loads here. Canva still opens in this Chromebook’s Chrome, because Canva blocks the server. Roblox login stays inside the app as Firefox so the human check can run. It does not open a second window.</p>' +
       '<p><b>SharedWorker / cdn.jsdelivr.net/baremux.</b> Unity cannot use a worker from another site. Drift blocks that CDN and uses /baremux on the same origin. If the game still fails, use Open outside proxy (Unity).</p>' +
       '<h3>Windows</h3>' +
       '<p><b>Same proxy errors as ChromeOS</b> (BareMux, cold start, Service Worker). Same fix: wait, then Ctrl+Shift+R.</p>' +
@@ -913,7 +936,7 @@
     var panel = document.createElement('div');
     panel.id = 'drift-settings-panel';
     panel.style.cssText =
-      'position:fixed;right:16px;bottom:70px;z-index:2147483001;width:min(380px,94vw);max-height:min(75vh,560px);overflow:auto;' +
+      'position:fixed;right:16px;bottom:70px;z-index:2147483001;width:min(380px,94vw);max-height:min(75vh,560px);overflow:auto;scrollbar-width:none;-ms-overflow-style:none;' +
       'background:#1c1c24;color:#eee;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px 16px;' +
       'box-shadow:0 12px 40px rgba(0,0,0,.45);font:13px/1.45 system-ui,sans-serif';
     var liquidOn = false, eduOn = false, gk = 'lazy', kbHide = 'F9', kbClass = 'F10', appSize = 'lg', tbSize = 'lg', orbOn = true;
@@ -951,8 +974,11 @@
       '</div></div>' +
       '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px">' +
       '<div style="flex:1"><b>Adapt Drift OS for ChromeOS</b>' +
-      '<div style="opacity:.75;font-size:12px;margin-top:4px">Keeps the taskbar on screen. App size and taskbar size stay the same on Windows and ChromeOS. The size is applied again when Drift opens, so you do not have to turn this on twice.</div></div>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">On ChromeOS the apps and the task bar are a little smaller. The task bar stays on screen. Windows keeps the size you picked.</div></div>' +
       switchHTML('drift-cros-sw', localStorage.getItem('wos:cros-adapt') === '1') + '</div>' +
+      '<div style="margin-bottom:14px;border-top:1px solid rgba(255,255,255,.08);padding-top:12px"><b>Choose your Movies</b>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">SerumOS is the movie list Drift already has. Cuevana is not a choice: Drift does not copy that catalog.</div>' +
+      '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="movies-src" value="serum" checked/> SerumOS</label></div>' +
       '<div style="margin-bottom:14px;border-top:1px solid rgba(255,255,255,.08);padding-top:12px"><b>Customize Task Bar and Apps Size</b>' +
       '<div style="opacity:.75;font-size:12px;margin:4px 0 8px">Apps and the task bar are separate. Large is the normal Drift size.</div>' +
       '<div style="font-size:12px;font-weight:650;margin:6px 0">Apps</div>' + sizeRadios('size-apps', appSize) +
@@ -989,6 +1015,21 @@
       '<div style="flex:1"><b>Education mode now</b><div style="opacity:.7;font-size:11px">Hides non-edu icons immediately</div></div>' +
       switchHTML('drift-edu-sw', eduOn) + '</div>' +
       '<button type="button" id="kb-class-go" style="margin-top:12px;width:100%;padding:10px;border:0;border-radius:10px;background:#1a73e8;color:#fff;font-weight:600;cursor:pointer">Open Classroom full page now</button></div>' +
+      '<div style="margin-top:16px;border-top:1px solid rgba(255,255,255,.08);padding-top:14px">' +
+      '<b>Clean search history Bypass</b>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">choose the tabs and the website you want to be open</div>' +
+      '<label style="display:block;margin:8px 0">Website' +
+      '<select id="drift-clean-site" style="display:block;width:100%;margin-top:4px;padding:8px;border-radius:8px;border:1px solid #333;background:#14141c;color:#eee">' +
+      '<option value="docs">Google Docs</option>' +
+      '<option value="discovery">Discovery Education</option>' +
+      '<option value="classroom">Classroom</option>' +
+      '<option value="canva">Canva</option>' +
+      '<option value="other">Other — Wikipedia</option></select></label>' +
+      '<label style="display:block;margin:8px 0">How many windows (1 to 6)' +
+      '<input id="drift-clean-n" type="number" min="1" max="6" value="1" style="display:block;width:100%;margin-top:4px;padding:8px;border-radius:8px;border:1px solid #333;background:#14141c;color:#eee;box-sizing:border-box"/></label>' +
+      '<div style="display:flex;gap:8px;margin-top:8px">' +
+      '<button type="button" id="drift-clean-open" style="flex:1;padding:10px;border:0;border-radius:10px;background:#1a73e8;color:#fff;font-weight:600;cursor:pointer">Open</button>' +
+      '<button type="button" id="drift-clean-random" style="flex:1;padding:10px;border:1px solid rgba(255,255,255,.16);border-radius:10px;background:transparent;color:#fff;font-weight:600;cursor:pointer">Random</button></div></div>' +
       '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:16px;border-top:1px solid rgba(255,255,255,.08);padding-top:14px">' +
       '<div style="flex:1"><b>Protector</b>' +
       '<div style="opacity:.75;font-size:12px;margin-top:4px">If Drift detects someone is viewing your screen on Linewize it instantly redirects you to classroom.google.com. It leaves on Class started, Streaming screen, a screenshot upload, or Heartbeat sent twice in a few seconds. The extension can stay installed. It does not leave just because Linewize is on.</div></div>' +
@@ -1037,6 +1078,45 @@
       try { localStorage.setItem('wos:protector', on ? '1' : '0'); } catch (e) {}
     });
     panel.querySelector('#drift-docs-btn').onclick = function () { openDriftDocs(); };
+    if (!document.getElementById('drift-settings-scroll')) {
+      var scrollCss = document.createElement('style');
+      scrollCss.id = 'drift-settings-scroll';
+      scrollCss.textContent = '#drift-settings-panel::-webkit-scrollbar{display:none;width:0;height:0}';
+      document.head.appendChild(scrollCss);
+    }
+    try { localStorage.setItem('wos:movies', 'serum'); } catch (e) {}
+    var cleanSites = {
+      docs: 'https://docs.google.com/',
+      discovery: 'https://www.discoveryeducation.com/',
+      classroom: 'https://classroom.google.com/',
+      canva: 'https://www.canva.com/',
+      other: 'https://en.wikipedia.org/'
+    };
+    function openClean(urls) {
+      for (var i = 0; i < urls.length; i++) window.open(urls[i], 'drift-clean-' + i);
+    }
+    var cleanOpen = panel.querySelector('#drift-clean-open');
+    if (cleanOpen) cleanOpen.onclick = function () {
+      var siteEl = panel.querySelector('#drift-clean-site');
+      var nEl = panel.querySelector('#drift-clean-n');
+      var site = siteEl ? siteEl.value : 'docs';
+      var n = nEl ? parseInt(nEl.value, 10) : 1;
+      if (!n || n < 1) n = 1;
+      if (n > 6) n = 6;
+      var u = cleanSites[site] || cleanSites.other;
+      var list = [];
+      for (var i = 0; i < n; i++) list.push(u);
+      openClean(list);
+    };
+    var cleanRandom = panel.querySelector('#drift-clean-random');
+    if (cleanRandom) cleanRandom.onclick = function () {
+      var list = [cleanSites.docs, cleanSites.discovery, cleanSites.classroom, cleanSites.canva];
+      for (var i = list.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var tmp = list[i]; list[i] = list[j]; list[j] = tmp;
+      }
+      openClean(list);
+    };
     panel.querySelector('#kb-class-go').onclick = function () {
       openTop('https://classroom.google.com/');
     };

@@ -285,7 +285,7 @@ h1{font-weight:500;margin:0 0 8px}
 /* YouTube Shorts vertical feed */
 .yt-shorts{height:100%;overflow-y:auto;scroll-snap-type:y mandatory;-webkit-overflow-scrolling:touch;background:#000}
 .yt-shorts .ss{scroll-snap-align:start;height:100%;min-height:100%;position:relative;display:flex;align-items:center;justify-content:center;background:#000}
-.yt-shorts .ss iframe{width:min(100%,420px);height:100%;border:0;max-height:100%}
+.yt-shorts .ss iframe,.yt-shorts .ss video{width:min(100%,420px);height:100%;border:0;max-height:100%;object-fit:contain;background:#000}
 .yt-shorts .ss .meta{position:absolute;left:12px;bottom:24px;right:64px;color:#fff;text-shadow:0 1px 4px #000;pointer-events:none}
 .yt-shorts .ss .meta b{display:block;font-size:14px;margin-bottom:4px}
 .yt-shorts .ss .meta small{opacity:.85;font-size:12px}
@@ -901,10 +901,9 @@ function youtube(root){
     box.innerHTML='<div class="ym">Opening YouTube…</div>';
     const video=document.createElement('video');
     video.controls=true; video.autoplay=true; video.playsInline=true;
-    video.style.cssText='position:absolute;inset:0;width:100%;height:100%;background:#000';
-    video.addEventListener('error', function(){
-      box.innerHTML='<iframe src="https://www.youtube-nocookie.com/embed/'+id+'?autoplay=1&rel=0&modestbranding=1" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen referrerpolicy="origin" style="position:absolute;inset:0;width:100%;height:100%;border:0;background:#000"></iframe>';
-    });
+    video.style.cssText='position:absolute;inset:0;width:100%;height:100%;background:#000;object-fit:contain';
+    function fail(){ box.innerHTML='<div class="ym" style="color:#ddd">This video did not start. Try another.</div>'; }
+    video.addEventListener('error', fail);
     (async()=>{
       try{
         const r=await fetch('/api/yt-play?id='+encodeURIComponent(id), {cache:'no-store'});
@@ -913,9 +912,9 @@ function youtube(root){
         box.innerHTML='';
         box.appendChild(video);
         video.src=j.url;
-        return;
-      }catch(e){}
-      box.innerHTML='<iframe src="https://www.youtube-nocookie.com/embed/'+id+'?autoplay=1&rel=0&modestbranding=1" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen referrerpolicy="origin" style="position:absolute;inset:0;width:100%;height:100%;border:0;background:#000"></iframe>';
+        const p=video.play();
+        if(p&&p.catch) p.catch(function(){ video.muted=true; const q=video.play(); if(q&&q.catch) q.catch(function(){}); });
+      }catch(e){ fail(); }
     })();
   }
   function play(id){
@@ -1682,7 +1681,7 @@ function layout(){
     cells[c+','+r]=a; at[a]=[c,r]; P[a]=[c,r];
   });
   let c=0,r=0;
-  D.desk.forEach(a=>{if(at[a])return;while(cells[c+','+r]){r++;if(r>=rows){r=0;c++}} if(c>=cols)c=0; cells[c+','+r]=a; at[a]=[c,r]; P[a]=[c,r]});
+  D.desk.forEach(a=>{if(at[a])return;let guard=0;while(cells[c+','+r]&&guard<cols*rows){c++;if(c>=cols){c=0;r++}if(r>=rows)r=0;guard++}cells[c+','+r]=a;at[a]=[c,r];P[a]=[c,r];c++;if(c>=cols){c=0;r++}if(r>=rows)r=0});
   document.querySelectorAll('.icons .ico').forEach(b=>{const p=at[b.dataset.app];if(!p)return;b.style.left=GX+p[0]*g.CW+'px';b.style.top=t+p[1]*g.CH+'px'})}
 const R1=rend;rend=()=>{R1();layout()};
 addEventListener('resize',layout);
@@ -2641,7 +2640,83 @@ function proxySite(root,url,label){
 }
 function gmailApp(root){proxySite(root,'https://mail.google.com/','Gmail')}
 function igApp(root){proxySite(root,'https://www.instagram.com/','Instagram')}
-function ttApp(root){proxySite(root,'https://www.tiktok.com/','TikTok')}
+function ttApp(root){
+  root.style.position='relative';
+  root.style.height='100%';
+  root.style.minHeight='0';
+  root.innerHTML='<div class="yt-shorts" data-feed></div>';
+  const feed=root.querySelector('[data-feed]');
+  const seen={};
+  let cursor='0', loading=false, done=false;
+  function arm(slide){
+    const v=slide.querySelector('video');
+    if(!v || v.dataset.on) return;
+    v.dataset.on='1';
+    v.src=slide.dataset.play;
+  }
+  function add(items){
+    items.forEach(it=>{
+      if(!it.id || seen[it.id]) return;
+      seen[it.id]=1;
+      const s=document.createElement('div');
+      s.className='ss';
+      s.dataset.play=it.play;
+      const v=document.createElement('video');
+      v.controls=true; v.playsInline=true; v.loop=true; v.preload='metadata';
+      v.addEventListener('error', function(){
+        if(s.querySelector('.ym')) return;
+        const m=document.createElement('div');
+        m.className='ym'; m.style.color='#fff';
+        m.textContent='This video did not start.';
+        s.appendChild(m);
+      });
+      const meta=document.createElement('div');
+      meta.className='meta';
+      const b=document.createElement('b'); b.textContent=it.title||'';
+      const sm=document.createElement('small'); sm.textContent=it.author?('@'+it.author):'';
+      meta.append(b, sm);
+      s.append(v, meta);
+      feed.appendChild(s);
+    });
+  }
+  function sync(){
+    const slides=[...feed.querySelectorAll('.ss')];
+    const fr=feed.getBoundingClientRect();
+    slides.forEach(s=>{
+      const r=s.getBoundingClientRect();
+      const vis=r.top < fr.bottom - fr.height*0.35 && r.bottom > fr.top + fr.height*0.35;
+      const v=s.querySelector('video');
+      if(!v) return;
+      if(vis){
+        arm(s);
+        const p=v.play();
+        if(p&&p.catch) p.catch(function(){ v.muted=true; const q=v.play(); if(q&&q.catch) q.catch(function(){}); });
+      } else v.pause();
+    });
+  }
+  async function more(){
+    if(loading || done) return;
+    loading=true;
+    try{
+      const r=await fetch('/api/tt-feed?cursor='+encodeURIComponent(cursor), {cache:'no-store'});
+      const j=await r.json();
+      const batch=(j.items||[]).filter(it=>it && it.play && !seen[it.id]);
+      if(!batch.length && !feed.children.length){
+        feed.innerHTML='<div class="ym" style="color:#fff">TikTok did not load. Try again.</div>';
+        done=true;
+      } else if(!batch.length) done=true;
+      else { add(batch); cursor=String(j.cursor||cursor); sync(); }
+    }catch(e){
+      if(!feed.children.length) feed.innerHTML='<div class="ym" style="color:#fff">TikTok did not load. Try again.</div>';
+    }
+    loading=false;
+  }
+  feed.addEventListener('scroll', function(){
+    sync();
+    if(feed.scrollTop+feed.clientHeight>feed.scrollHeight-240) more();
+  });
+  more();
+}
 
 const XAPPS={cam:{n:'Camera',f:camera},mus:{n:'Music',f:music},movies:{n:'Netflix',f:movies},code:{n:'VS Code',f:vscode},discord:{n:'Discord',f:discordApp},gmail:{n:'Gmail',f:gmailApp},ig:{n:'Instagram',f:igApp},tt:{n:'TikTok',f:ttApp},classroom:{n:'Classroom',f:classroomApp},canva:{n:'Canva',f:canvaApp},roblox:{n:'Roblox',f:robloxApp}};
 

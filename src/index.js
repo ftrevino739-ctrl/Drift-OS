@@ -3,6 +3,7 @@ import { fileURLToPath } from "url";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import { Readable } from "node:stream";
 import Fastify from "fastify";
 import fastifyStatic from "@fastify/static";
 
@@ -110,10 +111,10 @@ function loadAndPatchIndex() {
 	);
 
 	const tag =
-		'<script src="/drift-extras.js?v=20261020b" defer></script>' +
-		'<script src="/chromebook-proxy.js?v=20261020b" defer></script>' +
-		'<script src="/wayground-ai.js?v=20261020b" defer></script>' +
-		'<script src="/drift-fixup.js?v=20261020b" defer></script>' +
+		'<script src="/drift-extras.js?v=20261020c" defer></script>' +
+		'<script src="/chromebook-proxy.js?v=20261020c" defer></script>' +
+		'<script src="/wayground-ai.js?v=20261020c" defer></script>' +
+		'<script src="/drift-fixup.js?v=20261020c" defer></script>' +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +
@@ -380,6 +381,10 @@ const BROWSER_PROFILES = {
 		ua: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 OPR/116.0.0.0",
 		ch: "\"Opera\";v=\"116\", \"Chromium\";v=\"131\", \"Not_A Brand\";v=\"24\"",
 	},
+	brave: {
+		ua: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+		ch: "\"Brave\";v=\"131\", \"Chromium\";v=\"131\", \"Not_A Brand\";v=\"24\"",
+	},
 };
 function browserName(raw) {
 	const name = String(raw || "edge").toLowerCase();
@@ -394,7 +399,10 @@ function operaHostOk(host) {
 		host === "googleusercontent.com" || host.endsWith(".googleusercontent.com") ||
 		host === "googleapis.com" || host.endsWith(".googleapis.com") ||
 		host === "canva.com" || host.endsWith(".canva.com") ||
-		host === "accounts.youtube.com"
+		host === "accounts.youtube.com" ||
+		host === "roblox.com" || host.endsWith(".roblox.com") ||
+		host === "rbxcdn.com" || host.endsWith(".rbxcdn.com") ||
+		host === "arkoselabs.com" || host.endsWith(".arkoselabs.com")
 	);
 }
 function operaJar(req, reply) {
@@ -457,11 +465,15 @@ function operaBoot(browser) {
   function abs(u){ try { return new URL(u, document.baseURI).href; } catch (e) { return ""; } }
   function ours(path){ return location.origin + path; }
   function googleHost(u){
-    try { return /(^|\\.)((google|gstatic|googleapis|googleusercontent|youtube)\\.com)$/i.test(new URL(u).hostname); }
+    try {
+      var h = new URL(u).hostname;
+      return /(^|\\.)((google|gstatic|googleapis|googleusercontent|youtube|roblox|rbxcdn)\\.com)$/i.test(h) || /(^|\\.)arkoselabs\\.com$/i.test(h);
+    }
     catch (e) { return false; }
   }
   var armed = false;
   function hop(u){
+    if (navigator.onLine === false) return false;
     u = abs(u);
     if (!armed || !/^https?:/i.test(u) || u.indexOf("/api/opera?u=") !== -1) return false;
     var cur = "";
@@ -583,7 +595,7 @@ function operaBoot(browser) {
     if (emailEl && emailEl.value && !body.get("identifier")) body.set("identifier", emailEl.value);
     proxy(abs(f.action), (f.method || "POST").toUpperCase(), body.toString(), {}).then(function(r){ return r.text(); }).then(function(t){
       document.open(); document.write(t); document.close();
-    }).catch(function(){ hop(f.action); });
+    }).catch(function(){ if (navigator.onLine !== false) hop(f.action); });
   }, true);
 })();`;
 }
@@ -1080,9 +1092,9 @@ fastify.get("/api/yt-play", async (req, reply) => {
 	const id = String(req.query.id || "").replace(/[^a-zA-Z0-9_-]/g, "");
 	if (!id || id.length > 16) return reply.code(400).send({ error: "missing id" });
 	const hosts = [
+		"https://api.piped.private.coffee/streams/",
 		"https://pipedapi.kavin.rocks/streams/",
 		"https://pipedapi.adminforge.de/streams/",
-		"https://api.piped.private.coffee/streams/",
 		"https://pipedapi.reallyaweso.me/streams/",
 	];
 	const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
@@ -1091,17 +1103,88 @@ fastify.get("/api/yt-play", async (req, reply) => {
 			const r = await fetch(host + id, { headers: { "user-agent": UA, accept: "application/json" } });
 			if (!r.ok) continue;
 			const j = await r.json();
-			const list = j.videoStreams || [];
-			const pick = list.find((s) => s && s.url && !s.videoOnly && /mp4/i.test(String(s.mimeType || s.mime || s.container || "")))
-				|| list.find((s) => s && s.url && !s.videoOnly)
-				|| list.find((s) => s && s.url);
-			if (pick && pick.url) {
+			const list = (j.videoStreams || []).filter((s) => s && s.url && !s.videoOnly && /mp4/i.test(String(s.mimeType || s.mime || s.container || s.type || "")) && !/mpegurl|m3u8/i.test(String(s.mimeType || s.type || "")));
+			list.sort((a, b) => {
+				const score = (s) => (/videoplayback|googlevideo/.test(s.url) ? 40 : 0) + (/720/.test(String(s.quality || "")) ? 20 : 0) + (/360|480/.test(String(s.quality || "")) ? 12 : 0);
+				return score(b) - score(a);
+			});
+			const pick = list.find((s) => {
+				try { return mediaHostOk(new URL(s.url).hostname, "yt"); } catch { return false; }
+			});
+			if (pick) {
 				reply.header("cache-control", "no-store");
-				return { url: pick.url, title: j.title || "" };
+				return { url: "/api/yt-file?u=" + encodeURIComponent(pick.url), title: j.title || "" };
 			}
 		} catch {}
 	}
 	return reply.code(502).send({ error: "no stream" });
+});
+
+function mediaHostOk(host, kind) {
+	host = String(host || "").toLowerCase();
+	if (kind === "yt") {
+		return host === "googlevideo.com" || host.endsWith(".googlevideo.com")
+			|| host === "proxy.piped.private.coffee" || host === "api.piped.private.coffee" || host.endsWith(".piped.private.coffee")
+			|| host === "odycdn.com" || host.endsWith(".odycdn.com");
+	}
+	return /(^|\.)tiktokcdn(-[a-z0-9]+)?\.com$/.test(host) || host.endsWith(".muscdn.com") || host.endsWith(".tiktokv.com");
+}
+async function proxyMedia(req, reply, kind, referer) {
+	let current = "";
+	try { current = new URL(String(req.query.u || "")).toString(); } catch { return reply.code(400).send("bad url"); }
+	const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+	let r = null;
+	for (let i = 0; i < 3; i++) {
+		let u;
+		try { u = new URL(current); } catch { return reply.code(400).send("bad url"); }
+		if (u.protocol !== "https:" || !mediaHostOk(u.hostname, kind)) return reply.code(400).send("blocked");
+		const headers = { "user-agent": UA, referer, accept: "*/*" };
+		if (req.headers.range) headers.range = String(req.headers.range).slice(0, 80);
+		r = await fetch(current, { headers, redirect: "manual" });
+		if (r.status >= 300 && r.status < 400) {
+			const loc = r.headers.get("location");
+			if (!loc) break;
+			current = new URL(loc, current).toString();
+			continue;
+		}
+		break;
+	}
+	if (!r || !r.body) return reply.code(502).send("no video");
+	reply.code(r.status === 206 ? 206 : (r.ok ? 200 : r.status));
+	const ct = r.headers.get("content-type");
+	if (ct) reply.header("content-type", ct.split(";")[0]);
+	const cr = r.headers.get("content-range");
+	if (cr) reply.header("content-range", cr);
+	const cl = r.headers.get("content-length");
+	if (cl) reply.header("content-length", cl);
+	reply.header("accept-ranges", "bytes");
+	reply.header("cache-control", "no-store");
+	return reply.send(Readable.fromWeb(r.body));
+}
+fastify.get("/api/yt-file", async (req, reply) => proxyMedia(req, reply, "yt", "https://www.youtube.com/"));
+fastify.get("/api/tt-file", async (req, reply) => proxyMedia(req, reply, "tt", "https://www.tiktok.com/"));
+fastify.get("/api/tt-feed", async (req, reply) => {
+	const cursor = String(req.query.cursor || "0").replace(/[^0-9]/g, "").slice(0, 8) || "0";
+	const r = await fetch("https://www.tikwm.com/api/feed/list?region=US&count=8&cursor=" + cursor, {
+		headers: { "user-agent": "Mozilla/5.0", accept: "application/json" },
+	});
+	const j = await r.json();
+	const items = [];
+	for (const it of (Array.isArray(j.data) ? j.data : [])) {
+		if (!it || it.is_ad || typeof it.play !== "string" || !it.play.startsWith("https://")) continue;
+		let host = "";
+		try { host = new URL(it.play).hostname; } catch { continue; }
+		if (!mediaHostOk(host, "tt")) continue;
+		const author = it.author && (it.author.unique_id || it.author.nickname) || "";
+		items.push({
+			id: String(it.video_id || ""),
+			title: String(it.title || "").slice(0, 180),
+			author: String(author).slice(0, 80),
+			play: "/api/tt-file?u=" + encodeURIComponent(it.play),
+		});
+	}
+	reply.header("cache-control", "no-store");
+	return { items, cursor: String(Number(cursor) + (Array.isArray(j.data) ? j.data.length : 0)) };
 });
 
 fastify.get("/health", async () => ({
