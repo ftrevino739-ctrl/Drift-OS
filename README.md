@@ -48,7 +48,7 @@ Open http://localhost:8080 (Railway injects `PORT`).
 - Gemini AI
 - Netflix-style
 - Movies
-- Camera
+- Camera (VIDEO AND AUDIO)
 - Classdojo
 - JS injector (injects .js just as tampermonkey without extension)
 - Music
