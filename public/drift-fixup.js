@@ -246,15 +246,26 @@
       }
       var i21 = MODELS.findIndex(function (m) { return m && m[0] === 'google/gemini-3.8-flash'; });
       if (i21 > 0) MODELS.unshift(MODELS.splice(i21, 1)[0]);
-      if (MODELS.some(function (m) { return m && (m[1] === 'Drift 2.0' || m[0] === 'mistralai/mistral-large-4-0'); })) return;
-      MODELS.splice(1, 0, ['mistralai/mistral-large-4-0', 'Drift 2.0', 'Recommended · xKiro free · best', 'default', 'Mistral Large 4 via xKiro.', { code: 1, vision: 1, files: 0, think: 1, fast: 0 }]);
-      if (!MODELS.some(function (m) { return m && m[0] === 'qwen/qwen3-coder-plus:free'; })) {
-        MODELS.splice(1, 0, ['qwen/qwen3-coder-plus:free', 'Drift Code', 'Recommended · coding · VS Code', 'default', 'Best free coding model for VS Code & JS Injector.', { code: 1, vision: 1, files: 0, think: 1, fast: 1 }]);
-      }
-      MODELS.splice(2, 0, ['mistralai/codestral-2508', 'Codestral', 'xKiro free · code', 'default', 'Mistral Codestral free on xKiro.', { code: 1, vision: 0, files: 0, think: 0, fast: 1 }]);
-      MODELS.splice(3, 0, ['cohere/command-a-plus', 'Command A+', 'xKiro free', 'default', 'Cohere Command A+ free.', { code: 1, vision: 1, files: 0, think: 1, fast: 0 }]);
-      MODELS.splice(4, 0, ['mistralai/mistral-medium-3.5', 'Mistral Medium 3.5', 'xKiro free', 'default', 'Mistral Medium 3.5 free.', { code: 1, vision: 1, files: 0, think: 1, fast: 1 }]);
-      MODELS.splice(5, 0, ['qwen/qwen3.8-max:free', 'Qwen3.8 Max', 'xKiro free', 'default', 'Qwen3.8 Max free on xKiro.', { code: 1, vision: 1, files: 0, think: 1, fast: 0 }]);
+      var extra = [
+        ['mistralai/mistral-large-4-0', 'Drift 2.0', 'xKiro free · under Drift 2.1', 'default', 'Mistral Large 4. Strong, but Drift 2.1 stays above it.', { code: 1, vision: 1, files: 0, think: 1, fast: 0 }],
+        ['qwen/qwen3.8-omni-flash:free', 'Qwen3.8 Omni', 'xKiro free · vision', 'default', 'Free Qwen3.8 Omni. Sees images. Below Drift 2.1.', { code: 1, vision: 1, files: 0, think: 1, fast: 1 }],
+        ['qwen/qwen3.8-max:free', 'Qwen3.8 Max', 'xKiro free', 'default', 'Free Qwen3.8 Max. Below Drift 2.1.', { code: 1, vision: 1, files: 0, think: 1, fast: 0 }],
+        ['qwen/qwen3.6-plus:free', 'Qwen3.6 Plus', 'xKiro free', 'default', 'Free Qwen3.6 Plus. Below Drift 2.1.', { code: 1, vision: 1, files: 0, think: 1, fast: 0 }],
+        ['qwen/qwen3.5-plus:free', 'Qwen3.5 Plus', 'xKiro free', 'default', 'Free Qwen3.5 Plus. Below Drift 2.1.', { code: 1, vision: 1, files: 0, think: 1, fast: 0 }],
+        ['cohere/command-a-plus', 'Command A+', 'xKiro free', 'default', 'Cohere Command A+, free on xKiro. Below Drift 2.1.', { code: 1, vision: 1, files: 0, think: 1, fast: 0 }],
+        ['cohere/command-a-reasoning', 'Command A Reasoning', 'xKiro free', 'default', 'Cohere reasoning model, free on xKiro. Below Drift 2.1.', { code: 1, vision: 0, files: 0, think: 1, fast: 0 }],
+        ['mistralai/devstral-medium', 'Devstral', 'xKiro free · code', 'default', 'Mistral Devstral, free on xKiro. Below Drift 2.1.', { code: 1, vision: 0, files: 0, think: 0, fast: 1 }],
+        ['mistralai/mistral-medium-3.5', 'Mistral Medium 3.5', 'xKiro free', 'default', 'Mistral Medium 3.5, free on xKiro. Below Drift 2.1.', { code: 1, vision: 1, files: 0, think: 1, fast: 1 }],
+        ['mistralai/mistral-small-2603', 'Mistral Small', 'xKiro free', 'default', 'Mistral Small, free on xKiro. Below Drift 2.1.', { code: 1, vision: 1, files: 0, think: 1, fast: 1 }],
+        ['mistralai/codestral-2508', 'Codestral', 'xKiro free · code', 'default', 'Codestral, free on xKiro. Below Drift 2.1.', { code: 1, vision: 0, files: 0, think: 0, fast: 1 }],
+        ['qwen/qwen3-coder-plus:free', 'Drift Code', 'xKiro free · code', 'default', 'Qwen3 Coder, free on xKiro. Below Drift 2.1.', { code: 1, vision: 1, files: 0, think: 1, fast: 1 }]
+      ];
+      extra.forEach(function (m) {
+        if (!MODELS.some(function (x) { return x && x[0] === m[0]; })) MODELS.push(m);
+        if (typeof AI_ABOUT === 'object' && AI_ABOUT) AI_ABOUT[m[0]] = m[4];
+      });
+      i21 = MODELS.findIndex(function (m) { return m && m[0] === 'google/gemini-3.8-flash'; });
+      if (i21 > 0) MODELS.unshift(MODELS.splice(i21, 1)[0]);
     } catch (e) {}
   }
 
@@ -1220,25 +1231,42 @@
     if (!q) { if (status.parentNode) status.parentNode.remove(); return; }
     var click = /pantalla|on screen|selecci[oó]n|selection|\bclick\b|p[uú]lsa|responde lo que/i.test(q);
     driftPaint(status, 'Drift 2.1 is looking…');
-    var ask = q + '\n\nWrite a complete, well-organized answer. If you use markdown, write real tables and fenced code blocks. Do not wrap the whole answer in asterisks.';
-    if (click) ask += '\n\nThe user wants the selection on this screen answered or clicked. End your reply with one final line exactly CLICK: percentX percentY where both numbers are from 0 to 100 and mark the point that should be clicked. Do not explain that line.';
-    var blob = await new Promise(function (res) { canvas.toBlob(function (b) { res(b); }, 'image/jpeg', 0.62); });
+    try { if (window.driftAct) window.driftAct(q, ''); } catch (e) {}
+    var ask = q;
+    if (click) ask += '\n\nIf the user wants a point on this screen clicked, end with one line CLICK: percentX percentY. Do not explain that line.';
+    var data = canvas.toDataURL('image/jpeg', 0.62).split(',')[1];
     try {
-      for (var i = 0; i < 20 && typeof window.driftAsk !== 'function'; i++) {
-        await new Promise(function (res) { setTimeout(res, 150); });
+      var body = {
+        systemInstruction: { parts: [{ text: 'You are Drift 2.1 and you can see this screenshot. You are not a text-only AI. Answer in the user language with the full answer, not a short summary. Never say you are Gemini and never say you are a text AI. If they clearly ask to open a Drift app, add a final line OPEN_APP:id. Do not do that when they only ask for code.' }] },
+        contents: [{ role: 'user', parts: [
+          { inlineData: { mimeType: 'image/jpeg', data: data } },
+          { text: ask }
+        ]}],
+        generationConfig: { maxOutputTokens: 65536, temperature: 0.4 }
+      };
+      var r = await fetch('/api/gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      var j = await r.json().catch(function () { return {}; });
+      if (!r.ok) {
+        var msg = (j.error && (j.error.message || j.error)) || 'Drift 2.1 did not answer.';
+        if (r.status === 404 || /no-key/i.test(String(msg))) msg = 'Drift 2.1 has no Gemini key on this server, so it cannot see the screen.';
+        throw new Error(String(msg));
       }
-      if (typeof window.driftAsk !== 'function') throw new Error('Drift 2.1 is still loading. Ask again in a moment.');
-      var text = String(await window.driftAsk(ask, blob) || '').replace(/Gemini said/gi, 'Drift said');
+      var text = ((((j.candidates || [])[0] || {}).content || {}).parts || []).filter(function (p) { return !p.thought; }).map(function (p) { return p.text || ''; }).join('');
+      text = String(text || '').replace(/Gemini said/gi, 'Drift said');
+      if (window.driftAct) {
+        var acted = window.driftAct('', text);
+        if (typeof acted === 'string') text = acted;
+      }
       var cm = text.match(/CLICK:\s*(\d{1,3}(?:\.\d+)?)\s+(\d{1,3}(?:\.\d+)?)\s*$/i);
       if (cm && click) {
         text = text.replace(cm[0], '').trim();
         driftClickAt(Number(cm[1]), Number(cm[2]));
       }
       if (status.parentNode) status.parentNode.remove();
-      orbMessage(text || 'Drift 2.1 did not answer. Ask again in a moment.');
+      orbMessage(text || 'Drift 2.1 did not answer. Ask again.');
     } catch (e) {
       if (status.parentNode) status.parentNode.remove();
-      orbMessage(/failed to fetch/i.test(String(e && e.message || e)) ? 'Drift 2.1 could not reach Gemini. Ask again in a moment.' : String((e && e.message) || e));
+      orbMessage(String((e && e.message) || e));
     }
   }
   function driftClickAt(px, py) {
@@ -1300,7 +1328,16 @@
     if (userText) driftOpened = {};
     var answer = String(answerText || '');
     var did = false;
-    answer.replace(/OPEN_APP:\s*([a-z0-9_]+)/gi, function (_, id) { driftOpen(id.toLowerCase()); did = true; return ''; });
+    answer.replace(/OPEN_APP:\s*([a-z0-9_]+)/gi, function (_, id) {
+      id = id.toLowerCase();
+      var qNow = String(userText || '');
+      var asked = /\b(open|abre|abrir|ábreme|abreme|abrime|launch|lanz\w*|go to|ve a|pull up|bring up|switch to|cambia a|ponme)\b/i.test(qNow);
+      if (!asked) return '';
+      if (id === 'code' && !/\b(vs\s*code|vscode|code app|el code|the code)\b/i.test(qNow)) return '';
+      driftOpen(id);
+      did = true;
+      return '';
+    });
     answer.replace(/TASKBAR:\s*(hide|show)/gi, function (_, v) { driftTaskbar(v.toLowerCase() === 'show'); did = true; return ''; });
     answer.replace(/SIZE:\s*(apps|tb)\s*=\s*(xl|lg|sm|xs)/gi, function (_, which, value) { driftSetSize(which.toLowerCase(), value.toLowerCase()); did = true; return ''; });
     answer.replace(/SET:\s*([a-z]+)\s*=\s*([a-z0-9._-]+)/gi, function (_, key, value) {
@@ -1333,7 +1370,7 @@
       if (flag !== null && /protector/i.test(q)) { driftFlag('protector', flag); did = true; }
       if (flag !== null && /no dev/i.test(q)) { driftFlag('nodev', flag); did = true; }
       var asking = /^\s*(how|why|what|when|who|donde|d[oó]nde|cuando|cu[aá]ndo|por\s*qu[eé]|c[oó]mo\s+(se|hago|funciona)|explica|explain|qu[eé]\s+es)\b/i.test(q);
-      var verb = /\b(open|abre|abrir|ábreme|abreme|abrime|lanz\w*|launch|start|show|muestra|muéstrame|muestrame|entra|entrar|ve a|go to|pull up|bring up|switch to|cambia|load|carga|ponme|pon|quiero|necesito|dame|inicia|iniciar|ejecut\w*|run|usa|usar|use|mete|enseña|ensena|enseñame|ensename|please|pls)\b/i.test(q);
+      var verb = /\b(open|abre|abrir|ábreme|abreme|abrime|launch|lanz\w*|go to|ve a|pull up|bring up|switch to|cambia a|ponme)\b/i.test(q);
       var words = [
         ['js injector', 'injector'], ['vs code', 'code'], ['vscode', 'code'], ['classdojo', 'classdojo'], ['dojo islands', 'classdojo'], ['whatsapp', 'whatsapp'],
         ['wayground', 'wayground'], ['classroom', 'classroom'], ['instagram', 'ig'], ['calculator', 'calc'], ['calculadora', 'calc'],
@@ -1341,20 +1378,18 @@
         ['netflix', 'movies'], ['canva', 'canva'], ['gmail', 'gmail'], ['tiktok', 'tt'], ['gemini', 'gem'],
         ['browser', 'browser'], ['navegador', 'browser'], ['camera', 'cam'], ['cámara', 'cam'], ['camara', 'cam'],
         ['music', 'mus'], ['música', 'mus'], ['musica', 'mus'], ['games', 'games'], ['juegos', 'games'],
-        ['chat', 'chat'], ['code', 'code'], ['calc', 'calc'], ['ai', 'ai'], ['dojo', 'classdojo']
+        ['chat', 'chat'], ['calc', 'calc'], ['ai', 'ai'], ['dojo', 'classdojo']
       ];
       var hits = [];
       for (var i = 0; i < words.length; i++) {
         var re = new RegExp('(^|[^a-z])' + words[i][0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '([^a-z]|$)', 'i');
         if (re.test(q)) hits.push(words[i]);
       }
-      var writing = /\b(write|escribe|escr[ií]beme|l[ií]neas|lines|script|codigo|c[oó]digo)\b/i.test(q);
-      var short = q.trim().split(/\s+/).length <= 6;
-      if (!asking && (verb || short)) {
+      if (verb && /\b(open|abre|abrir|launch)\b[^.?\n]{0,24}\b(vs\s*code|vscode|code)\b/i.test(q)) hits.push(['vs code', 'code']);
+      if (!asking && verb) {
         hits.forEach(function (h) {
           var covered = hits.some(function (o) { return o[0] !== h[0] && o[0].length > h[0].length && o[0].indexOf(h[0]) !== -1; });
           if (covered) return;
-          if (h[1] === 'code' && writing && !/\b(vs\s*code|vscode)\b/i.test(q)) return;
           driftOpen(h[1]);
           did = true;
         });
