@@ -703,7 +703,7 @@
     try {
       if (!window.XAPPS) return;
       window.XAPPS.gmail = { n: 'Gmail', f: operaPage('https://mail.google.com/mail/u/0/#inbox') };
-      window.XAPPS.classroom = { n: 'Classroom', f: sessionChooser('https://classroom.google.com/', 'https://accounts.google.com/ServiceLogin?service=classroom&continue=https%3A%2F%2Fclassroom.google.com%2F') };
+      window.XAPPS.classroom = { n: 'Classroom', f: sessionChooser('https://accounts.google.com/ServiceLogin?service=classroom&continue=https%3A%2F%2Fclassroom.google.com%2F&passive=1209600', 'https://accounts.google.com/ServiceLogin?service=classroom&continue=https%3A%2F%2Fclassroom.google.com%2F') };
       window.XAPPS.canva = { n: 'Canva', f: sessionChooser('https://www.canva.com/', 'https://www.canva.com/login') };
       window.XAPPS.roblox = { n: 'Roblox', f: robloxShell };
     } catch (e) {}
@@ -809,7 +809,7 @@
       '<p><b>BareMux no respondió / Scramjet server is down or blocked.</b> Render is waking up or the school network blocks the WebSocket. Wait 30–60 seconds, stay on the tab, then press Retry. Do not reload in a loop.</p>' +
       '<p><b>Some apps stay blank for a few minutes.</b> The proxy is still connecting. Wait. TikTok, Gemini and Gimkit need that first connection.</p>' +
       '<p><b>ServiceWorker script evaluation failed.</b> Hard refresh. If it stays, close the tab and open Drift again. Do not use an old bookmark to a Vercel preview.</p>' +
-      '<p><b>Gmail and Classroom login.</b> They open inside the app as Opera, so Google does not mark the browser as insecure. Classroom and Canva Oauth stay inside the app too. Canva can still show its own block page in that window. Roblox still has Verify you are human.</p>' +
+      '<p><b>Gmail and Classroom login.</b> They open inside the app as Opera, so Google does not mark the browser as insecure. Classroom Oauth opens that same sign-in page inside the app. Canva stays in the window; if Canva blocks the server, Drift shows that message instead of a 404. Roblox still has Verify you are human.</p>' +
       '<p><b>SharedWorker / cdn.jsdelivr.net/baremux.</b> Unity cannot use a worker from another site. Drift blocks that CDN and uses /baremux on the same origin. If the game still fails, use Open outside proxy (Unity).</p>' +
       '<h3>Windows</h3>' +
       '<p><b>Same proxy errors as ChromeOS</b> (BareMux, cold start, Service Worker). Same fix: wait, then Ctrl+Shift+R.</p>' +
@@ -1228,21 +1228,23 @@
     var ask = q;
     if (click) ask += '\n\nIf the user wants a point on this screen clicked, end with one line CLICK: percentX percentY. Do not explain that line.';
     var data = canvas.toDataURL('image/jpeg', 0.62).split(',')[1];
+    var ep = 'https://holy-firefly-982c.fert0480.workers.dev';
+    try { if (typeof EP === 'function') ep = String(EP()).replace(/\/$/, ''); } catch (e) {}
     try {
       var body = {
-        systemInstruction: { parts: [{ text: 'You are Drift 2.1 and you can see this screenshot. You are not a text-only AI. Answer in the user language with the full answer, not a short summary. Never say you are Gemini and never say you are a text AI. If they clearly ask to open a Drift app, add a final line OPEN_APP:id. Do not do that when they only ask for code.' }] },
+        systemInstruction: { parts: [{ text: 'You are Drift 2.1. The user is showing you a screenshot. Answer about what is visible, in their language, in one complete reply. Never say Gemini. If they clearly ask to open a Drift app, add a final line OPEN_APP:id. Do not do that when they only ask for code.' }] },
         contents: [{ role: 'user', parts: [
           { inlineData: { mimeType: 'image/jpeg', data: data } },
           { text: ask }
         ]}],
-        generationConfig: { maxOutputTokens: 65536, temperature: 0.4 }
+        generationConfig: { maxOutputTokens: 2048, temperature: 0.4, thinkingConfig: { thinkingBudget: 0 } }
       };
       var r = await fetch('/api/gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       var j = await r.json().catch(function () { return {}; });
-      var noKey = !r.ok && (r.status === 404 || /no-key/i.test(JSON.stringify(j && j.error || j)));
-      if (!r.ok && !noKey) {
-        var msg = (j.error && (j.error.message || j.error)) || 'Drift 2.1 did not answer.';
-        throw new Error(String(msg));
+      if (!r.ok && /thinkingConfig|Unknown name|invalid/i.test(JSON.stringify(j && j.error || j))) {
+        delete body.generationConfig.thinkingConfig;
+        r = await fetch('/api/gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        j = await r.json().catch(function () { return {}; });
       }
       var text = '';
       if (r.ok) {
@@ -1250,10 +1252,22 @@
         text = parts.filter(function (p) { return !p.thought; }).map(function (p) { return p.text || ''; }).join('');
         if (!String(text).trim()) text = parts.filter(function (p) { return p.thought; }).map(function (p) { return p.text || ''; }).join('\n');
       }
-      if (!String(text).trim() && typeof window.driftAsk === 'function') {
-        driftPaint(status, 'Drift 2.1 is answering…');
-        var blob = await new Promise(function (res) { canvas.toBlob(function (b) { res(b); }, 'image/jpeg', 0.62); });
-        text = await window.driftAsk(ask, blob || null);
+      if (!String(text).trim()) {
+        var r2 = await fetch(ep + '/ai', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'google/gemini-3.8-flash',
+            max_tokens: 2048,
+            messages: [{ role: 'user', content: [
+              { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: data } },
+              { type: 'text', text: ask }
+            ]}],
+            system: 'You are Drift 2.1. Answer about the screenshot. Never say Gemini.'
+          })
+        });
+        var j2 = await r2.json().catch(function () { return {}; });
+        text = ((j2.content || []).map(function (x) { return x.text || ''; }).join('')) || '';
       }
       text = String(text || '').replace(/Gemini said/gi, 'Drift said');
       if (window.driftAct) {

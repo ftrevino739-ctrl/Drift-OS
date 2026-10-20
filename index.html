@@ -1277,6 +1277,10 @@ function ai(root){
       }catch(err){
         if(LS.get('wos:gk',''))throw err;
       }
+      const r=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'google/gemini-3.8-flash',max_tokens:4096,messages:msgs,system:'You are Drift 2.1. Reply in the user language with the full answer. Never say you are Gemini. Do not say you are a text AI.'}),signal:o.signal});
+      const j=await r.json().catch(()=>({}));
+      const text=((j.content||[]).map(x=>x.text||'').join(''))||'';
+      if(text)return {text};
       return geminiSite(msgs,o);
     }
     if(real)return real(input,o);
@@ -1336,7 +1340,7 @@ function ai(root){
   }
   async function geminiOfficial(list, o){
     const sys={parts:[{text:'You are Drift 2.1. Never say you are Gemini and never write "Gemini said". If you refer to yourself, say Drift. Reply in the user language with the full answer, not a summary. When they ask for code, write every line in one fenced block. Do not tell them to open an app instead of writing the code.'}]};
-    const body={systemInstruction:sys,contents:geminiContents(list),generationConfig:{maxOutputTokens:65536,temperature:0.4}};
+    const body={systemInstruction:sys,contents:geminiContents(list),generationConfig:{maxOutputTokens:65536,temperature:0.4,thinkingConfig:{thinkingBudget:0}}};
     let res=await geminiCall(body, o.signal);
     if(!res.ok && /thinkingConfig|Unknown name|invalid/i.test(JSON.stringify(res.j&&res.j.error||''))){
       delete body.generationConfig.thinkingConfig;

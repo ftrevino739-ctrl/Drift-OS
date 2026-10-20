@@ -110,10 +110,10 @@ function loadAndPatchIndex() {
 	);
 
 	const tag =
-		'<script src="/drift-extras.js?v=20261019i" defer></script>' +
-		'<script src="/chromebook-proxy.js?v=20261019i" defer></script>' +
-		'<script src="/wayground-ai.js?v=20261019i" defer></script>' +
-		'<script src="/drift-fixup.js?v=20261019i" defer></script>' +
+		'<script src="/drift-extras.js?v=20261019j" defer></script>' +
+		'<script src="/chromebook-proxy.js?v=20261019j" defer></script>' +
+		'<script src="/wayground-ai.js?v=20261019j" defer></script>' +
+		'<script src="/drift-fixup.js?v=20261019j" defer></script>' +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +
@@ -399,113 +399,13 @@ function operaCookie(jar, url) {
 const OPERA_BOOT = `(function(){
   var ua = ${JSON.stringify("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 OPR/116.0.0.0")};
   try { Object.defineProperty(navigator, "userAgent", { get: function(){ return ua; } }); } catch (e) {}
-  var hopping = false;
   function abs(u){ try { return new URL(u, document.baseURI).href; } catch (e) { return ""; } }
   function ours(path){ return location.origin + path; }
-  function googleAccounts(){ return /accounts\\.google\\.com/i.test(document.baseURI || ""); }
-  function isAccounts(u){ try { return /(^|\\.)accounts\\.google\\.com$/i.test(new URL(u).hostname); } catch (e) { return false; } }
+  function googleAccounts(){ return /accounts\.google\.com/i.test(document.baseURI || ""); }
   function hop(u){
     u = abs(u);
     if (!/^https?:/i.test(u) || u.indexOf("/api/opera?u=") !== -1) return;
-    hopping = true;
-    try { location.href = ours("/api/opera?u=" + encodeURIComponent(u)); }
-    finally { hopping = false; }
-  }
-  function bodyText(body){
-    if (body == null) return "";
-    if (typeof body === "string") return body;
-    try { if (typeof URLSearchParams !== "undefined" && body instanceof URLSearchParams) return body.toString(); } catch (e) {}
-    try { if (body && body.byteLength && typeof TextDecoder !== "undefined") return new TextDecoder().decode(body); } catch (e) {}
-    return "";
-  }
-  function headerBag(src){
-    var headers = {};
-    try {
-      var h = new Headers(src || undefined);
-      h.forEach(function(v, k){ headers[k] = v; });
-    } catch (e) {}
-    return headers;
-  }
-  function proxyBody(u, method, form, headers){
-    return JSON.stringify({ u: u, form: form || "", method: method || "GET", raw: true, headers: headers || {} });
-  }
-  if (googleAccounts()) {
-    try {
-      var hrefDesc = Object.getOwnPropertyDescriptor(Location.prototype, "href");
-      if (hrefDesc && hrefDesc.set && hrefDesc.configurable) {
-        Object.defineProperty(Location.prototype, "href", {
-          configurable: true,
-          get: hrefDesc.get,
-          set: function(v){
-            if (!hopping && isAccounts(abs(v))) { hop(v); return; }
-            return hrefDesc.set.call(this, v);
-          }
-        });
-      }
-    } catch (e) {}
-    try {
-      ["assign", "replace"].forEach(function(name){
-        var orig = Location.prototype[name];
-        if (typeof orig !== "function") return;
-        Location.prototype[name] = function(v){
-          if (!hopping && isAccounts(abs(v))) { hop(v); return; }
-          return orig.apply(this, arguments);
-        };
-      });
-    } catch (e) {}
-    var ofetch = window.fetch;
-    if (ofetch) {
-      window.fetch = function(input, init){
-        var raw = typeof input === "string" ? input : (input && input.url) || "";
-        var u = abs(raw);
-        if (!isAccounts(u)) return ofetch.apply(this, arguments);
-        init = init || {};
-        var method = String(init.method || (input && input.method) || "GET").toUpperCase();
-        var headers = headerBag(init.headers || (input && input.headers));
-        return ofetch(ours("/api/opera"), { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: proxyBody(u, method, bodyText(init.body), headers) });
-      };
-    }
-    var XO = XMLHttpRequest.prototype.open;
-    var XS = XMLHttpRequest.prototype.send;
-    var XH = XMLHttpRequest.prototype.setRequestHeader;
-    XMLHttpRequest.prototype.open = function(method, url){
-      this.__d = null;
-      var u = abs(url);
-      if (isAccounts(u)) this.__d = { method: String(method || "GET").toUpperCase(), url: u, headers: {} };
-      return XO.apply(this, arguments);
-    };
-    XMLHttpRequest.prototype.setRequestHeader = function(k, v){
-      if (this.__d) this.__d.headers[String(k).toLowerCase()] = String(v);
-      try { return XH.apply(this, arguments); } catch (e) { return; }
-    };
-    XMLHttpRequest.prototype.send = function(body){
-      var d = this.__d;
-      if (!d) return XS.apply(this, arguments);
-      var self = this;
-      var rt = "";
-      try { rt = self.responseType || ""; } catch (e) {}
-      ofetch(ours("/api/opera"), { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: proxyBody(d.url, d.method, bodyText(body), d.headers) })
-        .then(function(r){ return r.text().then(function(t){ return { status: r.status, t: t, ct: r.headers.get("content-type") || "text/plain" }; }); })
-        .then(function(res){
-          var payload = res.t;
-          if (rt === "json") { try { payload = JSON.parse(res.t); } catch (e) {} }
-          function set(prop, val){ try { Object.defineProperty(self, prop, { configurable: true, get: function(){ return val; } }); } catch (e) {} }
-          set("readyState", 4);
-          set("status", res.status || 200);
-          set("statusText", "OK");
-          set("responseText", res.t);
-          set("response", rt === "json" ? payload : res.t);
-          self.getAllResponseHeaders = function(){ return "content-type: " + res.ct + "\\r\\n"; };
-          self.getResponseHeader = function(h){ return /content-type/i.test(String(h || "")) ? res.ct : null; };
-          try { self.dispatchEvent(new Event("readystatechange")); } catch (e) {}
-          try { self.dispatchEvent(new Event("load")); } catch (e) {}
-          try { self.dispatchEvent(new Event("loadend")); } catch (e) {}
-          if (typeof self.onreadystatechange === "function") self.onreadystatechange();
-          if (typeof self.onload === "function") self.onload();
-        })
-        .catch(function(){});
-      return;
-    };
+    location.href = ours("/api/opera?u=" + encodeURIComponent(u));
   }
   try { window.open = function(u){ hop(u || ""); return null; }; } catch (e) {}
   document.addEventListener("click", function(e){
@@ -577,7 +477,11 @@ async function operaFetch(target, method, form, jar, contentType, extraHeaders) 
 		if (r.status >= 300 && r.status < 400) {
 			const loc = r.headers.get("location");
 			if (!loc) return { response: r, final: current };
-			current = new URL(loc, current).toString();
+			let next = new URL(loc, current).toString();
+			if (/classroom\.google\.com/i.test(current) && /edu\.google\.com/i.test(next)) {
+				next = "https://accounts.google.com/ServiceLogin?service=classroom&continue=" + encodeURIComponent("https://classroom.google.com/");
+			}
+			current = next;
 			verb = "GET";
 			body = "";
 			continue;
@@ -598,6 +502,10 @@ async function operaReply(req, reply, target, method, form, raw, contentType, ex
 	reply.header("cache-control", "no-store");
 	if (!raw && /text\/html|application\/xhtml/i.test(ct)) {
 		const html = await got.response.text();
+		if (/canva\.com$/i.test(u.hostname) && /designing again soon|challenge-platform|Just a moment|cf-challenge/i.test(html)) {
+			reply.type("text/html; charset=utf-8");
+			return reply.send("<!doctype html><meta charset=utf-8><title>Canva</title><body style=\"margin:0;height:100vh;display:grid;place-items:center;background:#fff;color:#111;font:16px system-ui;text-align:center;padding:28px\"><div><b>Canva</b><p>We'll have you designing again soon.</p><p style=\"opacity:.7;font-size:13px\">Canva blocked this server. The page stays in this window instead of a 404.</p></div></body>");
+		}
 		reply.header("content-security-policy", "default-src * data: blob: 'unsafe-inline' 'unsafe-eval'; script-src * data: blob: 'unsafe-inline' 'unsafe-eval'; style-src * 'unsafe-inline' data: blob:; img-src * data: blob:; connect-src *; frame-src *; media-src *");
 		reply.type("text/html; charset=utf-8");
 		return reply.send(operaInject(html, got.final));
