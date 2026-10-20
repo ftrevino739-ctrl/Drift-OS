@@ -686,25 +686,31 @@
       root.querySelector('.sjt').appendChild(frame);
     };
   }
-  function sessionChooser(url, loginUrl) {
+  function sessionChooser(url, loginUrl, oauthInChrome, loginInChrome) {
     return function (root) {
       root.innerHTML =
         '<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center">' +
         '<b style="font-size:18px">How do you want to inicialize sesión</b>' +
         '<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">' +
-        '<button type="button" data-login style="min-width:140px;padding:12px 16px;border-radius:12px;border:1px solid var(--line);background:var(--omni);color:inherit;cursor:pointer"><b>Log in</b><div style="font-size:12px;opacity:.75;margin-top:4px">manual</div></button>' +
-        '<button type="button" data-oauth style="min-width:200px;padding:12px 16px;border-radius:12px;border:0;background:#1a73e8;color:#fff;cursor:pointer"><b>Oauth</b><div style="font-size:12px;opacity:.9;margin-top:4px">inside this app</div></button>' +
+        '<button type="button" data-login style="min-width:140px;padding:12px 16px;border-radius:12px;border:1px solid var(--line);background:var(--omni);color:inherit;cursor:pointer"><b>Log in</b><div style="font-size:12px;opacity:.75;margin-top:4px">' + (loginInChrome ? "this Chromebook's Chrome" : 'manual') + '</div></button>' +
+        '<button type="button" data-oauth style="min-width:200px;padding:12px 16px;border-radius:12px;border:0;background:#1a73e8;color:#fff;cursor:pointer"><b>Oauth</b><div style="font-size:12px;opacity:.9;margin-top:4px">' + (oauthInChrome ? "this Chromebook's Chrome" : 'inside this app') + '</div></button>' +
         '</div></div>';
-      root.querySelector('[data-login]').onclick = function () { operaPage(loginUrl)(root); };
-      root.querySelector('[data-oauth]').onclick = function () { operaPage(url)(root); };
+      root.querySelector('[data-login]').onclick = function () {
+        if (loginInChrome) openInChrome(loginUrl)(root);
+        else operaPage(loginUrl)(root);
+      };
+      root.querySelector('[data-oauth]').onclick = function () {
+        if (oauthInChrome) openInChrome(url)(root);
+        else operaPage(url)(root);
+      };
     };
   }
   function wireLoginApps() {
     try {
       if (!window.XAPPS) return;
       window.XAPPS.gmail = { n: 'Gmail', f: operaPage('https://mail.google.com/mail/u/0/#inbox') };
-      window.XAPPS.classroom = { n: 'Classroom', f: sessionChooser('https://accounts.google.com/ServiceLogin?service=classroom&continue=https%3A%2F%2Fclassroom.google.com%2F&passive=1209600', 'https://accounts.google.com/ServiceLogin?service=classroom&continue=https%3A%2F%2Fclassroom.google.com%2F') };
-      window.XAPPS.canva = { n: 'Canva', f: sessionChooser('https://www.canva.com/', 'https://www.canva.com/login') };
+      window.XAPPS.classroom = { n: 'Classroom', f: sessionChooser('https://accounts.google.com/ServiceLogin?service=classroom&continue=https%3A%2F%2Fclassroom.google.com%2F&passive=1209600', 'https://accounts.google.com/ServiceLogin?service=classroom&continue=https%3A%2F%2Fclassroom.google.com%2F', true, false) };
+      window.XAPPS.canva = { n: 'Canva', f: sessionChooser('https://www.canva.com/', 'https://www.canva.com/login', true, true) };
       window.XAPPS.roblox = { n: 'Roblox', f: robloxShell };
     } catch (e) {}
   }
@@ -809,7 +815,7 @@
       '<p><b>BareMux no respondió / Scramjet server is down or blocked.</b> Render is waking up or the school network blocks the WebSocket. Wait 30–60 seconds, stay on the tab, then press Retry. Do not reload in a loop.</p>' +
       '<p><b>Some apps stay blank for a few minutes.</b> The proxy is still connecting. Wait. TikTok, Gemini and Gimkit need that first connection.</p>' +
       '<p><b>ServiceWorker script evaluation failed.</b> Hard refresh. If it stays, close the tab and open Drift again. Do not use an old bookmark to a Vercel preview.</p>' +
-      '<p><b>Gmail and Classroom login.</b> They open inside the app as Opera, so Google does not mark the browser as insecure. Classroom Oauth opens that same sign-in page inside the app. Canva stays in the window; if Canva blocks the server, Drift shows that message instead of a 404. Roblox still has Verify you are human.</p>' +
+      '<p><b>Gmail and Classroom login.</b> Log in stays inside the app as Opera, so Google does not mark the browser as insecure. Classroom Oauth opens Chrome on this Chromebook and uses the Google account already signed in there. Canva opens in that same Chrome, because Canva blocks this server. Roblox still has Verify you are human.</p>' +
       '<p><b>SharedWorker / cdn.jsdelivr.net/baremux.</b> Unity cannot use a worker from another site. Drift blocks that CDN and uses /baremux on the same origin. If the game still fails, use Open outside proxy (Unity).</p>' +
       '<h3>Windows</h3>' +
       '<p><b>Same proxy errors as ChromeOS</b> (BareMux, cold start, Service Worker). Same fix: wait, then Ctrl+Shift+R.</p>' +
@@ -1253,21 +1259,25 @@
         if (!String(text).trim()) text = parts.filter(function (p) { return p.thought; }).map(function (p) { return p.text || ''; }).join('\n');
       }
       if (!String(text).trim()) {
-        var r2 = await fetch(ep + '/ai', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: 'google/gemini-3.8-flash',
-            max_tokens: 2048,
-            messages: [{ role: 'user', content: [
-              { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: data } },
-              { type: 'text', text: ask }
-            ]}],
-            system: 'You are Drift 2.1. Answer about the screenshot. Never say Gemini.'
-          })
-        });
-        var j2 = await r2.json().catch(function () { return {}; });
-        text = ((j2.content || []).map(function (x) { return x.text || ''; }).join('')) || '';
+        var rawErr = JSON.stringify(j || {});
+        var noKey = !r.ok && (r.status === 404 || r.status === 0 || /no-key|failed to fetch/i.test(rawErr));
+        if (noKey) {
+          var r2 = await fetch(ep + '/ai', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              model: 'google/gemini-3.8-flash',
+              max_tokens: 2048,
+              messages: [{ role: 'user', content: [
+                { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: data } },
+                { type: 'text', text: ask }
+              ]}],
+              system: 'You are Drift 2.1. Answer about the screenshot. Never say Gemini.'
+            })
+          });
+          var j2 = await r2.json().catch(function () { return {}; });
+          text = ((j2.content || []).map(function (x) { return x.text || ''; }).join('')) || '';
+        }
       }
       text = String(text || '').replace(/Gemini said/gi, 'Drift said');
       if (window.driftAct) {

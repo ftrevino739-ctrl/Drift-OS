@@ -110,10 +110,10 @@ function loadAndPatchIndex() {
 	);
 
 	const tag =
-		'<script src="/drift-extras.js?v=20261019j" defer></script>' +
-		'<script src="/chromebook-proxy.js?v=20261019j" defer></script>' +
-		'<script src="/wayground-ai.js?v=20261019j" defer></script>' +
-		'<script src="/drift-fixup.js?v=20261019j" defer></script>' +
+		'<script src="/drift-extras.js?v=20261020a" defer></script>' +
+		'<script src="/chromebook-proxy.js?v=20261020a" defer></script>' +
+		'<script src="/wayground-ai.js?v=20261020a" defer></script>' +
+		'<script src="/drift-fixup.js?v=20261020a" defer></script>' +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +
@@ -206,20 +206,49 @@ fastify.post("/api/pulse", (req, reply) => proxyMod(req, reply, "/api/pulse"));
 fastify.post("/api/gemini", { bodyLimit: 6 * 1024 * 1024 }, async (req, reply) => {
 	const key = process.env.GEMINI_API_KEY || "";
 	if (!key) return reply.code(404).send({ error: "no-key" });
-	try {
-		const r = await fetch(
-			"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=" + encodeURIComponent(key),
-			{
-				method: "POST",
-				headers: { "content-type": "application/json" },
-				body: JSON.stringify(req.body || {}),
-			}
-		);
-		const text = await r.text();
-		reply.code(r.status);
+	const models = ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-2.0-flash"];
+	const busyText = JSON.stringify({ error: { code: 503, message: "Gemini is busy right now. Ask again in a moment.", status: "UNAVAILABLE" } });
+	function sendJson(status, text) {
+		reply.code(status);
 		reply.header("content-type", "application/json; charset=utf-8");
 		reply.header("cache-control", "no-store");
 		return reply.send(text);
+	}
+	let lastStatus = 503;
+	let lastText = busyText;
+	try {
+		const body = req.body || {};
+		for (let mi = 0; mi < models.length; mi++) {
+			const model = models[mi];
+			for (let attempt = 0; attempt < 3; attempt++) {
+				let status = 503;
+				let text = busyText;
+				try {
+					const r = await fetch(
+						"https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) + ":generateContent?key=" + encodeURIComponent(key),
+						{
+							method: "POST",
+							headers: { "content-type": "application/json" },
+							body: JSON.stringify(body),
+							signal: AbortSignal.timeout(20000),
+						}
+					);
+					status = r.status;
+					text = await r.text();
+				} catch {
+					status = 503;
+					text = busyText;
+				}
+				lastStatus = status;
+				lastText = text || busyText;
+				if (status >= 200 && status < 300) return sendJson(status, lastText);
+				const busy = status === 503 || status === 429 || status === 500;
+				if (status === 404 || (status === 400 && mi > 0)) break;
+				if (!busy) return sendJson(status, lastText);
+				if (attempt < 2) await new Promise((res) => setTimeout(res, 600 * (attempt + 1)));
+			}
+		}
+		return sendJson(lastStatus || 503, lastText);
 	} catch {
 		return reply.code(502).send({ error: "Gemini did not answer." });
 	}

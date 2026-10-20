@@ -315,21 +315,30 @@ document.getElementById("redeem-form").onsubmit = async function (e) {
   e.preventDefault();
   var note = document.getElementById("redeem-note");
   var code = document.getElementById("code").value;
+  if (!String(code || "").trim()) { note.textContent = "Paste both lines of the code."; return; }
+  var w = window.open("about:blank");
+  if (!w) { note.textContent = "Allow pop-ups, then redeem again."; return; }
   note.textContent = "Checking…";
   try {
     var r = await fetch("/api/redeem", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: code, hwid: deviceId() }) });
     var j = await r.json();
-    if (!j.ok) { note.textContent = j.error || "That code does not work."; return; }
-    var w = window.open("about:blank");
-    if (!w) { note.textContent = "Allow pop-ups, then redeem again."; return; }
+    if (!j.ok) {
+      try { w.close(); } catch (e2) {}
+      note.textContent = j.error || "That code does not work.";
+      return;
+    }
     var src = JSON.stringify(String(j.url || ""));
     var ticket = JSON.stringify(String(j.ticket || ""));
+    var pulse = JSON.stringify(location.origin + "/api/pulse");
     w.document.open();
-    w.document.write("<!DOCTYPE html><html><head><meta charset='utf-8'><title> </title><style>html,body{margin:0;height:100%;background:#000}iframe{border:0;position:fixed;inset:0;width:100%;height:100%}</style></head><body><iframe src=" + src + " allow='fullscreen; camera; microphone; display-capture; clipboard-read; clipboard-write; autoplay'></iframe><script>var ticket=" + ticket + ";function kick(){document.open();document.write('<!DOCTYPE html><title></title>');document.close();}setInterval(function(){fetch('/api/pulse',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ticket:ticket})}).then(function(r){return r.json()}).then(function(j){if(!j||j.ok===false)kick()}).catch(function(){})},4000);<" + "/script></body></html>");
+    w.document.write("<!DOCTYPE html><html><head><meta charset='utf-8'><title> </title><style>html,body{margin:0;height:100%;background:#000}iframe{border:0;position:fixed;inset:0;width:100%;height:100%}</style></head><body><iframe src=" + src + " allow='fullscreen; camera; microphone; display-capture; clipboard-read; clipboard-write; autoplay'></iframe><script>var ticket=" + ticket + ";function kick(){document.open();document.write('<!DOCTYPE html><title></title>');document.close();}setInterval(function(){fetch(" + pulse + ",{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ticket:ticket})}).then(function(r){return r.json()}).then(function(j){if(!j||j.ok===false)kick()}).catch(function(){})},4000);<" + "/script></body></html>");
     w.document.close();
     note.textContent = "Opened.";
     document.getElementById("code").value = "";
-  } catch (err) { note.textContent = "Could not check the code."; }
+  } catch (err) {
+    try { w.close(); } catch (e3) {}
+    note.textContent = "Could not check the code.";
+  }
 };
 </script>
 </body>

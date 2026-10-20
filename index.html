@@ -1271,12 +1271,9 @@ function ai(root){
     const msgs=input.map(m=>({role:m.role,content:m.content}));
     if(o.images&&o.images.length){const last=msgs[msgs.length-1];const text=typeof last.content==='string'?last.content:'';last.content=[...await Promise.all(o.images.map(async b=>({type:'image',source:{type:'base64',media_type:b.type||'image/jpeg',data:await b64(b)}}))),{type:'text',text}]}
     if(o.model==='google/gemini-3.8-flash'){
-      try{
-        const official=await geminiOfficial(msgs,o);
-        if(official&&official.text)return official;
-      }catch(err){
-        if(LS.get('wos:gk',''))throw err;
-      }
+      const official=await geminiOfficial(msgs,o);
+      if(official&&official.text)return official;
+      if(official)return official;
       const r=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'google/gemini-3.8-flash',max_tokens:4096,messages:msgs,system:'You are Drift 2.1. Reply in the user language with the full answer. Never say you are Gemini. Do not say you are a text AI.'}),signal:o.signal});
       const j=await r.json().catch(()=>({}));
       const text=((j.content||[]).map(x=>x.text||'').join(''))||'';
@@ -1375,7 +1372,7 @@ function ai(root){
       if(o.onText)o.onText({text});
     }
     if(o.onText&&text)o.onText({text});
-    return text?{text}:null;
+    return {text:text||''};
   }
   function geminiPromptEl(doc){
     const nodes=doc.querySelectorAll('textarea, div[contenteditable="true"], [role="textbox"]');
