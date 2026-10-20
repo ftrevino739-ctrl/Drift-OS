@@ -38,9 +38,9 @@ Open http://localhost:8080 (Railway injects `PORT`).
 - local leaderboard
 - Gimkit join (modified)
 - Classroom (SOON MODIFIED)
-- VS Code
+- VS Code (with AI)
 - Canva
-- Roblox,
+- Roblox
 - Discord
 - Youtube (Shorts and Video Search)
 - Tiktok
