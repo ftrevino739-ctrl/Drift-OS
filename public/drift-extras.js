@@ -41,6 +41,14 @@
       '<path d="M14 16h20v3H14zm0 7h14v3H14zm0 7h9v3h-9z" fill="#38BDF8"/>' +
       '<path d="M30 30l7 4-7 4z" fill="#FBBF24"/>'
     );
+    IC.classdojo = svg(
+      '<rect width="48" height="48" rx="11" fill="#21C47A"/>' +
+      '<circle cx="24" cy="22" r="10" fill="#fff"/>' +
+      '<circle cx="20" cy="21" r="1.6" fill="#163"/>' +
+      '<circle cx="28" cy="21" r="1.6" fill="#163"/>' +
+      '<path d="M19 25c1.4 2 8.6 2 10 0" fill="none" stroke="#163" stroke-width="1.6" stroke-linecap="round"/>' +
+      '<path d="M16 34c2 3 14 3 16 0" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/>'
+    );
   }
 
   function refreshUI() {
@@ -356,19 +364,33 @@
         if (!q) return;
         out.textContent = 'Writing a new file…';
         try {
-          var ep = (typeof EP === 'function' ? EP() : (window.DDG0 || 'https://holy-firefly-982c.fert0480.workers.dev')).replace(/\/$/, '');
-          var r = await fetch(ep + '/ai', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              model: 'qwen/qwen3-coder-plus:free',
-              max_tokens: 32768,
-              messages: [{ role: 'user', content: q }],
-              system: 'You are the coding assistant inside Drift VS Code. When the user asks you to create something, reply with one or more new files. For each file use exactly:\nFILE: name.ext\n```\ncomplete code\n```\nPick the real extension (.py .json .js .ts .lua .luau .html .css .md .sql). Write the COMPLETE file. Never truncate, never say the rest continues.'
-            })
-          });
+          var body = {
+            systemInstruction: { parts: [{ text: 'You are Drift 2.1, the coding assistant inside Drift VS Code. When the user asks you to create something, reply with one or more new files. For each file use exactly:\nFILE: name.ext\n```\ncomplete code\n```\nPick the real extension (.py .json .js .ts .lua .luau .html .css .md .sql). Write the COMPLETE file. Never truncate, never say the rest continues.' }] },
+            contents: [{ role: 'user', parts: [{ text: q }] }],
+            generationConfig: { maxOutputTokens: 65536, temperature: 0.4 }
+          };
+          var r = await fetch('/api/gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
           var j = await r.json();
-          var text = ((j.content || []).map(function (x) { return x.text || ''; }).join('')) || (j.error && (j.error.message || String(j.error))) || '';
+          var text = '';
+          if (r.ok) {
+            text = ((((j.candidates || [])[0] || {}).content || {}).parts || []).filter(function (p) { return !p.thought; }).map(function (p) { return p.text || ''; }).join('');
+          } else if (r.status === 404 || /no-key/i.test(JSON.stringify(j.error || ''))) {
+            var ep = (typeof EP === 'function' ? EP() : (window.DDG0 || 'https://holy-firefly-982c.fert0480.workers.dev')).replace(/\/$/, '');
+            var r2 = await fetch(ep + '/ai', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                model: 'google/gemini-3.8-flash',
+                max_tokens: 32768,
+                messages: [{ role: 'user', content: q }],
+                system: body.systemInstruction.parts[0].text
+              })
+            });
+            var j2 = await r2.json();
+            text = ((j2.content || []).map(function (x) { return x.text || ''; }).join('')) || (j2.error && (j2.error.message || String(j2.error))) || '';
+          } else {
+            text = (j.error && (j.error.message || String(j.error))) || 'Drift 2.1 did not answer.';
+          }
           var re = /FILE:\s*([^\n]+)\n```[^\n]*\n([\s\S]*?)```/g, m, made = [], hit;
           while ((m = re.exec(text))) made.push([m[1].trim(), m[2].replace(/\s+$/, '')]);
           if (!made.length) {
@@ -429,6 +451,50 @@
     } catch (e) {}
   }
 
+  function classdojoApp(root) {
+    var page = 'https://www.classdojo.com/dojo-islands/';
+    var scriptUrl = 'https://raw.githubusercontent.com/appsandoranges/Class-Dojo-Plus/master/class-dojo-plus.js';
+    root.innerHTML = '<div style="display:flex;flex-direction:column;height:100%;min-height:0"><div style="padding:8px 10px;border-bottom:1px solid var(--line);font-size:12px">ClassDojo · Dojo Islands</div><div class="sjt" style="flex:1;min-height:0;position:relative"></div></div>';
+    var box = root.querySelector('.sjt');
+    var src = '';
+    var seen = '';
+    function inject() {
+      var frame = box.querySelector('iframe');
+      if (!frame || !src) return;
+      try {
+        var d = frame.contentDocument;
+        var href = String(frame.contentWindow.location.href || '');
+        if (!d || !d.documentElement) return;
+        if (href !== seen) {
+          seen = href;
+          d.documentElement.removeAttribute('data-cdp');
+        }
+        if (d.documentElement.getAttribute('data-cdp') === '1') return;
+        d.documentElement.setAttribute('data-cdp', '1');
+        var s = d.createElement('script');
+        s.textContent = src + '\n//# sourceURL=class-dojo-plus.js';
+        (d.head || d.documentElement).appendChild(s);
+      } catch (e) {}
+    }
+    fetch('/api/raw?u=' + encodeURIComponent(scriptUrl), { cache: 'no-store' }).then(function (r) {
+      if (!r.ok) throw new Error('mod');
+      return r.text();
+    }).then(function (t) {
+      src = String(t || '').replace(/^[\s\S]*?==\/UserScript==\s*/, '');
+      inject();
+    }).catch(function () {});
+    if (typeof window.openProxied === 'function') {
+      window.openProxied(page, box).then(function (frame) {
+        if (frame && frame.frame) frame.frame.addEventListener('load', function () { setTimeout(inject, 400); });
+        setTimeout(inject, 800);
+      }).catch(function () {});
+    } else if (typeof window.proxySite === 'function') {
+      window.proxySite(box, page, 'ClassDojo');
+    } else {
+      box.textContent = page;
+    }
+  }
+
   function registerCore() {
     var apps = A();
     var x = X();
@@ -437,10 +503,12 @@
     apps.whatsapp = 'WhatsApp';
     apps.wayground = 'Wayground';
     apps.injector = 'JS Injector';
+    apps.classdojo = 'ClassDojo';
     x.whatsapp = { n: 'WhatsApp', f: whatsappApp };
     x.github = { n: 'GitHub', f: githubApp };
     x.wayground = { n: 'Wayground', f: waygroundApp };
     x.injector = { n: 'JS Injector', f: injectorApp };
+    x.classdojo = { n: 'ClassDojo', f: classdojoApp };
     x.mus = { n: 'Music', f: musicApp };
     if (typeof discordApp === 'function') x.discord = { n: 'Discord', f: discordApp };
     loadCustomApps();

@@ -797,11 +797,12 @@ function browser(root,w){
   const T=()=>tabs[cur],U=()=>T().h[T().i];
   async function ddg(u){
     const q=decodeURIComponent(u.split('q=')[1]||''),box=$('#ddgbox',page);if(!box)return;
-    box.innerHTML='<small style="color:var(--mute)">Buscando…</small>';
+    box.innerHTML='<small style="color:var(--mute)">Searching…</small>';
     try{
-      const r=await fetch(EP()+'/?q='+encodeURIComponent(q)),j=await r.json();
-      if(j.error)throw 0;
-      box.innerHTML=(j.organic_results||[]).map(x=>`<div class="res"><a data-go="${esc(x.link||'')}">${esc(x.title||x.link||'')}</a><small>${esc(x.displayed_link||x.link||'')}</small>${esc(x.snippet||'')}</div>`).join('')||'<small style="color:var(--mute)">No results.</small>';
+      const r=await fetch('/api/search?q='+encodeURIComponent(q)+'&engine='+encodeURIComponent(typeof ENG==='function'?ENG():'duckduckgo'));
+      const j=await r.json();
+      const rows=(j.results||[]).filter(x=>x&&x.url);
+      box.innerHTML=rows.map(x=>`<div class="res"><a data-go="${esc(x.url)}">${esc(x.title||x.url)}</a><small>${esc(x.url)}</small></div>`).join('')||'<small style="color:var(--mute)">No results.</small>';
     }catch{box.innerHTML='<small style="color:var(--mute)">No se pudo buscar ahora. Revisa tu conexión e inténtalo de nuevo.</small>'}
   }
   function newTab(u='chrome://newtab'){tabs.push({h:[u],i:0});cur=tabs.length-1;draw()}
@@ -1025,7 +1026,8 @@ async function go(){
 }
 
 const MODELS=[
-['qwen/qwen3-coder-plus:free','Drift Code','Recommended · coding · default','default','Best free coding model. Writes complete scripts and new VS Code files.',{code:1,vision:1,files:0,think:1,fast:1}],
+['google/gemini-3.8-flash','Drift 2.1','Recommended · default · code','default','Gemini itself, shown in Drift as Drift 2.1. This is the default chat and the VS Code model.',{code:1,vision:1,files:1,think:1,fast:1}],
+['qwen/qwen3-coder-plus:free','Drift Code','coding','default','Older coding model. New chats and VS Code use Drift 2.1.',{code:1,vision:1,files:0,think:1,fast:1}],
 ['groq-llama','Drift 1.0','Recommended · Groq · fast','default','Code, fast chat, reasoning. Great for general tasks and programming.',{code:1,vision:0,files:0,think:0,fast:1}],
 ['or-deepseek','Drift 1.1','Recommended · OpenRouter','default','Deep reasoning. Shows thinking steps. Strong for hard problems and code.',{code:1,vision:0,files:0,think:1,fast:0}],
 ['or-gemini','Drift 1.2','Recommended · OpenRouter free','default','Multimodal-capable routing, quick answers, balanced quality.',{code:1,vision:1,files:0,think:0,fast:1}],
@@ -1047,7 +1049,7 @@ const EFF=['Low','Medium','High'],EFI={Low:'Reply very briefly and directly.',Me
 function ai(root){
   root.innerHTML=`<div class="ai"><div class="ah"><button class="hb" data-a="menu" aria-label="Chats">☰</button><b class="at">New chat</b><button class="hb" data-a="new" aria-label="New chat">＋</button></div><div class="ai-tools"><button type="button" data-t="caveman" title="Minimal answers only">Caveman</button><button type="button" data-t="instr" title="Custom instructions">Instructions</button></div><div class="am"></div><div class="cmp"><textarea rows="1" placeholder="Ask anything — try: open Browser" aria-label="Message"></textarea><div class="thumbs"></div><div class="cr"><button class="rb" data-a="att" aria-label="Adjuntar fotos">＋</button><input type="file" accept="image/*" multiple hidden><button class="pill" data-a="mdl"></button><span style="flex:1"></span><button class="rb mic" data-a="mic" aria-label="Dictar"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg></button><button class="rb snd" data-a="send" aria-label="Enviar">↑</button></div></div><div class="drw"><div class="dh"><b>Chats</b><button class="hb" data-a="cl" aria-label="Close">✕</button></div><button class="nw" data-a="new">＋ Chat nuevo</button><div class="cl"></div></div><div class="sheet"></div></div>`;
   const am=$('.am',root),ta=$('textarea',root),th=$('.thumbs',root),pill=$('.pill',root),sd=$('.snd',root),drw=$('.drw',root),cl=$('.cl',root),sh=$('.sheet',root),fi=$('input[type=file]',root),mic=$('[data-a=mic]',root),title=$('.at',root);
-  let hist=[],curId=null,busy=false,sample=null,ctl=null,pend=[],model='qwen/qwen3-coder-plus:free',eff='Medium',caveman=false,customInstr=LS.get('wos:cinst','');
+  let hist=[],curId=null,busy=false,sample=null,ctl=null,pend=[],model='google/gemini-3.8-flash',eff='Medium',caveman=false,customInstr=LS.get('wos:cinst','');
   const cur=()=>S.d.chats.find(c=>c.id===curId);
   const setPill=()=>{const M=MODELS.find(m=>m[0]===model)||MODELS[0];pill.innerHTML=M[1]+' <span>'+eff+'</span>'};
   root.querySelectorAll('[data-t]').forEach(b=>{
@@ -1149,8 +1151,8 @@ function ai(root){
         inp.onkeydown=e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape'){inp.value='';inp.blur()}}}};
     $('.ai',root).appendChild(m);
   }
-  function load(id){if(ctl)ctl.abort();busy=false;sd.disabled=false;curId=id;const c=cur();hist=c.msgs;if(c.model&&MODELS.some(m=>m[0]===c.model))model=c.model;eff=c.eff||eff;title.textContent=c.title;am.innerHTML='';if(!hist.length)empty();hist.forEach(m=>add(m.role==='user'?'u':'a',m.content));setPill();renderList()}
-  function newChat(){const c={id:'c'+Date.now(),title:'Chat nuevo',model,eff,msgs:[]};S.d.chats.unshift(c);save();load(c.id);drw.classList.remove('open')}
+  function load(id){if(ctl)ctl.abort();busy=false;sd.disabled=false;curId=id;const c=cur();hist=c.msgs;if(c.model==='qwen/qwen3-coder-plus:free')c.model='google/gemini-3.8-flash';if(c.model&&MODELS.some(m=>m[0]===c.model))model=c.model;else model='google/gemini-3.8-flash';eff=c.eff||eff;title.textContent=c.title;am.innerHTML='';if(!hist.length)empty();hist.forEach(m=>add(m.role==='user'?'u':'a',m.content));setPill();renderList()}
+  function newChat(){model='google/gemini-3.8-flash';const c={id:'c'+Date.now(),title:'Chat nuevo',model,eff,msgs:[]};S.d.chats.unshift(c);save();load(c.id);drw.classList.remove('open')}
   function sheet(){
   sh.innerHTML=`<div class="sh"><button class="hb" data-a="xs" aria-label="Close">✕</button><b>Select model</b><span style="width:38px"></span></div><div class="card">${MODELS.map(m=>`<div class="mo-wrap"><button class="mo" data-m="${m[0]}"><span><b>${m[1]}</b><small>${m[2]}</small></span>${m[0]===model?'<i>✓</i>':''}</button><button type="button" class="mo-more" data-tip="${m[0]}" title="Capabilities">⋯</button><div class="mo-tip" data-tipbox="${m[0]}"></div></div>`).join('')}</div><div class="card"><button class="mo" data-e="1"><b>Effort</b><small>${eff} ›</small></button></div>`;
   sh.classList.add('show');
@@ -1206,39 +1208,48 @@ function ai(root){
     mine.push({role:'user',content:q});
     const ub=add('u',q),imgs=pend.splice(0);th.innerHTML='';
     if(imgs.length){const g=document.createElement('div');g.className='thumbs';imgs.forEach(b=>{const i=new Image();i.src=URL.createObjectURL(b);g.appendChild(i)});ub.appendChild(g)}
-    const think=add('e','Drift is thinking…');const out=add('a','');out.classList.add('think');
+    const think=document.createElement('details');think.className='think-panel';think.open=true;
+    think.innerHTML='<summary>Thinking <span data-sec>0s</span></summary><div class="think-body">Looking up pages for this question…</div>';
+    am.appendChild(think);
+    const thinkBody=think.querySelector('.think-body'), thinkSec=think.querySelector('[data-sec]');
+    const started=Date.now();
+    const thinkTimer=setInterval(()=>{thinkSec.textContent=Math.max(1,Math.round((Date.now()-started)/1000))+'s'},250);
+    let sources='';
+    try{
+      const sr=await fetch('/api/search?q='+encodeURIComponent(q.slice(0,180))+'&engine='+(typeof ENG==='function'?ENG():'duckduckgo'));
+      const sj=await sr.json();
+      const lines=(sj.results||[]).slice(0,6).map(x=>'Looked at '+x.title+'\n'+x.url);
+      if(lines.length){sources=lines.join('\n');thinkBody.textContent=sources+'\nUsing those pages to decide the answer.';}
+    }catch(e){}
+    const out=add('a','');out.classList.add('think');
     const pre=[
       'You are Drift, the assistant inside this web OS. Reply in the user language.',
       caveman?'CAVEMAN MODE: answer in the fewest words possible. No filler. No markdown tables unless asked.':'',
       customInstr?'User custom instructions: '+customInstr:'',
       'If the user asks for code, write the complete code. Never stop halfway, never say the rest continues, and never replace lines with "...".',
+      sources?('Pages already checked:\n'+sources):'',
       'Only when the user explicitly asks to open or launch an app, reply with a single line exactly: OPEN_APP:<id> where id is browser|yt|cam|mus|discord|gmail|ig|tt|classroom|canva|roblox|movies|code|calc|ai',
       EFI[eff]||''
     ].filter(Boolean).join(' ');
     const input=mine.map((m,i)=>i===0?{role:m.role,content:pre+'\n\n'+m.content}:m);
     ctl=new AbortController();
     try{
-      const r=await sample(input,{model,modelTier:MODELS.find(x=>x[0]===model)[3],...(imgs.length?{images:imgs}:{}),cache:false,signal:ctl.signal,onText:({text})=>{out.textContent=text;am.scrollTop=am.scrollHeight}});
-      think.remove();out.classList.remove('think');
+      const r=await sample(input,{model,modelTier:(MODELS.find(x=>x[0]===model)||MODELS[0])[3],...(imgs.length?{images:imgs}:{}),cache:false,signal:ctl.signal,onThink:function(t){thinkBody.textContent=(sources?sources+'\n\n':'')+String(t||'');am.scrollTop=am.scrollHeight},onText:({text})=>{
+        const raw=String(text||'');
+        const m=raw.match(/<think>([\s\S]*?)(<\/think>|$)/i);
+        if(m){thinkBody.textContent=(sources?sources+'\n':'')+m[1].trim();out.textContent=raw.replace(/<think>[\s\S]*?(<\/think>|$)/i,'').trim();}
+        else out.textContent=raw;
+        am.scrollTop=am.scrollHeight;
+      }});
+      clearInterval(thinkTimer);think.remove();out.classList.remove('think');
       let txt=r.text||'';
-      // extract thinking blocks from model output
-      let thinking=r.thinking||'';
       const thm=txt.match(/<think>([\s\S]*?)<\/think>/i)||txt.match(/\(thinking\)([\s\S]*?)\(\/thinking\)/i);
-      if(thm){thinking=(thinking?thinking+'\n':'')+thm[1].trim();txt=txt.replace(thm[0],'').trim()}
-      const M=MODELS.find(m=>m[0]===model);const showThink=thinking||(M&&M[5]&&M[5].think);
-      if(showThink){
-        const det=document.createElement('details');det.className='think-panel';det.open=!!thinking;
-        det.innerHTML='<summary>Thinking</summary><div class="think-body"></div>';
-        const body=det.querySelector('.think-body');
-        if(thinking){body.textContent=thinking}
-        else{body.innerHTML='<div class="think-step">Read the request</div><div class="think-step">Plan a useful answer</div><div class="think-step">Write the reply</div>'}
-        out.parentNode.insertBefore(det,out);
-      }
+      if(thm) txt=txt.replace(thm[0],'').trim();
       const openm=txt.match(/OPEN_APP:([a-z0-9_]+)/i);
       if(openm){try{openApp(openm[1].toLowerCase())}catch(e){}txt=txt.replace(openm[0],'').trim()||('Opened '+openm[1])}
       if(txt.includes('```')||txt.includes('|')||txt.includes('**')||txt.includes('##')){renderMD(out,txt)}else out.textContent=txt;
       mine.push({role:'assistant',content:txt});save();
-    }catch(e){try{think.remove()}catch(x){}out.className='e';out.textContent=(e&&e.message)||'No se pudo obtener respuesta.';mine.pop()}
+    }catch(e){try{clearInterval(thinkTimer);think.remove()}catch(x){}out.className='e';out.textContent=(e&&e.message)||'No se pudo obtener respuesta.';mine.pop()}
     if(mine===hist){busy=false;sd.disabled=false}
   }
   if(S.d.chats.length)load(S.d.chats[0].id);else newChat();
@@ -1301,7 +1312,7 @@ function ai(root){
   }
   async function geminiOfficial(list, o){
     const sys={parts:[{text:'You are Gemini. Drift shows you under the name Drift 2.1. Reply in the user language. When the user asks for code, write the complete file in this reply: every line, no summary, no "...", and do not say the rest continues.'}]};
-    const body={systemInstruction:sys,contents:geminiContents(list),generationConfig:{maxOutputTokens:65536,temperature:0.4,thinkingConfig:{thinkingLevel:'low',includeThoughts:false}}};
+    const body={systemInstruction:sys,contents:geminiContents(list),generationConfig:{maxOutputTokens:65536,temperature:0.4,thinkingConfig:{thinkingLevel:'low',includeThoughts:true}}};
     let res=await geminiCall(body, o.signal);
     if(!res.ok && /thinkingConfig|Unknown name|invalid/i.test(JSON.stringify(res.j&&res.j.error||''))){
       delete body.generationConfig.thinkingConfig;
@@ -1312,8 +1323,11 @@ function ai(root){
       if(!LS.get('wos:gk','') && (res.status===404 || /no-key/i.test(String(msg)))) return null;
       throw {message:String(msg||'Gemini did not answer.')};
     }
-    const piece=()=>((((res.j.candidates||[])[0]||{}).content||{}).parts||[]).filter(p=>!p.thought).map(p=>p.text||'').join('');
-    let text=piece();
+    const splitParts=j=>{const parts=((((j.candidates||[])[0]||{}).content||{}).parts||[]);return {text:parts.filter(p=>!p.thought).map(p=>p.text||'').join(''),think:parts.filter(p=>p.thought).map(p=>p.text||'').join('\n').trim()}};
+    let got=splitParts(res.j);
+    let text=got.text;
+    let thought=got.think;
+    if(thought&&o.onThink)o.onThink(thought);
     let finish=((res.j.candidates||[])[0]||{}).finishReason||'';
     const want=(geminiPlain(list).match(/\b(\d{2,4})\s*(lineas|líneas|linea|lines|line)\b/i)||[])[1];
     const lines=t=>{const blocks=[...String(t).matchAll(/```[^\n]*\n([\s\S]*?)```/g)]; if(!blocks.length)return String(t).split('\n').length; return Math.max.apply(null, blocks.map(b=>b[1].split('\n').length));};
@@ -1323,7 +1337,9 @@ function ai(root){
       const more={systemInstruction:sys,contents:[{role:'user',parts:[{text:geminiPlain(list)+'\n\nContinue from the next line until the script is complete'+(want?' ('+want+' lines)':'')+'. Do not repeat this ending:\n'+text.slice(-1500)}]}],generationConfig:body.generationConfig};
       const nxt=await geminiCall(more, o.signal);
       if(!nxt.ok) break;
-      const add=((((nxt.j.candidates||[])[0]||{}).content||{}).parts||[]).filter(p=>!p.thought).map(p=>p.text||'').join('');
+      const addParts=splitParts(nxt.j);
+      const add=addParts.text;
+      if(addParts.think){thought=(thought?thought+'\n':'')+addParts.think;if(o.onThink)o.onThink(thought);}
       if(!add) break;
       text+=(/\n$/.test(text)?'':'\n')+add;
       finish=((nxt.j.candidates||[])[0]||{}).finishReason||'';
@@ -1364,17 +1380,17 @@ function ai(root){
     if(!host){
       host=document.createElement('div');
       host.className='drift-gem';
-      host.style.cssText='position:absolute;inset:0;z-index:4;background:#fff;display:flex;flex-direction:column';
+      host.style.cssText='position:fixed;left:-5200px;top:0;width:900px;height:700px;opacity:0;pointer-events:none;overflow:hidden';
       const bar=document.createElement('div');
       bar.textContent='Drift 2.1';
-      bar.style.cssText='padding:8px 10px;font:600 13px system-ui;background:#111;color:#fff;flex:none';
+      bar.style.cssText='display:none';
       const box=document.createElement('div');
       box.className='drift-gem-box';
-      box.style.cssText='flex:1;min-height:0;position:relative';
+      box.style.cssText='width:900px;height:700px;position:relative';
       host.append(bar, box);
-      am.appendChild(host);
+      document.body.appendChild(host);
     }
-    host.style.display='flex';
+    host.style.display='block';
     const box=host.querySelector('.drift-gem-box');
     if(!box.querySelector('iframe')){
       if(typeof openProxied!=='function') return {text:'Drift 2.1 is Gemini, and it could not be opened from here.'};
@@ -1389,7 +1405,7 @@ function ai(root){
       if(promptEl) break;
       await new Promise(res=>setTimeout(res,500));
     }
-    if(!promptEl) return {text:'Drift 2.1 is Gemini. Sign in on this panel, then send the request again.'};
+    if(!promptEl) return {text:'Drift 2.1 could not reach Gemini yet. Ask again in a moment.'};
     const before=geminiAnswer(doc);
     geminiType(promptEl, ask);
     geminiSend(doc, promptEl);
@@ -1405,8 +1421,8 @@ function ai(root){
       try{stopping=[...(frame.contentDocument||doc).querySelectorAll('button')].some(b=>/stop|detener/i.test(b.getAttribute('aria-label')||''));}catch(e){}
       if(text && stable>=3 && !stopping) break;
     }
-    if(text && text.length>40){host.style.display='none'; return {text};}
-    return {text:text||'Drift 2.1 is Gemini. The answer is in this panel.'};
+    if(text && text.length>40){host.remove(); return {text};}
+    return {text:text||'Drift 2.1 did not return the answer yet. Ask again.'};
   }
   if(window.claude)claude.use('sample').then(s=>{real=s}).catch(()=>{});
 }
@@ -1514,7 +1530,7 @@ const PX=u=>{const p=PT();return /^https?:\/\//i.test(p)&&/\{(url|raw)\}/.test(p
 const R0=render;
 render=u=>{const r=R0(u);if(r.h.includes('<iframe')){const p=PX(/^https?:/.test(u)?u:'https://'+u);if(p)r.h=r.h.replace(/(<iframe src=")[^"]*"/,(_,a)=>a+esc(p)+'"')}return r};
 /* ---- Buscador (Google/Bing/DDG), IA local Gemma sin API, chats de invitado efímeros ---- */
-const ENG=()=>LS.get('wos:eng','google');
+const ENG=()=>LS.get('wos:eng','duckduckgo');
 const LOCAL={'local-gemma':['gemma-2-2b-it-q4f16_1-MLC','gemma-2-2b-it-q4f32_1-MLC']};
 /* models already set */
 let EN=null;
@@ -1596,17 +1612,23 @@ addEventListener('pointermove',e=>{
   const el=document.elementFromPoint(e.clientX,e.clientY);$('#task').classList.toggle('dt',!!(el&&el.closest('#task')))});
 /* posición libre en el escritorio (con cuadrícula) */
 const GX=12,top0=()=>(parseFloat(getComputedStyle(document.documentElement).paddingTop)||0)+14;
-const gridStep=()=>{const sc=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--drift-app'))||2;return {CW:Math.round(42*sc),CH:Math.round(48*sc)}};
+const gridStep=()=>{const sc=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--drift-app'))||1;const z=Math.max(120,Math.round(132*sc));return {CW:z,CH:Math.round(z*0.9)}};
 const dims=()=>{const g=gridStep();return {cols:Math.max(1,Math.floor((innerWidth-GX)/g.CW)),rows:Math.max(1,Math.floor((innerHeight-top0()-8)/g.CH))}};
 function layout(){
   const D=S.d,{cols,rows}=dims(),P=D.pos=D.pos||{},cells={},at={},t=top0(),g=gridStep();
-  const tbh=parseInt(getComputedStyle(document.documentElement).getPropertyValue('--tbh'))||76;
-  const iconW=Math.round(38*(parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--drift-app'))||2));
-  const maxX=Math.max(8,innerWidth-iconW),maxY=Math.max(t+8,innerHeight-(document.body.classList.contains('drift-tb-off')?12:tbh)-iconW);
-  D.desk.forEach(a=>{const p=P[a];if(p&&p[2]===1){at[a]=p;return}if(p){const c=Math.min(Math.max(p[0],0),cols-1),r=Math.min(Math.max(p[1],0),rows-1);if(!cells[c+','+r]){cells[c+','+r]=a;at[a]=[c,r]}}});
+  D.desk.forEach(a=>{
+    const p=P[a]; if(!p) return;
+    let c,r;
+    if(p[2]===1){c=Math.round(p[0]/g.CW);r=Math.round((p[1]-t)/g.CH);delete p[2];P[a]=[c,r]}
+    else {c=p[0];r=p[1]}
+    c=Math.max(0,Math.min(cols-1,c|0)); r=Math.max(0,Math.min(rows-1,r|0));
+    let guard=0;
+    while(cells[c+','+r]&&guard<cols*rows){r++; if(r>=rows){r=0;c=(c+1)%cols} guard++}
+    cells[c+','+r]=a; at[a]=[c,r]; P[a]=[c,r];
+  });
   let c=0,r=0;
-  D.desk.forEach(a=>{if(at[a])return;while(cells[c+','+r]){r++;if(r>=rows){r=0;c++}}if(c>=cols)c=0;cells[c+','+r]=a;at[a]=[c,r]});
-  document.querySelectorAll('.icons .ico').forEach(b=>{const p=at[b.dataset.app];if(!p)return;if(p[2]===1){b.style.left=Math.max(4,Math.min(maxX,p[0]))+'px';b.style.top=Math.max(t,Math.min(maxY,p[1]))+'px'}else{b.style.left=GX+p[0]*g.CW+'px';b.style.top=t+p[1]*g.CH+'px'}})}
+  D.desk.forEach(a=>{if(at[a])return;while(cells[c+','+r]){r++;if(r>=rows){r=0;c++}} if(c>=cols)c=0; cells[c+','+r]=a; at[a]=[c,r]; P[a]=[c,r]});
+  document.querySelectorAll('.icons .ico').forEach(b=>{const p=at[b.dataset.app];if(!p)return;b.style.left=GX+p[0]*g.CW+'px';b.style.top=t+p[1]*g.CH+'px'})}
 const R1=rend;rend=()=>{R1();layout()};
 addEventListener('resize',layout);
 const endDrag=(e,ok)=>{
@@ -1621,11 +1643,14 @@ const endDrag=(e,ok)=>{
     if(from>-1){L.splice(from,1);if(from<at)at--}
     L.splice(at,0,d.a);
   }else{
-    const t=top0(),P=S.d.pos=S.d.pos||{};
-    const maxX=Math.max(8,innerWidth-76),maxY=Math.max(t+8,innerHeight-18);
-    const x=Math.max(4,Math.min(maxX,(e.clientX||0)-36));
-    const y=Math.max(t,Math.min(maxY,(e.clientY||0)-28));
-    P[d.a]=[x,y,1];if(!S.d.desk.includes(d.a))S.d.desk.push(d.a);
+    const t=top0(),g=gridStep(),{cols,rows}=dims(),P=S.d.pos=S.d.pos||{};
+    let c=Math.max(0,Math.min(cols-1,Math.round((e.clientX-GX)/g.CW)));
+    let r=Math.max(0,Math.min(rows-1,Math.round((e.clientY-t)/g.CH)));
+    const taken={};
+    S.d.desk.forEach(a=>{if(a===d.a)return;const p=P[a];if(p)taken[p[0]+','+p[1]]=1});
+    let guard=0;
+    while(taken[c+','+r]&&guard<cols*rows){r++; if(r>=rows){r=0;c=(c+1)%cols} guard++}
+    P[d.a]=[c,r]; if(!S.d.desk.includes(d.a))S.d.desk.push(d.a);
   }
   save();rend()};
 addEventListener('pointerup',e=>endDrag(e,true));addEventListener('pointercancel',e=>endDrag(e,true));
@@ -2645,7 +2670,7 @@ async function openProxied(url, box){
 }
 
 function sjBrowser(root){
-  root.innerHTML='<div class="tabs"></div><div class="nav"><button aria-label="Atrás">←</button><button aria-label="Adelante">→</button><button aria-label="Recargar">⟳</button><input class="omni" placeholder="Busca en Google o escribe una dirección" aria-label="Barra de direcciones"><select aria-label="Buscador"></select></div><div class="page"></div>';
+  root.innerHTML='<div class="tabs"></div><div class="nav"><button aria-label="Atrás">←</button><button aria-label="Adelante">→</button><button aria-label="Recargar">⟳</button><input class="omni" placeholder="Search DuckDuckGo or type an address" aria-label="Barra de direcciones"><select aria-label="Buscador"></select></div><div class="page"></div>';
   const tabsEl=$('.tabs',root),om=$('.omni',root),page=$('.page',root),[bk,fw,rl]=root.querySelectorAll('.nav>button'),sel=$('select',root);
   sel.style.cssText='height:30px;border-radius:15px;border:1px solid var(--line);background:var(--omni);color:var(--ink);padding:0 6px;font-size:12px;flex:none';
   sel.innerHTML=[['google','Google'],['bing','Bing'],['duckduckgo','DuckDuckGo']].map(x=>`<option value="${x[0]}">${x[1]}</option>`).join('');
@@ -2658,18 +2683,51 @@ function sjBrowser(root){
     if(!/\s/.test(v)){try{const u=new URL('https://'+v);if(u.hostname.includes('.'))return u.toString()}catch{}}
     return ENGS[ENG()]+encodeURIComponent(v)};
   const home=t=>{
-    t.box.innerHTML='<div class="center"><div class="logo"><span>W</span><span>e</span><span>b</span><span>O</span><span>S</span></div><input class="sb" placeholder="Busca o escribe una dirección" aria-label="Search"><div class="tiles">'+
-      [['Google','https://www.google.com','#4285f4'],['YouTube','https://www.youtube.com','#ff0033'],['Discord','https://discord.com/app','#5865F2'],['Instagram','https://www.instagram.com','#d62976'],['TikTok','https://www.tiktok.com','#111'],['Reddit','https://www.reddit.com','#ff4500'],['Wikipedia','https://es.wikipedia.org','#666']]
+    t.box.innerHTML='<div class="center"><div class="logo"><span>W</span><span>e</span><span>b</span><span>O</span><span>S</span></div><input class="sb" placeholder="Search DuckDuckGo or type an address" aria-label="Search"><div class="tiles">'+
+      [['DuckDuckGo','https://duckduckgo.com','#de5833'],['YouTube','https://www.youtube.com','#ff0033'],['Discord','https://discord.com/app','#5865F2'],['Instagram','https://www.instagram.com','#d62976'],['TikTok','https://www.tiktok.com','#111'],['Reddit','https://www.reddit.com','#ff4500'],['Wikipedia','https://es.wikipedia.org','#666']]
       .map(x=>`<button class="tile" data-u="${x[1]}"><i style="background:${x[2]};color:#fff">${x[0][0]}</i>${x[0]}</button>`).join('')+'</div></div>';
     const sb=$('.sb',t.box);sb.onkeydown=e=>{if(e.key==='Enter')go(sb.value)};
     t.box.querySelectorAll('.tile').forEach(b=>b.onclick=()=>go(b.dataset.u))};
-  async function go(v){
-    const u=norm(v);if(!u)return;const t=T();
+  function asUrl(v){
+    v=String(v||'').trim(); if(!v) return '';
+    try{const u=new URL(v);if(/^https?:$/.test(u.protocol))return u.toString()}catch{}
+    if(!/\s/.test(v)){try{const u=new URL('https://'+v);if(u.hostname.includes('.'))return u.toString()}catch{}}
+    return '';
+  }
+  async function openFrame(u){
+    const t=T();
+    if(!t.fr){t.box.innerHTML='<div class="ld">Loading…</div>';await sjInit();
+      const f=SJC.createFrame();f.frame.style.cssText=sjStyle;t.box.innerHTML='';t.box.appendChild(f.frame);t.fr=f}
+    t.url=u;t.title=u.replace(/^https?:\/\//,'').slice(0,30);t.fr.go(u);bar();
+  }
+  async function showResults(q){
+    const t=T(); t.fr=null; t.url=''; t.title=q.slice(0,30);
+    t.box.innerHTML='<div class="ym">Searching…</div>';
+    bar(true);
     try{
-      if(!t.fr){t.box.innerHTML='<div class="ld">Loading…</div>';await sjInit();
-        const f=SJC.createFrame();f.frame.style.cssText=sjStyle;t.box.innerHTML='';t.box.appendChild(f.frame);t.fr=f}
-      t.url=u;t.title=u.replace(/^https?:\/\//,'').slice(0,30);t.fr.go(u);bar()}
-    catch(e){t.box.innerHTML='<div class="ym">Could not start proxy: '+esc(String(e&&e.message||e))+'</div>'}}
+      const r=await fetch('/api/search?q='+encodeURIComponent(q)+'&engine='+encodeURIComponent(ENG()));
+      const j=await r.json();
+      const rows=(j.results||[]).filter(x=>x&&x.url);
+      if(!rows.length){t.box.innerHTML='<div class="ym">No results.</div>';return}
+      t.box.innerHTML='<div style="padding:16px;overflow:auto;height:100%;box-sizing:border-box"></div>';
+      const box=t.box.firstChild;
+      rows.forEach(item=>{
+        const b=document.createElement('button');
+        b.type='button';
+        b.style.cssText='display:block;width:100%;text-align:left;border:0;background:transparent;color:inherit;padding:10px 4px;border-bottom:1px solid var(--line);cursor:pointer';
+        b.innerHTML='<b style="color:#8ab4f8">'+esc(item.title||item.url)+'</b><div style="font-size:12px;opacity:.7">'+esc(item.url)+'</div>';
+        b.onclick=()=>openFrame(item.url).catch(e=>{t.box.innerHTML='<div class="ym">'+esc(String(e&&e.message||e))+'</div>'});
+        box.appendChild(b);
+      });
+    }catch(e){t.box.innerHTML='<div class="ym">'+esc(String(e&&e.message||e))+'</div>'}
+  }
+  async function go(v){
+    const raw=String(v||'').trim(); if(!raw)return;
+    const direct=asUrl(raw);
+    try{
+      if(direct) await openFrame(direct);
+      else await showResults(raw);
+    }catch(e){T().box.innerHTML='<div class="ym">Could not start proxy: '+esc(String(e&&e.message||e))+'</div>'}}
   function bar(force){
     const s=tabs.map(t=>t.title).join('|')+'#'+cur;
     if(force||s!==sig){sig=s;tabsEl.innerHTML='';
@@ -2756,6 +2814,7 @@ loadU=u=>{L0(u);if(!u){S.d.chats=[];save()}if(!S.d.v3){S.d.v3=1;['pins','desk'].
   if(!S.d.v9){S.d.v9=1;['pins','desk'].forEach(k=>{['gmail','ig','tt'].forEach(a=>{if(!S.d[k].includes(a))S.d[k].push(a)})});save();rend()}
   if(!S.d.v10){S.d.v10=1;['pins','desk'].forEach(k=>{['classroom','canva','roblox'].forEach(a=>{if(!S.d[k].includes(a))S.d[k].push(a)})});save();rend()}
 if(!S.d.v11){S.d.v11=1;['pins','desk'].forEach(k=>{['chat','games','gimkit'].forEach(a=>{if(!S.d[k].includes(a))S.d[k].push(a)})});save();rend()}
+  if(!S.d.v12){S.d.v12=1;['pins','desk'].forEach(k=>{if(!S.d[k].includes('classdojo'))S.d[k].push('classdojo')});save();rend()}
 };
 loadU(S.user);
 })();

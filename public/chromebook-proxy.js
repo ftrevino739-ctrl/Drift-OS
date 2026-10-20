@@ -293,18 +293,22 @@
       cheatSrc = t.replace(/^[\s\S]*?==\/UserScript==\s*/, '');
       return cheatSrc;
     }
+    var injBusy = false;
     function inject() {
+      if (injBusy) return;
       if (!frameObj || !frameObj.frame || !cheatSrc) return;
       try {
         var w = frameObj.frame.contentWindow;
         var d = frameObj.frame.contentDocument || (w && w.document);
         if (!w || !d || !d.documentElement) throw new Error('Frame not ready');
         if (d.documentElement.getAttribute('data-gk-inj') === '1') return;
+        injBusy = true;
         d.documentElement.setAttribute('data-gk-inj', '1');
         var s1 = d.createElement('script'); s1.textContent = gm; (d.head || d.documentElement).appendChild(s1);
         var s2 = d.createElement('script'); s2.textContent = cheatSrc + '\n//# sourceURL=gimkit-cheat.js'; (d.head || d.documentElement).appendChild(s2);
         st.textContent = 'Gimkit loaded · cheat injected';
       } catch (e) { st.textContent = 'Page loaded · inject later: ' + (e.message || e); }
+      finally { injBusy = false; }
     }
     function watchFrame() {
       if (root.dataset.gkWatch === '1') return;
@@ -340,10 +344,6 @@
         if (frameObj.frame) {
           frameObj.frame.addEventListener('load', function () {
             try { seenHref = String(frameObj.frame.contentWindow.location.href || ''); } catch (e) { seenHref = ''; }
-            try {
-              var d = frameObj.frame.contentDocument;
-              if (d && d.documentElement) d.documentElement.removeAttribute('data-gk-inj');
-            } catch (e) {}
             setTimeout(function () { loadCheat().then(inject); }, 500);
           });
         }
@@ -362,7 +362,6 @@
         var d = frameObj && frameObj.frame && frameObj.frame.contentDocument;
         if (d && d.documentElement) d.documentElement.removeAttribute('data-gk-inj');
       } catch (e) {}
-      seenHref = '';
       loadCheat().then(inject).catch(function (e) { st.textContent = String(e.message || e); });
     };
     openUrl('https://www.gimkit.com/join');

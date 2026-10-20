@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   window.DRIFT_BEST_MODEL = window.DRIFT_BEST_MODEL || 'mistralai/mistral-large-4-0';
-  window.DRIFT_CODE_MODEL = window.DRIFT_CODE_MODEL || 'qwen/qwen3-coder-plus:free';
+  window.DRIFT_CODE_MODEL = 'google/gemini-3.8-flash';
 
   var GIMKIT_INJECTORS = {
     lazy: {
@@ -244,8 +244,10 @@
         MODELS.unshift(['google/gemini-3.8-flash', 'Drift 2.1', 'Recommended · Gemini', 'default', 'Gemini itself, shown in Drift as Drift 2.1. It writes the full script you ask for, including long Luau files.', { code: 1, vision: 1, files: 1, think: 1, fast: 1 }]);
         if (typeof AI_ABOUT === 'object' && AI_ABOUT) AI_ABOUT['google/gemini-3.8-flash'] = MODELS[0][4];
       }
+      var i21 = MODELS.findIndex(function (m) { return m && m[0] === 'google/gemini-3.8-flash'; });
+      if (i21 > 0) MODELS.unshift(MODELS.splice(i21, 1)[0]);
       if (MODELS.some(function (m) { return m && (m[1] === 'Drift 2.0' || m[0] === 'mistralai/mistral-large-4-0'); })) return;
-      MODELS.unshift(['mistralai/mistral-large-4-0', 'Drift 2.0', 'Recommended · xKiro free · best', 'default', 'Mistral Large 4 via xKiro.', { code: 1, vision: 1, files: 0, think: 1, fast: 0 }]);
+      MODELS.splice(1, 0, ['mistralai/mistral-large-4-0', 'Drift 2.0', 'Recommended · xKiro free · best', 'default', 'Mistral Large 4 via xKiro.', { code: 1, vision: 1, files: 0, think: 1, fast: 0 }]);
       if (!MODELS.some(function (m) { return m && m[0] === 'qwen/qwen3-coder-plus:free'; })) {
         MODELS.splice(1, 0, ['qwen/qwen3-coder-plus:free', 'Drift Code', 'Recommended · coding · VS Code', 'default', 'Best free coding model for VS Code & JS Injector.', { code: 1, vision: 1, files: 0, think: 1, fast: 1 }]);
       }
@@ -284,7 +286,7 @@
       '#drift-cav:checked{background:#34c759}' +
       '#drift-cav::after{content:"";position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left .2s}' +
       '#drift-cav:checked::after{left:20px}' +
-      'body.drift-edu [data-app]:not([data-app="classroom"]):not([data-app="canva"]):not([data-app="wayground"]){display:none!important}';
+      'body.drift-edu [data-app]:not([data-app="classroom"]):not([data-app="canva"]):not([data-app="wayground"]):not([data-app="classdojo"]){display:none!important}';
     document.head.appendChild(st);
   }
 
@@ -383,13 +385,13 @@
         setEducationMode(!document.body.classList.contains('drift-edu'));
       } else if (matchCombo(e, classKey) || e.key.toUpperCase() === String(classKey).toUpperCase()) {
         e.preventDefault();
-        window.location.href = 'https://classroom.google.com/';
+        openTop('https://classroom.google.com/');
       } else if (disc && matchCombo(e, disc)) {
         e.preventDefault();
-        window.location.href = 'https://www.discoveryeducation.com/';
+        openTop('https://www.discoveryeducation.com/');
       } else if (aleks && matchCombo(e, aleks)) {
         e.preventDefault();
-        window.location.href = 'https://www.aleks.com/';
+        openTop('https://www.aleks.com/');
       } else if (docs && matchCombo(e, docs)) {
         e.preventDefault();
         window.location.href = 'https://docs.google.com/';
@@ -401,7 +403,19 @@
     }, true);
   }
 
-  var SIZE_MAP = { xl: 3, lg: 2, sm: 0.7, xs: 0.5 };
+  function openTop(url) {
+    try {
+      if (window.top && window.top !== window) { window.top.location.assign(url); return; }
+    } catch (e) {}
+    try { window.location.assign(url); return; } catch (e2) {}
+    var a = document.createElement('a');
+    a.href = url;
+    a.target = '_top';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+  var SIZE_MAP = { xl: 3, lg: 2, sm: 1, xs: 0.7 };
   function readSize(key) {
     var v = 'lg';
     try { v = localStorage.getItem(key) || 'lg'; } catch (e) {}
@@ -410,10 +424,6 @@
   function applySize() {
     var app = SIZE_MAP[readSize('wos:size-apps')];
     var tb = SIZE_MAP[readSize('wos:size-tb')];
-    if (document.body.classList.contains('drift-cros')) {
-      tb *= 0.82;
-      app *= 0.86;
-    }
     var tbh = Math.max(28, Math.round(38 * tb));
     document.documentElement.style.setProperty('--drift-app', String(Math.round(app * 1000) / 1000));
     document.documentElement.style.setProperty('--drift-tb', String(Math.round(tb * 1000) / 1000));
@@ -451,7 +461,7 @@
       document.head.appendChild(s);
     }
   }
-  var DRIFT_DEFAULTS = { calc:1, browser:1, ai:1, yt:1, cam:1, mus:1, movies:1, code:1, discord:1, gmail:1, ig:1, tt:1, classroom:1, canva:1, roblox:1, gimkit:1, games:1, chat:1, github:1, whatsapp:1, wayground:1, injector:1, gem:1 };
+  var DRIFT_DEFAULTS = { calc:1, browser:1, ai:1, yt:1, cam:1, mus:1, movies:1, code:1, discord:1, gmail:1, ig:1, tt:1, classroom:1, canva:1, roblox:1, gimkit:1, games:1, chat:1, github:1, whatsapp:1, wayground:1, injector:1, gem:1, classdojo:1 };
   function deleteCreatedApps() {
     try {
       var apps = window.APPS || {}, x = window.XAPPS || {}, IC = window.IC || {};
@@ -634,12 +644,49 @@
       open();
     };
   }
+  function deviceMail(url) {
+    return function (root) {
+      root.innerHTML =
+        '<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center">' +
+        '<b style="font-size:18px">Gmail</b>' +
+        '<div style="max-width:460px;opacity:.8;font-size:13px">Gmail opens in the browser on this device. That is a browser Gmail accepts. It does not open inside the proxy.</div>' +
+        '<button type="button" data-open style="padding:10px 16px;border:0;border-radius:10px;background:#1a73e8;color:#fff;font-weight:650;cursor:pointer">Open Gmail</button></div>';
+      function open() {
+        var w = window.open(url, '_blank', 'noopener,noreferrer');
+        if (!w) {
+          var n = root.querySelector('[data-open]');
+          if (n) n.textContent = 'Allow pop-ups, then press Open Gmail';
+        }
+      }
+      root.querySelector('[data-open]').onclick = open;
+      open();
+    };
+  }
+  function sessionChooser(url, manual) {
+    return function (root) {
+      root.innerHTML =
+        '<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center">' +
+        '<b style="font-size:18px">How do you want to inicialize sesión</b>' +
+        '<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">' +
+        '<button type="button" data-login style="min-width:140px;padding:12px 16px;border-radius:12px;border:1px solid var(--line);background:var(--omni);color:inherit;cursor:pointer"><b>Log in</b><div style="font-size:12px;opacity:.75;margin-top:4px">manual</div></button>' +
+        '<button type="button" data-oauth style="min-width:200px;padding:12px 16px;border-radius:12px;border:0;background:#1a73e8;color:#fff;cursor:pointer"><b>Oauth</b><div style="font-size:12px;opacity:.9;margin-top:4px">the accounts on your browser (recommended)</div></button>' +
+        '</div></div>';
+      root.querySelector('[data-login]').onclick = function () { manual(root); };
+      root.querySelector('[data-oauth]').onclick = function () {
+        var w = window.open(url, '_blank', 'noopener,noreferrer');
+        if (!w) {
+          var n = root.querySelector('[data-oauth] b');
+          if (n) n.textContent = 'Allow pop-ups, then press Oauth';
+        }
+      };
+    };
+  }
   function wireLoginApps() {
     try {
       if (!window.XAPPS) return;
-      window.XAPPS.gmail = { n: 'Gmail', f: inAppPage('https://mail.google.com/mail/u/0/#inbox') };
-      window.XAPPS.classroom = { n: 'Classroom', f: inAppPage('https://classroom.google.com/') };
-      window.XAPPS.canva = { n: 'Canva', f: chromeLaunch('Canva', 'https://www.canva.com/') };
+      window.XAPPS.gmail = { n: 'Gmail', f: deviceMail('https://mail.google.com/mail/u/0/#inbox') };
+      window.XAPPS.classroom = { n: 'Classroom', f: sessionChooser('https://classroom.google.com/', inAppPage('https://classroom.google.com/')) };
+      window.XAPPS.canva = { n: 'Canva', f: sessionChooser('https://www.canva.com/', inAppPage('https://www.canva.com/')) };
       window.XAPPS.roblox = { n: 'Roblox', f: robloxShell };
     } catch (e) {}
   }
@@ -763,8 +810,8 @@
     var items = [
       ['xl', 'Extra large (x3 larger than the normal apps)'],
       ['lg', 'Large (x2 larger than normal apps) (Default)'],
-      ['sm', 'Small (x0.7 smaller than the normal apps)'],
-      ['xs', 'Extra small (0.5x smaller than your apps)']
+      ['sm', 'Small (x1, the normal size)'],
+      ['xs', 'Extra small (x0.7)']
     ];
     return items.map(function (it) {
       return '<label style="display:flex;gap:8px;align-items:flex-start;margin:4px 0;cursor:pointer"><input type="radio" name="' + name + '" value="' + it[0] + '"' + (current === it[0] ? ' checked' : '') + ' style="margin-top:3px"/> <span>' + it[1] + '</span></label>';
@@ -814,7 +861,7 @@
       '</div></div>' +
       '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px">' +
       '<div style="flex:1"><b>Adapt Drift OS for ChromeOS</b>' +
-      '<div style="opacity:.75;font-size:12px;margin-top:4px">Makes the taskbar a little smaller so a maximized app uses that space, and makes windows that are not fullscreen a little smaller. The taskbar stays on screen.</div></div>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Keeps the taskbar on screen. App size and taskbar size stay the same on Windows and ChromeOS. The size is applied again when Drift opens, so you do not have to turn this on twice.</div></div>' +
       switchHTML('drift-cros-sw', localStorage.getItem('wos:cros-adapt') === '1') + '</div>' +
       '<div style="margin-bottom:14px;border-top:1px solid rgba(255,255,255,.08);padding-top:12px"><b>Customize Task Bar and Apps Size</b>' +
       '<div style="opacity:.75;font-size:12px;margin:4px 0 8px">Apps and the task bar are separate. Large is the normal Drift size.</div>' +
@@ -901,7 +948,7 @@
     });
     panel.querySelector('#drift-docs-btn').onclick = function () { openDriftDocs(); };
     panel.querySelector('#kb-class-go').onclick = function () {
-      window.location.href = 'https://classroom.google.com/';
+      openTop('https://classroom.google.com/');
     };
     panel.querySelectorAll('input[name="gk-inj"]').forEach(function (r) {
       r.onchange = function () {
@@ -1157,10 +1204,13 @@
     stream.getTracks().forEach(function (t) { try { t.stop(); } catch (e) {} });
     var q = prompt('What do you want to know about this screen?', 'What is on my screen?');
     if (!q) { if (status.parentNode) status.parentNode.remove(); return; }
+    var click = /pantalla|on screen|selecci[oó]n|selection|\bclick\b|p[uú]lsa|responde lo que/i.test(q);
     driftPaint(status, 'Gemini 3.6 is looking…');
     var data = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
     var ep = 'https://holy-firefly-982c.fert0480.workers.dev';
     try { if (typeof EP === 'function') ep = String(EP()).replace(/\/$/, ''); } catch (e) {}
+    var ask = q + '\n\nIf you use markdown, write real tables and fenced code blocks. Do not wrap the whole answer in asterisks.';
+    if (click) ask += '\n\nThe user wants the selection on this screen answered or clicked. End your reply with one final line exactly CLICK: percentX percentY where both numbers are from 0 to 100 and mark the point that should be clicked. Do not explain that line.';
     try {
       var r = await fetch(ep + '/ai', {
         method: 'POST',
@@ -1170,19 +1220,52 @@
           max_tokens: 2048,
           messages: [{ role: 'user', content: [
             { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: data } },
-            { type: 'text', text: q + '\n\nIf you use markdown, write real tables and fenced code blocks. Do not wrap the whole answer in asterisks.' }
+            { type: 'text', text: ask }
           ]}],
           system: 'You are Gemini 3.6 inside Drift. The user is showing you a screenshot. Answer about what is visible. Use markdown tables for rows and fenced code blocks for code. Do not fill the answer with asterisks.'
         })
       });
       var j = await r.json();
       var text = ((j.content || []).map(function (x) { return x.text || ''; }).join('')) || (j.error && (j.error.message || JSON.stringify(j.error))) || 'No answer.';
+      var cm = text.match(/CLICK:\s*(\d{1,3}(?:\.\d+)?)\s+(\d{1,3}(?:\.\d+)?)\s*$/i);
+      if (cm && click) {
+        text = text.replace(cm[0], '').trim();
+        driftClickAt(Number(cm[1]), Number(cm[2]));
+      }
       if (status.parentNode) status.parentNode.remove();
       orbMessage(text);
     } catch (e) {
       if (status.parentNode) status.parentNode.remove();
       orbMessage(String(e.message || e));
     }
+  }
+  function driftClickAt(px, py) {
+    var x = Math.max(0, Math.min(window.innerWidth - 1, (px / 100) * window.innerWidth));
+    var y = Math.max(0, Math.min(window.innerHeight - 1, (py / 100) * window.innerHeight));
+    var cur = document.createElement('div');
+    cur.style.cssText = 'position:fixed;z-index:2147483646;width:16px;height:16px;margin-left:-8px;margin-top:-8px;border-radius:50%;border:2px solid #fff;background:#111;pointer-events:none;left:12px;top:12px;transition:left .45s ease,top .45s ease';
+    document.body.appendChild(cur);
+    requestAnimationFrame(function () { cur.style.left = x + 'px'; cur.style.top = y + 'px'; });
+    setTimeout(function () {
+      var el = document.elementFromPoint(x, y);
+      if (el && el !== cur) {
+        try { el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, clientX: x, clientY: y, view: window })); } catch (e) { try { el.click(); } catch (e2) {} }
+      }
+      setTimeout(function () { cur.remove(); }, 350);
+    }, 500);
+  }
+  function hookOpenApp() {
+    if (typeof window.openApp !== 'function' || window.openApp.__driftUse) return;
+    var orig = window.openApp;
+    function wrapped(app) {
+      try {
+        var name = (window.APPS && window.APPS[app]) || app;
+        fetch('/api/use', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ app: String(name).slice(0, 48) }) }).catch(function () {});
+      } catch (e) {}
+      return orig(app);
+    }
+    wrapped.__driftUse = true;
+    window.openApp = wrapped;
   }
   function boot() {
     window.driftPaint = driftPaint;
@@ -1204,6 +1287,7 @@
     try { installOrb(); } catch (e) {}
     try { installSettingsButton(); } catch (e) {}
     try { installProtector(); } catch (e) {}
+    try { hookOpenApp(); } catch (e) {}
     if (typeof installChromeUI === 'function') try { installChromeUI(); } catch (e) {}
     setTimeout(function () {
       applyBrandLogos();
@@ -1215,8 +1299,19 @@
       installSettingsButton();
       installLiquidGlass();
       styleCavemanAsSwitch();
+      try { applySize(); } catch (e) {}
+      try { if (localStorage.getItem('wos:cros-adapt') === '1') setChromeOSAdapt(true); } catch (e) {}
+      try { hookOpenApp(); } catch (e) {}
     }, 500);
-    setTimeout(function () { wireGames(); wireLoginApps(); installSettingsButton(); injectXkiroModels(); }, 1500);
+    setTimeout(function () {
+      wireGames(); wireLoginApps(); installSettingsButton(); injectXkiroModels();
+      try { applySize(); } catch (e) {}
+      try { if (localStorage.getItem('wos:cros-adapt') === '1') setChromeOSAdapt(true); } catch (e) {}
+    }, 1500);
+    setTimeout(function () {
+      try { applySize(); } catch (e) {}
+      try { if (localStorage.getItem('wos:cros-adapt') === '1') setChromeOSAdapt(true); } catch (e) {}
+    }, 3000);
   }
 
   onReady(boot);

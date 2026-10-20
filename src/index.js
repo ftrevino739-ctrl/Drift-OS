@@ -102,10 +102,10 @@ function loadAndPatchIndex() {
 	);
 
 	const tag =
-		'<script src="/drift-extras.js?v=20261019d" defer></script>' +
-		'<script src="/chromebook-proxy.js?v=20261019d" defer></script>' +
-		'<script src="/wayground-ai.js?v=20261019d" defer></script>' +
-		'<script src="/drift-fixup.js?v=20261019d" defer></script>' +
+		'<script src="/drift-extras.js?v=20261019e" defer></script>' +
+		'<script src="/chromebook-proxy.js?v=20261019e" defer></script>' +
+		'<script src="/wayground-ai.js?v=20261019e" defer></script>' +
+		'<script src="/drift-fixup.js?v=20261019e" defer></script>' +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +
@@ -212,6 +212,114 @@ fastify.post("/api/gemini", async (req, reply) => {
 	reply.header("cache-control", "no-store");
 	return reply.send(text);
 });
+
+function decodeSearchHref(href) {
+	const raw = String(href || "").replace(/&/g, "&").trim();
+	if (!raw) return "";
+	try {
+		const abs = new URL(raw, "https://duckduckgo.com/");
+		const uddg = abs.searchParams.get("uddg");
+		if (uddg) return decodeURIComponent(uddg);
+		if (abs.pathname === "/url" || abs.pathname === "/url/") {
+			const q = abs.searchParams.get("q") || abs.searchParams.get("url");
+			if (q) return q;
+		}
+		if (/^https?:$/i.test(abs.protocol) && !/duckduckgo\.com$/i.test(abs.hostname)) return abs.toString();
+	} catch {}
+	return /^https?:\/\//i.test(raw) ? raw : "";
+}
+function cleanSearchText(s) {
+	return String(s || "")
+		.replace(/<[^>]+>/g, "")
+		.replace(/&/g, "&")
+		.replace(/"/g, '"')
+		.replace(/&#39;|'/g, "'")
+		.replace(/</g, "<")
+		.replace(/>/g, ">")
+		.replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+		.replace(/\s+/g, " ")
+		.trim();
+}
+function searchBlocked(html) {
+	return /unusual traffic|detected unusual|our systems have detected|g-recaptcha|\/sorry\/|captcha-form|enable javascript to view/i.test(String(html || ""));
+}
+function pushResult(out, title, url) {
+	if (!url || !/^https?:\/\//i.test(url)) return;
+	if (/duckduckgo\.com|google\.(com|es)\/search|bing\.com\/search|googleadservices|gstatic\.com/i.test(url)) return;
+	const t = title || url;
+	if (out.some((x) => x.url === url)) return;
+	out.push({ title: t.slice(0, 180), url });
+}
+function parseDdg(html) {
+	const out = [];
+	const re = /<a\b[^>]*class="[^"]*result__a[^"]*"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
+	let m;
+	while ((m = re.exec(html)) && out.length < 12) pushResult(out, cleanSearchText(m[2]), decodeSearchHref(m[1]));
+	return out;
+}
+function parseBingRss(xml) {
+	const out = [];
+	const re = /<item>[\s\S]*?<title>([\s\S]*?)<\/title>[\s\S]*?<link>([\s\S]*?)<\/link>/gi;
+	let m;
+	while ((m = re.exec(xml)) && out.length < 12) {
+		const title = cleanSearchText(m[1].replace(/<!\[CDATA\[|\]\]>/g, ""));
+		const url = cleanSearchText(m[2].replace(/<!\[CDATA\[|\]\]>/g, ""));
+		pushResult(out, title, url);
+	}
+	return out;
+}
+function parseGoogle(html) {
+	const out = [];
+	const re = /<a\b[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
+	let m;
+	while ((m = re.exec(html)) && out.length < 20) {
+		let href = m[1].replace(/&/g, "&");
+		if (href.startsWith("/url?") || href.startsWith("https://www.google.com/url?")) href = decodeSearchHref(href.startsWith("/") ? "https://www.google.com" + href : href);
+		else if (!/^https?:/i.test(href)) continue;
+		pushResult(out, cleanSearchText(m[2]), href);
+		if (out.length >= 12) break;
+	}
+	return out;
+}
+const SEARCH_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+async function searchDdg(q) {
+	const r = await fetch("https://html.duckduckgo.com/html/?q=" + encodeURIComponent(q), {
+		headers: { "user-agent": SEARCH_UA, accept: "text/html", "accept-language": "en-US,en;q=0.9" },
+	});
+	return parseDdg(await r.text());
+}
+fastify.get("/api/search", async (req, reply) => {
+	const q = String((req.query && req.query.q) || "").trim().slice(0, 240);
+	const engine = String((req.query && req.query.engine) || "duckduckgo").toLowerCase();
+	reply.header("cache-control", "no-store");
+	if (!q) return reply.send({ results: [], engine: "duckduckgo" });
+	let results = [];
+	let used = "duckduckgo";
+	try {
+		if (engine === "bing") {
+			const r = await fetch("https://www.bing.com/search?q=" + encodeURIComponent(q) + "&format=rss", {
+				headers: { "user-agent": SEARCH_UA, accept: "application/rss+xml,text/xml,text/html" },
+			});
+			const xml = await r.text();
+			if (!searchBlocked(xml)) results = parseBingRss(xml);
+			if (results.length) used = "bing";
+		} else if (engine === "google") {
+			const r = await fetch("https://www.google.com/search?q=" + encodeURIComponent(q) + "&gbv=1&hl=en&num=10", {
+				headers: { "user-agent": SEARCH_UA, accept: "text/html", "accept-language": "en-US,en;q=0.9" },
+			});
+			const html = await r.text();
+			if (!searchBlocked(html)) results = parseGoogle(html);
+			if (results.length) used = "google";
+		}
+	} catch {}
+	if (!results.length) {
+		try { results = await searchDdg(q); } catch {}
+		used = "duckduckgo";
+	}
+	return reply.send({ results, engine: used });
+});
+
+fastify.post("/api/use", (req, reply) => proxyMod(req, reply, "/api/usage"));
 
 function chatFile() {
 	const preferred = process.env.DATA_DIR ? path.join(process.env.DATA_DIR, "chat.json") : path.join(rootPath, "data", "chat.json");

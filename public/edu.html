@@ -295,12 +295,20 @@ document.getElementById("ask-form").onsubmit = async function (e) {
   var note = document.getElementById("ask-note");
   var username = document.getElementById("user").value.trim();
   if (!username) { note.textContent = "Write a username."; return; }
+  var last = 0;
+  try { last = Number(localStorage.getItem("rv:ask-at") || 0); } catch (err) {}
+  var left = 30000 - (Date.now() - last);
+  if (left > 0) { note.textContent = "Wait " + Math.ceil(left / 1000) + " seconds to ask for another code."; return; }
   note.textContent = "Sending…";
   try {
     var r = await fetch("/api/ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: username, os: osName(), device: regionName() }) });
     var j = await r.json();
-    note.textContent = j.ok ? "Request sent." : (j.error || "Could not send.");
-    if (j.ok) document.getElementById("user").value = "";
+    if (j.wait) { note.textContent = "Wait " + j.wait + " seconds to ask for another code."; return; }
+    note.textContent = j.ok ? "Request sent. Wait 30 seconds to ask for another code." : (j.error || "Could not send.");
+    if (j.ok) {
+      document.getElementById("user").value = "";
+      try { localStorage.setItem("rv:ask-at", String(Date.now())); } catch (err2) {}
+    }
   } catch (err) { note.textContent = "Could not send."; }
 };
 document.getElementById("redeem-form").onsubmit = async function (e) {
