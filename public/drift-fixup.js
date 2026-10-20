@@ -415,7 +415,7 @@
     a.click();
     a.remove();
   }
-  var SIZE_MAP = { xl: 3, lg: 2, sm: 1, xs: 0.7 };
+  var SIZE_MAP = { xl: 3, lg: 2, sm: 1.7, xs: 1.5 };
   function readSize(key) {
     var v = 'lg';
     try { v = localStorage.getItem(key) || 'lg'; } catch (e) {}
@@ -431,9 +431,11 @@
     var st = document.getElementById('drift-size-style');
     if (!st) { st = document.createElement('style'); st.id = 'drift-size-style'; document.head.appendChild(st); }
     st.textContent =
-      '.icons .ico{width:calc(38px * var(--drift-app, 2))!important;font-size:calc(6px * var(--drift-app, 2))!important}' +
-      '.icons .ico i{width:calc(23px * var(--drift-app, 2))!important;height:calc(23px * var(--drift-app, 2))!important}' +
-      '#task .tb{height:calc(25px * var(--drift-tb, 2))!important;font-size:calc(7px * var(--drift-tb, 2))!important}' +
+      '.icons .ico{width:calc(38px * var(--drift-app, 2))!important;font-size:calc(6px * var(--drift-app, 2))!important;border-radius:14%!important}' +
+      '.icons .ico i,.icons .ico i svg,.icons .ico img{width:calc(23px * var(--drift-app, 2))!important;height:calc(23px * var(--drift-app, 2))!important;border-radius:22%!important;overflow:hidden}' +
+      '#task .tb{height:calc(25px * var(--drift-tb, 2))!important;font-size:calc(7px * var(--drift-tb, 2))!important;border-radius:calc(4px * var(--drift-tb, 1))!important}' +
+      '#pins button{border-radius:18%!important}' +
+      '#pins button .mi,.mi{border-radius:22%!important}' +
       '#pins button .mi{width:calc(18px * var(--drift-tb, 2));height:calc(18px * var(--drift-tb, 2))}';
     try { if (typeof layout === 'function') layout(); } catch (e) {}
   }
@@ -644,25 +646,17 @@
       open();
     };
   }
-  function deviceMail(url) {
+  function operaPage(url) {
     return function (root) {
-      root.innerHTML =
-        '<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center">' +
-        '<b style="font-size:18px">Gmail</b>' +
-        '<div style="max-width:460px;opacity:.8;font-size:13px">Gmail opens in the browser on this device. That is a browser Gmail accepts. It does not open inside the proxy.</div>' +
-        '<button type="button" data-open style="padding:10px 16px;border:0;border-radius:10px;background:#1a73e8;color:#fff;font-weight:650;cursor:pointer">Open Gmail</button></div>';
-      function open() {
-        var w = window.open(url, '_blank', 'noopener,noreferrer');
-        if (!w) {
-          var n = root.querySelector('[data-open]');
-          if (n) n.textContent = 'Allow pop-ups, then press Open Gmail';
-        }
-      }
-      root.querySelector('[data-open]').onclick = open;
-      open();
+      root.innerHTML = '<div class="sjt" style="height:100%;min-height:0;position:relative;background:#fff"></div>';
+      var frame = document.createElement('iframe');
+      frame.setAttribute('referrerpolicy', 'no-referrer');
+      frame.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';
+      frame.src = '/api/opera?u=' + encodeURIComponent(url);
+      root.querySelector('.sjt').appendChild(frame);
     };
   }
-  function sessionChooser(url, manual) {
+  function sessionChooser(url, loginUrl) {
     return function (root) {
       root.innerHTML =
         '<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center">' +
@@ -671,22 +665,16 @@
         '<button type="button" data-login style="min-width:140px;padding:12px 16px;border-radius:12px;border:1px solid var(--line);background:var(--omni);color:inherit;cursor:pointer"><b>Log in</b><div style="font-size:12px;opacity:.75;margin-top:4px">manual</div></button>' +
         '<button type="button" data-oauth style="min-width:200px;padding:12px 16px;border-radius:12px;border:0;background:#1a73e8;color:#fff;cursor:pointer"><b>Oauth</b><div style="font-size:12px;opacity:.9;margin-top:4px">the accounts on your browser (recommended)</div></button>' +
         '</div></div>';
-      root.querySelector('[data-login]').onclick = function () { manual(root); };
-      root.querySelector('[data-oauth]').onclick = function () {
-        var w = window.open(url, '_blank', 'noopener,noreferrer');
-        if (!w) {
-          var n = root.querySelector('[data-oauth] b');
-          if (n) n.textContent = 'Allow pop-ups, then press Oauth';
-        }
-      };
+      root.querySelector('[data-login]').onclick = function () { operaPage(loginUrl)(root); };
+      root.querySelector('[data-oauth]').onclick = function () { operaPage(url)(root); };
     };
   }
   function wireLoginApps() {
     try {
       if (!window.XAPPS) return;
-      window.XAPPS.gmail = { n: 'Gmail', f: deviceMail('https://mail.google.com/mail/u/0/#inbox') };
-      window.XAPPS.classroom = { n: 'Classroom', f: sessionChooser('https://classroom.google.com/', inAppPage('https://classroom.google.com/')) };
-      window.XAPPS.canva = { n: 'Canva', f: sessionChooser('https://www.canva.com/', inAppPage('https://www.canva.com/')) };
+      window.XAPPS.gmail = { n: 'Gmail', f: operaPage('https://mail.google.com/mail/u/0/#inbox') };
+      window.XAPPS.classroom = { n: 'Classroom', f: sessionChooser('https://classroom.google.com/', 'https://accounts.google.com/ServiceLogin?service=classroom&continue=https%3A%2F%2Fclassroom.google.com%2F') };
+      window.XAPPS.canva = { n: 'Canva', f: sessionChooser('https://www.canva.com/', 'https://www.canva.com/login') };
       window.XAPPS.roblox = { n: 'Roblox', f: robloxShell };
     } catch (e) {}
   }
@@ -791,7 +779,7 @@
       '<p><b>BareMux no respondió / Scramjet server is down or blocked.</b> Render is waking up or the school network blocks the WebSocket. Wait 30–60 seconds, stay on the tab, then press Retry. Do not reload in a loop.</p>' +
       '<p><b>Some apps stay blank for a few minutes.</b> The proxy is still connecting. Wait. TikTok, Gemini and Gimkit need that first connection.</p>' +
       '<p><b>ServiceWorker script evaluation failed.</b> Hard refresh. If it stays, close the tab and open Drift again. Do not use an old bookmark to a Vercel preview.</p>' +
-      '<p><b>Gmail and Classroom.</b> They open inside the app and do not use the proxy. Canva still opens in Google Chrome. Roblox still has Verify you are human.</p>' +
+      '<p><b>Gmail, Classroom and Canva.</b> Login and Oauth stay inside the app as Opera. They do not use Scramjet and they do not open another tab. A managed Chromebook can still block a non-school Google account. Roblox still has Verify you are human.</p>' +
       '<p><b>SharedWorker / cdn.jsdelivr.net/baremux.</b> Unity cannot use a worker from another site. Drift blocks that CDN and uses /baremux on the same origin. If the game still fails, use Open outside proxy (Unity).</p>' +
       '<h3>Windows</h3>' +
       '<p><b>Same proxy errors as ChromeOS</b> (BareMux, cold start, Service Worker). Same fix: wait, then Ctrl+Shift+R.</p>' +
@@ -810,8 +798,8 @@
     var items = [
       ['xl', 'Extra large (x3 larger than the normal apps)'],
       ['lg', 'Large (x2 larger than normal apps) (Default)'],
-      ['sm', 'Small (x1, the normal size)'],
-      ['xs', 'Extra small (x0.7)']
+      ['sm', 'Small (x1.7)'],
+      ['xs', 'Extra small (x1.5)']
     ];
     return items.map(function (it) {
       return '<label style="display:flex;gap:8px;align-items:flex-start;margin:4px 0;cursor:pointer"><input type="radio" name="' + name + '" value="' + it[0] + '"' + (current === it[0] ? ' checked' : '') + ' style="margin-top:3px"/> <span>' + it[1] + '</span></label>';
@@ -1184,7 +1172,7 @@
     return body;
   }
   async function orbAsk() {
-    var status = orbMessage('Pick this screen in the share dialog. Gemini 3.6 will look at it.');
+    var status = orbMessage('Pick this screen in the share dialog. Drift 2.1 will look at it.');
     var stream;
     try { stream = await navigator.mediaDevices.getDisplayMedia({ video: { displaySurface: 'monitor' }, audio: false }); }
     catch (e) {
@@ -1205,28 +1193,44 @@
     var q = prompt('What do you want to know about this screen?', 'What is on my screen?');
     if (!q) { if (status.parentNode) status.parentNode.remove(); return; }
     var click = /pantalla|on screen|selecci[oó]n|selection|\bclick\b|p[uú]lsa|responde lo que/i.test(q);
-    driftPaint(status, 'Gemini 3.6 is looking…');
+    driftPaint(status, 'Drift 2.1 is looking…');
     var data = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
     var ep = 'https://holy-firefly-982c.fert0480.workers.dev';
     try { if (typeof EP === 'function') ep = String(EP()).replace(/\/$/, ''); } catch (e) {}
     var ask = q + '\n\nIf you use markdown, write real tables and fenced code blocks. Do not wrap the whole answer in asterisks.';
     if (click) ask += '\n\nThe user wants the selection on this screen answered or clicked. End your reply with one final line exactly CLICK: percentX percentY where both numbers are from 0 to 100 and mark the point that should be clicked. Do not explain that line.';
     try {
-      var r = await fetch(ep + '/ai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'google/gemini-3.6-flash',
-          max_tokens: 2048,
-          messages: [{ role: 'user', content: [
-            { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: data } },
-            { type: 'text', text: ask }
-          ]}],
-          system: 'You are Gemini 3.6 inside Drift. The user is showing you a screenshot. Answer about what is visible. Use markdown tables for rows and fenced code blocks for code. Do not fill the answer with asterisks.'
-        })
-      });
-      var j = await r.json();
-      var text = ((j.content || []).map(function (x) { return x.text || ''; }).join('')) || (j.error && (j.error.message || JSON.stringify(j.error))) || 'No answer.';
+      var text = '';
+      var body = {
+        systemInstruction: { parts: [{ text: 'You are Drift 2.1. The user is showing you a screenshot. Answer about what is visible. Never say Gemini. Use markdown tables for rows and fenced code blocks for code.' }] },
+        contents: [{ role: 'user', parts: [
+          { inline_data: { mime_type: 'image/jpeg', data: data } },
+          { text: ask }
+        ]}],
+        generationConfig: { maxOutputTokens: 2048, temperature: 0.4 }
+      };
+      var r = await fetch('/api/gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      var j = await r.json().catch(function () { return {}; });
+      if (r.ok) {
+        text = ((((j.candidates || [])[0] || {}).content || {}).parts || []).filter(function (p) { return !p.thought; }).map(function (p) { return p.text || ''; }).join('');
+      } else {
+        var r2 = await fetch(ep + '/ai', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'google/gemini-3.8-flash',
+            max_tokens: 2048,
+            messages: [{ role: 'user', content: [
+              { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: data } },
+              { type: 'text', text: ask }
+            ]}],
+            system: 'You are Drift 2.1. Answer about the screenshot. Never say Gemini.'
+          })
+        });
+        var j2 = await r2.json();
+        text = ((j2.content || []).map(function (x) { return x.text || ''; }).join('')) || (j2.error && (j2.error.message || JSON.stringify(j2.error))) || 'No answer.';
+      }
+      text = String(text || 'No answer.').replace(/Gemini said/gi, 'Drift said');
       var cm = text.match(/CLICK:\s*(\d{1,3}(?:\.\d+)?)\s+(\d{1,3}(?:\.\d+)?)\s*$/i);
       if (cm && click) {
         text = text.replace(cm[0], '').trim();
@@ -1254,6 +1258,113 @@
       setTimeout(function () { cur.remove(); }, 350);
     }, 500);
   }
+  function driftTaskbar(show) {
+    var task = document.getElementById('task');
+    if (show) {
+      if (task) task.classList.remove('drift-hidden');
+      document.body.classList.remove('drift-tb-off');
+      try { localStorage.setItem('wos:tb-hidden', '0'); } catch (e) {}
+    } else {
+      if (task) task.classList.add('drift-hidden');
+      document.body.classList.add('drift-tb-off');
+      try { localStorage.setItem('wos:tb-hidden', '1'); } catch (e) {}
+    }
+  }
+  var driftOpened = {};
+  function driftOpen(id) {
+    if (!id || driftOpened[id] || !window.APPS || !window.APPS[id]) return;
+    driftOpened[id] = 1;
+    try { openApp(id); } catch (e) {}
+  }
+  function driftSetSize(which, value) {
+    if (!SIZE_MAP[value]) return;
+    try { localStorage.setItem(which === 'tb' ? 'wos:size-tb' : 'wos:size-apps', value); } catch (e) {}
+    applySize();
+  }
+  function driftFlag(key, on) {
+    if (key === 'cros') setChromeOSAdapt(on);
+    else if (key === 'edu') setEducationMode(on);
+    else if (key === 'nodev') setNoDev(on);
+    else if (key === 'glass') {
+      try { localStorage.setItem('wos:liquid-glass', on ? '1' : '0'); } catch (e) {}
+      installLiquidGlass();
+    } else if (key === 'orb') {
+      try { localStorage.setItem('wos:ai-orb', on ? '1' : '0'); } catch (e) {}
+      installOrb();
+    } else if (key === 'protector') {
+      try { localStorage.setItem('wos:protector', on ? '1' : '0'); } catch (e) {}
+    } else if (key === 'home' && /^(drift|mac|win)$/.test(String(on))) {
+      try { localStorage.setItem('wos:home-btn', String(on)); } catch (e) {}
+      try { applyHomeLogo(String(on)); } catch (e2) {}
+    }
+  }
+  window.driftAct = function (userText, answerText) {
+    if (userText) driftOpened = {};
+    var answer = String(answerText || '');
+    var did = false;
+    answer.replace(/OPEN_APP:\s*([a-z0-9_]+)/gi, function (_, id) { driftOpen(id.toLowerCase()); did = true; return ''; });
+    answer.replace(/TASKBAR:\s*(hide|show)/gi, function (_, v) { driftTaskbar(v.toLowerCase() === 'show'); did = true; return ''; });
+    answer.replace(/SIZE:\s*(apps|tb)\s*=\s*(xl|lg|sm|xs)/gi, function (_, which, value) { driftSetSize(which.toLowerCase(), value.toLowerCase()); did = true; return ''; });
+    answer.replace(/SET:\s*([a-z]+)\s*=\s*([a-z0-9._-]+)/gi, function (_, key, value) {
+      if (key === 'home') driftFlag('home', value);
+      else driftFlag(key, value === '1' || value === 'on' || value === 'true');
+      did = true;
+      return '';
+    });
+    answer = answer.replace(/^\s*(OPEN_APP:\s*[a-z0-9_]+|TASKBAR:\s*(?:hide|show)|SIZE:\s*(?:apps|tb)\s*=\s*(?:xl|lg|sm|xs)|SET:\s*[a-z]+\s*=\s*[a-z0-9._-]+)\s*$/gim, '').replace(/\n{3,}/g, '\n\n').trim();
+    answer = answer.replace(/Gemini said/gi, 'Drift said');
+    var q = String(userText || '');
+    if (q) {
+      if (/\b(hide|oculta|esconde|quita)\b/i.test(q) && /(task\s*bar|barra)/i.test(q)) { driftTaskbar(false); did = true; }
+      else if (/\b(show|muestra|enseña|pon)\b/i.test(q) && /(task\s*bar|barra)/i.test(q)) { driftTaskbar(true); did = true; }
+      var size = /extra\s*small|extra\s*peque/i.test(q) ? 'xs' : (/\bsmall\b|pequeñ/i.test(q) ? 'sm' : (/extra\s*large|extra\s*grande/i.test(q) ? 'xl' : (/\blarge\b|\bgrande\b/i.test(q) ? 'lg' : '')));
+      if (size && /size|tama|apps|icon|task\s*bar|barra/i.test(q)) {
+        driftSetSize(/task\s*bar|barra/i.test(q) && !/app|icon/i.test(q) ? 'tb' : 'apps', size);
+        did = true;
+      }
+      function wantsOn() {
+        if (/\b(off|apaga|desactiva|disable|quita)\b/i.test(q)) return false;
+        if (/\b(on|prende|activa|enable|enciende)\b/i.test(q)) return true;
+        return null;
+      }
+      var flag = wantsOn();
+      if (flag !== null && /adapt|chrome\s*os|chromeos/i.test(q)) { driftFlag('cros', flag); did = true; }
+      if (flag !== null && /education|modo edu/i.test(q)) { driftFlag('edu', flag); did = true; }
+      if (flag !== null && /liquid glass/i.test(q)) { driftFlag('glass', flag); did = true; }
+      if (flag !== null && /\borb\b|assistant|asistente/i.test(q)) { driftFlag('orb', flag); did = true; }
+      if (flag !== null && /protector/i.test(q)) { driftFlag('protector', flag); did = true; }
+      if (flag !== null && /no dev/i.test(q)) { driftFlag('nodev', flag); did = true; }
+      var asking = /^\s*(how|why|what|when|who|donde|d[oó]nde|cuando|cu[aá]ndo|por\s*qu[eé]|c[oó]mo\s+(se|hago|funciona)|explica|explain|qu[eé]\s+es)\b/i.test(q);
+      var verb = /\b(open|abre|abrir|ábreme|abreme|abrime|lanz\w*|launch|start|show|muestra|muéstrame|muestrame|entra|entrar|ve a|go to|pull up|bring up|switch to|cambia|load|carga|ponme|pon|quiero|necesito|dame|inicia|iniciar|ejecut\w*|run|usa|usar|use|mete|enseña|ensena|enseñame|ensename|please|pls)\b/i.test(q);
+      var words = [
+        ['js injector', 'injector'], ['vs code', 'code'], ['vscode', 'code'], ['classdojo', 'classdojo'], ['dojo islands', 'classdojo'], ['whatsapp', 'whatsapp'],
+        ['wayground', 'wayground'], ['classroom', 'classroom'], ['instagram', 'ig'], ['calculator', 'calc'], ['calculadora', 'calc'],
+        ['youtube', 'yt'], ['discord', 'discord'], ['roblox', 'roblox'], ['gimkit', 'gimkit'], ['github', 'github'],
+        ['netflix', 'movies'], ['canva', 'canva'], ['gmail', 'gmail'], ['tiktok', 'tt'], ['gemini', 'gem'],
+        ['browser', 'browser'], ['navegador', 'browser'], ['camera', 'cam'], ['cámara', 'cam'], ['camara', 'cam'],
+        ['music', 'mus'], ['música', 'mus'], ['musica', 'mus'], ['games', 'games'], ['juegos', 'games'],
+        ['chat', 'chat'], ['code', 'code'], ['calc', 'calc'], ['ai', 'ai'], ['dojo', 'classdojo']
+      ];
+      var hits = [];
+      for (var i = 0; i < words.length; i++) {
+        var re = new RegExp('(^|[^a-z])' + words[i][0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '([^a-z]|$)', 'i');
+        if (re.test(q)) hits.push(words[i]);
+      }
+      var writing = /\b(write|escribe|escr[ií]beme|l[ií]neas|lines|script|codigo|c[oó]digo)\b/i.test(q);
+      var short = q.trim().split(/\s+/).length <= 6;
+      if (!asking && (verb || short)) {
+        hits.forEach(function (h) {
+          var covered = hits.some(function (o) { return o[0] !== h[0] && o[0].length > h[0].length && o[0].indexOf(h[0]) !== -1; });
+          if (covered) return;
+          if (h[1] === 'code' && writing && !/\b(vs\s*code|vscode)\b/i.test(q)) return;
+          driftOpen(h[1]);
+          did = true;
+        });
+      }
+    }
+    if (!answer && did) return 'Done.';
+    return answer;
+  };
   function hookOpenApp() {
     if (typeof window.openApp !== 'function' || window.openApp.__driftUse) return;
     var orig = window.openApp;

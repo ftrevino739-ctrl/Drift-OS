@@ -90,22 +90,30 @@ function loadAndPatchIndex() {
 
 	html = html.replace(
 		"const openm=txt.match(/OPEN_APP:([a-z0-9_]+)/i);\n      if(openm){try{openApp(openm[1].toLowerCase())}catch(e){}txt=txt.replace(openm[0],'').trim()||('Opened '+openm[1])}",
-		"const openm=txt.match(/OPEN_APP:([a-z0-9_]+)/i);\n      if(openm){const __u=(mine.filter(m=>m.role==='user').pop()||{}).content||'';const __ok=/\\b(open|abre|abrir|launch|start)\\b/i.test(__u);if(__ok){try{openApp(openm[1].toLowerCase())}catch(e){}txt=txt.replace(openm[0],'').trim()||('Opened '+openm[1])}else{txt=txt.replace(openm[0],'').trim()}}"
+		"if(typeof window.driftAct==='function'){var __a=window.driftAct('',txt);if(typeof __a==='string')txt=__a}"
+	);
+	html = html.replace(
+		"const openm=txt.match(/OPEN_APP:([a-z0-9_]+)/i);\n      if(openm){const __u=(mine.filter(m=>m.role==='user').pop()||{}).content||'';const __ok=/\\b(open|abre|abrir|launch|start)\\b/i.test(__u);if(__ok){try{openApp(openm[1].toLowerCase())}catch(e){}txt=txt.replace(openm[0],'').trim()||('Opened '+openm[1])}else{txt=txt.replace(openm[0],'').trim()}}",
+		"if(typeof window.driftAct==='function'){var __a=window.driftAct('',txt);if(typeof __a==='string')txt=__a}"
 	);
 	html = html.replace(
 		"When the user asks you to open an app",
-		"Only when the user explicitly asks to open/launch an app by name"
+		"When the user wants an app, the taskbar, or a setting changed, in any wording"
 	);
 	html = html.replace(
 		"reply with a single line exactly: OPEN_APP:<id>",
-		"and only then, reply with a single line exactly: OPEN_APP:<id>. Never emit OPEN_APP for weather, facts, homework, or normal chat"
+		"reply with OPEN_APP, TASKBAR, SIZE, or SET lines"
+	);
+	html = html.replace(
+		"and only then, reply with a single line exactly: OPEN_APP:<id>. Never emit OPEN_APP for weather, facts, homework, or normal chat",
+		"reply with OPEN_APP, TASKBAR, SIZE, or SET lines. Do not emit those lines for ordinary questions"
 	);
 
 	const tag =
-		'<script src="/drift-extras.js?v=20261019e" defer></script>' +
-		'<script src="/chromebook-proxy.js?v=20261019e" defer></script>' +
-		'<script src="/wayground-ai.js?v=20261019e" defer></script>' +
-		'<script src="/drift-fixup.js?v=20261019e" defer></script>' +
+		'<script src="/drift-extras.js?v=20261019f" defer></script>' +
+		'<script src="/chromebook-proxy.js?v=20261019f" defer></script>' +
+		'<script src="/wayground-ai.js?v=20261019f" defer></script>' +
+		'<script src="/drift-fixup.js?v=20261019f" defer></script>' +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +
@@ -320,6 +328,188 @@ fastify.get("/api/search", async (req, reply) => {
 });
 
 fastify.post("/api/use", (req, reply) => proxyMod(req, reply, "/api/usage"));
+
+const OPERA_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 OPR/116.0.0.0";
+const operaJars = new Map();
+function operaHostOk(host) {
+	host = String(host || "").toLowerCase();
+	return (
+		host === "google.com" || host.endsWith(".google.com") ||
+		host === "gstatic.com" || host.endsWith(".gstatic.com") ||
+		host === "googleusercontent.com" || host.endsWith(".googleusercontent.com") ||
+		host === "googleapis.com" || host.endsWith(".googleapis.com") ||
+		host === "canva.com" || host.endsWith(".canva.com") ||
+		host === "accounts.youtube.com"
+	);
+}
+function operaJar(req, reply) {
+	const raw = String(req.headers.cookie || "");
+	const m = raw.match(/(?:^|;\s*)drift_op=([a-f0-9]{24})/);
+	let sid = m && operaJars.has(m[1]) ? m[1] : "";
+	if (!sid) {
+		sid = crypto.randomBytes(12).toString("hex");
+		if (operaJars.size > 300) operaJars.delete(operaJars.keys().next().value);
+		operaJars.set(sid, new Map());
+		reply.header("set-cookie", "drift_op=" + sid + "; Path=/; HttpOnly; SameSite=Lax; Max-Age=43200");
+	}
+	return operaJars.get(sid);
+}
+function operaStore(jar, url, response) {
+	let host = "";
+	try { host = new URL(url).hostname.toLowerCase(); } catch { return; }
+	const lines = typeof response.headers.getSetCookie === "function" ? response.headers.getSetCookie() : [];
+	for (const line of lines) {
+		const segs = line.split(";").map((s) => s.trim());
+		const eq = segs[0].indexOf("=");
+		if (eq < 1) continue;
+		const name = segs[0].slice(0, eq);
+		const value = segs[0].slice(eq + 1);
+		let domain = host;
+		let cpath = "/";
+		for (const seg of segs.slice(1)) {
+			const i = seg.indexOf("=");
+			const k = (i === -1 ? seg : seg.slice(0, i)).trim().toLowerCase();
+			const v = i === -1 ? "" : seg.slice(i + 1).trim();
+			if (k === "domain" && v) domain = v.replace(/^\./, "").toLowerCase();
+			if (k === "path" && v) cpath = v;
+		}
+		if (!operaHostOk(domain)) continue;
+		const list = (jar.get(domain) || []).filter((c) => c.name !== name);
+		list.push({ name, value, path: cpath });
+		jar.set(domain, list);
+	}
+}
+function operaCookie(jar, url) {
+	let u;
+	try { u = new URL(url); } catch { return ""; }
+	const host = u.hostname.toLowerCase();
+	const bits = [];
+	for (const [domain, list] of jar) {
+		if (host !== domain && !host.endsWith("." + domain)) continue;
+		for (const c of list) {
+			if (u.pathname.startsWith(c.path || "/")) bits.push(c.name + "=" + c.value);
+		}
+	}
+	return bits.join("; ");
+}
+const OPERA_BOOT = `(function(){
+  var ua = ${JSON.stringify("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 OPR/116.0.0.0")};
+  try { Object.defineProperty(navigator, "userAgent", { get: function(){ return ua; } }); } catch (e) {}
+  function abs(u){ try { return new URL(u, document.baseURI).href; } catch (e) { return ""; } }
+  function ours(path){ return location.origin + path; }
+  function hop(u){ u = abs(u); if (!/^https?:/i.test(u)) return; location.href = ours("/api/opera?u=" + encodeURIComponent(u)); }
+  try { window.open = function(u){ hop(u || ""); return null; }; } catch (e) {}
+  document.addEventListener("click", function(e){
+    var a = e.target && e.target.closest && e.target.closest("a[href]");
+    if (!a) return;
+    var u = abs(a.getAttribute("href"));
+    if (!/^https?:/i.test(u)) return;
+    e.preventDefault();
+    hop(u);
+  }, true);
+  document.addEventListener("submit", function(e){
+    var f = e.target;
+    if (!f || !f.action) return;
+    e.preventDefault();
+    var body = new URLSearchParams();
+    try { new FormData(f).forEach(function(v,k){ if (typeof v === "string") body.append(k,v); }); } catch (err) {}
+    fetch(ours("/api/opera"), { method:"POST", credentials:"same-origin", headers:{"content-type":"application/json"}, body: JSON.stringify({ u: abs(f.action), form: body.toString(), method: (f.method || "POST").toUpperCase() }) })
+      .then(function(r){ return r.text(); })
+      .then(function(t){ document.open(); document.write(t); document.close(); })
+      .catch(function(){ hop(f.action); });
+  }, true);
+  function via(u, method, body, headers){
+    return fetch(ours("/api/opera"), { method:"POST", credentials:"same-origin", headers:{"content-type":"application/json"}, body: JSON.stringify({ u:u, method:method || "GET", form: body || "", raw:1, headers: headers || {} }) });
+  }
+  var ofetch = window.fetch;
+  window.fetch = function(input, init){
+    var u = typeof input === "string" ? input : (input && input.url) || "";
+    var absu = abs(u);
+    if (!/^https?:/i.test(absu) || absu.indexOf(location.origin) === 0) return ofetch.apply(this, arguments);
+    init = init || {};
+    var headers = {};
+    try { new Headers(init.headers || (input && input.headers) || {}).forEach(function(v,k){ if (/^content-type$/i.test(k)) headers[k] = v; }); } catch (e) {}
+    var body = "";
+    var src = init.body;
+    if (typeof src === "string") body = src;
+    else if (typeof URLSearchParams !== "undefined" && src instanceof URLSearchParams) body = src.toString();
+    return via(absu, init.method || (input && input.method) || "GET", body, headers);
+  };
+})();`;
+function operaInject(html, pageUrl) {
+	const boot = "<base href=\"" + String(pageUrl).replace(/"/g, "") + "\"><script>" + OPERA_BOOT + "</script>";
+	html = String(html).replace(/<meta[^>]+http-equiv=["']Content-Security-Policy["'][^>]*>/gi, "");
+	html = html.replace(/<meta[^>]+http-equiv=["']refresh["'][^>]*>/gi, "");
+	if (/<head[^>]*>/i.test(html)) return html.replace(/<head[^>]*>/i, (m) => m + boot);
+	return boot + html;
+}
+async function operaFetch(target, method, form, jar, contentType) {
+	let current = target;
+	let verb = String(method || "GET").toUpperCase() === "POST" ? "POST" : "GET";
+	let body = form || "";
+	for (let i = 0; i < 6; i++) {
+		let u;
+		try { u = new URL(current); } catch { return null; }
+		if (u.protocol !== "https:" || !operaHostOk(u.hostname)) return { blocked: true, final: current };
+		const headers = {
+			"user-agent": OPERA_UA,
+			accept: "text/html,application/xhtml+xml,application/json,application/xml;q=0.9,*/*;q=0.8",
+			"accept-language": "en-US,en;q=0.9",
+			origin: u.origin,
+			referer: current,
+			"sec-ch-ua": "\"Opera\";v=\"116\", \"Chromium\";v=\"131\", \"Not_A Brand\";v=\"24\"",
+			"sec-ch-ua-mobile": "?0",
+			"sec-ch-ua-platform": "\"Windows\"",
+		};
+		const cookie = operaCookie(jar, current);
+		if (cookie) headers.cookie = cookie;
+		if (verb === "POST") headers["content-type"] = contentType || "application/x-www-form-urlencoded";
+		const r = await fetch(current, {
+			method: verb,
+			headers,
+			body: verb === "POST" ? body : undefined,
+			redirect: "manual",
+		});
+		operaStore(jar, current, r);
+		if (r.status >= 300 && r.status < 400) {
+			const loc = r.headers.get("location");
+			if (!loc) return { response: r, final: current };
+			current = new URL(loc, current).toString();
+			verb = "GET";
+			body = "";
+			continue;
+		}
+		return { response: r, final: current };
+	}
+	return null;
+}
+async function operaReply(req, reply, target, method, form, raw, contentType) {
+	let u;
+	try { u = new URL(target); } catch { return reply.code(400).send("bad url"); }
+	if (u.protocol !== "https:" || !operaHostOk(u.hostname)) return reply.code(400).send("blocked");
+	const jar = operaJar(req, reply);
+	const got = await operaFetch(u.toString(), method, form, jar, contentType);
+	if (!got) return reply.code(502).send("Opera did not load that page.");
+	if (got.blocked) return reply.code(400).send("blocked");
+	const ct = got.response.headers.get("content-type") || "application/octet-stream";
+	reply.header("cache-control", "no-store");
+	if (!raw && /text\/html|application\/xhtml/i.test(ct)) {
+		reply.header("content-security-policy", "default-src * data: blob: 'unsafe-inline' 'unsafe-eval'; script-src * data: blob: 'unsafe-inline' 'unsafe-eval'; style-src * 'unsafe-inline' data: blob:; img-src * data: blob:; connect-src *; frame-src *; media-src *");
+		reply.type("text/html; charset=utf-8");
+		return reply.send(operaInject(await got.response.text(), got.final));
+	}
+	reply.header("content-type", ct.split(";")[0] || ct);
+	return reply.send(Buffer.from(await got.response.arrayBuffer()));
+}
+fastify.get("/api/opera", async (req, reply) => {
+	return operaReply(req, reply, String((req.query && req.query.u) || ""), "GET", "", false, "");
+});
+fastify.post("/api/opera", { bodyLimit: 8 * 1024 * 1024 }, async (req, reply) => {
+	const b = req.body || {};
+	const headers = b.headers && typeof b.headers === "object" ? b.headers : {};
+	const ct = headers["content-type"] || headers["Content-Type"] || "";
+	return operaReply(req, reply, String(b.u || ""), String(b.method || "POST"), String(b.form || ""), !!b.raw, String(ct).slice(0, 160));
+});
 
 function chatFile() {
 	const preferred = process.env.DATA_DIR ? path.join(process.env.DATA_DIR, "chat.json") : path.join(rootPath, "data", "chat.json");

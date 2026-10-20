@@ -41,14 +41,7 @@
       '<path d="M14 16h20v3H14zm0 7h14v3H14zm0 7h9v3h-9z" fill="#38BDF8"/>' +
       '<path d="M30 30l7 4-7 4z" fill="#FBBF24"/>'
     );
-    IC.classdojo = svg(
-      '<rect width="48" height="48" rx="11" fill="#21C47A"/>' +
-      '<circle cx="24" cy="22" r="10" fill="#fff"/>' +
-      '<circle cx="20" cy="21" r="1.6" fill="#163"/>' +
-      '<circle cx="28" cy="21" r="1.6" fill="#163"/>' +
-      '<path d="M19 25c1.4 2 8.6 2 10 0" fill="none" stroke="#163" stroke-width="1.6" stroke-linecap="round"/>' +
-      '<path d="M16 34c2 3 14 3 16 0" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/>'
-    );
+    IC.classdojo = '<img src="/classdojo.svg" alt="" style="width:100%;height:100%;object-fit:contain;background:#fff">';
   }
 
   function refreshUI() {
@@ -282,23 +275,17 @@
       if (!q) return;
       out.textContent = 'Generating…';
       try {
-        var ep = (window.DDG0 || 'https://holy-firefly-982c.fert0480.workers.dev').replace(/\/$/, '');
-        try {
-          var saved = localStorage.getItem('wos:ddg');
-          if (saved) ep = JSON.parse(saved).replace(/\/$/, '');
-        } catch (e) {}
-        var r = await fetch(ep + '/ai', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: 'groq-llama',
-            messages: [{ role: 'user', content: 'Write only JavaScript. No markdown fences.\n' + q }],
-            system: 'You write JavaScript for a browser userscript. Output code only.'
-          })
-        });
+        var body = {
+          systemInstruction: { parts: [{ text: 'You are Drift 2.1. Write only JavaScript for a browser userscript. Output code only, no markdown fences.' }] },
+          contents: [{ role: 'user', parts: [{ text: q }] }],
+          generationConfig: { maxOutputTokens: 8192, temperature: 0.3 }
+        };
+        var r = await fetch('/api/gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
         var j = await r.json();
-        var text = ((j.content || []).map(function (x) { return x.text || ''; }).join('') || j.text || '');
-        text = text.replace(/^```[a-z]*\n?/i, '').replace(/```$/, '');
+        var text = '';
+        if (r.ok) text = ((((j.candidates || [])[0] || {}).content || {}).parts || []).filter(function (p) { return !p.thought; }).map(function (p) { return p.text || ''; }).join('');
+        else throw new Error((j.error && (j.error.message || String(j.error))) || 'Drift 2.1 did not answer.');
+        text = String(text).replace(/^```[a-z]*\n?/i, '').replace(/```$/, '');
         if (!text) throw new Error('Empty response');
         code.value = text;
         check();
