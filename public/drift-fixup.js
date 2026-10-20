@@ -682,13 +682,6 @@
       var frame = document.createElement('iframe');
       frame.setAttribute('referrerpolicy', 'no-referrer');
       frame.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';
-      function onMsg(ev) {
-        if (!ev.data || ev.data.driftOpen !== url) return;
-        window.removeEventListener('message', onMsg);
-        openInChrome(url)(root);
-      }
-      window.addEventListener('message', onMsg);
-      setTimeout(function () { window.removeEventListener('message', onMsg); }, 20000);
       frame.src = '/api/opera?u=' + encodeURIComponent(url);
       root.querySelector('.sjt').appendChild(frame);
     };
@@ -700,10 +693,10 @@
         '<b style="font-size:18px">How do you want to inicialize sesión</b>' +
         '<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">' +
         '<button type="button" data-login style="min-width:140px;padding:12px 16px;border-radius:12px;border:1px solid var(--line);background:var(--omni);color:inherit;cursor:pointer"><b>Log in</b><div style="font-size:12px;opacity:.75;margin-top:4px">manual</div></button>' +
-        '<button type="button" data-oauth style="min-width:200px;padding:12px 16px;border-radius:12px;border:0;background:#1a73e8;color:#fff;cursor:pointer"><b>Oauth</b><div style="font-size:12px;opacity:.9;margin-top:4px">the accounts on your browser (recommended)</div></button>' +
+        '<button type="button" data-oauth style="min-width:200px;padding:12px 16px;border-radius:12px;border:0;background:#1a73e8;color:#fff;cursor:pointer"><b>Oauth</b><div style="font-size:12px;opacity:.9;margin-top:4px">inside this app</div></button>' +
         '</div></div>';
       root.querySelector('[data-login]').onclick = function () { operaPage(loginUrl)(root); };
-      root.querySelector('[data-oauth]').onclick = function () { openInChrome(url)(root); };
+      root.querySelector('[data-oauth]').onclick = function () { operaPage(url)(root); };
     };
   }
   function wireLoginApps() {
@@ -816,7 +809,7 @@
       '<p><b>BareMux no respondió / Scramjet server is down or blocked.</b> Render is waking up or the school network blocks the WebSocket. Wait 30–60 seconds, stay on the tab, then press Retry. Do not reload in a loop.</p>' +
       '<p><b>Some apps stay blank for a few minutes.</b> The proxy is still connecting. Wait. TikTok, Gemini and Gimkit need that first connection.</p>' +
       '<p><b>ServiceWorker script evaluation failed.</b> Hard refresh. If it stays, close the tab and open Drift again. Do not use an old bookmark to a Vercel preview.</p>' +
-      '<p><b>Gmail and Classroom login.</b> They open inside the app as Opera, so Google does not mark the browser as insecure. Classroom and Canva Oauth open in Chrome on this Chromebook. Canva blocks the in-app page, so that login opens in Chrome too. Roblox still has Verify you are human.</p>' +
+      '<p><b>Gmail and Classroom login.</b> They open inside the app as Opera, so Google does not mark the browser as insecure. Classroom and Canva Oauth stay inside the app too. Canva can still show its own block page in that window. Roblox still has Verify you are human.</p>' +
       '<p><b>SharedWorker / cdn.jsdelivr.net/baremux.</b> Unity cannot use a worker from another site. Drift blocks that CDN and uses /baremux on the same origin. If the game still fails, use Open outside proxy (Unity).</p>' +
       '<h3>Windows</h3>' +
       '<p><b>Same proxy errors as ChromeOS</b> (BareMux, cold start, Service Worker). Same fix: wait, then Ctrl+Shift+R.</p>' +
@@ -1246,12 +1239,22 @@
       };
       var r = await fetch('/api/gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       var j = await r.json().catch(function () { return {}; });
-      if (!r.ok) {
+      var noKey = !r.ok && (r.status === 404 || /no-key/i.test(JSON.stringify(j && j.error || j)));
+      if (!r.ok && !noKey) {
         var msg = (j.error && (j.error.message || j.error)) || 'Drift 2.1 did not answer.';
-        if (r.status === 404 || /no-key/i.test(String(msg))) msg = 'Drift 2.1 has no Gemini key on this server, so it cannot see the screen.';
         throw new Error(String(msg));
       }
-      var text = ((((j.candidates || [])[0] || {}).content || {}).parts || []).filter(function (p) { return !p.thought; }).map(function (p) { return p.text || ''; }).join('');
+      var text = '';
+      if (r.ok) {
+        var parts = ((((j.candidates || [])[0] || {}).content || {}).parts || []);
+        text = parts.filter(function (p) { return !p.thought; }).map(function (p) { return p.text || ''; }).join('');
+        if (!String(text).trim()) text = parts.filter(function (p) { return p.thought; }).map(function (p) { return p.text || ''; }).join('\n');
+      }
+      if (!String(text).trim() && typeof window.driftAsk === 'function') {
+        driftPaint(status, 'Drift 2.1 is answering…');
+        var blob = await new Promise(function (res) { canvas.toBlob(function (b) { res(b); }, 'image/jpeg', 0.62); });
+        text = await window.driftAsk(ask, blob || null);
+      }
       text = String(text || '').replace(/Gemini said/gi, 'Drift said');
       if (window.driftAct) {
         var acted = window.driftAct('', text);

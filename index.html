@@ -1241,6 +1241,7 @@ function ai(root){
         am.scrollTop=am.scrollHeight;
       }});
       clearInterval(thinkTimer);
+      const drafted=String(thinkBody.textContent||'').trim();
       if(sources){think.querySelector('summary').innerHTML='Looked at <span>'+Math.round((Date.now()-started)/1000)+'s</span>';thinkBody.textContent=sources}
       else think.remove();
       searchDone.then(function(){if(!sources||!out.isConnected)return;if(!think.isConnected){am.insertBefore(think,out)}think.querySelector('summary').innerHTML='Looked at <span>'+Math.round((Date.now()-started)/1000)+'s</span>';thinkBody.textContent=sources}).catch(function(){});
@@ -1248,6 +1249,11 @@ function ai(root){
       let txt=(r.text||'').replace(/Gemini said/gi,'Drift said');
       const thm=txt.match(/<think>([\s\S]*?)<\/think>/i)||txt.match(/\(thinking\)([\s\S]*?)\(\/thinking\)/i);
       if(thm) txt=txt.replace(thm[0],'').trim();
+      if(!txt.trim()){
+        let draft=drafted;
+        if(sources) draft=draft.split(sources).join('').trim();
+        if(draft) txt=draft.replace(/Gemini said/gi,'Drift said');
+      }
       if(typeof window.driftAct==='function'){const __a=window.driftAct('',txt);if(typeof __a==='string')txt=__a}
       if(!txt.includes('```') && /\b(luau|lua|python|javascript|html|css|script|code)\b/i.test(q)){
         const lang=/luau/i.test(q)?'luau':/lua/i.test(q)?'lua':/python|\bpy\b/i.test(q)?'python':/html/i.test(q)?'html':/css/i.test(q)?'css':/javascript|\bjs\b/i.test(q)?'javascript':'txt';
@@ -1346,6 +1352,7 @@ function ai(root){
     let text=got.text;
     let thought=got.think;
     if(thought&&o.onThink)o.onThink(thought);
+    if(!String(text||'').trim() && thought) text=thought;
     let finish=((res.j.candidates||[])[0]||{}).finishReason||'';
     const want=(geminiPlain(list).match(/\b(\d{2,4})\s*(lineas|líneas|linea|lines|line)\b/i)||[])[1];
     const lines=t=>{const blocks=[...String(t).matchAll(/```[^\n]*\n([\s\S]*?)```/g)]; if(!blocks.length)return String(t).split('\n').length; return Math.max.apply(null, blocks.map(b=>b[1].split('\n').length));};
@@ -1356,7 +1363,7 @@ function ai(root){
       const nxt=await geminiCall(more, o.signal);
       if(!nxt.ok) break;
       const addParts=splitParts(nxt.j);
-      const add=addParts.text;
+      const add=addParts.text || ((!String(addParts.text||'').trim() && addParts.think) ? addParts.think : '');
       if(addParts.think){thought=(thought?thought+'\n':'')+addParts.think;if(o.onThink)o.onThink(thought);}
       if(!add) break;
       text+=(/\n$/.test(text)?'':'\n')+add;
