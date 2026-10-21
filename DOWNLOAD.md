@@ -1,4 +1,4 @@
-# Full WebOS UI
+# Full Drift UI
 
 The main UI file (`index.html` / `public/index.html`) is ~155KB.
 
