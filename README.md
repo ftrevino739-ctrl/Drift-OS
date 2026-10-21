@@ -34,13 +34,13 @@ Open http://localhost:8080 (Railway injects `PORT`).
 ## Apps
 
 - Chat (Discord-style channels) 
-- Games 
+- Games (PENDING FIXES but WORKING)
 - local leaderboard
 - Gimkit join (modified)
 - Classroom (SOON MODIFIED)
 - VS Code (with AI)
 - Canva
-- Roblox
+- Roblox (PENDING fixes only for ChromeOS)
 - Discord
 - Youtube (Shorts and Video Search)
 - Tiktok
@@ -49,14 +49,14 @@ Open http://localhost:8080 (Railway injects `PORT`).
 - Netflix-style
 - Movies
 - Camera (VIDEO AND AUDIO)
-- Classdojo
+- ClassDojo 
 - JS injector (injects .js just as tampermonkey without extension)
-- Music
+- Music 
 - Github
 - Wayground (Modified)
-- WhatsApp
+- WhatsApp (PENDING FIXES)
 - Calculator (Basic, Scientific and Convert)
-- Gmail 
+- Gmail (PENDING FIXES)
 - Working Browser (Bing, DuckDuckGo and Google)
 - AI: 4 Drift AI models,  LLama 3.1 8B, Gemma 2 9B, Mistral Mini, Qwen Flash, Gemma 2 (LOCAL) and Gemini Nano all this with custom instructions, Effort; Medium, High and Low.
 
