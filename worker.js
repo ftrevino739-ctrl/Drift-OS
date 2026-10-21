@@ -176,26 +176,61 @@ export default {
       }
       if (u.pathname === "/yt") {
         const key = (env && env.YT_KEY) || "";
-        const base = "https://www.googleapis.com/youtube/v3/";
         const q = u.searchParams.get("q");
-        const url = u.searchParams.get("chart")
-          ? base + "videos?part=snippet&chart=mostPopular&regionCode=MX&maxResults=12&key=" + key
+        const chart = u.searchParams.get("chart");
+        if (key) {
+          const base = "https://www.googleapis.com/youtube/v3/";
+          const url = chart
+            ? base + "videos?part=snippet&chart=mostPopular&regionCode=MX&maxResults=12&key=" + key
+            : q
+              ? base + "search?part=snippet&type=video&maxResults=12&safeSearch=moderate&q=" + encodeURIComponent(q) + "&key=" + key
+              : null;
+          if (url) {
+            const d = await (await fetch(url)).json();
+            if (!d.error) {
+              return j({
+                items: (d.items || []).map(function (i) {
+                  return {
+                    id: i.id.videoId || i.id,
+                    title: i.snippet.title,
+                    channel: i.snippet.channelTitle,
+                    thumb: (i.snippet.thumbnails.medium || i.snippet.thumbnails.default).url,
+                  };
+                }),
+              });
+            }
+          }
+        }
+        const inv = chart
+          ? "https://invidious.f5.si/api/v1/trending?type=video"
           : q
-            ? base + "search?part=snippet&type=video&maxResults=12&safeSearch=moderate&q=" + encodeURIComponent(q) + "&key=" + key
+            ? "https://invidious.f5.si/api/v1/search?type=video&q=" + encodeURIComponent(q)
             : null;
-        if (!url) return j({ items: [] });
-        const d = await (await fetch(url)).json();
-        if (d.error) return j({ error: d.error.message });
+        if (!inv) return j({ items: [] });
+        const list = await (await fetch(inv, { headers: { accept: "application/json" } })).json();
+        const arr = Array.isArray(list) ? list : [];
         return j({
-          items: (d.items || []).map(function (i) {
-            return {
-              id: i.id.videoId || i.id,
-              title: i.snippet.title,
-              channel: i.snippet.channelTitle,
-              thumb: (i.snippet.thumbnails.medium || i.snippet.thumbnails.default).url,
-            };
-          }),
+          items: arr.slice(0, 12).map(function (i) {
+            var thumb = (i.videoThumbnails || []).find(function (t) { return t.quality === "medium"; }) || (i.videoThumbnails || [])[0] || {};
+            return { id: i.videoId, title: i.title, channel: i.author, thumb: thumb.url || "" };
+          }).filter(function (i) { return i.id; }),
         });
+      }
+      if ((u.pathname === "/search" || u.pathname === "/") && u.searchParams.get("q")) {
+        const q = u.searchParams.get("q");
+        const key = env && env.SERPAPI_KEY;
+        if (!key) return j({ results: [], error: "SERPAPI_KEY is not set on the worker" });
+        const e = u.searchParams.get("engine");
+        const eng = e === "bing" || e === "google" ? e : "duckduckgo";
+        const r = await fetch(
+          "https://serpapi.com/search.json?engine=" + eng + (eng === "duckduckgo" ? "&kp=1" : "") +
+          "&q=" + encodeURIComponent(q) + "&api_key=" + key
+        );
+        const d = await r.json();
+        const results = (d.organic_results || []).map(function (row) {
+          return { title: row.title || row.link, url: row.link };
+        }).filter(function (row) { return row.url; });
+        return j({ results: results, organic_results: d.organic_results || [], error: d.error });
       }
       return j({ ok: true, service: "Drift-OS worker", providers: ["groq", "openrouter", "xkiro"] });
     } catch (err) {
