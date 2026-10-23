@@ -788,7 +788,7 @@ function render(url){
   if(url==='chrome://newtab'||url.startsWith('chrome://')&&!url.startsWith('chrome://search'))return{t:'Nueva pestaña',h:`<div class="center"><div class="logo"><span>S</span><span>e</span><span>a</span><span>r</span><span>c</span><span>h</span></div><input class="sb" data-sb placeholder="Busca o escribe una URL" aria-label="Search"></div>`};
   if(url.startsWith('chrome://search')){const q=decodeURIComponent(url.split('q=')[1]||'');return{t:q+' - Búsqueda',h:`<div class="pad"><div id="ddgbox"></div></div>`}}
   const s=/^https?:/.test(url)?url:'https://'+url;
-  return{t:url.replace(/^https?:\/\//,'').slice(0,40),h:`<div class="fr"><div class="ld">Loading…</div><iframe credentialless src="${esc(s)}" referrerpolicy="no-referrer" allow="fullscreen; autoplay; clipboard-write; encrypted-media; picture-in-picture" allowfullscreen sandbox="allow-scripts allow-forms allow-popups allow-same-origin allow-presentation"></iframe></div>`};
+  return{t:url.replace(/^https?:\/\//,'').slice(0,40),u:s,h:`<div class="fr" style="height:100%;position:relative"><div class="sjbox" style="position:absolute;inset:0"></div></div>`};
 }
 function browser(root,w){
   root.innerHTML=`<div class="tabs"></div><div class="nav"><button aria-label="Atrás">←</button><button aria-label="Adelante">→</button><button aria-label="Recargar">⟳</button><input class="omni" placeholder="Busca en la web o escribe una URL" aria-label="Barra de direcciones"></div><div class="page"></div>`;
@@ -817,6 +817,11 @@ function browser(root,w){
     const p=document.createElement('button');p.className='plus';p.textContent='+';p.setAttribute('aria-label','Nueva pestaña');p.onclick=()=>newTab();tabsEl.appendChild(p);
     const u=U(),r=render(u);
     page.innerHTML=r.h;page.scrollTop=0;
+    if(r.u){
+      const box=$('.sjbox',page);
+      if(box && typeof openProxied==='function') openProxied(r.u, box);
+      else if(box) box.innerHTML='<div class="ym">Scramjet no está listo. Recarga Drift.</div>';
+    }
     const f=$('iframe',page);if(f)f.onload=()=>{const l=$('.ld',page);if(l)l.remove()};
     if(u.startsWith('chrome://search'))ddg(u);
     om.value=/^chrome:\/\/(newtab)?$/.test(u)?'':(/^chrome:/.test(u)?u:(/^https?:/.test(u)?u:'https://'+u));
@@ -950,11 +955,19 @@ function youtube(root){
   async function loadHome(){
     yb.innerHTML='<div class="ym">Loading…</div>';
     try{
-      const j=await ytApi('videos',{part:'snippet,statistics',chart:'mostPopular',regionCode:'MX',maxResults:'24'});
-      last=mapVideos(j);grid(last);
+      const r=await fetch('/api/yt-list?chart=1');
+      const j=await r.json();
+      if(!r.ok||j.error) throw new Error(j.error||'YouTube');
+      last=mapVideos(j);
+      if(!last.length) throw new Error('Sin videos');
+      grid(last);
     }catch(e){
-      try{const r=await fetch(EP()+'/yt?chart=1');const j=await r.json();last=(j.items||[]).map(x=>({type:'video',...x}));grid(last)}
-      catch{yb.innerHTML='<div class="ym">No se pudo cargar. '+(e.message||'')+'</div>'}
+      try{
+        const j=await ytApi('videos',{part:'snippet,statistics',chart:'mostPopular',regionCode:'MX',maxResults:'24'});
+        last=mapVideos(j);
+        if(!last.length) throw new Error('Sin videos');
+        grid(last);
+      }catch(e2){yb.innerHTML='<div class="ym">No se pudo cargar. '+((e2&&e2.message)||e.message||'')+'</div>'}
     }
   }
   async function loadShorts(){
@@ -1011,15 +1024,18 @@ async function go(){
     mode='search';tabs.forEach(b=>b.classList.toggle('on',b.dataset.tab==='search'));
     searchBar.hidden=false;yb.innerHTML='<div class="ym">Buscando…</div>';
     try{
-      const [jv,jc]=await Promise.all([
-        ytApi('search',{part:'snippet',type:'video',q,maxResults:'20',safeSearch:'moderate'}),
-        ytApi('search',{part:'snippet',type:'channel',q,maxResults:'3'})
-      ]);
-      last=[...mapSearch(jc),...mapSearch(jv)];
-      if(last.length)grid(last);else yb.innerHTML='<div class="ym">Sin resultados para «'+dec(q)+'».</div>';
+      const r=await fetch('/api/yt-list?q='+encodeURIComponent(q));
+      const j=await r.json();
+      if(!r.ok||j.error) throw new Error(j.error||'YouTube');
+      last=mapSearch(j);
+      if(!last.length) throw new Error('sin');
+      grid(last);
     }catch(e){
-      try{const r=await fetch(EP()+'/yt?q='+encodeURIComponent(q));const j=await r.json();last=(j.items||[]).map(x=>({type:'video',...x}));if(last.length)grid(last);else yb.innerHTML='<div class="ym">No results.</div>'}
-      catch{yb.innerHTML='<div class="ym">Error al buscar. '+(e.message||'')+'</div>'}
+      try{
+        const jv=await ytApi('search',{part:'snippet',type:'video',q,maxResults:'20',safeSearch:'moderate'});
+        last=mapSearch(jv);
+        if(last.length)grid(last);else yb.innerHTML='<div class="ym">Sin resultados para «'+dec(q)+'».</div>';
+      }catch(e2){yb.innerHTML='<div class="ym">Error al buscar. '+((e2&&e2.message)||e.message||'')+'</div>'}
     }
   }
   $('button',searchBar).onclick=go;inp.onkeydown=e=>{if(e.key==='Enter')go()};
