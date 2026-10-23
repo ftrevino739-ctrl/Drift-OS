@@ -608,7 +608,7 @@
     };
   }
   function robloxShell(root) {
-    return operaPage('https://www.roblox.com/', 'edge')(root);
+    return operaPage('https://www.roblox.com/', 'firefox')(root);
   }
   function inAppPage(url) {
     return function (root) {
@@ -769,9 +769,11 @@
   function wireLoginApps() {
     try {
       if (!window.XAPPS) return;
-      window.XAPPS.gmail = { n: 'Gmail', f: operaPage('https://mail.google.com/mail/u/0/#inbox', 'edge') };
+      window.XAPPS.gmail = { n: 'Gmail', f: operaPage('https://mail.google.com/mail/u/0/#inbox', 'firefox') };
       window.XAPPS.classroom = { n: 'Classroom', f: sessionChooser('https://accounts.google.com/ServiceLogin?service=classroom&continue=https%3A%2F%2Fclassroom.google.com%2F&passive=1209600', 'https://accounts.google.com/ServiceLogin?service=classroom&continue=https%3A%2F%2Fclassroom.google.com%2F', false, false, 'classroom') };
       window.XAPPS.canva = { n: 'Canva', f: sessionChooser('https://www.canva.com/', 'https://www.canva.com/login', true, true) };
+      window.__driftRoblox = robloxShell;
+      window.__driftGmail = operaPage('https://mail.google.com/mail/u/0/#inbox', 'firefox');
       window.XAPPS.roblox = { n: 'Roblox', f: robloxShell };
     } catch (e) {}
   }
