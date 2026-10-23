@@ -73,10 +73,10 @@ function loadAndPatchIndex() {
 	);
 
 	const xapps =
-		"const XAPPS={cam:{n:'Camera',f:camera},mus:{n:'Music',f:music},movies:{n:'Movies',f:movies},code:{n:'VS Code',f:vscode},discord:{n:'Discord',f:discordApp},gmail:{n:'Gmail',f:function(r){var f=window.__driftGmail; if(f) return f(r);}},ig:{n:'Instagram',f:igApp},tt:{n:'TikTok',f:ttApp}," +
+		"const XAPPS={cam:{n:'Camera',f:camera},mus:{n:'Music',f:music},movies:{n:'Movies',f:movies},code:{n:'VS Code',f:vscode},discord:{n:'Discord',f:discordApp},gmail:{n:'Gmail',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#fff';var fr=document.createElement('iframe');fr.setAttribute('credentialless','');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';fr.src='/api/opera?u='+encodeURIComponent('https://mail.google.com/mail/u/0/#inbox')+'&b=firefox';r.appendChild(fr)}},ig:{n:'Instagram',f:igApp},tt:{n:'TikTok',f:ttApp}," +
 		"classroom:{n:'Classroom',f:function(r){proxySite(r,'https://classroom.google.com','Classroom')}}," +
 		"canva:{n:'Canva',f:function(r){proxySite(r,'https://www.canva.com','Canva')}}," +
-		"roblox:{n:'Roblox',f:function(r){var f=window.__driftRoblox; if(f) return f(r);}}," +
+		"roblox:{n:'Roblox',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#fff';var fr=document.createElement('iframe');fr.setAttribute('credentialless','');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';fr.src='/api/opera?u='+encodeURIComponent('https://www.roblox.com/login')+'&b=firefox';r.appendChild(fr)}}," +
 		"gimkit:{n:'Gimkit',f:gimkitApp},games:{n:'Games',f:function(r){return (window.noahGamesApp||gamesHub)(r)}},chat:{n:'Chat',f:noahChat}};" +
 		"window.XAPPS=XAPPS;window.APPS=APPS;try{window.IC=IC}catch(e){}try{window.proxySite=proxySite}catch(e){}try{window.vscode=vscode}catch(e){}try{window.S=S}catch(e){}try{window.discordApp=discordApp}catch(e){};";
 	html = html.replace(
@@ -239,7 +239,7 @@ fastify.post("/api/gemini", { bodyLimit: 6 * 1024 * 1024 }, async (req, reply) =
 		const body = req.body || {};
 		for (let mi = 0; mi < models.length; mi++) {
 			const model = models[mi];
-			const tries = mi === 0 ? 2 : 1;
+			const tries = 1;
 			for (let attempt = 0; attempt < tries; attempt++) {
 				let status = 503;
 				let text = busyText;
@@ -1113,8 +1113,9 @@ fastify.get("/api/yt-play", async (req, reply) => {
 	const id = String(req.query.id || "").replace(/[^a-zA-Z0-9_-]/g, "");
 	if (!id || id.length > 16) return reply.code(400).send({ error: "missing id" });
 	const hosts = [
-		"https://invidious.f5.si/api/v1/videos/",
 		"https://api.piped.private.coffee/streams/",
+		"https://pipedapi.kavin.rocks/streams/",
+		"https://invidious.f5.si/api/v1/videos/",
 	];
 	const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 	const candidates = [];
