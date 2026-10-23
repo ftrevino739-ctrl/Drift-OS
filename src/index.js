@@ -73,10 +73,10 @@ function loadAndPatchIndex() {
 	);
 
 	const xapps =
-		"const XAPPS={cam:{n:'Camera',f:camera},mus:{n:'Music',f:music},movies:{n:'Movies',f:movies},code:{n:'VS Code',f:vscode},discord:{n:'Discord',f:discordApp},gmail:{n:'Gmail',f:gmailApp},ig:{n:'Instagram',f:igApp},tt:{n:'TikTok',f:ttApp}," +
+		"const XAPPS={cam:{n:'Camera',f:camera},mus:{n:'Music',f:music},movies:{n:'Movies',f:movies},code:{n:'VS Code',f:vscode},discord:{n:'Discord',f:discordApp},gmail:{n:'Gmail',f:function(r){var f=window.__driftGmail; if(f) return f(r);}},ig:{n:'Instagram',f:igApp},tt:{n:'TikTok',f:ttApp}," +
 		"classroom:{n:'Classroom',f:function(r){proxySite(r,'https://classroom.google.com','Classroom')}}," +
 		"canva:{n:'Canva',f:function(r){proxySite(r,'https://www.canva.com','Canva')}}," +
-		"roblox:{n:'Roblox',f:function(r){proxySite(r,'https://www.roblox.com/login','Roblox')}}," +
+		"roblox:{n:'Roblox',f:function(r){var f=window.__driftRoblox; if(f) return f(r);}}," +
 		"gimkit:{n:'Gimkit',f:gimkitApp},games:{n:'Games',f:function(r){return (window.noahGamesApp||gamesHub)(r)}},chat:{n:'Chat',f:noahChat}};" +
 		"window.XAPPS=XAPPS;window.APPS=APPS;try{window.IC=IC}catch(e){}try{window.proxySite=proxySite}catch(e){}try{window.vscode=vscode}catch(e){}try{window.S=S}catch(e){}try{window.discordApp=discordApp}catch(e){};";
 	html = html.replace(
@@ -1138,18 +1138,10 @@ fastify.get("/api/yt-play", async (req, reply) => {
 		} catch {}
 	}
 	candidates.sort((a, b) => b.score - a.score);
-	for (const pick of candidates.slice(0, 4)) {
-		try {
-			const probe = await fetch(pick.url, {
-				headers: { "user-agent": UA, range: "bytes=0-1", referer: "https://www.youtube.com/", accept: "*/*" },
-				redirect: "follow",
-			});
-			const ct = String(probe.headers.get("content-type") || "");
-			if (probe.ok && /video|mp4|octet-stream/i.test(ct)) {
-				reply.header("cache-control", "no-store");
-				return { url: "/api/yt-file?u=" + encodeURIComponent(pick.url), title: pick.title || "" };
-			}
-		} catch {}
+	const pick = candidates[0];
+	if (pick) {
+		reply.header("cache-control", "no-store");
+		return { url: "/api/yt-file?u=" + encodeURIComponent(pick.url), title: pick.title || "" };
 	}
 	return reply.code(502).send({ error: "no stream" });
 });
