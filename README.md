@@ -1,6 +1,6 @@
 # Drift-OS / Northwind Atlas
 
-Web desktop with Scramjet proxy, YouTube, Drift AI, Chat, Games, Gimkit, Classroom, Canva, Roblox.
+Web Operating system for (school)
 
 ## Quick start (Scramjet / Railway)
 
