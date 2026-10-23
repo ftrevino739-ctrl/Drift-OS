@@ -788,7 +788,7 @@ function render(url){
   if(url==='chrome://newtab'||url.startsWith('chrome://')&&!url.startsWith('chrome://search'))return{t:'Nueva pestaña',h:`<div class="center"><div class="logo"><span>S</span><span>e</span><span>a</span><span>r</span><span>c</span><span>h</span></div><input class="sb" data-sb placeholder="Busca o escribe una URL" aria-label="Search"></div>`};
   if(url.startsWith('chrome://search')){const q=decodeURIComponent(url.split('q=')[1]||'');return{t:q+' - Búsqueda',h:`<div class="pad"><div id="ddgbox"></div></div>`}}
   const s=/^https?:/.test(url)?url:'https://'+url;
-  return{t:url.replace(/^https?:\/\//,'').slice(0,40),h:`<div class="fr"><div class="ld">Loading…</div><iframe src="${esc(s)}" referrerpolicy="no-referrer" allow="fullscreen; autoplay; clipboard-write; encrypted-media; picture-in-picture" allowfullscreen sandbox="allow-scripts allow-forms allow-popups allow-same-origin allow-presentation"></iframe></div>`};
+  return{t:url.replace(/^https?:\/\//,'').slice(0,40),h:`<div class="fr"><div class="ld">Loading…</div><iframe credentialless src="${esc(s)}" referrerpolicy="no-referrer" allow="fullscreen; autoplay; clipboard-write; encrypted-media; picture-in-picture" allowfullscreen sandbox="allow-scripts allow-forms allow-popups allow-same-origin allow-presentation"></iframe></div>`};
 }
 function browser(root,w){
   root.innerHTML=`<div class="tabs"></div><div class="nav"><button aria-label="Atrás">←</button><button aria-label="Adelante">→</button><button aria-label="Recargar">⟳</button><input class="omni" placeholder="Busca en la web o escribe una URL" aria-label="Barra de direcciones"></div><div class="page"></div>`;
@@ -799,7 +799,7 @@ function browser(root,w){
     const q=decodeURIComponent(u.split('q=')[1]||''),box=$('#ddgbox',page);if(!box)return;
     box.innerHTML='<small style="color:var(--mute)">Searching…</small>';
     try{
-      const r=await fetch('/api/search?q='+encodeURIComponent(q)+'&engine='+encodeURIComponent(typeof ENG==='function'?ENG():'duckduckgo'));
+      const r=await fetch('/api/search?q='+encodeURIComponent(q)+'&engine=duckduckgo);
       const j=await r.json();
       const rows=(j.results||[]).filter(x=>x&&x.url);
       box.innerHTML=rows.map(x=>`<div class="res"><a data-go="${esc(x.url)}">${esc(x.title||x.url)}</a><small>${esc(x.url)}</small></div>`).join('')||'<small style="color:var(--mute)">No results.</small>';
@@ -903,7 +903,7 @@ function youtube(root){
     video.controls=true; video.autoplay=true; video.playsInline=true;
     video.style.cssText='position:absolute;inset:0;width:100%;height:100%;background:#000;object-fit:contain';
     function fail(){
-      box.innerHTML='<iframe src="https://www.youtube-nocookie.com/embed/'+encodeURIComponent(id)+'?autoplay=1&rel=0" allow="autoplay;encrypted-media;picture-in-picture" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0;background:#000"></iframe>';
+      box.innerHTML='<iframe credentialless src="https://www.youtube-nocookie.com/embed/'+encodeURIComponent(id)+'?autoplay=1&rel=0" allow="autoplay;encrypted-media;picture-in-picture" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0;background:#000"></iframe>';
     }
     video.addEventListener('error', fail);
     (async()=>{
@@ -1274,8 +1274,6 @@ function ai(root){
     const msgs=input.map(m=>({role:m.role,content:m.content}));
     if(o.images&&o.images.length){const last=msgs[msgs.length-1];const text=typeof last.content==='string'?last.content:'';last.content=[...await Promise.all(o.images.map(async b=>({type:'image',source:{type:'base64',media_type:b.type||'image/jpeg',data:await b64(b)}}))),{type:'text',text}]}
     if(o.model==='google/gemini-3.8-flash'){
-      const site=await geminiSite(msgs,o);
-      if(site&&String(site.text||'').trim()) return site;
       let official=null;
       try{ official=await geminiOfficial(msgs,o); }catch(err){ throw err; }
       if(official&&official.text) return official;
@@ -1943,7 +1941,7 @@ function movies(root){
         <option value="vidsrcnc">VidSrc (alt)</option>
         <option value="multiembed">Multiembed</option>
       </select></div>
-      <iframe allowfullscreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-popups"></iframe></div></div>`;
+      <iframe credentialless allowfullscreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-popups"></iframe></div></div>`;
     const fr=$('iframe',root);
     const setSrc=()=>{
       const p=$('#mvsrc',root).value;
