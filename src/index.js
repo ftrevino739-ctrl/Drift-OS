@@ -1109,6 +1109,24 @@ fastify.post("/api/chat/servers/:id/messages", async (req, reply) => {
 	return { message };
 });
 
+fastify.get("/api/yt-list", async (req, reply) => {
+	const key = process.env.YT_KEY || "AIzaSyCcwFsoTOMku6Lh1lsCB1sUJCngP0sYcY4";
+	const q = String((req.query && req.query.q) || "").trim().slice(0, 180);
+	const base = "https://www.googleapis.com/youtube/v3/";
+	const url = q
+		? base + "search?part=snippet&type=video&maxResults=20&safeSearch=moderate&q=" + encodeURIComponent(q) + "&key=" + key
+		: base + "videos?part=snippet,statistics&chart=mostPopular&regionCode=MX&maxResults=24&key=" + key;
+	try {
+		const r = await fetch(url, { headers: { accept: "application/json" } });
+		const j = await r.json();
+		reply.header("cache-control", "no-store");
+		if (j.error) return reply.code(502).send({ error: (j.error && j.error.message) || "YouTube" });
+		return j;
+	} catch (err) {
+		return reply.code(502).send({ error: "YouTube no respondió." });
+	}
+});
+
 fastify.get("/api/yt-play", async (req, reply) => {
 	const id = String(req.query.id || "").replace(/[^a-zA-Z0-9_-]/g, "");
 	if (!id || id.length > 16) return reply.code(400).send({ error: "missing id" });
