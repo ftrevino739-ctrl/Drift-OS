@@ -799,7 +799,7 @@ function browser(root,w){
     const q=decodeURIComponent(u.split('q=')[1]||''),box=$('#ddgbox',page);if(!box)return;
     box.innerHTML='<small style="color:var(--mute)">Searching…</small>';
     try{
-      const r=await fetch('/api/search?q='+encodeURIComponent(q)+'&engine=duckduckgo);
+      const r=await fetch('/api/search?q='+encodeURIComponent(q)+'&engine=duckduckgo');
       const j=await r.json();
       const rows=(j.results||[]).filter(x=>x&&x.url);
       box.innerHTML=rows.map(x=>`<div class="res"><a data-go="${esc(x.url)}">${esc(x.title||x.url)}</a><small>${esc(x.url)}</small></div>`).join('')||'<small style="color:var(--mute)">No results.</small>';
