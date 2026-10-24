@@ -276,16 +276,264 @@
     var src = 'noah';
     try { src = localStorage.getItem('wos:movies') || 'noah'; } catch (e) {}
     if (src === 'serum') src = 'noah';
-    if (src === 'racial') return driftSite('https://racialquityleadership.com/')(root);
+    if (src === 'racial') return driftSite('https://racialequityleadership.com/')(root);
     if (typeof movies === 'function') return movies(root);
     root.textContent = 'Movies is not ready.';
+  }
+  function windowsEmulator(root) {
+    root.innerHTML = '';
+    root.style.cssText = 'height:100%;min-height:0;position:relative;overflow:hidden;background:#000;color:#111;font-family:Segoe UI,system-ui,sans-serif';
+    var desk = document.createElement('div');
+    desk.style.cssText = 'position:absolute;inset:0;background:linear-gradient(165deg,#0a4f93,#1b8adf 48%,#79c7ff);display:flex';
+    root.appendChild(desk);
+    var stage = document.createElement('div');
+    stage.style.cssText = 'position:absolute;inset:0 0 48px 0';
+    desk.appendChild(stage);
+    var task = document.createElement('div');
+    task.style.cssText = 'position:absolute;left:0;right:0;bottom:0;height:48px;display:flex;align-items:center;gap:6px;padding:0 8px;background:rgba(20,20,20,.55);backdrop-filter:blur(16px);z-index:30';
+    desk.appendChild(task);
+    var startBtn = document.createElement('button');
+    startBtn.type = 'button';
+    startBtn.setAttribute('aria-label', 'Start');
+    startBtn.innerHTML = '<span style="display:grid;grid-template-columns:7px 7px;gap:2px"><i style="width:7px;height:7px;background:#4cc2ff;display:block"></i><i style="width:7px;height:7px;background:#4cc2ff;display:block"></i><i style="width:7px;height:7px;background:#4cc2ff;display:block"></i><i style="width:7px;height:7px;background:#4cc2ff;display:block"></i></span>';
+    startBtn.style.cssText = 'width:40px;height:36px;border:0;border-radius:6px;background:transparent;cursor:pointer;display:grid;place-items:center';
+    var clock = document.createElement('div');
+    clock.style.cssText = 'margin-left:auto;color:#fff;font-size:12px;text-align:right;line-height:1.2;padding-right:6px';
+    task.appendChild(startBtn);
+    task.appendChild(clock);
+    function tick() {
+      var d = new Date();
+      clock.innerHTML = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + '<br>' + d.toLocaleDateString();
+    }
+    tick();
+    var timer = setInterval(function () { if (!root.isConnected) { clearInterval(timer); return; } tick(); }, 10000);
+    var z = 5, openWins = {};
+    function focus(w) { w.style.zIndex = ++z; w.style.display = 'flex'; }
+    function win(id, title, fill) {
+      if (openWins[id]) { focus(openWins[id]); return openWins[id]; }
+      var w = document.createElement('div');
+      w.style.cssText = 'position:absolute;left:64px;top:28px;width:min(680px,94%);height:min(430px,80%);background:#f3f3f3;border-radius:8px;box-shadow:0 18px 50px rgba(0,0,0,.35);display:flex;flex-direction:column;overflow:hidden';
+      var bar = document.createElement('div');
+      bar.style.cssText = 'height:34px;display:flex;align-items:center;gap:6px;padding:0 6px 0 10px;background:#fff;cursor:grab;flex:none';
+      var name = document.createElement('b');
+      name.textContent = title;
+      name.style.cssText = 'flex:1;font-size:13px;font-weight:600';
+      bar.appendChild(name);
+      function mk(label, fn, hot) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = label;
+        b.style.cssText = 'width:36px;height:26px;border:0;border-radius:4px;background:transparent;cursor:pointer';
+        b.onmouseenter = function () { b.style.background = hot || '#e8e8e8'; if (hot) b.style.color = '#fff'; };
+        b.onmouseleave = function () { b.style.background = 'transparent'; b.style.color = '#111'; };
+        b.onclick = function (e) { e.stopPropagation(); fn(); };
+        bar.appendChild(b);
+      }
+      mk('—', function () { w.style.display = 'none'; });
+      mk('□', function () {
+        if (w.dataset.max === '1') {
+          w.dataset.max = '0';
+          w.style.left = '64px'; w.style.top = '28px'; w.style.width = 'min(680px,94%)'; w.style.height = 'min(430px,80%)'; w.style.borderRadius = '8px';
+        } else {
+          w.dataset.max = '1';
+          w.style.left = '0'; w.style.top = '0'; w.style.width = '100%'; w.style.height = '100%'; w.style.borderRadius = '0';
+        }
+      });
+      mk('✕', function () {
+        w.remove();
+        delete openWins[id];
+        var tb = task.querySelector('[data-w="' + id + '"]');
+        if (tb) tb.remove();
+      }, '#c42b1c');
+      var body = document.createElement('div');
+      body.style.cssText = 'flex:1;min-height:0;overflow:auto;background:#fff';
+      w.appendChild(bar);
+      w.appendChild(body);
+      stage.appendChild(w);
+      var ox = 0, oy = 0, sx = 0, sy = 0, drag = false;
+      bar.addEventListener('pointerdown', function (e) {
+        if (e.target.tagName === 'BUTTON') return;
+        drag = true; sx = e.clientX; sy = e.clientY;
+        var r = w.getBoundingClientRect(), pr = stage.getBoundingClientRect();
+        ox = r.left - pr.left; oy = r.top - pr.top;
+        try { bar.setPointerCapture(e.pointerId); } catch (err) {}
+      });
+      bar.addEventListener('pointermove', function (e) {
+        if (!drag || w.dataset.max === '1') return;
+        w.style.left = (ox + e.clientX - sx) + 'px';
+        w.style.top = (oy + e.clientY - sy) + 'px';
+      });
+      bar.addEventListener('pointerup', function () { drag = false; });
+      w.addEventListener('pointerdown', function () { focus(w); });
+      fill(body);
+      focus(w);
+      openWins[id] = w;
+      var tb = document.createElement('button');
+      tb.type = 'button';
+      tb.dataset.w = id;
+      tb.textContent = title;
+      tb.style.cssText = 'height:32px;max-width:150px;overflow:hidden;padding:0 10px;border:0;border-radius:6px;background:rgba(255,255,255,.2);color:#fff;cursor:pointer;font-size:12px';
+      tb.onclick = function () {
+        if (w.style.display === 'none') focus(w);
+        else if (String(w.style.zIndex) === String(z)) w.style.display = 'none';
+        else focus(w);
+      };
+      task.insertBefore(tb, clock);
+      return w;
+    }
+    function notepad(body) {
+      var ta = document.createElement('textarea');
+      ta.style.cssText = 'width:100%;height:100%;box-sizing:border-box;border:0;resize:none;padding:12px;font:14px Consolas,monospace;outline:none';
+      try { ta.value = localStorage.getItem('wos:win-note') || ''; } catch (e) {}
+      ta.oninput = function () { try { localStorage.setItem('wos:win-note', ta.value); } catch (e) {} };
+      body.style.overflow = 'hidden';
+      body.appendChild(ta);
+    }
+    function explorer(body) {
+      body.style.cssText = 'flex:1;min-height:0;display:flex;background:#fff';
+      var side = document.createElement('div');
+      side.style.cssText = 'width:150px;flex:none;background:#f6f6f6;padding:10px;font-size:13px';
+      side.innerHTML = '<b>This PC</b><div style="margin-top:8px;line-height:1.8">Desktop<br>Documents<br>Downloads<br>Pictures</div>';
+      var main = document.createElement('div');
+      main.style.cssText = 'flex:1;padding:14px;display:grid;grid-template-columns:repeat(auto-fill,90px);gap:12px;align-content:start';
+      ['Desktop', 'Documents', 'Downloads', 'Pictures'].forEach(function (n) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.style.cssText = 'border:0;background:transparent;cursor:pointer;font-size:12px';
+        b.innerHTML = '<div style="width:48px;height:36px;margin:0 auto 4px;background:#ffce4a;border-radius:3px"></div>' + n;
+        main.appendChild(b);
+      });
+      body.appendChild(side);
+      body.appendChild(main);
+    }
+    function command(body) {
+      body.style.cssText = 'flex:1;min-height:0;background:#0c0c0c;color:#ccc;display:flex;flex-direction:column;font:13px Consolas,monospace';
+      var pre = document.createElement('pre');
+      pre.style.cssText = 'flex:1;margin:0;padding:10px;overflow:auto;white-space:pre-wrap';
+      var input = document.createElement('input');
+      input.style.cssText = 'border:0;background:#0c0c0c;color:#ccc;padding:8px 10px;font:13px Consolas,monospace;outline:none';
+      var cwd = 'C:\\\\Users\\\\Drift';
+      var lines = ['Windows emulator [Version 11]', 'Type help.'];
+      function paint() { pre.textContent = lines.concat([cwd + '>']).join('\n'); pre.scrollTop = pre.scrollHeight; }
+      paint();
+      input.onkeydown = function (e) {
+        if (e.key !== 'Enter') return;
+        var raw = input.value;
+        input.value = '';
+        lines.push(cwd + '> ' + raw);
+        var parts = raw.trim().split(/\s+/);
+        var c = (parts[0] || '').toLowerCase();
+        if (!c) {}
+        else if (c === 'help') lines.push('dir    cd    echo    cls    ver    time    date    whoami    start notepad');
+        else if (c === 'dir') lines.push('Directory of ' + cwd, 'Desktop   Documents   Downloads   Pictures');
+        else if (c === 'cls') lines = [];
+        else if (c === 'ver') lines.push('Windows emulator 11');
+        else if (c === 'whoami') lines.push('desktop\\\\drift');
+        else if (c === 'echo') lines.push(parts.slice(1).join(' '));
+        else if (c === 'time' || c === 'date') lines.push(String(new Date()));
+        else if (c === 'cd') cwd = parts[1] ? ('C:\\\\' + parts.slice(1).join(' ')) : cwd;
+        else if (c === 'start' && (parts[1] || '') === 'notepad') win('note', 'Notepad', notepad);
+        else lines.push("'" + c + "' is not recognized as a command.");
+        paint();
+      };
+      body.appendChild(pre);
+      body.appendChild(input);
+      setTimeout(function () { input.focus(); }, 30);
+    }
+    function browserWin(body) {
+      body.style.cssText = 'flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;background:#fff';
+      var nav = document.createElement('div');
+      nav.style.cssText = 'display:flex;gap:6px;padding:8px;background:#f3f3f3;flex:none';
+      var input = document.createElement('input');
+      input.value = 'https://www.bing.com';
+      input.style.cssText = 'flex:1;padding:6px 8px;border-radius:8px;border:1px solid #ccc';
+      var go = document.createElement('button');
+      go.type = 'button';
+      go.textContent = 'Go';
+      go.style.cssText = 'padding:6px 12px;border:0;border-radius:8px;background:#0067c0;color:#fff;cursor:pointer';
+      var view = document.createElement('div');
+      view.style.cssText = 'flex:1;min-height:0;position:relative;background:#fff';
+      function load() {
+        var u = input.value.trim();
+        if (!/^https?:/i.test(u)) u = 'https://' + u;
+        if (typeof window.openProxied === 'function') window.openProxied(u, view);
+        else view.textContent = 'Scramjet is not ready.';
+      }
+      go.onclick = load;
+      input.onkeydown = function (e) { if (e.key === 'Enter') load(); };
+      nav.appendChild(input);
+      nav.appendChild(go);
+      body.appendChild(nav);
+      body.appendChild(view);
+      load();
+    }
+    function settingsWin(body) {
+      body.style.cssText = 'flex:1;padding:18px;background:#fff;font-size:14px';
+      body.innerHTML = '<b>Windows emulator</b><p>This PC is running inside Drift. Notepad stays on this device. The browser uses Scramjet.</p><p style="opacity:.7">Version 11 · user Drift</p>';
+    }
+    function recycle(body) {
+      body.style.cssText = 'flex:1;display:grid;place-items:center;color:#666;background:#fff';
+      body.textContent = 'Recycle Bin is empty';
+    }
+    var apps = [
+      ['pc', 'This PC', explorer],
+      ['note', 'Notepad', notepad],
+      ['cmd', 'Command Prompt', command],
+      ['edge', 'Browser', browserWin],
+      ['set', 'Settings', settingsWin],
+      ['bin', 'Recycle Bin', recycle]
+    ];
+    var icons = document.createElement('div');
+    icons.style.cssText = 'position:relative;z-index:2;padding:12px;display:flex;flex-direction:column;gap:8px';
+    apps.forEach(function (a) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.style.cssText = 'width:84px;border:0;background:transparent;color:#fff;cursor:pointer;font-size:12px;text-shadow:0 1px 2px rgba(0,0,0,.45)';
+      b.innerHTML = '<div style="width:42px;height:42px;margin:0 auto 4px;border-radius:8px;background:rgba(255,255,255,.22)"></div>' + a[1];
+      b.ondblclick = function () { win(a[0], a[1], a[2]); };
+      b.onclick = function () { win(a[0], a[1], a[2]); };
+      icons.appendChild(b);
+    });
+    desk.appendChild(icons);
+    var menu = document.createElement('div');
+    menu.style.cssText = 'display:none;position:absolute;left:8px;bottom:56px;width:260px;background:rgba(32,32,32,.94);color:#fff;border-radius:10px;padding:8px;z-index:40;box-shadow:0 12px 40px rgba(0,0,0,.35)';
+    apps.forEach(function (a) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = a[1];
+      b.style.cssText = 'display:block;width:100%;text-align:left;padding:8px 10px;border:0;border-radius:6px;background:transparent;color:#fff;cursor:pointer';
+      b.onmouseenter = function () { b.style.background = 'rgba(255,255,255,.12)'; };
+      b.onmouseleave = function () { b.style.background = 'transparent'; };
+      b.onclick = function () { menu.style.display = 'none'; win(a[0], a[1], a[2]); };
+      menu.appendChild(b);
+    });
+    desk.appendChild(menu);
+    startBtn.onclick = function (e) {
+      e.stopPropagation();
+      menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    };
+    desk.addEventListener('pointerdown', function (e) {
+      if (!menu.contains(e.target) && e.target !== startBtn) menu.style.display = 'none';
+    });
+    var boot = document.createElement('div');
+    boot.style.cssText = 'position:absolute;inset:0;z-index:60;background:#000;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px';
+    boot.innerHTML = '<div style="display:grid;grid-template-columns:18px 18px;gap:4px"><i style="width:18px;height:18px;background:#4cc2ff;display:block"></i><i style="width:18px;height:18px;background:#4cc2ff;display:block"></i><i style="width:18px;height:18px;background:#4cc2ff;display:block"></i><i style="width:18px;height:18px;background:#4cc2ff;display:block"></i></div><div style="font-size:18px">Windows emulator</div><div style="width:180px;height:3px;background:#222"><div data-bar style="height:100%;width:0;background:#4cc2ff"></div></div>';
+    root.appendChild(boot);
+    var n = 0, bar = boot.querySelector('[data-bar]');
+    var bootTimer = setInterval(function () {
+      n += 12;
+      if (bar) bar.style.width = Math.min(100, n) + '%';
+      if (n >= 100) { clearInterval(bootTimer); boot.remove(); }
+    }, 140);
   }
   function wireAskedApps() {
     if (!window.XAPPS || !window.APPS) return;
     var IC = window.IC || (window.IC = {});
     window.APPS.aleks = 'ALEKS';
     window.APPS.espn = 'ESPN';
+    window.APPS.winemu = 'Windows emulator';
     window.XAPPS.aleks = { n: 'ALEKS', f: driftSite('https://www.aleks.com/') };
+    window.XAPPS.winemu = { n: 'Windows emulator', f: windowsEmulator };
     window.XAPPS.espn = { n: 'ESPN', f: driftSite('https://www.espn.com/') };
     window.XAPPS.yt = { n: 'YouTube', f: driftSite('https://www.youtube.com/') };
     window.XAPPS.tt = { n: 'TikTok', f: driftSite('https://www.tiktok.com/') };
@@ -293,12 +541,22 @@
     window.XAPPS.movies = { n: 'Movies', f: moviesApp };
     IC.aleks = '<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="11" fill="#0b3d91"/><text x="24" y="30" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">A</text></svg>';
     IC.espn = '<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="11" fill="#c41230"/><text x="24" y="31" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">ESPN</text></svg>';
+    IC.winemu = '<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="11" fill="#0078d4"/><g fill="#fff"><rect x="13" y="13" width="9" height="9"/><rect x="26" y="13" width="9" height="9"/><rect x="13" y="26" width="9" height="9"/><rect x="26" y="26" width="9" height="9"/></g></svg>';
     try {
+      var changed = false;
       if (window.S && window.S.d && !window.S.d.v14) {
         window.S.d.v14 = 1;
+        changed = true;
         ['aleks', 'espn'].forEach(function (id) {
           if (window.S.d.desk.indexOf(id) < 0) window.S.d.desk.push(id);
         });
+      }
+      if (window.S && window.S.d && !window.S.d.v15) {
+        window.S.d.v15 = 1;
+        changed = true;
+        if (window.S.d.desk.indexOf('winemu') < 0) window.S.d.desk.push('winemu');
+      }
+      if (changed) {
         if (typeof save === 'function') save();
         if (typeof rend === 'function') rend();
       }
@@ -570,7 +828,7 @@
       document.head.appendChild(s);
     }
   }
-  var DRIFT_DEFAULTS = { calc:1, browser:1, ai:1, yt:1, cam:1, mus:1, movies:1, code:1, discord:1, gmail:1, ig:1, tt:1, classroom:1, canva:1, roblox:1, gimkit:1, games:1, chat:1, github:1, whatsapp:1, wayground:1, injector:1, gem:1, classdojo:1, aleks:1, espn:1 };
+  var DRIFT_DEFAULTS = { calc:1, browser:1, ai:1, yt:1, cam:1, mus:1, movies:1, code:1, discord:1, gmail:1, ig:1, tt:1, classroom:1, canva:1, roblox:1, gimkit:1, games:1, chat:1, github:1, whatsapp:1, wayground:1, injector:1, gem:1, classdojo:1, aleks:1, espn:1, winemu:1 };
   function deleteCreatedApps() {
     try {
       var apps = window.APPS || {}, x = window.XAPPS || {}, IC = window.IC || {};
@@ -1058,7 +1316,7 @@
       '<div style="opacity:.75;font-size:12px;margin-top:4px">Fits Drift on iPad 10 and iPad 11. Apps and the task bar stay on screen, with a little more room for touch. Windows size is unchanged.</div></div>' +
       switchHTML('drift-ipad-sw', localStorage.getItem('wos:ipad-adapt') === '1') + '</div>' +
       '<div style="margin-bottom:14px;border-top:1px solid rgba(255,255,255,.08);padding-top:12px"><b>Choose your Movies</b>' +
-      '<div style="opacity:.75;font-size:12px;margin-top:4px">Noah is the catalog already in Drift. Racial opens racialquityleadership.com.</div>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Noah is the catalog already in Drift. Racial opens racialequityleadership.com.</div>' +
       '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="movies-src" value="noah"/> Noah</label>' +
       '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="movies-src" value="racial"/> Racial</label></div>' +
       '<div style="margin-bottom:14px;border-top:1px solid rgba(255,255,255,.08);padding-top:12px"><b>Choose your Games</b>' +
