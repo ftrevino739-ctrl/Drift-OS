@@ -114,7 +114,7 @@ function loadAndPatchIndex() {
 		'<script src="/drift-extras.js?v=20261024a" defer></script>' +
 		'<script src="/chromebook-proxy.js?v=20261020f" defer></script>' +
 		'<script src="/wayground-ai.js?v=20261024a" defer></script>' +
-		'<script src="/drift-fixup.js?v=20261024b" defer></script>' +
+		'<script src="/drift-fixup.js?v=20261024c" defer></script>' +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +
@@ -1359,7 +1359,7 @@ fastify.setNotFoundHandler((_req, reply) => {
 	return reply.code(404).send("Not found");
 });
 
-let port = parseInt(process.env.PORT || "", 10);
+let port = parseInt(process.env.PORT || process.env.SERVER_PORT || "", 10);
 if (Number.isNaN(port)) port = 8080;
 await fastify.listen({ port, host: "0.0.0.0" });
 console.log("Drift listening", port);

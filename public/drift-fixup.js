@@ -276,7 +276,7 @@
     var src = 'noah';
     try { src = localStorage.getItem('wos:movies') || 'noah'; } catch (e) {}
     if (src === 'serum') src = 'noah';
-    if (src === 'racial') return driftSite('https://racialequityleadership.com/')(root);
+    if (src === 'racial') return driftSite('https://racialequityleadership.com/movies.html')(root);
     if (typeof movies === 'function') return movies(root);
     root.textContent = 'Movies is not ready.';
   }
@@ -532,8 +532,10 @@
     window.APPS.aleks = 'ALEKS';
     window.APPS.espn = 'ESPN';
     window.APPS.winemu = 'Windows emulator';
+    window.APPS.gbuild = 'Game Builder';
     window.XAPPS.aleks = { n: 'ALEKS', f: driftSite('https://www.aleks.com/') };
     window.XAPPS.winemu = { n: 'Windows emulator', f: windowsEmulator };
+    window.XAPPS.gbuild = { n: 'Game Builder', f: driftSite('https://tesana.com/create') };
     window.XAPPS.espn = { n: 'ESPN', f: driftSite('https://www.espn.com/') };
     window.XAPPS.yt = { n: 'YouTube', f: driftSite('https://www.youtube.com/') };
     window.XAPPS.tt = { n: 'TikTok', f: driftSite('https://www.tiktok.com/') };
@@ -542,6 +544,7 @@
     IC.aleks = '<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="11" fill="#0b3d91"/><text x="24" y="30" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">A</text></svg>';
     IC.espn = '<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="11" fill="#c41230"/><text x="24" y="31" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">ESPN</text></svg>';
     IC.winemu = '<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="11" fill="#0078d4"/><g fill="#fff"><rect x="13" y="13" width="9" height="9"/><rect x="26" y="13" width="9" height="9"/><rect x="13" y="26" width="9" height="9"/><rect x="26" y="26" width="9" height="9"/></g></svg>';
+    IC.gbuild = '<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="11" fill="#111827"/><path d="M16 32V16h6l2 6 2-6h6v16h-5V23l-3 9h-2l-3-9v9h-3z" fill="#5eead4"/></svg>';
     try {
       var changed = false;
       if (window.S && window.S.d && !window.S.d.v14) {
@@ -555,6 +558,11 @@
         window.S.d.v15 = 1;
         changed = true;
         if (window.S.d.desk.indexOf('winemu') < 0) window.S.d.desk.push('winemu');
+      }
+      if (window.S && window.S.d && !window.S.d.v16) {
+        window.S.d.v16 = 1;
+        changed = true;
+        if (window.S.d.desk.indexOf('gbuild') < 0) window.S.d.desk.push('gbuild');
       }
       if (changed) {
         if (typeof save === 'function') save();
@@ -828,7 +836,7 @@
       document.head.appendChild(s);
     }
   }
-  var DRIFT_DEFAULTS = { calc:1, browser:1, ai:1, yt:1, cam:1, mus:1, movies:1, code:1, discord:1, gmail:1, ig:1, tt:1, classroom:1, canva:1, roblox:1, gimkit:1, games:1, chat:1, github:1, whatsapp:1, wayground:1, injector:1, gem:1, classdojo:1, aleks:1, espn:1, winemu:1 };
+  var DRIFT_DEFAULTS = { calc:1, browser:1, ai:1, yt:1, cam:1, mus:1, movies:1, code:1, discord:1, gmail:1, ig:1, tt:1, classroom:1, canva:1, roblox:1, gimkit:1, games:1, chat:1, github:1, whatsapp:1, wayground:1, injector:1, gem:1, classdojo:1, aleks:1, espn:1, winemu:1, gbuild:1 };
   function deleteCreatedApps() {
     try {
       var apps = window.APPS || {}, x = window.XAPPS || {}, IC = window.IC || {};
@@ -1316,7 +1324,7 @@
       '<div style="opacity:.75;font-size:12px;margin-top:4px">Fits Drift on iPad 10 and iPad 11. Apps and the task bar stay on screen, with a little more room for touch. Windows size is unchanged.</div></div>' +
       switchHTML('drift-ipad-sw', localStorage.getItem('wos:ipad-adapt') === '1') + '</div>' +
       '<div style="margin-bottom:14px;border-top:1px solid rgba(255,255,255,.08);padding-top:12px"><b>Choose your Movies</b>' +
-      '<div style="opacity:.75;font-size:12px;margin-top:4px">Noah is the catalog already in Drift. Racial opens racialequityleadership.com.</div>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Noah is the catalog already in Drift. Racial opens racialequityleadership.com/movies.html.</div>' +
       '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="movies-src" value="noah"/> Noah</label>' +
       '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="movies-src" value="racial"/> Racial</label></div>' +
       '<div style="margin-bottom:14px;border-top:1px solid rgba(255,255,255,.08);padding-top:12px"><b>Choose your Games</b>' +
