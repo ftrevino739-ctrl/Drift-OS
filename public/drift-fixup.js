@@ -228,11 +228,88 @@
       });
   }
 
+  function driftSite(url) {
+    return function (root) {
+      root.innerHTML = '';
+      root.style.cssText = 'height:100%;min-height:0;position:relative;background:#000';
+      if (typeof window.openProxied === 'function') window.openProxied(url, root);
+      else root.textContent = 'Scramjet is not ready.';
+    };
+  }
+  function loadPokiSdk(doc) {
+    try {
+      var d = doc || document;
+      if (!d || !d.querySelector || d.querySelector('script[data-poki-sdk]')) return;
+      var s = d.createElement('script');
+      s.src = 'https://game-cdn.poki.com/scripts/v2/poki-sdk.js';
+      s.async = true;
+      s.setAttribute('data-poki-sdk', '1');
+      (d.head || d.documentElement).appendChild(s);
+    } catch (e) {}
+  }
+  var GAME_LIBS = {
+    poki: 'https://poki.com/',
+    crazygames: 'https://www.crazygames.com/',
+    lagged: 'https://lagged.com/',
+    y8: 'https://www.y8.com/',
+    kbh: 'https://kbhgames.com/'
+  };
+  function gamesApp(root) {
+    var lib = 'noah';
+    try { lib = localStorage.getItem('wos:games-lib') || 'noah'; } catch (e) {}
+    if (GAME_LIBS[lib]) {
+      if (lib === 'poki') loadPokiSdk(document);
+      root.innerHTML = '';
+      root.style.cssText = 'height:100%;min-height:0;position:relative;background:#000';
+      if (typeof window.openProxied !== 'function') { root.textContent = 'Scramjet is not ready.'; return; }
+      window.openProxied(GAME_LIBS[lib], root).then(function (frame) {
+        if (lib !== 'poki' || !frame || !frame.frame) return;
+        var put = function () { try { loadPokiSdk(frame.frame.contentDocument); } catch (e) {} };
+        frame.frame.addEventListener('load', put);
+        setTimeout(put, 1200);
+      });
+      return;
+    }
+    return noahGamesApp(root);
+  }
+  function moviesApp(root) {
+    var src = 'noah';
+    try { src = localStorage.getItem('wos:movies') || 'noah'; } catch (e) {}
+    if (src === 'serum') src = 'noah';
+    if (src === 'racial') return driftSite('https://racialquityleadership.com/')(root);
+    if (typeof movies === 'function') return movies(root);
+    root.textContent = 'Movies is not ready.';
+  }
+  function wireAskedApps() {
+    if (!window.XAPPS || !window.APPS) return;
+    var IC = window.IC || (window.IC = {});
+    window.APPS.aleks = 'ALEKS';
+    window.APPS.espn = 'ESPN';
+    window.XAPPS.aleks = { n: 'ALEKS', f: driftSite('https://www.aleks.com/') };
+    window.XAPPS.espn = { n: 'ESPN', f: driftSite('https://www.espn.com/') };
+    window.XAPPS.yt = { n: 'YouTube', f: driftSite('https://www.youtube.com/') };
+    window.XAPPS.tt = { n: 'TikTok', f: driftSite('https://www.tiktok.com/') };
+    window.XAPPS.gem = { n: 'Gemini', f: driftSite('https://gemini.google.com/app') };
+    window.XAPPS.movies = { n: 'Movies', f: moviesApp };
+    IC.aleks = '<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="11" fill="#0b3d91"/><text x="24" y="30" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">A</text></svg>';
+    IC.espn = '<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="11" fill="#c41230"/><text x="24" y="31" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">ESPN</text></svg>';
+    try {
+      if (window.S && window.S.d && !window.S.d.v14) {
+        window.S.d.v14 = 1;
+        ['aleks', 'espn'].forEach(function (id) {
+          if (window.S.d.desk.indexOf(id) < 0) window.S.d.desk.push(id);
+        });
+        if (typeof save === 'function') save();
+        if (typeof rend === 'function') rend();
+      }
+    } catch (e) {}
+  }
   function wireGames() {
     try {
       if (window.APPS) window.APPS.games = 'Games';
       window.noahGamesApp = noahGamesApp;
-      if (window.XAPPS) window.XAPPS.games = { n: 'Games', f: noahGamesApp };
+      if (window.XAPPS) window.XAPPS.games = { n: 'Games', f: gamesApp };
+      wireAskedApps();
       applyBrandLogos();
     } catch (e) {}
   }
@@ -493,7 +570,7 @@
       document.head.appendChild(s);
     }
   }
-  var DRIFT_DEFAULTS = { calc:1, browser:1, ai:1, yt:1, cam:1, mus:1, movies:1, code:1, discord:1, gmail:1, ig:1, tt:1, classroom:1, canva:1, roblox:1, gimkit:1, games:1, chat:1, github:1, whatsapp:1, wayground:1, injector:1, gem:1, classdojo:1 };
+  var DRIFT_DEFAULTS = { calc:1, browser:1, ai:1, yt:1, cam:1, mus:1, movies:1, code:1, discord:1, gmail:1, ig:1, tt:1, classroom:1, canva:1, roblox:1, gimkit:1, games:1, chat:1, github:1, whatsapp:1, wayground:1, injector:1, gem:1, classdojo:1, aleks:1, espn:1 };
   function deleteCreatedApps() {
     try {
       var apps = window.APPS || {}, x = window.XAPPS || {}, IC = window.IC || {};
@@ -766,12 +843,38 @@
       };
     };
   }
+  function backBar(root, homeUrl) {
+    var bar = document.createElement('div');
+    bar.style.cssText = 'position:absolute;top:8px;right:8px;z-index:20';
+    bar.innerHTML = '<button type="button" style="padding:8px 12px;border:0;border-radius:8px;background:#1a73e8;color:#fff;cursor:pointer;font:600 12px system-ui">I am back — open it here</button>';
+    root.style.position = 'relative';
+    root.appendChild(bar);
+    bar.querySelector('button').onclick = function () { operaPage(homeUrl, 'firefox')(root); };
+  }
+  function loginThenHome(root, loginUrl, homeUrl) {
+    operaPage(loginUrl, 'firefox')(root);
+    backBar(root, homeUrl);
+  }
+  function sessionInside(homeUrl, loginUrl, label) {
+    return function (root) {
+      root.innerHTML =
+        '<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center">' +
+        '<b style="font-size:18px">' + label + '</b>' +
+        '<div style="max-width:460px;opacity:.8;font-size:13px">Log in and OAuth stay in Firefox inside this app, so the session is still here when you come back.</div>' +
+        '<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">' +
+        '<button type="button" data-login style="min-width:140px;padding:12px 16px;border-radius:12px;border:1px solid var(--line);background:var(--omni);color:inherit;cursor:pointer"><b>Log in</b></button>' +
+        '<button type="button" data-oauth style="min-width:140px;padding:12px 16px;border-radius:12px;border:0;background:#1a73e8;color:#fff;cursor:pointer"><b>OAuth</b></button>' +
+        '</div></div>';
+      root.querySelector('[data-login]').onclick = function () { loginThenHome(root, loginUrl, homeUrl); };
+      root.querySelector('[data-oauth]').onclick = function () { loginThenHome(root, loginUrl, homeUrl); };
+    };
+  }
   function wireLoginApps() {
     try {
       if (!window.XAPPS) return;
       window.XAPPS.gmail = { n: 'Gmail', f: operaPage('https://mail.google.com/mail/u/0/#inbox', 'firefox') };
-      window.XAPPS.classroom = { n: 'Classroom', f: sessionChooser('https://accounts.google.com/ServiceLogin?service=classroom&continue=https%3A%2F%2Fclassroom.google.com%2F&passive=1209600', 'https://accounts.google.com/ServiceLogin?service=classroom&continue=https%3A%2F%2Fclassroom.google.com%2F', false, false, 'classroom') };
-      window.XAPPS.canva = { n: 'Canva', f: sessionChooser('https://www.canva.com/', 'https://www.canva.com/login', true, true) };
+      window.XAPPS.classroom = { n: 'Classroom', f: sessionInside('https://classroom.google.com/', 'https://accounts.google.com/ServiceLogin?service=classroom&continue=' + encodeURIComponent('https://classroom.google.com/'), 'Classroom') };
+      window.XAPPS.canva = { n: 'Canva', f: sessionInside('https://www.canva.com/', 'https://www.canva.com/login', 'Canva') };
       window.__driftRoblox = robloxShell;
       window.__driftGmail = operaPage('https://mail.google.com/mail/u/0/#inbox', 'firefox');
       window.XAPPS.roblox = { n: 'Roblox', f: robloxShell };
@@ -955,8 +1058,17 @@
       '<div style="opacity:.75;font-size:12px;margin-top:4px">Fits Drift on iPad 10 and iPad 11. Apps and the task bar stay on screen, with a little more room for touch. Windows size is unchanged.</div></div>' +
       switchHTML('drift-ipad-sw', localStorage.getItem('wos:ipad-adapt') === '1') + '</div>' +
       '<div style="margin-bottom:14px;border-top:1px solid rgba(255,255,255,.08);padding-top:12px"><b>Choose your Movies</b>' +
-      '<div style="opacity:.75;font-size:12px;margin-top:4px">SerumOS is the movie list Drift already has. Cuevana is not a choice: Drift does not copy that catalog.</div>' +
-      '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="movies-src" value="serum" checked/> SerumOS</label></div>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Noah is the catalog already in Drift. Racial opens racialquityleadership.com.</div>' +
+      '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="movies-src" value="noah"/> Noah</label>' +
+      '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="movies-src" value="racial"/> Racial</label></div>' +
+      '<div style="margin-bottom:14px;border-top:1px solid rgba(255,255,255,.08);padding-top:12px"><b>Choose your Games</b>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Noah is noahstutoring. Poki also loads the Poki SDK. The other four open in the app.</div>' +
+      '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="games-lib" value="noah"/> Noah (noahstutoring)</label>' +
+      '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="games-lib" value="poki"/> Poki</label>' +
+      '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="games-lib" value="crazygames"/> CrazyGames</label>' +
+      '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="games-lib" value="lagged"/> Lagged</label>' +
+      '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="games-lib" value="y8"/> Y8</label>' +
+      '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="games-lib" value="kbh"/> KBH Games</label></div>' +
       '<div style="margin-bottom:14px;border-top:1px solid rgba(255,255,255,.08);padding-top:12px"><b>Customize Task Bar and Apps Size</b>' +
       '<div style="opacity:.75;font-size:12px;margin:4px 0 8px">Apps and the task bar are separate. Large is the normal Drift size.</div>' +
       '<div style="font-size:12px;font-weight:650;margin:6px 0">Apps</div>' + sizeRadios('size-apps', appSize) +
@@ -1063,7 +1175,27 @@
       scrollCss.textContent = '#drift-settings-panel::-webkit-scrollbar{display:none;width:0;height:0}';
       document.head.appendChild(scrollCss);
     }
-    try { localStorage.setItem('wos:movies', 'serum'); } catch (e) {}
+    var movieNow = 'noah', gameNow = 'noah';
+    try {
+      movieNow = localStorage.getItem('wos:movies') || 'noah';
+      if (movieNow === 'serum') movieNow = 'noah';
+      gameNow = localStorage.getItem('wos:games-lib') || 'noah';
+    } catch (e) {}
+    panel.querySelectorAll('input[name="movies-src"]').forEach(function (r) {
+      r.checked = r.value === movieNow;
+      r.onchange = function () {
+        if (!r.checked) return;
+        try { localStorage.setItem('wos:movies', r.value); } catch (e) {}
+      };
+    });
+    panel.querySelectorAll('input[name="games-lib"]').forEach(function (r) {
+      r.checked = r.value === gameNow;
+      r.onchange = function () {
+        if (!r.checked) return;
+        try { localStorage.setItem('wos:games-lib', r.value); } catch (e) {}
+        if (r.value === 'poki') loadPokiSdk(document);
+      };
+    });
     var cleanSites = {
       docs: 'https://docs.google.com/',
       discovery: 'https://www.discoveryeducation.com/',

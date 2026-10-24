@@ -111,10 +111,10 @@ function loadAndPatchIndex() {
 	);
 
 	const tag =
-		'<script src="/drift-extras.js?v=20261020f" defer></script>' +
+		'<script src="/drift-extras.js?v=20261024a" defer></script>' +
 		'<script src="/chromebook-proxy.js?v=20261020f" defer></script>' +
-		'<script src="/wayground-ai.js?v=20261020f" defer></script>' +
-		'<script src="/drift-fixup.js?v=20261022a" defer></script>' +
+		'<script src="/wayground-ai.js?v=20261024a" defer></script>' +
+		'<script src="/drift-fixup.js?v=20261024a" defer></script>' +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +
@@ -614,7 +614,10 @@ function operaBoot(browser) {
     if (emailEl && emailEl.value && !body.get("identifier")) body.set("identifier", emailEl.value);
     proxy(abs(f.action), (f.method || "POST").toUpperCase(), body.toString(), {}).then(function(r){ return r.text(); }).then(function(t){
       if (!t || t.length < 80) return;
-      if (/identifierId/i.test(t) && !/password|Passwd/i.test(t)) return;
+      var cur = "";
+      try { cur = document.documentElement ? document.documentElement.outerHTML : ""; } catch (e) {}
+      function flat(s){ return String(s || "").replace(/\\s+/g, "").slice(0, 2500); }
+      if (cur && flat(t) === flat(cur)) return;
       document.open(); document.write(t); document.close();
     }).catch(function(){ if (navigator.onLine !== false) hop(f.action); });
   }, true);
@@ -695,10 +698,6 @@ async function operaReply(req, reply, target, method, form, raw, contentType, ex
 	reply.header("cache-control", "no-store");
 	if (!raw && /text\/html|application\/xhtml/i.test(ct)) {
 		const html = await got.response.text();
-		if (/canva\.com$/i.test(u.hostname) && /designing again soon|challenge-platform|Just a moment|cf-challenge/i.test(html)) {
-			reply.type("text/html; charset=utf-8");
-			return reply.send("<!doctype html><meta charset=utf-8><title>Canva</title><body style=\"margin:0;height:100vh;display:grid;place-items:center;background:#fff;color:#111;font:16px system-ui;text-align:center;padding:28px\"><div><b>Canva</b><p>We'll have you designing again soon.</p><p style=\"opacity:.7;font-size:13px\">Canva blocked this server. The page stays in this window instead of a 404.</p></div></body>");
-		}
 		reply.header("content-security-policy", "default-src * data: blob: 'unsafe-inline' 'unsafe-eval'; script-src * data: blob: 'unsafe-inline' 'unsafe-eval'; style-src * 'unsafe-inline' data: blob:; img-src * data: blob:; connect-src *; frame-src *; media-src *");
 		reply.type("text/html; charset=utf-8");
 		return reply.send(operaInject(html, got.final, browser));

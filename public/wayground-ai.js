@@ -136,22 +136,36 @@
           return;
         }
       } catch (e) {}
-      st.textContent = 'Wayground is open in this app. It does not use the proxy.';
+      st.textContent = 'Wayground is open. Press Inject mod if the menu is not there yet.';
     }
 
     box.innerHTML = '';
-    var frameEl = document.createElement('iframe');
-    frameEl.title = 'Wayground';
-    frameEl.setAttribute('referrerpolicy', 'no-referrer');
-    frameEl.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals');
-    frameEl.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';
-    frameEl.src = 'https://wayground.com/';
-    box.appendChild(frameEl);
-    st.textContent = 'Wayground is open in this app. It does not use the proxy.';
-    frameEl.addEventListener('load', function () {
-      seen = '';
-      setTimeout(function () { tryInject(false); }, 700);
-    });
+    st.textContent = 'Opening Wayground with the mod…';
+    function armFrame(el) {
+      if (!el) return;
+      el.addEventListener('load', function () {
+        seen = '';
+        setTimeout(function () { tryInject(false); }, 800);
+      });
+    }
+    if (typeof openProxied === 'function') {
+      openProxied('https://wayground.com/', box).then(function (fr) {
+        armFrame(fr && fr.frame);
+        setTimeout(function () { tryInject(false); }, 1200);
+      }).catch(function () {
+        st.textContent = 'Wayground could not open. Press Inject mod after it loads.';
+      });
+    } else {
+      var frameEl = document.createElement('iframe');
+      frameEl.title = 'Wayground';
+      frameEl.setAttribute('credentialless', '');
+      frameEl.setAttribute('referrerpolicy', 'no-referrer');
+      frameEl.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals');
+      frameEl.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';
+      frameEl.src = 'https://wayground.com/';
+      box.appendChild(frameEl);
+      armFrame(frameEl);
+    }
 
     if (!root.dataset.wgWatch) {
       root.dataset.wgWatch = '1';

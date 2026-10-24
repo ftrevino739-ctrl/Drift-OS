@@ -208,8 +208,10 @@
   }
 
   function whatsappApp(root) {
-    if (typeof proxySite === 'function') proxySite(root, 'https://web.whatsapp.com/', 'WhatsApp');
-    else root.textContent = 'WhatsApp needs the proxy.';
+    root.innerHTML = '';
+    root.style.cssText = 'height:100%;min-height:0;position:relative;background:#111b21';
+    if (typeof openProxied === 'function') openProxied('https://web.whatsapp.com/', root);
+    else root.textContent = 'WhatsApp needs Scramjet.';
   }
 
   function githubApp(root) {

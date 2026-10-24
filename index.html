@@ -799,7 +799,8 @@ function browser(root,w){
     const q=decodeURIComponent(u.split('q=')[1]||''),box=$('#ddgbox',page);if(!box)return;
     box.innerHTML='<small style="color:var(--mute)">Searching…</small>';
     try{
-      const r=await fetch('/api/search?q='+encodeURIComponent(q)+'&engine=duckduckgo');
+      const eng=(typeof ENG==='function'?ENG():'duckduckgo');
+      const r=await fetch('/api/search?q='+encodeURIComponent(q)+'&engine='+encodeURIComponent(eng));
       const j=await r.json();
       const rows=(j.results||[]).filter(x=>x&&x.url);
       box.innerHTML=rows.map(x=>`<div class="res"><a data-go="${esc(x.url)}">${esc(x.title||x.url)}</a><small>${esc(x.url)}</small></div>`).join('')||'<small style="color:var(--mute)">No results.</small>';
@@ -1082,6 +1083,8 @@ function ai(root){
   
   const formatInline=(s)=>{
     let h=s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    h=h.replace(/!\[([^\]]*)\]\((data:image\/[a-z0-9.+-]+;base64,[^)\s]+)\)/gi,'<img alt="$1" src="$2" style="max-width:100%;border-radius:10px;display:block;margin:8px 0">');
+    h=h.replace(/!\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)/g,'<img alt="$1" src="$2" style="max-width:100%;border-radius:10px;display:block;margin:8px 0">');
     h=h.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,'<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
     h=h.replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g,function(_,a,u){return a+'<a href="'+u+'" target="_blank" rel="noopener noreferrer">'+u+'</a>'});
     h=h.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/\*([^*]+)\*/g,'<em>$1</em>').replace(/`([^`]+)`/g,'<code>$1</code>');
@@ -1278,7 +1281,7 @@ function ai(root){
         const lang=/luau/i.test(q)?'luau':/lua/i.test(q)?'lua':/python|\bpy\b/i.test(q)?'python':/html/i.test(q)?'html':/css/i.test(q)?'css':/javascript|\bjs\b/i.test(q)?'javascript':'txt';
         txt='```'+lang+'\n'+txt.trim()+'\n```';
       }
-      if(txt.includes('```')||txt.includes('|')||txt.includes('**')||txt.includes('##')||/https?:\/\//.test(txt)||/\[[^\]]+\]\(https?:/.test(txt)){renderMD(out,txt)}else out.textContent=txt;
+      if(txt.includes('```')||txt.includes('|')||txt.includes('**')||txt.includes('##')||/https?:\/\//.test(txt)||/\[[^\]]+\]\(https?:/.test(txt)||/!\[[^\]]*\]\(/.test(txt)||/data:image\//.test(txt)){renderMD(out,txt)}else out.textContent=txt;
       mine.push({role:'assistant',content:txt});save();
     }catch(e){try{clearInterval(thinkTimer);think.remove()}catch(x){}out.className='e';out.textContent=(e&&e.message)||'No se pudo obtener respuesta.';mine.pop()}
     if(mine===hist){busy=false;sd.disabled=false}
@@ -1368,7 +1371,7 @@ function ai(root){
       if(res.status===404 || res.status===0 || /no-key|failed to fetch/i.test(String(msg))) return null;
       throw {message:String(msg||'Gemini did not answer.')};
     }
-    const splitParts=j=>{const parts=((((j.candidates||[])[0]||{}).content||{}).parts||[]);return {text:parts.filter(p=>!p.thought).map(p=>p.text||'').join(''),think:parts.filter(p=>p.thought).map(p=>p.text||'').join('\n').trim()}};
+    const splitParts=j=>{const parts=((((j.candidates||[])[0]||{}).content||{}).parts||[]);const img=p=>{const d=p.inlineData||p.inline_data;if(!d||!d.data)return '';return '\n![](data:'+(d.mimeType||d.mime_type||'image/png')+';base64,'+d.data+')\n'};return {text:parts.filter(p=>!p.thought).map(p=>(p.text||'')+img(p)).join(''),think:parts.filter(p=>p.thought).map(p=>p.text||'').join('\n').trim()}};
     let got=splitParts(res.j);
     let text=got.text;
     let thought=got.think;
@@ -1645,7 +1648,6 @@ browser=(root,w)=>{B0(root,w);
   s.value=ENG();s.onchange=()=>LS.set('wos:eng',s.value);
   o.textContent='↗';o.setAttribute('aria-label','Abrir en pestaña nueva');o.onclick=()=>{const v=$('.omni',root).value;if(/^https?:/.test(v))window.open(v,'_blank')};
   nav.append(s,o)};
-const LS0=LS.set;LS.set=(k,v)=>LS0(k,k==='wos:u:_g'&&v?{...v,chats:[]}:v);
 
 /* ---- Ctrl+Shift = pantalla completa ---- */
 const fs=()=>{const d=document.documentElement;document.fullscreenElement?document.exitFullscreen():d.requestFullscreen&&d.requestFullscreen().catch(()=>{})};
@@ -1763,6 +1765,9 @@ const Y0=youtube;
 youtube=root=>{if(skipYT)return;Y0(root);
   const b=document.createElement('button');b.textContent='Completo';b.style.background='#555';b.onclick=()=>full($('.yb',root),'https://m.youtube.com','YouTube');$('.yh',root).appendChild(b);
 };
+function driftSite(url){return function(root){root.innerHTML='';root.style.cssText='height:100%;min-height:0;position:relative;background:#000';if(typeof openProxied==='function')openProxied(url,root);else root.textContent='Scramjet no está listo.';};}
+XAPPS.yt={n:'YouTube',f:driftSite('https://www.youtube.com/')};
+XAPPS.tt={n:'TikTok',f:driftSite('https://www.tiktok.com/')};
 
 /* ---- Apps nuevas: Cámara y Música ---- */
 const MEM=[];
@@ -2816,13 +2821,14 @@ async function openProxied(url, box){
 }
 
 function sjBrowser(root){
-  root.innerHTML='<div class="tabs"></div><div class="nav"><button aria-label="Atrás">←</button><button aria-label="Adelante">→</button><button aria-label="Recargar">⟳</button><input class="omni" placeholder="Search DuckDuckGo or type an address" aria-label="Barra de direcciones"><select aria-label="Buscador"></select></div><div class="page"></div>';
+  root.innerHTML='<div class="tabs"></div><div class="nav"><button aria-label="Atrás">←</button><button aria-label="Adelante">→</button><button aria-label="Recargar">⟳</button><input class="omni" placeholder="Search or type an address" aria-label="Barra de direcciones"><select aria-label="Buscador"></select></div><div class="page"></div>';
   const tabsEl=$('.tabs',root),om=$('.omni',root),page=$('.page',root),[bk,fw,rl]=root.querySelectorAll('.nav>button'),sel=$('select',root);
   sel.style.cssText='height:30px;border-radius:15px;border:1px solid var(--line);background:var(--omni);color:var(--ink);padding:0 6px;font-size:12px;flex:none';
-  sel.innerHTML='<option value="duckduckgo">DuckDuckGo</option>';
-  sel.value='duckduckgo';
-  try { LS.set('wos:eng','duckduckgo'); } catch (e) {}
-  const ENGS={duckduckgo:'https://duckduckgo.com/?q='};
+  sel.innerHTML='<option value="google">Google</option><option value="bing">Bing</option><option value="duckduckgo">DuckDuckGo</option>';
+  try { sel.value=(typeof ENG==='function'?ENG():'duckduckgo'); } catch (e) { sel.value='duckduckgo'; }
+  if(!sel.value) sel.value='duckduckgo';
+  sel.onchange=function(){ try { LS.set('wos:eng', sel.value); } catch (e) {} };
+  const ENGS={google:'https://www.google.com/search?q=',bing:'https://www.bing.com/search?q=',duckduckgo:'https://duckduckgo.com/?q='};
   let tabs=[],cur=0,sig='';
   const T=()=>tabs[cur];
   const norm=v=>{v=v.trim();if(!v)return'';
@@ -2830,8 +2836,8 @@ function sjBrowser(root){
     if(!/\s/.test(v)){try{const u=new URL('https://'+v);if(u.hostname.includes('.'))return u.toString()}catch{}}
     return ENGS[ENG()]+encodeURIComponent(v)};
   const home=t=>{
-    t.box.innerHTML='<div class="center"><div class="logo"><span>W</span><span>e</span><span>b</span><span>O</span><span>S</span></div><input class="sb" placeholder="Search DuckDuckGo or type an address" aria-label="Search"><div class="tiles">'+
-      [['DuckDuckGo','https://duckduckgo.com','#de5833'],['YouTube','https://www.youtube.com','#ff0033'],['Discord','https://discord.com/app','#5865F2'],['Instagram','https://www.instagram.com','#d62976'],['TikTok','https://www.tiktok.com','#111'],['Reddit','https://www.reddit.com','#ff4500'],['Wikipedia','https://es.wikipedia.org','#666']]
+    t.box.innerHTML='<div class="center"><div class="logo"><span>W</span><span>e</span><span>b</span><span>O</span><span>S</span></div><input class="sb" placeholder="Search or type an address" aria-label="Search"><div class="tiles">'+
+      [['Google','https://www.google.com','#4285f4'],['Bing','https://www.bing.com','#2582ea'],['DuckDuckGo','https://duckduckgo.com','#de5833'],['YouTube','https://www.youtube.com','#ff0033'],['Discord','https://discord.com/app','#5865F2'],['Instagram','https://www.instagram.com','#d62976'],['TikTok','https://www.tiktok.com','#111'],['Reddit','https://www.reddit.com','#ff4500'],['Wikipedia','https://es.wikipedia.org','#666']]
       .map(x=>`<button class="tile" data-u="${x[1]}"><i style="background:${x[2]};color:#fff">${x[0][0]}</i>${x[0]}</button>`).join('')+'</div></div>';
     const sb=$('.sb',t.box);sb.onkeydown=e=>{if(e.key==='Enter')go(sb.value)};
     t.box.querySelectorAll('.tile').forEach(b=>b.onclick=()=>go(b.dataset.u))};
@@ -2852,11 +2858,11 @@ function sjBrowser(root){
     t.box.innerHTML='<div class="ym">Searching…</div>';
     bar(true);
     try{
-      const r=await fetch('/api/search?q='+encodeURIComponent(q)+'&engine=duckduckgo');
+      const r=await fetch('/api/search?q='+encodeURIComponent(q)+'&engine='+encodeURIComponent((typeof ENG==='function'?ENG():'duckduckgo')));
       const j=await r.json();
       let rows=(j.results||[]).filter(x=>x&&x.url);
       if(!rows.length){
-        const w=await fetch((typeof EP==='function'?EP():DDG0)+'/search?q='+encodeURIComponent(q)+'&engine=duckduckgo');
+        const w=await fetch((typeof EP==='function'?EP():DDG0)+'/search?q='+encodeURIComponent(q)+'&engine='+encodeURIComponent((typeof ENG==='function'?ENG():'duckduckgo')));
         const d=await w.json();
         rows=(d.results||d.organic_results||[]).map(x=>({title:x.title||x.url||x.link,url:x.url||x.link})).filter(x=>x.url);
       }
@@ -2878,7 +2884,7 @@ function sjBrowser(root){
     const direct=asUrl(raw);
     try{
       if(direct) await openFrame(direct);
-      else await showResults(raw);
+      else { const eng=sel.value||(typeof ENG==='function'?ENG():'duckduckgo'); const base=ENGS[eng]||ENGS.duckduckgo; await openFrame(base+encodeURIComponent(raw)); }
     }catch(e){T().box.innerHTML='<div class="ym">Could not start proxy: '+esc(String(e&&e.message||e))+'</div>'}}
   function bar(force){
     const s=tabs.map(t=>t.title).join('|')+'#'+cur;
@@ -2936,8 +2942,7 @@ async function nano(b){
 LOCAL['local-nano']=[];
 Object.assign(IC,{gem:'<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="11" fill="#fff"/><path d="M24 7c1.6 9.2 7.8 15.4 17 17-9.2 1.6-15.4 7.8-17 17-1.6-9.2-7.8-15.4-17-17 9.2-1.6 15.4-7.8 17-17z" fill="#4c8df6"/></svg>'});
 Object.assign(APPS,{gem:'Gemini'});
-XAPPS.gem={n:'Gemini',f:root=>{const b=document.createElement('div');b.style.cssText='position:relative;flex:1;padding:10px;overflow:auto';root.appendChild(b);
-  if(SJ())sjLoad(b,'https://gemini.google.com/app');else b.innerHTML='<div class="ym">Gemini web necesita el servidor con proxy (Scramjet). Aquí todavía no está activo.</div>'}};
+XAPPS.gem={n:'Gemini',f:function(root){root.innerHTML='';root.style.cssText='height:100%;min-height:0;position:relative;background:#fff';if(typeof openProxied==='function')openProxied('https://gemini.google.com/app',root);else root.innerHTML='<div class="ym">Gemini needs Scramjet.</div>';}};
 
 /* ---- apps nuevas por defecto en barra y escritorio (una vez por usuario) ---- */
 
