@@ -635,7 +635,7 @@ function openApp(app){
   const baseW=app==='calc'?150:430, baseH=app==='calc'?240:280;
   const W=Math.max(260,Math.min(innerWidth-16,Math.round(baseW*sc))),H=Math.max(200,Math.min(innerHeight-tbh-16,Math.round(baseH*sc)));
   w.style.cssText=`width:${W}px;height:${H}px;left:${Math.max(10,(innerWidth-W)/2+n*18-40)}px;top:${50+n*18}px;z-index:${++z}`;
-  const name='<span class="mi">'+IC[app]+'</span> '+{calc:'Calculator',browser:'Browser',ai:'AI',yt:'YouTube'}[app];
+  const name='<span class="mi">'+(IC[app]||'')+'</span> '+({calc:'Calculator',browser:'Browser',ai:'AI',yt:'YouTube'}[app]||APPS[app]||app);
   w.innerHTML=`<div class="title"><b style="display:flex;align-items:center;gap:8px">${name}</b><button class="wb" data-a="min" aria-label="Minimize">–</button><button class="wb" data-a="max" aria-label="Maximize">▢</button><button class="wb x" data-a="x" aria-label="Close">✕</button></div><div class="body"></div>`;
   desk.appendChild(w);
   const tb=document.createElement('button');tb.className='tb';tb.innerHTML=name;tbs.appendChild(tb);
@@ -1510,10 +1510,10 @@ const H=async(u,p)=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new 
 function loadU(u){S.user=u;S.d=LS.get('wos:u:'+(u||'_g'),null)||defD();['pins','desk'].forEach(k=>S.d[k]=(S.d[k]||[]).filter(a=>!!a));S.d.chats=S.d.chats||[];if(!S.d.v2){S.d.v2=1;['pins','desk'].forEach(k=>{if(!S.d[k].includes('yt'))S.d[k].push('yt')});save()}LS.set('wos:cur',u);rend();if(typeof window.driftAsk!=='function'){try{ai(document.createElement('div'))}catch(e){}}}
 function sw(u){Object.keys(wins).forEach(k=>{wins[k].w.remove();wins[k].tb.remove();delete wins[k]});loadU(u)}
 function tiles(){const f=($('#lq').value||'').toLowerCase(),D=S.d;
-  $('#apps').innerHTML=Object.keys(APPS).filter(a=>APPS[a].toLowerCase().includes(f)).map(a=>`<div class="tl" draggable="true" data-d="${a}"><button data-app="${a}"><span class="mi">${IC[a]}</span>${APPS[a]}</button></div>`).join('')}
+  $('#apps').innerHTML=Object.keys(APPS).filter(a=>APPS[a].toLowerCase().includes(f)).map(a=>`<div class="tl" draggable="true" data-d="${a}"><button data-app="${a}"><span class="mi">${IC[a]||''}</span>${APPS[a]}</button></div>`).join('')}
 function rend(){const D=S.d,nm=S.user||'Invitado';
-  $('.icons').innerHTML=D.desk.map(a=>`<button class="ico" data-app="${a}"><i>${IC[a]}</i>${APPS[a]}</button>`).join('');
-  $('#pins').innerHTML=D.pins.map(a=>`<button data-app="${a}" title="${APPS[a]}" aria-label="${APPS[a]}"><span class="mi">${IC[a]}</span></button>`).join('');
+  $('.icons').innerHTML=D.desk.map(a=>`<button class="ico" data-app="${a}"><i>${IC[a]||''}</i>${APPS[a]||''}</button>`).join('');
+  $('#pins').innerHTML=D.pins.map(a=>`<button data-app="${a}" title="${APPS[a]||''}" aria-label="${APPS[a]||a}"><span class="mi">${IC[a]||''}</span></button>`).join('');
   /* keep wallpaper */;tiles();$('#prof').textContent=nm[0].toUpperCase();$('#uinfo').innerHTML='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px;margin-right:4px"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg> '+nm}
 function tog(){const m=$('#menu');m.classList.toggle('show');if(m.classList.contains('show')){$('#lq').value='';tiles();$('#lq').focus()}}
 function modal(h){const m=document.createElement('div');m.className='modal';m.innerHTML='<div class="box">'+h+'</div>';document.body.appendChild(m);return m}
@@ -1753,9 +1753,9 @@ tt:{n:'TikTok',c:'#fe2c55',home:'https://www.tiktok.com',re:/tiktok\.com\/.*?vid
 const O0=openApp;let skipYT=false;
 openApp=a=>{
   const X=XAPPS[a];
-  if(X){skipYT=true;O0('yt');skipYT=false;const o=wins['w'+n],nm='<span class="mi">'+IC[a]+'</span> '+X.n,root=$('.body',o.w);$('.title b',o.w).innerHTML=nm;o.tb.innerHTML=nm;root.innerHTML='';X.f(root,o.w);return}
+  if(X){skipYT=true;O0('yt');skipYT=false;const o=wins['w'+n],nm='<span class="mi">'+(IC[a]||'')+'</span> '+X.n,root=$('.body',o.w);$('.title b',o.w).innerHTML=nm;o.tb.innerHTML=nm;root.innerHTML='';X.f(root,o.w);return}
   const c=SITES[a];if(!c)return O0(a);
-  skipYT=true;O0('yt');skipYT=false;const o=wins['w'+n],nm='<span class="mi">'+IC[a]+'</span> '+c.n,root=$('.body',o.w);
+  skipYT=true;O0('yt');skipYT=false;const o=wins['w'+n],nm='<span class="mi">'+(IC[a]||'')+'</span> '+c.n,root=$('.body',o.w);
   $('.title b',o.w).innerHTML=nm;o.tb.innerHTML=nm;
   root.innerHTML=`<div class="yt"><div class="yh"><input placeholder="Enlace de ${c.n}" aria-label="Enlace"><button style="background:${c.c}">Ver</button><button style="background:#555">Completo</button></div><div class="yb"><div class="ym">${c.h}</div></div></div>`;
   const i=$('input',root),yb=$('.yb',root),[v,f]=root.querySelectorAll('.yh button');
@@ -1765,9 +1765,6 @@ const Y0=youtube;
 youtube=root=>{if(skipYT)return;Y0(root);
   const b=document.createElement('button');b.textContent='Completo';b.style.background='#555';b.onclick=()=>full($('.yb',root),'https://m.youtube.com','YouTube');$('.yh',root).appendChild(b);
 };
-function driftSite(url){return function(root){root.innerHTML='';root.style.cssText='height:100%;min-height:0;position:relative;background:#000';if(typeof openProxied==='function')openProxied(url,root);else root.textContent='Scramjet no está listo.';};}
-XAPPS.yt={n:'YouTube',f:driftSite('https://www.youtube.com/')};
-XAPPS.tt={n:'TikTok',f:driftSite('https://www.tiktok.com/')};
 
 /* ---- Apps nuevas: Cámara y Música ---- */
 const MEM=[];
@@ -2740,6 +2737,9 @@ function ttApp(root){
 }
 
 const XAPPS={cam:{n:'Camera',f:camera},mus:{n:'Music',f:music},movies:{n:'Netflix',f:movies},code:{n:'VS Code',f:vscode},discord:{n:'Discord',f:discordApp},gmail:{n:'Gmail',f:gmailApp},ig:{n:'Instagram',f:igApp},tt:{n:'TikTok',f:ttApp},classroom:{n:'Classroom',f:classroomApp},canva:{n:'Canva',f:canvaApp},roblox:{n:'Roblox',f:robloxApp}};
+function driftSite(url){return function(root){root.innerHTML='';root.style.cssText='height:100%;min-height:0;position:relative;background:#000';if(typeof openProxied==='function')openProxied(url,root);else root.textContent='Scramjet no está listo.';};}
+XAPPS.yt={n:'YouTube',f:driftSite('https://www.youtube.com/')};
+XAPPS.tt={n:'TikTok',f:driftSite('https://www.tiktok.com/')};
 
 /* ---- Browser real con Scramjet (solo si el servidor Node está detrás) ---- */
 const SJ=()=>!!navigator.serviceWorker; // real check inside sjInit (assets on server)

@@ -114,7 +114,7 @@ function loadAndPatchIndex() {
 		'<script src="/drift-extras.js?v=20261024a" defer></script>' +
 		'<script src="/chromebook-proxy.js?v=20261020f" defer></script>' +
 		'<script src="/wayground-ai.js?v=20261024a" defer></script>' +
-		'<script src="/drift-fixup.js?v=20261024c" defer></script>' +
+		'<script src="/drift-fixup.js?v=20261025a" defer></script>' +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +
@@ -395,6 +395,28 @@ fastify.get("/api/search", async (req, reply) => {
 		} catch {}
 	}
 	return reply.send({ results, engine: used });
+});
+
+const TMDB_TOKEN = process.env.TMDB_TOKEN || process.env.TMDB_KEY || "";
+fastify.get("/api/tmdb", async (req, reply) => {
+	const path = String((req.query && req.query.path) || "").replace(/^\/+/, "");
+	reply.header("cache-control", "no-store");
+	if (!path || path.includes("..") || !/^[\w./?=&%+\-]+$/.test(path)) return reply.code(400).send({ error: "bad path" });
+	if (!TMDB_TOKEN) return reply.code(503).send({ error: "no-key" });
+	const url = "https://api.themoviedb.org/3/" + path + (path.includes("?") ? "&" : "?") + "language=es-MX";
+	const r = await fetch(url, { headers: { Authorization: "Bearer " + TMDB_TOKEN, accept: "application/json" } });
+	const data = await r.json().catch(() => ({ error: "bad response" }));
+	return reply.code(r.ok ? 200 : r.status).send(data);
+});
+fastify.get("/api/tmdb-img", async (req, reply) => {
+	const p = String((req.query && req.query.p) || "");
+	if (!/^\/[A-Za-z0-9_./-]+$/.test(p)) return reply.code(400).send("bad");
+	const r = await fetch("https://image.tmdb.org/t/p/w342" + p);
+	if (!r.ok) return reply.code(r.status).send("image");
+	reply.header("content-type", r.headers.get("content-type") || "image/jpeg");
+	reply.header("cache-control", "public, max-age=86400");
+	reply.header("cross-origin-resource-policy", "same-origin");
+	return reply.send(Buffer.from(await r.arrayBuffer()));
 });
 
 fastify.post("/api/use", async (req, reply) => {

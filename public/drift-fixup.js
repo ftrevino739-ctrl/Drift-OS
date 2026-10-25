@@ -252,7 +252,8 @@
     crazygames: 'https://www.crazygames.com/',
     lagged: 'https://lagged.com/',
     y8: 'https://www.y8.com/',
-    kbh: 'https://kbhgames.com/'
+    kbh: 'https://kbhgames.com/',
+    tesana: 'https://tesana.com/play'
   };
   function gamesApp(root) {
     var lib = 'noah';
@@ -272,10 +273,128 @@
     }
     return noahGamesApp(root);
   }
+  function tmdbGet(path) {
+    var ep = 'https://holy-firefly-982c.fert0480.workers.dev';
+    try { if (typeof EP === 'function') ep = EP(); } catch (e) {}
+    return fetch('/api/tmdb?path=' + encodeURIComponent(path), { headers: { accept: 'application/json' } })
+      .then(function (r) { return r.json().then(function (j) { return { status: r.status, j: j }; }); })
+      .then(function (x) {
+        if (x.status !== 503 && x.j && !x.j.error) return x.j;
+        if (x.j && x.j.results) return x.j;
+        return fetch(ep.replace(/\/$/, '') + '/tmdb?path=' + encodeURIComponent(path), { headers: { accept: 'application/json' } })
+          .then(function (r) { return r.json(); });
+      });
+  }
+  function tmdbImg(path) {
+    if (!path) return '';
+    return '/api/tmdb-img?p=' + encodeURIComponent(path);
+  }
+  function tmdbMovies(root) {
+    root.innerHTML = '';
+    root.style.cssText = 'height:100%;min-height:0;display:flex;flex-direction:column;background:#0b0b10;color:#eee;font-family:system-ui,sans-serif';
+    var bar = document.createElement('div');
+    bar.style.cssText = 'display:flex;gap:8px;align-items:center;padding:10px;flex:none;border-bottom:1px solid #222';
+    bar.innerHTML = '<b>Movies</b>' +
+      '<button type="button" data-k="movie" style="padding:6px 10px;border:0;border-radius:8px;background:#e50914;color:#fff;cursor:pointer">Películas</button>' +
+      '<button type="button" data-k="tv" style="padding:6px 10px;border:0;border-radius:8px;background:#222;color:#fff;cursor:pointer">Series</button>' +
+      '<input data-q placeholder="Buscar" style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid #333;background:#14141c;color:#eee">';
+    var grid = document.createElement('div');
+    grid.style.cssText = 'flex:1;overflow:auto;padding:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;align-content:start';
+    root.appendChild(bar);
+    root.appendChild(grid);
+    var kind = 'movie';
+    function card(item) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.style.cssText = 'all:unset;cursor:pointer;background:#14141c;border-radius:12px;overflow:hidden;display:flex;flex-direction:column';
+      var img = tmdbImg(item.poster_path);
+      b.innerHTML = (img ? '<img alt="" src="' + img + '" style="width:100%;height:190px;object-fit:cover;background:#111">' : '<div style="height:190px;background:#222"></div>') +
+        '<div style="padding:8px;font-size:12px;line-height:1.3"><b>' + String(item.title || item.name || '').replace(/[&<>]/g, '') + '</b></div>';
+      b.onclick = function () { openItem(item); };
+      return b;
+    }
+    function showList(list, err) {
+      grid.innerHTML = '';
+      grid.style.display = 'grid';
+      if (err) { grid.textContent = err; return; }
+      (list || []).forEach(function (item) { if (item && (item.poster_path || item.title || item.name)) grid.appendChild(card(item)); });
+      if (!grid.childNodes.length) grid.textContent = 'Sin resultados.';
+    }
+    function loadList() {
+      var q = (bar.querySelector('[data-q]').value || '').trim();
+      var path = q
+        ? ('/search/' + kind + '?query=' + encodeURIComponent(q))
+        : ('/trending/' + kind + '/week');
+      showList([], 'Cargando…');
+      tmdbGet(path).then(function (j) {
+        if (!j || j.error === 'no-key') { showList([], 'Falta la clave de TMDB. Pega el worker nuevo o pon TMDB_TOKEN en el host.'); return; }
+        if (j.status_message && !j.results) { showList([], j.status_message); return; }
+        showList(j.results || []);
+      }).catch(function () { showList([], 'No se pudo cargar el catálogo.'); });
+    }
+    function openItem(item) {
+      var id = item.id;
+      var path = kind === 'tv' ? ('/tv/' + id) : ('/movie/' + id);
+      grid.innerHTML = 'Cargando…';
+      tmdbGet(path).then(function (d) {
+        grid.style.display = 'block';
+        var title = d.title || d.name || item.title || item.name || '';
+        var overview = d.overview || 'Sin descripción.';
+        var when = (d.release_date || d.first_air_date || '').slice(0, 4);
+        var html = '<button type="button" data-back style="margin:0 0 10px;padding:6px 10px;border:0;border-radius:8px;background:#222;color:#fff;cursor:pointer">← Volver</button>' +
+          '<div style="display:flex;gap:14px;align-items:flex-start">' +
+          (d.poster_path ? '<img alt="" src="' + tmdbImg(d.poster_path) + '" style="width:140px;border-radius:10px">' : '') +
+          '<div><b style="font-size:18px">' + String(title).replace(/[&<>]/g, '') + '</b>' +
+          '<div style="opacity:.7;margin:4px 0 8px">' + when + (d.vote_average ? ' · ' + Number(d.vote_average).toFixed(1) : '') + '</div>' +
+          '<p style="margin:0;line-height:1.45;font-size:14px">' + String(overview).replace(/[&<>]/g, '') + '</p></div></div>';
+        grid.innerHTML = html;
+        grid.querySelector('[data-back]').onclick = loadList;
+        if (kind === 'tv' && d.seasons && d.seasons.length) {
+          var seasons = d.seasons.filter(function (s) { return s.season_number > 0; });
+          if (!seasons.length) seasons = d.seasons;
+          var pick = document.createElement('div');
+          pick.style.cssText = 'margin-top:14px;display:flex;gap:6px;flex-wrap:wrap';
+          var eps = document.createElement('div');
+          eps.style.marginTop = '10px';
+          seasons.forEach(function (s) {
+            var b = document.createElement('button');
+            b.type = 'button';
+            b.textContent = s.name || ('Temporada ' + s.season_number);
+            b.style.cssText = 'padding:6px 10px;border:0;border-radius:8px;background:#222;color:#fff;cursor:pointer';
+            b.onclick = function () {
+              eps.textContent = 'Cargando episodios…';
+              tmdbGet('/tv/' + id + '/season/' + s.season_number).then(function (season) {
+                eps.innerHTML = '';
+                (season.episodes || []).forEach(function (ep) {
+                  var row = document.createElement('div');
+                  row.style.cssText = 'display:flex;gap:10px;padding:8px 0;border-top:1px solid #222';
+                  var still = ep.still_path ? '<img alt="" src="' + tmdbImg(ep.still_path) + '" style="width:120px;height:68px;object-fit:cover;border-radius:6px">' : '';
+                  row.innerHTML = still + '<div><b>' + ep.episode_number + '. ' + String(ep.name || '').replace(/[&<>]/g, '') + '</b>' +
+                    '<div style="opacity:.8;font-size:13px;margin-top:4px">' + String(ep.overview || 'Sin descripción.').replace(/[&<>]/g, '') + '</div></div>';
+                  eps.appendChild(row);
+                });
+                if (!eps.childNodes.length) eps.textContent = 'Esta temporada no tiene episodios.';
+              });
+            };
+            pick.appendChild(b);
+          });
+          grid.appendChild(pick);
+          grid.appendChild(eps);
+          if (pick.firstChild) pick.firstChild.click();
+        }
+      }).catch(function () { grid.textContent = 'No se pudo abrir esta ficha.'; });
+    }
+    bar.querySelector('[data-k="movie"]').onclick = function () { kind = 'movie'; loadList(); };
+    bar.querySelector('[data-k="tv"]').onclick = function () { kind = 'tv'; loadList(); };
+    var qt;
+    bar.querySelector('[data-q]').oninput = function () { clearTimeout(qt); qt = setTimeout(loadList, 350); };
+    loadList();
+  }
   function moviesApp(root) {
     var src = 'noah';
-    try { src = localStorage.getItem('wos:movies') || 'noah'; } catch (e) {}
+    try { src = localStorage.getItem('wos:movies') || 'tmdb'; } catch (e) {}
     if (src === 'serum') src = 'noah';
+    if (src === 'tmdb') return tmdbMovies(root);
     if (src === 'racial') return driftSite('https://racialequityleadership.com/movies.html')(root);
     if (typeof movies === 'function') return movies(root);
     root.textContent = 'Movies is not ready.';
@@ -1324,12 +1443,14 @@
       '<div style="opacity:.75;font-size:12px;margin-top:4px">Fits Drift on iPad 10 and iPad 11. Apps and the task bar stay on screen, with a little more room for touch. Windows size is unchanged.</div></div>' +
       switchHTML('drift-ipad-sw', localStorage.getItem('wos:ipad-adapt') === '1') + '</div>' +
       '<div style="margin-bottom:14px;border-top:1px solid rgba(255,255,255,.08);padding-top:12px"><b>Choose your Movies</b>' +
-      '<div style="opacity:.75;font-size:12px;margin-top:4px">Noah is the catalog already in Drift. Racial opens racialequityleadership.com/movies.html.</div>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">TMDB shows posters, the description and the episodes. Noah is the catalog already in Drift. Racial opens racialequityleadership.com/movies.html.</div>' +
+      '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="movies-src" value="tmdb"/> TMDB</label>' +
       '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="movies-src" value="noah"/> Noah</label>' +
       '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="movies-src" value="racial"/> Racial</label></div>' +
       '<div style="margin-bottom:14px;border-top:1px solid rgba(255,255,255,.08);padding-top:12px"><b>Choose your Games</b>' +
-      '<div style="opacity:.75;font-size:12px;margin-top:4px">Noah is noahstutoring. Poki also loads the Poki SDK. The other four open in the app.</div>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Noah is noahstutoring. Poki also loads the Poki SDK. Tesana opens tesana.com/play.</div>' +
       '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="games-lib" value="noah"/> Noah (noahstutoring)</label>' +
+      '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="games-lib" value="tesana"/> Tesana</label>' +
       '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="games-lib" value="poki"/> Poki</label>' +
       '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="games-lib" value="crazygames"/> CrazyGames</label>' +
       '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="games-lib" value="lagged"/> Lagged</label>' +
@@ -1443,7 +1564,7 @@
     }
     var movieNow = 'noah', gameNow = 'noah';
     try {
-      movieNow = localStorage.getItem('wos:movies') || 'noah';
+      movieNow = localStorage.getItem('wos:movies') || 'tmdb';
       if (movieNow === 'serum') movieNow = 'noah';
       gameNow = localStorage.getItem('wos:games-lib') || 'noah';
     } catch (e) {}
