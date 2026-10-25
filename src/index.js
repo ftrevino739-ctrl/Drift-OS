@@ -114,7 +114,7 @@ function loadAndPatchIndex() {
 		'<script src="/drift-extras.js?v=20261024a" defer></script>' +
 		'<script src="/chromebook-proxy.js?v=20261020f" defer></script>' +
 		'<script src="/wayground-ai.js?v=20261024a" defer></script>' +
-		'<script src="/drift-fixup.js?v=20261025a" defer></script>' +
+		'<script src="/drift-fixup.js?v=20261025b" defer></script>' +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +
@@ -398,20 +398,27 @@ fastify.get("/api/search", async (req, reply) => {
 });
 
 const TMDB_TOKEN = process.env.TMDB_TOKEN || process.env.TMDB_KEY || "";
+const tmdbCache = new Map();
 fastify.get("/api/tmdb", async (req, reply) => {
 	const path = String((req.query && req.query.path) || "").replace(/^\/+/, "");
-	reply.header("cache-control", "no-store");
 	if (!path || path.includes("..") || !/^[\w./?=&%+\-]+$/.test(path)) return reply.code(400).send({ error: "bad path" });
 	if (!TMDB_TOKEN) return reply.code(503).send({ error: "no-key" });
+	const hit = tmdbCache.get(path);
+	if (hit && Date.now() - hit.at < 10 * 60 * 1000) {
+		reply.header("cache-control", "public, max-age=300");
+		return reply.send(hit.data);
+	}
 	const url = "https://api.themoviedb.org/3/" + path + (path.includes("?") ? "&" : "?") + "language=es-MX";
 	const r = await fetch(url, { headers: { Authorization: "Bearer " + TMDB_TOKEN, accept: "application/json" } });
 	const data = await r.json().catch(() => ({ error: "bad response" }));
+	if (r.ok) tmdbCache.set(path, { at: Date.now(), data });
+	reply.header("cache-control", r.ok ? "public, max-age=300" : "no-store");
 	return reply.code(r.ok ? 200 : r.status).send(data);
 });
 fastify.get("/api/tmdb-img", async (req, reply) => {
 	const p = String((req.query && req.query.p) || "");
 	if (!/^\/[A-Za-z0-9_./-]+$/.test(p)) return reply.code(400).send("bad");
-	const r = await fetch("https://image.tmdb.org/t/p/w342" + p);
+	const r = await fetch("https://image.tmdb.org/t/p/w185" + p);
 	if (!r.ok) return reply.code(r.status).send("image");
 	reply.header("content-type", r.headers.get("content-type") || "image/jpeg");
 	reply.header("cache-control", "public, max-age=86400");
@@ -614,6 +621,28 @@ function operaBoot(browser) {
         get: function(){ return desc.get.call(this); },
         set: function(v){ if (!hop(v)) desc.set.call(this, v); }
       });
+    }
+  } catch (e) {}
+  try {
+    if (window.top && window.top !== window) {
+      var topWin = window.top;
+      var tLoc = topWin.location;
+      var tProto = topWin.Location && topWin.Location.prototype;
+      var td = tProto && Object.getOwnPropertyDescriptor(tProto, "href");
+      if (td && td.set && td.get) {
+        Object.defineProperty(tProto, "href", {
+          configurable: true,
+          get: function(){ return td.get.call(this); },
+          set: function(v){
+            if (this === tLoc && document.documentElement && document.documentElement.isConnected) { armed = true; hop(v); return; }
+            td.set.call(this, v);
+          }
+        });
+      }
+      try {
+        topWin.location.assign = function(v){ if (document.documentElement && document.documentElement.isConnected) { armed = true; hop(v); return; } };
+        topWin.location.replace = function(v){ if (document.documentElement && document.documentElement.isConnected) { armed = true; hop(v); return; } };
+      } catch (e2) {}
     }
   } catch (e) {}
   try { window.open = function(u){ armed = true; hop(u || ""); return null; }; } catch (e) {}
@@ -1370,7 +1399,9 @@ fastify.get("/api/noah-games", async (_req, reply) => {
 	const src = await r.text();
 	const data = parseNoahGames(src);
 	noahCache = { at: now, data };
-	return reply.header("Cross-Origin-Resource-Policy", "same-origin").send(data);
+	reply.header("Cross-Origin-Resource-Policy", "same-origin");
+	reply.header("Cache-Control", "public, max-age=600");
+	return reply.send(data);
 });
 
 fastify.setNotFoundHandler((_req, reply) => {
@@ -1381,9 +1412,15 @@ fastify.setNotFoundHandler((_req, reply) => {
 	return reply.code(404).send("Not found");
 });
 
-let port = parseInt(process.env.PORT || process.env.SERVER_PORT || "", 10);
-if (Number.isNaN(port)) port = 8080;
-await fastify.listen({ port, host: "0.0.0.0" });
-console.log("Drift listening", port);
+let port = parseInt(process.env.APP_PORT || process.env.SERVER_PORT || process.env.PORT || "", 10);
+if (Number.isNaN(port) || port <= 0) port = 8080;
+console.log("Drift port", { APP_PORT: process.env.APP_PORT || "", SERVER_PORT: process.env.SERVER_PORT || "", PORT: process.env.PORT || "", using: port });
+try {
+	await fastify.listen({ port, host: "0.0.0.0" });
+	console.log("Drift listening", port);
+} catch (err) {
+	console.error("Drift failed to listen", err && err.stack ? err.stack : err);
+	process.exit(1);
+}
 process.on("SIGINT", () => process.exit(0));
 process.on("SIGTERM", () => process.exit(0));

@@ -55,8 +55,15 @@
     };
   }
 
+  function driftIcons() {
+    try {
+      if (typeof IC !== 'undefined' && IC) { window.IC = IC; return IC; }
+    } catch (e) {}
+    window.IC = window.IC || {};
+    return window.IC;
+  }
   function applyBrandLogos() {
-    var IC = window.IC;
+    var IC = driftIcons();
     if (!IC) return;
     var rays = '';
     for (var i = 0; i < 12; i++) {
@@ -88,6 +95,11 @@
     IC.games = svg(
       '<rect width="48" height="48" rx="11" fill="#111827"/><rect x="8" y="14" width="14" height="10" rx="2" fill="#34d399"/><rect x="26" y="14" width="14" height="10" rx="2" fill="#60a5fa"/><rect x="8" y="28" width="14" height="10" rx="2" fill="#f472b6"/><rect x="26" y="28" width="14" height="10" rx="2" fill="#fbbf24"/>'
     );
+    IC.chat = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="48" rx="12" fill="#34C759"/><path fill="#fff" d="M24 11.2c-7.2 0-13 4.8-13 10.8 0 3.4 1.8 6.4 4.6 8.4-.2 1.4-.8 3-1.6 4.1 0 0 2.1-.4 4.1-1.5 1.8.8 3.8 1.3 6 1.3 7.2 0 13-4.8 13-10.8s-5.8-10.8-13-10.8z"/></svg>';
+    IC.espn = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="48" rx="8" fill="#d00"/><text x="24" y="31" text-anchor="middle" fill="#fff" font-family="Arial Black,Impact,sans-serif" font-size="13" font-style="italic" font-weight="900" letter-spacing="-0.4">ESPN</text></svg>';
+    IC.aleks = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="48" rx="11" fill="#fff"/><path d="M24 7a17 17 0 0 1 17 17H24z" fill="#1d4ed8"/><path d="M41 24a17 17 0 0 1-17 17V24z" fill="#16a34a"/><path d="M24 41A17 17 0 0 1 7 24h17z" fill="#f59e0b"/><path d="M7 24A17 17 0 0 1 24 7v17z" fill="#7c3aed"/><circle cx="24" cy="24" r="6.2" fill="#fff"/></svg>';
+    IC.gbuild = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="48" rx="12" fill="#0f172a"/><path d="M13 21l11-6 11 6-11 6z" fill="#5eead4"/><path d="M13 21v8l11 6v-8z" fill="#14b8a6"/><path d="M35 21v8l-11 6v-8z" fill="#99f6e4"/><circle cx="35.5" cy="34.5" r="6" fill="#f472b6"/><path d="M35.5 31.6v5.8M32.6 34.5h5.8" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/></svg>';
+    IC.winemu = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="48" rx="11" fill="#0078D4"/><g fill="#fff"><rect x="11" y="11" width="11.5" height="11.5" rx="1.4"/><rect x="25.5" y="11" width="11.5" height="11.5" rx="1.4"/><rect x="11" y="25.5" width="11.5" height="11.5" rx="1.4"/><rect x="25.5" y="25.5" width="11.5" height="11.5" rx="1.4"/></g></svg>';
   }
 
   function styleSettingsBtn() {
@@ -250,25 +262,49 @@
   var GAME_LIBS = {
     poki: 'https://poki.com/',
     crazygames: 'https://www.crazygames.com/',
-    lagged: 'https://lagged.com/',
-    y8: 'https://www.y8.com/',
-    kbh: 'https://kbhgames.com/',
     tesana: 'https://tesana.com/play'
   };
+  function externalGames(root, url, title) {
+    root.innerHTML = '';
+    root.style.cssText = 'height:100%;min-height:0;display:flex;flex-direction:column;background:#000';
+    var bar = document.createElement('div');
+    bar.style.cssText = 'flex:none;display:flex;gap:8px;align-items:center;padding:6px 10px;background:#0b0b10;color:#fff;font:12px system-ui,sans-serif;z-index:5';
+    var back = document.createElement('button');
+    back.type = 'button';
+    back.textContent = '← Back';
+    back.style.cssText = 'padding:6px 12px;border-radius:8px;border:1px solid #333;background:#1a1a24;color:#fff;cursor:pointer';
+    var name = document.createElement('b');
+    name.textContent = title || 'Games';
+    bar.appendChild(back);
+    bar.appendChild(name);
+    var view = document.createElement('div');
+    view.style.cssText = 'flex:1;min-height:0;position:relative;background:#000';
+    root.appendChild(bar);
+    root.appendChild(view);
+    function go(u) {
+      view.innerHTML = '';
+      if (typeof window.openProxied === 'function') window.openProxied(u, view);
+      else view.textContent = 'Scramjet is not ready.';
+    }
+    back.onclick = function () { go(url); };
+    go(url);
+  }
   function gamesApp(root) {
     var lib = 'noah';
     try { lib = localStorage.getItem('wos:games-lib') || 'noah'; } catch (e) {}
+    if (lib === 'lagged' || lib === 'y8' || lib === 'kbh') lib = 'noah';
     if (GAME_LIBS[lib]) {
       if (lib === 'poki') loadPokiSdk(document);
-      root.innerHTML = '';
-      root.style.cssText = 'height:100%;min-height:0;position:relative;background:#000';
-      if (typeof window.openProxied !== 'function') { root.textContent = 'Scramjet is not ready.'; return; }
-      window.openProxied(GAME_LIBS[lib], root).then(function (frame) {
-        if (lib !== 'poki' || !frame || !frame.frame) return;
-        var put = function () { try { loadPokiSdk(frame.frame.contentDocument); } catch (e) {} };
-        frame.frame.addEventListener('load', put);
-        setTimeout(put, 1200);
-      });
+      var titles = { tesana: 'Tesana', poki: 'Poki', crazygames: 'CrazyGames' };
+      externalGames(root, GAME_LIBS[lib], titles[lib] || 'Games');
+      if (lib === 'poki') {
+        setTimeout(function () {
+          try {
+            var frame = root.querySelector('iframe');
+            if (frame) loadPokiSdk(frame.contentDocument);
+          } catch (e) {}
+        }, 1200);
+      }
       return;
     }
     return noahGamesApp(root);
@@ -308,7 +344,7 @@
       b.type = 'button';
       b.style.cssText = 'all:unset;cursor:pointer;background:#14141c;border-radius:12px;overflow:hidden;display:flex;flex-direction:column';
       var img = tmdbImg(item.poster_path);
-      b.innerHTML = (img ? '<img alt="" src="' + img + '" style="width:100%;height:190px;object-fit:cover;background:#111">' : '<div style="height:190px;background:#222"></div>') +
+      b.innerHTML = (img ? '<img alt="" loading="lazy" decoding="async" src="' + img + '" style="width:100%;height:190px;object-fit:cover;background:#111">' : '<div style="height:190px;background:#222"></div>') +
         '<div style="padding:8px;font-size:12px;line-height:1.3"><b>' + String(item.title || item.name || '').replace(/[&<>]/g, '') + '</b></div>';
       b.onclick = function () { openItem(item); };
       return b;
@@ -325,12 +361,22 @@
       var path = q
         ? ('/search/' + kind + '?query=' + encodeURIComponent(q))
         : ('/trending/' + kind + '/week');
-      showList([], 'Cargando…');
+      var cacheKey = q ? '' : ('wos:tmdb-' + kind);
+      var painted = false;
+      if (cacheKey) {
+        try {
+          var cached = JSON.parse(sessionStorage.getItem(cacheKey) || 'null');
+          if (cached && cached.length) { showList(cached); painted = true; }
+        } catch (e) {}
+      }
+      if (!painted) showList([], 'Cargando…');
       tmdbGet(path).then(function (j) {
         if (!j || j.error === 'no-key') { showList([], 'Falta la clave de TMDB. Pega el worker nuevo o pon TMDB_TOKEN en el host.'); return; }
         if (j.status_message && !j.results) { showList([], j.status_message); return; }
-        showList(j.results || []);
-      }).catch(function () { showList([], 'No se pudo cargar el catálogo.'); });
+        var list = j.results || [];
+        if (cacheKey && list.length) { try { sessionStorage.setItem(cacheKey, JSON.stringify(list.slice(0, 24))); } catch (e) {} }
+        showList(list);
+      }).catch(function () { if (!painted) showList([], 'No se pudo cargar el catálogo.'); });
     }
     function openItem(item) {
       var id = item.id;
@@ -401,6 +447,24 @@
   }
   function windowsEmulator(root) {
     root.innerHTML = '';
+    root.style.cssText = 'height:100%;min-height:0;display:flex;flex-direction:column;background:#000;color:#fff';
+    var bar = document.createElement('div');
+    bar.style.cssText = 'flex:none;display:flex;gap:8px;align-items:center;padding:6px 10px;background:#0078D4;color:#fff;font:600 12px system-ui,sans-serif';
+    bar.textContent = 'Windows 98 · v86 (emulador x86 real)';
+    var view = document.createElement('div');
+    view.style.cssText = 'flex:1;min-height:0;position:relative;background:#000';
+    root.appendChild(bar);
+    root.appendChild(view);
+    var url = 'https://copy.sh/v86/?profile=windows98';
+    if (typeof window.openProxied === 'function') window.openProxied(url, view);
+    else {
+      var fr = document.createElement('iframe');
+      fr.src = url;
+      fr.setAttribute('allow', 'fullscreen');
+      fr.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#000';
+      view.appendChild(fr);
+    }
+    return;
     root.style.cssText = 'height:100%;min-height:0;position:relative;overflow:hidden;background:#000;color:#111;font-family:Segoe UI,system-ui,sans-serif';
     var desk = document.createElement('div');
     desk.style.cssText = 'position:absolute;inset:0;background:linear-gradient(165deg,#0a4f93,#1b8adf 48%,#79c7ff);display:flex';
@@ -660,10 +724,7 @@
     window.XAPPS.tt = { n: 'TikTok', f: driftSite('https://www.tiktok.com/') };
     window.XAPPS.gem = { n: 'Gemini', f: driftSite('https://gemini.google.com/app') };
     window.XAPPS.movies = { n: 'Movies', f: moviesApp };
-    IC.aleks = '<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="11" fill="#0b3d91"/><text x="24" y="30" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">A</text></svg>';
-    IC.espn = '<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="11" fill="#c41230"/><text x="24" y="31" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">ESPN</text></svg>';
-    IC.winemu = '<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="11" fill="#0078d4"/><g fill="#fff"><rect x="13" y="13" width="9" height="9"/><rect x="26" y="13" width="9" height="9"/><rect x="13" y="26" width="9" height="9"/><rect x="26" y="26" width="9" height="9"/></g></svg>';
-    IC.gbuild = '<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="11" fill="#111827"/><path d="M16 32V16h6l2 6 2-6h6v16h-5V23l-3 9h-2l-3-9v9h-3z" fill="#5eead4"/></svg>';
+    applyBrandLogos();
     try {
       var changed = false;
       if (window.S && window.S.d && !window.S.d.v14) {
@@ -731,6 +792,67 @@
     } catch (e) {}
   }
 
+
+  function installAppGlass() {
+    var on = false;
+    try { on = localStorage.getItem('wos:liquid-apps') === '1'; } catch (e) {}
+    var st = document.getElementById('drift-app-glass-style');
+    if (!st) { st = document.createElement('style'); st.id = 'drift-app-glass-style'; document.head.appendChild(st); }
+    if (on) {
+      document.body.classList.add('drift-app-glass');
+      st.textContent =
+        'body.drift-app-glass .win{background:rgba(255,255,255,.22)!important;backdrop-filter:blur(24px) saturate(180%)!important;-webkit-backdrop-filter:blur(24px) saturate(180%)!important;border:1px solid rgba(255,255,255,.28)!important;box-shadow:0 12px 40px rgba(0,0,0,.18)!important}' +
+        'body.drift-app-glass .win>.title{background:rgba(255,255,255,.16)!important}' +
+        'body.drift-app-glass .win>.body{background:rgba(10,12,20,.28)!important}';
+    } else {
+      document.body.classList.remove('drift-app-glass');
+      st.textContent = '';
+    }
+  }
+  function speedDesk() {
+    if (window.__driftSpeed) return;
+    window.__driftSpeed = 1;
+    try {
+      if (typeof rend === 'function' && !rend.__driftFast) {
+        var orig = rend;
+        var fast = function () {
+          var menu = document.getElementById('menu');
+          var open = menu && menu.classList.contains('show');
+          var tilesFn = window.tiles;
+          if (!open && typeof tilesFn === 'function') {
+            window.tiles = function () {};
+            try { return orig(); } finally { window.tiles = tilesFn; }
+          }
+          return orig();
+        };
+        fast.__driftFast = 1;
+        rend = fast;
+      }
+    } catch (e) {}
+    var prefetch = function () {
+      try {
+        if (!sessionStorage.getItem('wos:noah-games')) {
+          fetch('/api/noah-games').then(function (r) { return r.json(); }).then(function (list) {
+            if (Array.isArray(list) && list.length) sessionStorage.setItem('wos:noah-games', JSON.stringify(list));
+          }).catch(function () {});
+        }
+      } catch (e) {}
+      try {
+        if (!sessionStorage.getItem('wos:tmdb-movie') && typeof tmdbGet === 'function') {
+          tmdbGet('/trending/movie/week').then(function (j) {
+            if (j && j.results && j.results.length) sessionStorage.setItem('wos:tmdb-movie', JSON.stringify(j.results.slice(0, 24)));
+          }).catch(function () {});
+        }
+        if (!sessionStorage.getItem('wos:tmdb-tv') && typeof tmdbGet === 'function') {
+          tmdbGet('/trending/tv/week').then(function (j) {
+            if (j && j.results && j.results.length) sessionStorage.setItem('wos:tmdb-tv', JSON.stringify(j.results.slice(0, 24)));
+          }).catch(function () {});
+        }
+      } catch (e) {}
+    };
+    if (window.requestIdleCallback) requestIdleCallback(prefetch, { timeout: 1200 });
+    else setTimeout(prefetch, 300);
+  }
   function installLiquidGlass() {
     var on = false;
     try { on = localStorage.getItem('wos:liquid-glass') === '1'; } catch (e) {}
@@ -1427,6 +1549,10 @@
       '<div style="flex:1"><b>Enable Liquid Glass (experimental)</b>' +
       '<div style="opacity:.75;font-size:12px;margin-top:4px">Make Drift OS look like an iOS device with the new liquid glass UI applied on the task bar.</div></div>' +
       switchHTML('drift-liquid-sw', liquidOn) + '</div>' +
+      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px">' +
+      '<div style="flex:1"><b>Apply Liquid Glass to apps</b>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Makes the app windows transparent so the desktop shows through. Pages inside a site stay readable.</div></div>' +
+      switchHTML('drift-app-glass-sw', localStorage.getItem('wos:liquid-apps') === '1') + '</div>' +
       '<div style="margin-bottom:14px"><b>Home button</b>' +
       '<div style="opacity:.75;font-size:12px;margin:4px 0 8px">MacOS logo, Windows logo, or Drift logo (default).</div>' +
       '<div id="drift-home-opts" style="display:flex;gap:8px;flex-wrap:wrap">' +
@@ -1448,14 +1574,11 @@
       '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="movies-src" value="noah"/> Noah</label>' +
       '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="movies-src" value="racial"/> Racial</label></div>' +
       '<div style="margin-bottom:14px;border-top:1px solid rgba(255,255,255,.08);padding-top:12px"><b>Choose your Games</b>' +
-      '<div style="opacity:.75;font-size:12px;margin-top:4px">Noah is noahstutoring. Poki also loads the Poki SDK. Tesana opens tesana.com/play.</div>' +
-      '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="games-lib" value="noah"/> Noah (noahstutoring)</label>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Noah is the in-app catalog. Tesana, Poki and CrazyGames open in the app. Tesana has a Back button to leave a game.</div>' +
+      '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="games-lib" value="noah"/> Noah (recommended)</label>' +
       '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="games-lib" value="tesana"/> Tesana</label>' +
       '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="games-lib" value="poki"/> Poki</label>' +
-      '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="games-lib" value="crazygames"/> CrazyGames</label>' +
-      '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="games-lib" value="lagged"/> Lagged</label>' +
-      '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="games-lib" value="y8"/> Y8</label>' +
-      '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="games-lib" value="kbh"/> KBH Games</label></div>' +
+      '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="games-lib" value="crazygames"/> CrazyGames</label></div>' +
       '<div style="margin-bottom:14px;border-top:1px solid rgba(255,255,255,.08);padding-top:12px"><b>Customize Task Bar and Apps Size</b>' +
       '<div style="opacity:.75;font-size:12px;margin:4px 0 8px">Apps and the task bar are separate. Large is the normal Drift size.</div>' +
       '<div style="font-size:12px;font-weight:650;margin:6px 0">Apps</div>' + sizeRadios('size-apps', appSize) +
@@ -1526,6 +1649,10 @@
     wireSwitch(panel.querySelector('#drift-liquid-sw'), function (on) {
       try { localStorage.setItem('wos:liquid-glass', on ? '1' : '0'); } catch (e) {}
       installLiquidGlass();
+    });
+    wireSwitch(panel.querySelector('#drift-app-glass-sw'), function (on) {
+      try { localStorage.setItem('wos:liquid-apps', on ? '1' : '0'); } catch (e) {}
+      installAppGlass();
     });
     wireSwitch(panel.querySelector('#drift-edu-sw'), function (on) { setEducationMode(on); });
     wireSwitch(panel.querySelector('#drift-cros-sw'), function (on) { setChromeOSAdapt(on); });
@@ -2102,6 +2229,8 @@
     wireGames();
     wireLoginApps();
     installLiquidGlass();
+    installAppGlass();
+    speedDesk();
     styleCavemanAsSwitch();
     bindCustomKeybinds();
     installCustomAppContextMenu();
@@ -2126,6 +2255,7 @@
       wireLoginApps();
       installSettingsButton();
       installLiquidGlass();
+      installAppGlass();
       styleCavemanAsSwitch();
       try { applySize(); } catch (e) {}
       try { if (localStorage.getItem('wos:cros-adapt') === '1') setChromeOSAdapt(true); if (localStorage.getItem('wos:ipad-adapt') === '1') setIpadAdapt(true); } catch (e) {}

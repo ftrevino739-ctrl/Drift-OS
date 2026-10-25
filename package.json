@@ -3,6 +3,7 @@
   "version": "2.0.0",
   "description": "Drift OS desktop with Scramjet proxy",
   "type": "module",
+  "main": "src/index.js",
   "engines": {
     "node": ">=18"
   },
