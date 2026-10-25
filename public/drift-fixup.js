@@ -315,8 +315,8 @@
     return fetch('/api/tmdb?path=' + encodeURIComponent(path), { headers: { accept: 'application/json' } })
       .then(function (r) { return r.json().then(function (j) { return { status: r.status, j: j }; }); })
       .then(function (x) {
-        if (x.status !== 503 && x.j && !x.j.error) return x.j;
-        if (x.j && x.j.results) return x.j;
+        if (x.status !== 503 && x.j && !x.j.error && !x.j.status_message && x.j.success !== false) return x.j;
+        if (x.j && (x.j.results || x.j.title || x.j.name || x.j.id) && !x.j.status_message) return x.j;
         return fetch(ep.replace(/\/$/, '') + '/tmdb?path=' + encodeURIComponent(path), { headers: { accept: 'application/json' } })
           .then(function (r) { return r.json(); });
       });

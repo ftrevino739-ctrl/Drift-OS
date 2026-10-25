@@ -264,15 +264,20 @@ h1{font-weight:500;margin:0 0 8px}
 .codeblock .cb-bar button{border:0;background:#21262d;color:#e6edf3;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer}
 .codeblock .cb-bar button:hover{background:#30363d}
 .codeblock pre{margin:0;padding:12px;overflow:auto;max-height:min(70vh,2400px);font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre}
-.am>.u,.am>.a{content-visibility:auto;contain-intrinsic-size:auto 96px}
-.think-panel.live{position:sticky;bottom:8px;z-index:5;box-shadow:0 8px 24px rgba(0,0,0,.18)}
-.ai-tools{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
-.ai-tools button{border:1px solid var(--line);background:var(--omni);color:inherit;border-radius:999px;padding:5px 10px;font-size:12px;cursor:pointer}
-.src-row{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12px;color:var(--mute)}
-.src-favs{display:flex;align-items:center}
-.src-fav{width:22px;height:22px;border-radius:50%;object-fit:cover;margin-left:-6px;border:2px solid var(--card,#fff);background:#eee}
-.src-fav:first-child{margin-left:0}
+.am>.u,.am>.a{overflow:visible}
+.think-panel.live{position:sticky;bottom:8px;z-index:4;box-shadow:0 8px 24px rgba(0,0,0,.12)}
 #drift-thanks{position:fixed;left:50%;bottom:92px;transform:translateX(-50%);background:#111;color:#fff;padding:10px 14px;border-radius:999px;z-index:2147483646;font:13px system-ui;display:none}
+.ans-bar{display:flex;align-items:center;gap:2px;margin-top:10px;flex-wrap:wrap}
+.ans-bar button{width:34px;height:34px;border:0;background:transparent;border-radius:10px;color:#6b7280;cursor:pointer;display:grid;place-items:center;padding:0}
+.ans-bar button:hover{background:rgba(0,0,0,.06)}
+.ans-bar .src-row{margin:0 0 0 6px}
+.src-row{display:flex;align-items:center;gap:8px;font-size:13px;color:#6b7280}
+.src-favs{display:flex;align-items:center}
+.src-fav{width:22px;height:22px;border-radius:50%;object-fit:cover;margin-left:-6px;border:2px solid #fff;background:#eee}
+.src-fav:first-child{margin-left:0}
+.file-card{display:flex;align-items:center;gap:10px;margin:8px 0;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:var(--omni);color:inherit;text-decoration:none;max-width:440px}
+.file-card b{display:block;font-size:14px}
+.file-card small{display:block;color:var(--mute);font-size:12px;margin-top:2px}
 .codeblock.preview-on pre{display:none}
 .codeblock .cb-prev{display:none;padding:0;min-height:180px;background:#fff}
 .codeblock.preview-on .cb-prev{display:block}
@@ -427,11 +432,13 @@ h1{font-weight:500;margin:0 0 8px}
 
 
 /* AI thinking + model tip */
-.think-panel{align-self:flex-start;max-width:92%;margin:4px 0 8px;border:1px solid var(--line);border-radius:12px;background:var(--omni);overflow:hidden;font-size:12px}
-.think-panel summary{cursor:pointer;padding:8px 12px;color:var(--mute);list-style:none;display:flex;align-items:center;gap:8px}
+.think-panel{align-self:stretch;width:min(100%,740px);margin:8px 0 10px;border:1px solid #e5e5e5;border-radius:18px;background:#f3f4f6;overflow:hidden;font-size:14px;color:#6b7280}
+.think-panel summary{cursor:pointer;padding:14px 16px;color:#6b7280;list-style:none;display:flex;align-items:center;gap:8px;font-weight:600}
 .think-panel summary::-webkit-details-marker{display:none}
-.think-panel[open] summary{border-bottom:1px solid var(--line);color:var(--ink)}
-.think-body{padding:10px 12px;color:var(--mute);line-height:1.45;white-space:pre-wrap}
+.think-panel summary .chev{display:inline-block;transition:transform .15s;font-size:12px}
+.think-panel[open] summary .chev{transform:rotate(180deg)}
+.think-panel .think-body{margin:0 12px 12px;padding:14px 16px;background:#fff;border:1px solid #ececec;border-radius:14px;color:#4b5563;line-height:1.55;white-space:pre-wrap;max-height:360px;overflow:auto;font-style:normal;font-size:13.5px}
+.think{font-style:normal}
 .think-step{margin:0 0 8px;padding-left:8px;border-left:2px solid var(--acc)}
 .mo-wrap{position:relative}
 .mo-more{position:absolute;right:8px;top:50%;transform:translateY(-50%);opacity:0;border:0;background:var(--line);color:var(--ink);width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:14px}
@@ -1157,7 +1164,19 @@ function ai(root){
     clearTimeout(n._t);
     n._t=setTimeout(()=>{n.style.display='none'},1800);
   }
+  function fileCard(el,lang,code){
+    const names={html:'index.html',htm:'index.html',css:'styles.css',js:'script.js',javascript:'script.js',ts:'script.ts',python:'juego.py',py:'juego.py',json:'data.json',svg:'image.svg',lua:'script.lua',luau:'script.lua',txt:'archivo.txt'};
+    const name=names[lang]||('drift-'+(lang||'txt').replace(/[^a-z0-9]+/gi,'').slice(0,12)+'.txt');
+    const a=document.createElement('a');a.className='file-card';a.download=name;
+    a.href=URL.createObjectURL(new Blob([code],{type:'text/plain;charset=utf-8'}));
+    const kb=Math.max(1,Math.round(String(code).length/1024));
+    a.innerHTML='<span style="font-size:22px;line-height:1">\uD83D\uDCC4</span><span><b></b><small></small></span>';
+    a.querySelector('b').textContent=name;
+    a.querySelector('small').textContent=kb+' KB · pulsa para descargar';
+    el.appendChild(a);
+  }
   function paintCode(el,lang,code){
+    if(code&&String(code).trim())fileCard(el,lang,code);
     const box=document.createElement('div');box.className='codeblock';
     const bar=document.createElement('div');bar.className='cb-bar';
     const lab=document.createElement('span');lab.textContent=lang||'code';
@@ -1181,15 +1200,24 @@ function ai(root){
     };
     el.appendChild(box);
   }
+  const ICO={
+    copy:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>',
+    up:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 11v9M7 11l-3 3m3-3l3 3M14 20V8m0 0l-3 3m3-3l3 3"/><path d="M14 8V4a1 1 0 0 0-1-1h-2"/></svg>',
+    down:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 13V4M7 13l-3-3m3 3l3-3M14 4v12m0 0l-3-3m3 3l3-3"/></svg>',
+    share:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4m0 0l-4 4m4-4l4 4"/><path d="M5 15v4h14v-4"/></svg>',
+    dl:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 4v12m0 0l-4-4m4 4l4-4"/><path d="M5 20h14"/></svg>'
+  };
   function answerTools(el, plain){
-    if(!el||el.querySelector('.ai-tools'))return;
-    const bar=document.createElement('div');bar.className='ai-tools';
-    function btn(label, fn){const b=document.createElement('button');b.type='button';b.textContent=label;b.onclick=fn;bar.appendChild(b);return b}
-    btn('Copiar', async()=>{try{await navigator.clipboard.writeText(plain)}catch(e){}});
-    btn('Compartir', async()=>{try{if(navigator.share)await navigator.share({title:'Drift',text:plain});else await navigator.clipboard.writeText(plain)}catch(e){}});
-    btn('Descargar', ()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([plain],{type:'text/markdown'}));a.download='drift-respuesta.md';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)});
-    btn('Opinar', ()=>thanksToast());
+    if(!el||el.querySelector('.ans-bar'))return;
+    const bar=document.createElement('div');bar.className='ans-bar';
+    function btn(icon, label, fn){const b=document.createElement('button');b.type='button';b.innerHTML=icon;b.title=label;b.setAttribute('aria-label',label);b.onclick=fn;bar.appendChild(b);return b}
+    btn(ICO.copy,'Copiar', async()=>{try{await navigator.clipboard.writeText(plain)}catch(e){}});
+    btn(ICO.up,'Me gusta', ()=>thanksToast());
+    btn(ICO.down,'No me gusta', ()=>thanksToast());
+    btn(ICO.share,'Compartir', async()=>{try{if(navigator.share)await navigator.share({title:'Drift',text:plain});else await navigator.clipboard.writeText(plain)}catch(e){}});
+    btn(ICO.dl,'Descargar', ()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([plain],{type:'text/markdown'}));a.download='drift-respuesta.md';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)});
     el.appendChild(bar);
+    return bar;
   }
   function sourceRow(el, rows){
     if(!el||!rows||!rows.length||el.querySelector('.src-row'))return;
@@ -1311,30 +1339,31 @@ function ai(root){
     if(imgs.length){const g=document.createElement('div');g.className='thumbs';imgs.forEach(b=>{const i=new Image();i.src=URL.createObjectURL(b);g.appendChild(i)});ub.appendChild(g)}
     am.querySelectorAll('.think-panel').forEach(n=>{n.open=false;n.classList.remove('live')});
     const think=document.createElement('details');think.className='think-panel live';think.open=true;
-    think.innerHTML='<summary>Pensando <span data-sec>0s</span></summary><div class="think-body">Estoy leyendo tu mensaje.</div>';
+    think.innerHTML='<summary><span class="chev">\u25BE</span> Pensando <span data-sec>0s</span></summary><div class="think-body"></div>';
     am.appendChild(think);
-    try{think.scrollIntoView({block:'nearest',behavior:'smooth'})}catch(e){}
     const thinkBody=think.querySelector('.think-body'), thinkSec=think.querySelector('[data-sec]');
     const started=Date.now();
     const thinkTimer=setInterval(()=>{thinkSec.textContent=Math.round((Date.now()-started)/1000)+'s'},250);
     let sources='', sourceRows=[], thoughtNote='';
+    const steps=['Reviso la pregunta y preparo la respuesta completa.'];
     function paintThink(){
-      const bits=[];
+      const bits=steps.slice();
       if(sources)bits.push(sources);
       if(thoughtNote)bits.push(thoughtNote);
-      if(!bits.length)bits.push('Estoy leyendo tu mensaje.');
       if(think.isConnected)thinkBody.textContent=bits.join('\n\n');
     }
+    paintThink();
     try{if(window.driftAct)window.driftAct(q,'')}catch(e){}
     const needsWeb=/\b(qui[eé]n|quien|qu[eé] es|noticias|precio|clima|weather|hoy|latest|busca|search|fuente|sitio)\b/i.test(q) && !/\b(c[oó]digo|code|html|script|lua|luau|function|tampermonkey)\b/i.test(q);
     const searchDone=needsWeb?fetch('/api/search?q='+encodeURIComponent(q.slice(0,180))+'&engine='+(typeof ENG==='function'?ENG():'duckduckgo')).then(r=>r.json()).then(sj=>{
       sourceRows=(sj.results||[]).filter(x=>x&&x.url).slice(0,5);
       if(sourceRows.length){
-        sources='Busqué en la web y leí '+sourceRows.length+' páginas:\n'+sourceRows.map(x=>'• '+(x.title||x.url)+' — '+x.url).join('\n');
+        sources='Páginas que abrí:\n'+sourceRows.map(x=>'• '+(x.title||x.url)+'\n  '+x.url).join('\n');
+        steps.push('Busqué en la web y leí '+sourceRows.length+' páginas.');
         paintThink();
-      }else{sources='Busqué en la web y no encontré páginas útiles.';paintThink()}
-    }).catch(()=>{sources='Intenté buscar en la web y no pude leer las páginas.';paintThink()}):Promise.resolve();
-    const out=add('a','');out.classList.add('think');
+      }else{sources='Busqué y no encontré páginas útiles.';steps.push(sources);paintThink()}
+    }).catch(()=>{sources='Intenté buscar y no pude leer las páginas.';steps.push(sources);paintThink()}):(function(){steps.push('No hizo falta buscar en la web. Respondo directo para que salga en unos segundos.');paintThink();return Promise.resolve()})();
+    const out=add('a','');
     const pre=[
       'You are Drift 2.1 inside this web OS. Never say you are Gemini. Never write "Gemini said". If you refer to yourself, say Drift.',
       'Reply in the user language with a complete, well-written answer. Do not stall, and do not stop at one vague line.',
@@ -1347,41 +1376,53 @@ function ai(root){
     const input=mine.map((m,i)=>i===0?{role:m.role,content:pre+'\n\n'+m.content}:m);
     ctl=new AbortController();
     try{
-      const r=await sample(input,{model,modelTier:(MODELS.find(x=>x[0]===model)||MODELS[0])[3],...(imgs.length?{images:imgs}:{}),cache:false,signal:ctl.signal,onThink:function(t){const full=String(t||'').trim();thoughtNote=full?('Revisé esto antes de responder:\n'+(full.length>700?full.slice(0,700)+'…':full)):'';paintThink()},onText:({text})=>{
+      const r=await sample(input,{model,modelTier:(MODELS.find(x=>x[0]===model)||MODELS[0])[3],...(imgs.length?{images:imgs}:{}),cache:false,signal:ctl.signal,onThink:function(t){const full=String(t||'').trim();if(!full)return;thoughtNote=full;if(steps.indexOf('Esto revisé antes de escribir:')<0)steps.push('Esto revisé antes de escribir:');paintThink()},onText:({text})=>{
         const raw=String(text||'');
         const m=raw.match(/<think>([\s\S]*?)(<\/think>|$)/i);
-        if(m){thoughtNote='Revisé esto antes de responder:\n'+m[1].trim().slice(0,700);paintThink();out.textContent=raw.replace(/<think>[\s\S]*?(<\/think>|$)/i,'').replace(/Gemini said/gi,'Drift said').trim();}
+        if(m){thoughtNote=(thoughtNote?thoughtNote+'\n':'')+m[1].trim();paintThink();out.textContent=raw.replace(/<think>[\s\S]*?(<\/think>|$)/i,'').replace(/Gemini said/gi,'Drift said').trim();}
         else out.textContent=raw.replace(/Gemini said/gi,'Drift said');
       }});
       clearInterval(thinkTimer);
-      const secs=Math.round((Date.now()-started)/1000);
+      const secs=Math.max(1,Math.round((Date.now()-started)/1000));
       think.classList.remove('live');
       think.open=false;
-      if(sources||thoughtNote){think.querySelector('summary').innerHTML=(sources?'Busqué':'Pensé')+' <span>'+secs+'s</span>';paintThink()}
-      else think.remove();
-      searchDone.then(function(){if(!think.isConnected||!out.isConnected)return;if(sources){think.querySelector('summary').innerHTML='Busqué <span>'+secs+'s</span>';paintThink();sourceRow(out,sourceRows)}}).catch(function(){});
-      out.classList.remove('think');
+      think.querySelector('summary').innerHTML='<span class="chev">\u25BE</span> Pensado por <span>'+secs+'s</span>';
+      paintThink();
+      searchDone.then(function(){if(!think.isConnected)return;paintThink();if(thinkBody&&sourceRows.length)sourceRow(thinkBody,sourceRows);const host=(out.querySelector&&out.querySelector('.ans-bar'))||out;if(out.isConnected)sourceRow(host,sourceRows)}).catch(function(){});
       let txt=(r.text||'').replace(/Gemini said/gi,'Drift said');
       const thm=txt.match(/<think>([\s\S]*?)<\/think>/i)||txt.match(/\(thinking\)([\s\S]*?)\(\/thinking\)/i);
-      if(thm){thoughtNote='Revisé esto antes de responder:\n'+thm[1].trim().slice(0,700);txt=txt.replace(thm[0],'').trim();paintThink()}
+      if(thm){const inner=thm[1].trim();if(inner)thoughtNote=(thoughtNote?thoughtNote+'\n':'')+inner;txt=txt.replace(thm[0],'').trim();paintThink()}
+      const fenceBody=ss=>{const blocks=[...String(ss||'').matchAll(/```[^\n]*\n([\s\S]*?)```/g)].map(m=>m[1]);const open=String(ss||'').match(/```[^\n]*\n([\s\S]+)$/);if(open&&!/```\s*$/.test(ss))blocks.push(open[1]);blocks.sort((a,b)=>b.length-a.length);return blocks[0]||''};
+      const fromThought=fenceBody(thoughtNote), fromText=fenceBody(txt);
+      if(fromThought.length>fromText.length+40 && !String(txt).includes(fromThought.slice(0,80))){
+        const lang=(String(thoughtNote).match(/```([a-z0-9.+#-]*)/i)||[])[1]||'txt';
+        txt=(txt?txt.trim()+'\n\n':'')+'```'+lang+'\n'+fromThought.replace(/\n$/,'')+'\n```';
+      }
       if(!txt.trim() && thoughtNote) txt=thoughtNote;
       if(typeof window.driftAct==='function'){const __a=window.driftAct('',txt);if(typeof __a==='string')txt=__a}
       const looksCode=/\b(c[oó]digo|code|html|css|javascript|script|lua|luau|tampermonkey)\b/i.test(q);
       if(looksCode && !txt.includes('```')){
-        const lang=/tampermonkey|userscript/i.test(q)?'javascript':/luau/i.test(q)?'luau':/lua/i.test(q)?'lua':/python|\bpy\b/i.test(q)?'python':/html/i.test(q)?'html':/css/i.test(q)?'css':/javascript|\bjs\b/i.test(q)?'javascript':'txt';
-        txt='```'+lang+'\n'+txt.trim()+'\n```';
+        const html=txt.match(/<!DOCTYPE[\s\S]+|<\s*html[\s\S]+/i);
+        if(html && html[0].length>40) txt='```html\n'+html[0].trim()+'\n```';
       }
       if(txt.includes('```') && !/```[\s\S]*```/.test(txt)) txt=txt+'\n```';
       out.innerHTML='';
       if(txt.includes('```')||txt.includes('|')||txt.includes('**')||txt.includes('##')||/https?:\/\//.test(txt)||/\[[^\]]+\]\(https?:/.test(txt)||/!\[[^\]]*\]\(/.test(txt)||/data:image\//.test(txt))renderMD(out,txt);
       else out.textContent=txt;
-      sourceRow(out, sourceRows);
-      answerTools(out, txt);
+      const bar=answerTools(out, txt);
+      sourceRow(bar||out, sourceRows);
+      if(thinkBody && sourceRows.length && !thinkBody.querySelector('.src-row'))sourceRow(thinkBody, sourceRows);
+      try{out.scrollIntoView({block:'nearest'})}catch(e){}
       mine.push({role:'assistant',content:txt,sources:sourceRows});
       try{save()}catch(err){
         try{S.d.chats=(S.d.chats||[]).slice(0,6);(S.d.chats||[]).forEach(ch=>{if(ch&&ch.msgs&&ch.msgs.length>16)ch.msgs=ch.msgs.slice(-16)});save()}catch(e2){}
       }
-    }catch(e){try{clearInterval(thinkTimer);think.classList.remove('live')}catch(x){}out.className='e';out.textContent=(e&&e.message)||'No se pudo obtener respuesta.';mine.pop()}
+    }catch(e){
+      try{clearInterval(thinkTimer);think.classList.remove('live');think.open=false;const secs=Math.max(1,Math.round((Date.now()-started)/1000));think.querySelector('summary').innerHTML='<span class="chev">\u25BE</span> Pensado por <span>'+secs+'s</span>';paintThink()}catch(x){}
+      const kept=(out.textContent||'').trim();
+      if(kept.length>80){answerTools(out, kept)}
+      else{out.className='e';out.textContent=(e&&e.message)||'No se pudo obtener respuesta.';mine.pop()}
+    }
     if(mine===hist){busy=false;sd.disabled=false}
   }
   if(root.isConnected){if(S.d.chats.length)load(S.d.chats[0].id);else newChat();}
@@ -1457,10 +1498,14 @@ function ai(root){
     return last;
   }
   async function geminiOfficial(list, o){
-    const sys={parts:[{text:'You are Drift 2.1. Never say you are Gemini and never write "Gemini said". If you refer to yourself, say Drift. Reply in the user language with the full answer, not a summary. When they ask for code, write every line in one fenced block. Do not tell them to open an app instead of writing the code.'}]};
-    const body={systemInstruction:sys,contents:geminiContents(list),generationConfig:{maxOutputTokens:65536,temperature:0.4,thinkingConfig:{thinkingBudget:0}}};
+    const sys={parts:[{text:'You are Drift 2.1. Never say you are Gemini and never write "Gemini said". If you refer to yourself, say Drift. Reply in the user language with the full answer, not a summary. When they ask for code or a file, put the COMPLETE file in the answer inside one fenced block. Never leave the code only in thinking. Do not stop halfway and do not say you will send the file without pasting it. Do not tell them to open an app instead of writing the code.'}]};
+    const codeAsk=/\b(c[oó]digo|code|html|css|javascript|script|lua|luau|python|tampermonkey|archivo completo)\b/i.test(geminiPlain(list));
+    const gen={maxOutputTokens:65536,temperature:0.4};
+    if(!codeAsk && !window.__driftNoThink) gen.thinkingConfig={thinkingBudget:512,includeThoughts:true};
+    const body={systemInstruction:sys,contents:geminiContents(list),generationConfig:gen};
     let res=await geminiCall(body, o.signal);
-    if(!res.ok && /thinkingConfig|Unknown name|invalid/i.test(JSON.stringify(res.j&&res.j.error||''))){
+    if(!res.ok && /thinkingConfig|Unknown name|invalid|includeThoughts/i.test(JSON.stringify(res.j&&res.j.error||''))){
+      window.__driftNoThink=1;
       delete body.generationConfig.thinkingConfig;
       res=await geminiCall(body, o.signal);
     }
@@ -1469,7 +1514,7 @@ function ai(root){
       if(res.status===404 || res.status===0 || /no-key|failed to fetch/i.test(String(msg))) return null;
       throw {message:String(msg||'Gemini did not answer.')};
     }
-    const splitParts=j=>{const parts=((((j.candidates||[])[0]||{}).content||{}).parts||[]);const img=p=>{const d=p.inlineData||p.inline_data;if(!d||!d.data)return '';return '\n![](data:'+(d.mimeType||d.mime_type||'image/png')+';base64,'+d.data+')\n'};return {text:parts.filter(p=>!p.thought).map(p=>(p.text||'')+img(p)).join(''),think:parts.filter(p=>p.thought).map(p=>p.text||'').join('\n').trim()}};
+    const splitParts=j=>{const parts=((((j.candidates||[])[0]||{}).content||{}).parts||[]);const extra=p=>{const d=p.inlineData||p.inline_data;if(!d||!d.data)return '';const mime=d.mimeType||d.mime_type||'application/octet-stream';if(/^image\//.test(mime))return '\n![](data:'+mime+';base64,'+d.data+')\n';let text='';try{text=decodeURIComponent(escape(atob(d.data)))}catch(e){text=''}if(!text||text.length<8)return '';const lang=/html/.test(mime)?'html':/json/.test(mime)?'json':/css/.test(mime)?'css':/javascript/.test(mime)?'javascript':'txt';return '\n```'+lang+'\n'+text+'\n```\n'};return {text:parts.filter(p=>!p.thought).map(p=>(p.text||'')+extra(p)).join(''),think:parts.filter(p=>p.thought).map(p=>p.text||'').join('\n').trim()}};
     let got=splitParts(res.j);
     let text=got.text;
     let thought=got.think;

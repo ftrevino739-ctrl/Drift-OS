@@ -1,8 +1,19 @@
-// Worker Drift-OS — Groq + OpenRouter + xKiro
-// Secrets: GROQ_KEY, OPENROUTER_KEY, XKIRO_KEY, SERPAPI_KEY, YT_KEY
+// Worker Drift-OS — paste in Cloudflare only. Do not commit this file.
+// Settings → Variables and secrets:
+//   TMDB_TOKEN or TMDB_KEY = the short "Llave API" (32 characters) OR the long token that starts with eyJ.
+//   The short key is sent as api_key. The long token is sent as Bearer. Either one is enough.
+//   POE_KEY     = optional. Leave empty. Poe's free account cannot call models (they all ask for a subscription).
+//   GROQ_KEY, OPENROUTER_KEY, XKIRO_KEY, SERPAPI_KEY, YT_KEY = optional, same as before.
+// Search (DuckDuckGo, Bing, Google), /ai and /tmdb work without Poe.
 const ALLOW = "*";
 
-const EMBEDDED = { GROQ: "", OPENROUTER: "", XKIRO: "" };
+const EMBEDDED = {
+  GROQ: "",
+  OPENROUTER: "",
+  XKIRO: "",
+  POE: "",
+  TMDB: ""
+};
 
 const MODEL_MAP = {
   "groq-llama": { p: "groq", m: "llama-3.3-70b-versatile" },
@@ -25,6 +36,7 @@ const MODEL_MAP = {
 
 const XKIRO_FALLBACKS = ["mistralai/ministral-14b", "qwen/qwen3.7-flash:free", "qwen/qwen3.8-max:free"];
 const BASE = "Eres el asistente de Drift. Haz lo que el usuario te pida. Dilo con claridad. Si piden código, escribe el archivo completo, sin cortes, sin puntos suspensivos y sin decir que el resto continúa.";
+const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 
 function cors(res) {
   const h = new Headers(res.headers);
@@ -119,6 +131,13 @@ async function callXkiro(env, model, messages, maxTokens) {
   }
   return last;
 }
+async function callPoe(env, model, messages, maxTokens) {
+  const key = (env && env.POE_KEY) || EMBEDDED.POE;
+  if (!key) return { ok: false, status: 402, d: { error: { message: "Poe is not configured. Free Poe models are not available." } } };
+  return postJSON("https://api.poe.com/v1/chat/completions", { Authorization: "Bearer " + key, "Content-Type": "application/json" }, {
+    model: model, messages: messages, temperature: 0.35, max_tokens: Math.min(maxTokens || 4096, 8192),
+  });
+}
 function extractText(d) {
   if (!d) return "";
   if (d.choices && d.choices[0] && d.choices[0].message) return d.choices[0].message.content || "";
@@ -127,10 +146,59 @@ function extractText(d) {
   return "";
 }
 function routeModel(name) {
+  if (name.indexOf("poe/") === 0) return { p: "poe", m: name.slice(4) };
   if (MODEL_MAP[name]) return MODEL_MAP[name];
   if (/^(google\/gemini|qwen\/|mistralai\/|cohere\/)/.test(name)) return { p: "xkiro", m: name };
   if (name.indexOf("/") >= 0) return { p: "openrouter", m: name };
   return { p: "groq", m: "llama-3.3-70b-versatile" };
+}
+function parseDdg(html) {
+  const out = [];
+  const re = /uddg=([^&"]+)/g;
+  let m;
+  while ((m = re.exec(html)) && out.length < 12) {
+    try {
+      const url = decodeURIComponent(m[1]);
+      if (/^https?:\/\//i.test(url)) out.push({ title: url.replace(/^https?:\/\//, "").slice(0, 80), url: url });
+    } catch (e) {}
+  }
+  return out;
+}
+function parseRss(xml) {
+  const out = [];
+  const re = /<item>[\s\S]*?<title>([\s\S]*?)<\/title>[\s\S]*?<link>([\s\S]*?)<\/link>/gi;
+  let m;
+  while ((m = re.exec(xml)) && out.length < 12) {
+    const url = m[2].replace(/<!\[CDATA\[|\]\]>/g, "").trim();
+    const title = m[1].replace(/<!\[CDATA\[|\]\]>/g, "").replace(/<[^>]+>/g, "").trim();
+    if (/^https?:\/\//i.test(url)) out.push({ title: title || url, url: url });
+  }
+  return out;
+}
+function parseGoogle(html) {
+  const out = [];
+  const re = /href="\/url\?q=(https?:[^"&]+)/g;
+  let m;
+  while ((m = re.exec(html)) && out.length < 12) {
+    try {
+      const url = decodeURIComponent(m[1]);
+      if (!/google\./i.test(url)) out.push({ title: url.replace(/^https?:\/\//, "").slice(0, 80), url: url });
+    } catch (e) {}
+  }
+  return out;
+}
+async function searchWeb(q, eng) {
+  if (eng === "bing") {
+    const xml = await (await fetch("https://www.bing.com/search?q=" + encodeURIComponent(q) + "&format=rss", { headers: { "user-agent": UA, accept: "application/rss+xml,text/xml" } })).text();
+    const rows = parseRss(xml);
+    if (rows.length) return rows;
+  } else if (eng === "google") {
+    const html = await (await fetch("https://www.google.com/search?q=" + encodeURIComponent(q) + "&gbv=1&hl=en&num=10", { headers: { "user-agent": UA, accept: "text/html" } })).text();
+    const rows = parseGoogle(html);
+    if (rows.length) return rows;
+  }
+  const html = await (await fetch("https://html.duckduckgo.com/html/?q=" + encodeURIComponent(q), { headers: { "user-agent": UA, accept: "text/html" } })).text();
+  return parseDdg(html);
 }
 
 export default {
@@ -162,6 +230,7 @@ export default {
           try {
             if (a.p === "groq") last = await callGroq(env, a.m, msgs, budget);
             else if (a.p === "openrouter") last = await callOpenRouter(env, a.m, msgs, budget);
+            else if (a.p === "poe") last = await callPoe(env, a.m, msgs, budget);
             else last = await callXkiro(env, a.m, msgs, budget);
             if (last.ok) {
               const text = extractText(last.d);
@@ -173,6 +242,35 @@ export default {
         }
         const msg = (last && last.d && last.d.error && (last.d.error.message || last.d.error)) || "Error de IA";
         return j({ error: { message: String(msg), model_requested: name, tried: tried } }, (last && last.status) || 502);
+      }
+      if (u.pathname === "/tmdb") {
+        const tokens = [];
+        function pushTok(v) { v = String(v || "").trim(); if (v && tokens.indexOf(v) < 0) tokens.push(v); }
+        pushTok(env && env.TMDB_KEY);
+        pushTok(env && env.TMDB_TOKEN);
+        pushTok(EMBEDDED.TMDB);
+        tokens.sort(function (a, b) { return (a.indexOf("eyJ") === 0 ? 1 : 0) - (b.indexOf("eyJ") === 0 ? 1 : 0); });
+        const path = String(u.searchParams.get("path") || "").replace(/^\/+/, "");
+        if (!tokens.length) return j({ error: "no-key" }, 503);
+        if (!path || path.indexOf("..") >= 0) return j({ error: "bad path" }, 400);
+        const base = "https://api.themoviedb.org/3/" + path + (path.indexOf("?") >= 0 ? "&" : "?") + "language=es-MX";
+        let lastStatus = 401;
+        let lastBody = { status_message: "Invalid API key" };
+        for (let i = 0; i < tokens.length; i++) {
+          const token = tokens[i];
+          const jwt = token.indexOf("eyJ") === 0 && token.split(".").length === 3;
+          const headers = { accept: "application/json" };
+          let url = base;
+          if (jwt) headers.Authorization = "Bearer " + token;
+          else url = base + "&api_key=" + encodeURIComponent(token);
+          const r = await fetch(url, { headers: headers });
+          let d = {};
+          try { d = await r.json(); } catch (e) { d = { error: "bad response" }; }
+          lastStatus = r.status;
+          lastBody = d;
+          if (r.ok) return j(d, 200);
+        }
+        return j(lastBody, lastStatus);
       }
       if (u.pathname === "/yt") {
         const key = (env && env.YT_KEY) || "";
@@ -218,21 +316,25 @@ export default {
       }
       if ((u.pathname === "/search" || u.pathname === "/") && u.searchParams.get("q")) {
         const q = u.searchParams.get("q");
-        const key = env && env.SERPAPI_KEY;
-        if (!key) return j({ results: [], error: "SERPAPI_KEY is not set on the worker" });
         const e = u.searchParams.get("engine");
         const eng = e === "bing" || e === "google" ? e : "duckduckgo";
-        const r = await fetch(
-          "https://serpapi.com/search.json?engine=" + eng + (eng === "duckduckgo" ? "&kp=1" : "") +
-          "&q=" + encodeURIComponent(q) + "&api_key=" + key
-        );
-        const d = await r.json();
-        const results = (d.organic_results || []).map(function (row) {
-          return { title: row.title || row.link, url: row.link };
-        }).filter(function (row) { return row.url; });
-        return j({ results: results, organic_results: d.organic_results || [], error: d.error });
+        const key = env && env.SERPAPI_KEY;
+        if (key) {
+          const r = await fetch(
+            "https://serpapi.com/search.json?engine=" + eng + (eng === "duckduckgo" ? "&kp=1" : "") +
+            "&q=" + encodeURIComponent(q) + "&api_key=" + key
+          );
+          const d = await r.json();
+          const results = (d.organic_results || []).map(function (row) {
+            return { title: row.title || row.link, url: row.link };
+          }).filter(function (row) { return row.url; });
+          if (results.length) return j({ results: results, organic_results: d.organic_results || [], engine: eng, error: d.error });
+        }
+        let results = [];
+        try { results = await searchWeb(q, eng); } catch (err) { results = []; }
+        return j({ results: results, organic_results: results, engine: eng });
       }
-      return j({ ok: true, service: "Drift-OS worker", providers: ["groq", "openrouter", "xkiro"] });
+      return j({ ok: true, service: "Drift-OS worker", providers: ["groq", "openrouter", "xkiro", "poe"] });
     } catch (err) {
       return j({ error: String(err) }, 500);
     }

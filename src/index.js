@@ -114,7 +114,7 @@ function loadAndPatchIndex() {
 		'<script src="/drift-extras.js?v=20261024a" defer></script>' +
 		'<script src="/chromebook-proxy.js?v=20261020f" defer></script>' +
 		'<script src="/wayground-ai.js?v=20261024a" defer></script>' +
-		'<script src="/drift-fixup.js?v=20261025b" defer></script>' +
+		'<script src="/drift-fixup.js?v=20261025d" defer></script>' +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +
@@ -250,7 +250,7 @@ fastify.post("/api/gemini", { bodyLimit: 6 * 1024 * 1024 }, async (req, reply) =
 							method: "POST",
 							headers: { "content-type": "application/json" },
 							body: JSON.stringify(body),
-							signal: AbortSignal.timeout(12000),
+							signal: AbortSignal.timeout(55000),
 						}
 					);
 					status = r.status;
@@ -399,21 +399,43 @@ fastify.get("/api/search", async (req, reply) => {
 
 const TMDB_TOKEN = process.env.TMDB_TOKEN || process.env.TMDB_KEY || "";
 const tmdbCache = new Map();
+function tmdbTokens() {
+	const list = [];
+	for (const v of [process.env.TMDB_KEY, process.env.TMDB_TOKEN, TMDB_TOKEN]) {
+		const t = String(v || "").trim();
+		if (t && !list.includes(t)) list.push(t);
+	}
+	list.sort((a, b) => (a.startsWith("eyJ") ? 1 : 0) - (b.startsWith("eyJ") ? 1 : 0));
+	return list;
+}
+async function tmdbFetch(path) {
+	const base = "https://api.themoviedb.org/3/" + path + (path.includes("?") ? "&" : "?") + "language=es-MX";
+	let last = { ok: false, status: 401, data: { status_message: "Invalid API key" } };
+	for (const token of tmdbTokens()) {
+		const jwt = token.startsWith("eyJ") && token.split(".").length === 3;
+		const url = jwt ? base : base + "&api_key=" + encodeURIComponent(token);
+		const headers = { accept: "application/json" };
+		if (jwt) headers.Authorization = "Bearer " + token;
+		const r = await fetch(url, { headers });
+		const data = await r.json().catch(() => ({ error: "bad response" }));
+		last = { ok: r.ok, status: r.status, data };
+		if (r.ok) return last;
+	}
+	return last;
+}
 fastify.get("/api/tmdb", async (req, reply) => {
 	const path = String((req.query && req.query.path) || "").replace(/^\/+/, "");
 	if (!path || path.includes("..") || !/^[\w./?=&%+\-]+$/.test(path)) return reply.code(400).send({ error: "bad path" });
-	if (!TMDB_TOKEN) return reply.code(503).send({ error: "no-key" });
+	if (!tmdbTokens().length) return reply.code(503).send({ error: "no-key" });
 	const hit = tmdbCache.get(path);
 	if (hit && Date.now() - hit.at < 10 * 60 * 1000) {
 		reply.header("cache-control", "public, max-age=300");
 		return reply.send(hit.data);
 	}
-	const url = "https://api.themoviedb.org/3/" + path + (path.includes("?") ? "&" : "?") + "language=es-MX";
-	const r = await fetch(url, { headers: { Authorization: "Bearer " + TMDB_TOKEN, accept: "application/json" } });
-	const data = await r.json().catch(() => ({ error: "bad response" }));
-	if (r.ok) tmdbCache.set(path, { at: Date.now(), data });
-	reply.header("cache-control", r.ok ? "public, max-age=300" : "no-store");
-	return reply.code(r.ok ? 200 : r.status).send(data);
+	const got = await tmdbFetch(path);
+	if (got.ok) tmdbCache.set(path, { at: Date.now(), data: got.data });
+	reply.header("cache-control", got.ok ? "public, max-age=300" : "no-store");
+	return reply.code(got.ok ? 200 : got.status).send(got.data);
 });
 fastify.get("/api/tmdb-img", async (req, reply) => {
 	const p = String((req.query && req.query.p) || "");
