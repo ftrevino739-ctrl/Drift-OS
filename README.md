@@ -1,4 +1,4 @@
-# Drift-OS / Northwind Atlas
+# Drift-OS
 
 Web Operating system for (school)
 
