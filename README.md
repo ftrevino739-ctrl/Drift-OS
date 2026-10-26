@@ -27,7 +27,7 @@ Open http://localhost:8080 (Railway injects `PORT`).
 - **Thinking** panel for models flagged with think (DeepSeek / Qwen-style)
 - **Caveman** mode: minimal answers
 - **Custom instructions** (saved on device)
-- Say **open Browser** → AI emits `OPEN_APP:browser` and the OS opens it
+- **Total access** to all Drift apps
 - Model list: hover **⋯** for capabilities (code / vision / thinking) — no separate About page
 - Markdown: **bold**, tables (`| col |`), code blocks with copy/download/preview
 
@@ -56,6 +56,7 @@ Open http://localhost:8080 (Railway injects `PORT`).
 - Wayground (Modified)
 - WhatsApp (PENDING FIXES)
 - Calculator (Basic, Scientific and Convert)
+- ESPN
 - Gmail (PENDING FIXES)
 - Working Browser (Bing, DuckDuckGo and Google)
 - AI: 4 Drift AI models,  LLama 3.1 8B, Gemma 2 9B, Mistral Mini, Qwen Flash, Gemma 2 (LOCAL) and Gemini Nano all this with custom instructions, Effort; Medium, High and Low.
