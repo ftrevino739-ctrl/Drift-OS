@@ -114,7 +114,7 @@ function loadAndPatchIndex() {
 		'<script src="/drift-extras.js?v=20261024a" defer></script>' +
 		'<script src="/chromebook-proxy.js?v=20261020f" defer></script>' +
 		'<script src="/wayground-ai.js?v=20261024a" defer></script>' +
-		'<script src="/drift-fixup.js?v=20261025f" defer></script>' +
+		'<script src="/drift-fixup.js?v=20261025g" defer></script>' +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +
@@ -561,8 +561,10 @@ function operaBoot(browser) {
     catch (e) { return false; }
   }
   var armed = false;
+  var hops = 0;
   function hop(u){
     if (navigator.onLine === false) return false;
+    if (hops > 2) return false;
     u = abs(u);
     if (!armed || !/^https?:/i.test(u) || u.indexOf("/api/opera?u=") !== -1) return false;
     var cur = "";
@@ -575,6 +577,7 @@ function operaBoot(browser) {
       if (bits[0] === u && now - Number(bits[1] || 0) < 2500) return false;
       sessionStorage.setItem("drift_hop", u + "|" + now);
     } catch (e) {}
+    hops++;
     location.href = ours("/api/opera?u=" + encodeURIComponent(u) + "&b=" + encodeURIComponent(BROWSER));
     return true;
   }
@@ -656,14 +659,17 @@ function operaBoot(browser) {
           configurable: true,
           get: function(){ return td.get.call(this); },
           set: function(v){
-            if (this === tLoc && document.documentElement && document.documentElement.isConnected) { armed = true; hop(v); return; }
+            if (this === tLoc && document.documentElement && document.documentElement.isConnected) {
+              if (hops > 2) return;
+              armed = true; hop(v); return;
+            }
             td.set.call(this, v);
           }
         });
       }
       try {
-        topWin.location.assign = function(v){ if (document.documentElement && document.documentElement.isConnected) { armed = true; hop(v); return; } };
-        topWin.location.replace = function(v){ if (document.documentElement && document.documentElement.isConnected) { armed = true; hop(v); return; } };
+        topWin.location.assign = function(v){ if (hops > 2) return; if (document.documentElement && document.documentElement.isConnected) { armed = true; hop(v); return; } };
+        topWin.location.replace = function(v){ if (hops > 2) return; if (document.documentElement && document.documentElement.isConnected) { armed = true; hop(v); return; } };
       } catch (e2) {}
     }
   } catch (e) {}

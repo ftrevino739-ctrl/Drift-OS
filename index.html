@@ -681,9 +681,9 @@ function calc(root,w){
   root.innerHTML='<div class="calc"><div class="cm"><button class="mb"></button><div class="mmenu"></div></div><div class="cmain"></div></div>';
   const mb=$('.mb',root),mm=$('.mmenu',root),main=$('.cmain',root);
   let mode='basic',e='',fresh=false,deg=true,hist,out;
-  const NAMES={basic:'Básica',sci:'Científica',conv:'Convertir'};
-  function setMode(m){mode=m;mb.textContent=NAMES[m]+' ▾';mm.classList.remove('show');if(m==='conv')conv();else pad()}
-  mb.onclick=()=>{mm.innerHTML=Object.keys(NAMES).map(k=>`<button data-m="${k}"><span>${mode===k?'✓':''}</span><i>${{basic:'±',sci:'ƒ',conv:'⇄'}[k]}</i>${NAMES[k]}</button>`).join('');mm.classList.toggle('show')};
+  const NAMES={basic:'Básica',sci:'Científica',conv:'Convertir',frac:'Fracciones'};
+  function setMode(m){mode=m;mb.textContent=NAMES[m]+' ▾';mm.classList.remove('show');if(m==='frac')frac();else if(m==='conv')conv();else pad()}
+  mb.onclick=()=>{mm.innerHTML=Object.keys(NAMES).map(k=>`<button data-m="${k}"><span>${mode===k?'✓':''}</span><i>${{basic:'±',sci:'ƒ',conv:'⇄',frac:'½'}[k]}</i>${NAMES[k]}</button>`).join('');mm.classList.toggle('show')};
   mm.onclick=ev=>{const b=ev.target.closest('[data-m]');if(b)setMode(b.dataset.m)};
   function ev(s){
     let x=s.replace(/÷/g,'/').replace(/×/g,'*').replace(/−/g,'-').replace(/π/g,'Math.PI').replace(/\be\b/g,'Math.E').replace(/√\(/g,'Math.sqrt(').replace(/sin\(/g,'SIN(').replace(/cos\(/g,'COS(').replace(/tan\(/g,'TAN(').replace(/log\(/g,'Math.log10(').replace(/ln\(/g,'Math.log(').replace(/(\d+(?:\.\d+)?)!/g,'FACT($1)').replace(/%/g,'/100').replace(/\^/g,'**');
@@ -717,6 +717,10 @@ function calc(root,w){
     ['C','⌫','%','÷','7','8','9','×','4','5','6','−','1','2','3','+','±','0','.','='].forEach(k=>{const b=document.createElement('button');b.textContent=k;if('C⌫%÷×−+'.includes(k))b.className='op';if(k==='=')b.className='eq';b.onclick=()=>press(k);keys.appendChild(b)});
     if(mode==='sci'){const s=$('.sci',main);['Deg','sin(','cos(','tan(','!','π','e','log(','ln(','x²','(',')','√(','^','1/x'].forEach(k=>{const b=document.createElement('button');b.textContent=k==='Deg'?(deg?'Deg':'Rad'):k;b.onclick=()=>{if(k==='Deg'){deg=!deg;b.textContent=deg?'Deg':'Rad'}else press(k)};s.appendChild(b)})}
     out.textContent=e||'0';
+  }
+  function frac(){
+    main.style.flex='1';main.style.minHeight='0';
+    main.innerHTML='<iframe credentialless src="https://www.calculator.net/fraction-calculator.html" title="Fraction calculator" style="width:100%;height:100%;min-height:480px;border:0;background:#fff"></iframe>';
   }
   function conv(){
     main.innerHTML='<div class="cv"><select class="ct" aria-label="Categoría"></select><input class="cin2" type="number" inputmode="decimal" value="1" aria-label="Cantidad"><select class="cf" aria-label="De"></select><div class="sw">⇅</div><select class="cto" aria-label="A"></select><div class="cres">—</div><small class="cn"></small></div>';
@@ -1345,6 +1349,8 @@ function ai(root){
       caveman?'CAVEMAN MODE: answer in the fewest words possible. No filler.':'',
       customInstr?'User custom instructions: '+customInstr:'',
       'If the user asks for code, in any language, put the complete code in one fenced block with the language tag, for example ```luau. The app adds Copy, Download and Preview. Write every line. Do not emit OPEN_APP just because they asked for code.',
+      'A greeting is not a request for code. If they only say hi, hello, hola, or hey, answer in one or two sentences. Do not write code, HTML, or a file.',
+      'If they say edita or edit and a file name, return the full updated file in one fenced block so VS Code can save it.',
       'Only when the user clearly asks to open an app, hide or show the taskbar, or change a setting, put each action on its own line and then the answer. Commands: OPEN_APP:<id>  TASKBAR:hide  TASKBAR:show  SIZE:apps=xl|lg|sm|xs  SIZE:tb=xl|lg|sm|xs  SET:cros=0|1  SET:edu=0|1  SET:glass=0|1  SET:orb=0|1  SET:protector=0|1  SET:nodev=0|1  SET:home=drift|mac|win. ids: browser yt cam mus discord gmail ig tt classroom canva roblox movies code calc ai games chat github whatsapp wayground injector gimkit gem classdojo. Do not emit those lines for code, homework, or ordinary questions.',
       EFI[eff]||''
     ].filter(Boolean).join(' ');
@@ -1369,13 +1375,13 @@ function ai(root){
       if(thm){const inner=thm[1].trim();if(inner)thoughtNote=(thoughtNote?thoughtNote+'\n':'')+inner;txt=txt.replace(thm[0],'').trim();paintThink()}
       const fenceBody=ss=>{const blocks=[...String(ss||'').matchAll(/```[^\n]*\n([\s\S]*?)```/g)].map(m=>m[1]);const open=String(ss||'').match(/```[^\n]*\n([\s\S]+)$/);if(open&&!/```\s*$/.test(ss))blocks.push(open[1]);blocks.sort((a,b)=>b.length-a.length);return blocks[0]||''};
       const fromThought=fenceBody(thoughtNote), fromText=fenceBody(txt);
-      if(fromThought.length>fromText.length+40 && !String(txt).includes(fromThought.slice(0,80))){
+      const looksCode=/\b(c[oó]digo|code|html|css|javascript|python|script|lua|luau|tampermonkey)\b/i.test(q);
+      if(looksCode && fromThought.length>fromText.length+40 && !String(txt).includes(fromThought.slice(0,80))){
         const lang=(String(thoughtNote).match(/```([a-z0-9.+#-]*)/i)||[])[1]||'txt';
         txt=(txt?txt.trim()+'\n\n':'')+'```'+lang+'\n'+fromThought.replace(/\n$/,'')+'\n```';
       }
       if(!txt.trim() && thoughtNote) txt=thoughtNote;
       if(typeof window.driftAct==='function'){const __a=window.driftAct('',txt);if(typeof __a==='string')txt=__a}
-      const looksCode=/\b(c[oó]digo|code|html|css|javascript|script|lua|luau|tampermonkey)\b/i.test(q);
       if(looksCode && !txt.includes('```')){
         const html=txt.match(/<!DOCTYPE[\s\S]+|<\s*html[\s\S]+/i);
         if(html && html[0].length>40) txt='```html\n'+html[0].trim()+'\n```';
@@ -1407,13 +1413,15 @@ function ai(root){
     const msgs=input.map(m=>({role:m.role,content:m.content}));
     if(o.images&&o.images.length){const last=msgs[msgs.length-1];const text=typeof last.content==='string'?last.content:'';last.content=[...await Promise.all(o.images.map(async b=>({type:'image',source:{type:'base64',media_type:b.type||'image/jpeg',data:await b64(b)}}))),{type:'text',text}]}
     if(o.model==='google/gemini-3.8-flash'){
-      const blob=msgs.map(m=>typeof m.content==='string'?m.content:'').join('\n');
-      const wantsCode=/\b(c[oó]digo|code|html|css|javascript|python|script|lua|luau|tampermonkey)\b/i.test(blob);
+      const lastUser=[...msgs].reverse().find(m=>m.role==='user');
+      let asked=lastUser&&typeof lastUser.content==='string'?lastUser.content:'';
+      if(asked.indexOf('You are Drift 2.1')===0){const cut=asked.indexOf('\n\n');if(cut>=0)asked=asked.slice(cut+2)}
+      const wantsCode=/\b(c[oó]digo|code|html|css|javascript|python|script|lua|luau|tampermonkey)\b/i.test(asked);
       const hasFence=t=>/```[\s\S]{30,}```/.test(String(t||''))||/<!DOCTYPE html[\s\S]{40,}<\/html>/i.test(String(t||''))||/<html[\s\S]{40,}<\/html>/i.test(String(t||''));
       if(wantsCode){
         let live=true;
         const quiet={...o,onThink:function(t){if(live&&o.onThink)o.onThink(t)},onText:function(t){if(live&&o.onText)o.onText(t)}};
-        const fast=fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'groq-llama',max_tokens:8192,messages:msgs,system:'You are Drift 2.1. Reply in the user language. Put the COMPLETE file first, inside one fenced block such as ```html. Every line. After the block, one short sentence. Never describe code you did not paste.'}),signal:o.signal}).then(r=>r.json()).then(j=>((j.content||[]).map(x=>x.text||'').join(''))).catch(()=>'');
+        const fast=fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'groq-llama',max_tokens:8192,messages:msgs,system:'You are Drift 2.1. Reply in the user language. Put only the file they asked for inside one fenced block, with the right language tag. Every line. Then one short sentence. If they did not ask for a file, do not write one.',}),signal:o.signal}).then(r=>r.json()).then(j=>((j.content||[]).map(x=>x.text||'').join(''))).catch(()=>'');
         const slow=geminiOfficial(msgs,quiet).then(x=>x&&x.text||'').catch(()=>'');
         const winner=await new Promise(function(resolve){
           let pending=2, best='';
@@ -1493,7 +1501,7 @@ function ai(root){
     return last;
   }
   async function geminiOfficial(list, o){
-    const sys={parts:[{text:'You are Drift 2.1. Never say you are Gemini and never write "Gemini said". If you refer to yourself, say Drift. Reply in the user language with the full answer, not a summary. When they ask for code or a file, put the COMPLETE file in the answer inside one fenced block. Never leave the code only in thinking. Do not stop halfway and do not say you will send the file without pasting it. Do not tell them to open an app instead of writing the code.'}]};
+    const sys={parts:[{text:'You are Drift 2.1. Never say you are Gemini and never write "Gemini said". If you refer to yourself, say Drift. Reply in the user language with the full answer, not a summary. A greeting such as hi or hola is not a request for code: answer in one or two sentences and do not write a file. When they ask for code or a file, put the COMPLETE file in the answer inside one fenced block. If they say edita and a file name, return that file in one fenced block. Never leave the code only in thinking. Do not stop halfway and do not say you will send the file without pasting it. Do not tell them to open an app instead of writing the code.'}]};
     const codeAsk=/\b(c[oó]digo|code|html|css|javascript|script|lua|luau|python|tampermonkey|archivo completo)\b/i.test(geminiPlain(list));
     const gen={maxOutputTokens:codeAsk?8192:4096,temperature:0.4,thinkingConfig:{thinkingBudget:0}};
     const body={systemInstruction:sys,contents:geminiContents(list),generationConfig:gen};
@@ -2225,6 +2233,16 @@ function vscode(root){
   }
   window.DriftVS={
     addFile:function(name,text){if(!editor){pending.push([name,text]);return name}return addFile(name,text)},
+    writeFile:function(name,text){
+      name=String(name||'').replace(/[\\/]/g,'').trim();
+      if(!name)return '';
+      const i=files.findIndex(f=>f&&String(f.name).toLowerCase()===name.toLowerCase());
+      if(i<0)return addFile(name,text==null?'':String(text));
+      files[i].text=text==null?'':String(text);
+      saveFiles();
+      if(editor)show(i);else{active=i;paint()}
+      return files[i].name;
+    },
     getFiles:function(){saveFiles();return files.map(f=>({name:f.name,text:f.text}))}
   };
   function create(){
@@ -2918,19 +2936,22 @@ function sjInit(){
       const swr=await fetch('/sw.js',{method:'HEAD'});
       if(swr.ok){
         await navigator.serviceWorker.register('/sw.js');
-        await Promise.race([navigator.serviceWorker.ready, new Promise(function(res){setTimeout(res,1200)})]);
+        await Promise.race([navigator.serviceWorker.ready, new Promise(function(res){setTimeout(res,400)})]);
       }
     }catch(e){console.warn('SW skip',e)}
     if(typeof BareMux==='undefined')throw new Error('BareMux no cargó');
     const c=new BareMux.BareMuxConnection('/baremux/worker.js');
     const wisp=(location.protocol==='https:'?'wss':'ws')+'://'+location.host+'/wisp/';
-    if((await c.getTransport())!=='/libcurl/index.mjs')await c.setTransport('/libcurl/index.mjs',[{websocket:wisp}]);
+    await Promise.race([
+      (async()=>{if((await c.getTransport())!=='/libcurl/index.mjs')await c.setTransport('/libcurl/index.mjs',[{websocket:wisp}])})(),
+      new Promise(function(res){setTimeout(res,1500)})
+    ]);
     return SJC;
   })();
   SJP.catch(()=>{SJP=null});
   return SJP;
 }
-setTimeout(function(){try{sjInit()}catch(e){}},400);
+setTimeout(function(){try{sjInit()}catch(e){}},0);
 
 const sjStyle='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';
 async function sjLoad(box,url){

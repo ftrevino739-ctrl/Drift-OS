@@ -100,7 +100,6 @@
     IC.aleks = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="48" rx="11" fill="#fff"/><path d="M24 7a17 17 0 0 1 17 17H24z" fill="#1d4ed8"/><path d="M41 24a17 17 0 0 1-17 17V24z" fill="#16a34a"/><path d="M24 41A17 17 0 0 1 7 24h17z" fill="#f59e0b"/><path d="M7 24A17 17 0 0 1 24 7v17z" fill="#7c3aed"/><circle cx="24" cy="24" r="6.2" fill="#fff"/></svg>';
     IC.gbuild = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="48" rx="12" fill="#0f172a"/><path d="M13 21l11-6 11 6-11 6z" fill="#5eead4"/><path d="M13 21v8l11 6v-8z" fill="#14b8a6"/><path d="M35 21v8l-11 6v-8z" fill="#99f6e4"/><circle cx="35.5" cy="34.5" r="6" fill="#f472b6"/><path d="M35.5 31.6v5.8M32.6 34.5h5.8" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/></svg>';
     IC.winemu = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="48" rx="11" fill="#0078D4"/><g fill="#fff"><rect x="11" y="11" width="11.5" height="11.5" rx="1.4"/><rect x="25.5" y="11" width="11.5" height="11.5" rx="1.4"/><rect x="11" y="25.5" width="11.5" height="11.5" rx="1.4"/><rect x="25.5" y="25.5" width="11.5" height="11.5" rx="1.4"/></g></svg>';
-    IC.peak = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="48" rx="12" fill="#111113"/><path d="M14 32V16l10 8 10-8v16" fill="none" stroke="#fff" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"/></svg>';
   }
 
   function styleSettingsBtn() {
@@ -257,6 +256,7 @@
       fr.src = url;
       fr.setAttribute('allow', 'fullscreen; autoplay; encrypted-media; picture-in-picture; clipboard-read; clipboard-write');
       fr.setAttribute('allowfullscreen', '');
+      fr.setAttribute('credentialless', '');
       fr.referrerPolicy = 'no-referrer';
       fr.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#000';
       root.appendChild(fr);
@@ -451,21 +451,19 @@
     loadList();
   }
   function moviesApp(root) {
-    var src = 'noah';
-    try { src = localStorage.getItem('wos:movies') || 'tmdb'; } catch (e) {}
-    if (src === 'serum') src = 'noah';
-    if (src === 'tmdb') return tmdbMovies(root);
-    if (src === 'racial') return driftSite('https://racialequityleadership.com/movies.html')(root);
-    if (typeof movies === 'function') return movies(root);
-    root.textContent = 'Movies is not ready.';
+    return directSite('https://racialequityleadership.com/index.html')(root);
   }
   function windowsEmulator(root) {
     root.innerHTML = '';
     root.style.cssText = 'height:100%;min-height:0;position:relative;background:#000';
+    if (typeof window.openProxied === 'function') {
+      window.openProxied('https://win11.blueedge.me/', root);
+      return;
+    }
     var fr = document.createElement('iframe');
+    fr.setAttribute('credentialless', '');
     fr.src = 'https://win11.blueedge.me/';
     fr.setAttribute('allow', 'fullscreen; clipboard-read; clipboard-write');
-    fr.setAttribute('allowfullscreen', '');
     fr.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#000';
     root.appendChild(fr);
   }
@@ -476,12 +474,10 @@
     window.APPS.espn = 'ESPN';
     window.APPS.winemu = 'Windows emulator';
     window.APPS.gbuild = 'Game Builder';
-    window.APPS.peak = 'Peak';
     window.XAPPS.aleks = { n: 'ALEKS', f: driftSite('https://www.aleks.com/') };
     window.XAPPS.winemu = { n: 'Windows emulator', f: windowsEmulator };
     window.XAPPS.gbuild = { n: 'Game Builder', f: driftSite('https://tesana.com/create') };
     window.XAPPS.espn = { n: 'ESPN', f: driftSite('https://www.espn.com/') };
-    window.XAPPS.peak = { n: 'Peak', f: directSite('https://racialequityleadership.com/index.html') };
     window.XAPPS.yt = { n: 'YouTube', f: driftSite('https://www.youtube.com/') };
     window.XAPPS.tt = { n: 'TikTok', f: driftSite('https://www.tiktok.com/') };
     window.XAPPS.gem = { n: 'Gemini', f: driftSite('https://gemini.google.com/app') };
@@ -506,10 +502,12 @@
         changed = true;
         if (window.S.d.desk.indexOf('gbuild') < 0) window.S.d.desk.push('gbuild');
       }
-      if (window.S && window.S.d && !window.S.d.v17) {
-        window.S.d.v17 = 1;
+      if (window.S && window.S.d && !window.S.d.v18) {
+        window.S.d.v18 = 1;
         changed = true;
-        if (window.S.d.desk.indexOf('peak') < 0) window.S.d.desk.push('peak');
+        window.S.d.desk = (window.S.d.desk || []).filter(function (id) { return id !== 'peak'; });
+        if (window.S.d.pins) window.S.d.pins = window.S.d.pins.filter(function (id) { return id !== 'peak'; });
+        try { localStorage.setItem('wos:games-lib', 'noah'); } catch (e) {}
       }
       if (changed) {
         if (typeof save === 'function') save();
@@ -1154,11 +1152,11 @@
   function wireLoginApps() {
     try {
       if (!window.XAPPS) return;
-      window.XAPPS.gmail = { n: 'Gmail', f: operaPage('https://mail.google.com/mail/u/0/#inbox', 'firefox') };
+      window.XAPPS.gmail = { n: 'Gmail', f: operaPage('https://accounts.google.com/ServiceLogin?service=mail&continue=https%3A%2F%2Fmail.google.com%2Fmail%2F&flowName=GlifWebSignIn&flowEntry=ServiceLogin', 'firefox') };
       window.XAPPS.classroom = { n: 'Classroom', f: sessionInside('https://classroom.google.com/', 'https://accounts.google.com/ServiceLogin?service=classroom&continue=' + encodeURIComponent('https://classroom.google.com/'), 'Classroom') };
       window.XAPPS.canva = { n: 'Canva', f: sessionInside('https://www.canva.com/', 'https://www.canva.com/login', 'Canva') };
       window.__driftRoblox = robloxShell;
-      window.__driftGmail = operaPage('https://mail.google.com/mail/u/0/#inbox', 'firefox');
+      window.__driftGmail = operaPage('https://accounts.google.com/ServiceLogin?service=mail&continue=https%3A%2F%2Fmail.google.com%2Fmail%2F&flowName=GlifWebSignIn&flowEntry=ServiceLogin', 'firefox');
       window.XAPPS.roblox = { n: 'Roblox', f: robloxShell };
     } catch (e) {}
   }
@@ -1909,8 +1907,40 @@
       try { applyHomeLogo(String(on)); } catch (e2) {}
     }
   }
+  var lastAsk = '';
+  function fileFromAnswer(text) {
+    var blocks = [];
+    var re = /```[^\n]*\n([\s\S]*?)```/g, m;
+    var src = String(text || '');
+    while ((m = re.exec(src))) blocks.push(m[1].replace(/\n$/, ''));
+    blocks.sort(function (a, b) { return b.length - a.length; });
+    return blocks[0] || '';
+  }
+  function driftEditFile(name, text) {
+    name = String(name || '').replace(/[\\/]/g, '').trim();
+    if (!name || text == null) return;
+    var files = [];
+    try { files = JSON.parse(localStorage.getItem('wos:vscode-files') || '[]'); } catch (e) { files = []; }
+    if (!Array.isArray(files)) files = [];
+    var i = -1;
+    for (var k = 0; k < files.length; k++) {
+      if (files[k] && String(files[k].name).toLowerCase() === name.toLowerCase()) i = k;
+    }
+    if (i < 0) files.push({ name: name, text: String(text) });
+    else files[i].text = String(text);
+    try { localStorage.setItem('wos:vscode-files', JSON.stringify(files)); } catch (e2) {}
+    driftOpen('code');
+    var n = 0;
+    var timer = setInterval(function () {
+      n++;
+      if (window.DriftVS && typeof window.DriftVS.writeFile === 'function') {
+        clearInterval(timer);
+        try { window.DriftVS.writeFile(name, text); } catch (e3) {}
+      } else if (n > 40) clearInterval(timer);
+    }, 250);
+  }
   window.driftAct = function (userText, answerText) {
-    if (userText) driftOpened = {};
+    if (userText) { driftOpened = {}; lastAsk = String(userText); }
     var answer = String(answerText || '');
     var did = false;
     answer.replace(/OPEN_APP:\s*([a-z0-9_]+)/gi, function (_, id) {
@@ -1978,6 +2008,14 @@
           driftOpen(h[1]);
           did = true;
         });
+      }
+    }
+    if (answerText) {
+      var editQ = String(userText || lastAsk || '');
+      var em = editQ.match(/\b(?:edita|edit|modifica)\s+(?:el\s+(?:archivo|file)\s+|archivo\s+|file\s+)?["'“”]?([A-Za-z0-9_.-]{1,64})["'“”]?/i);
+      if (em) {
+        var next = fileFromAnswer(answerText);
+        if (next) { driftEditFile(em[1], next); did = true; }
       }
     }
     if (!answer && did) return 'Done.';
