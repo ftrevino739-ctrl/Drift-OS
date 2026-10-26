@@ -1,9 +1,10 @@
-// Worker Drift-OS — paste in Cloudflare only. Do not commit this file.
-// Settings → Variables and secrets:
-//   TMDB_TOKEN or TMDB_KEY = the short "Llave API" (32 characters) OR the long token that starts with eyJ.
+// Drift-OS worker. Paste this whole file into Cloudflare, then Deploy.
+// Settings, Variables and secrets:
+//   TMDB_KEY = the short API key (32 characters). This is the one to use.
+//   TMDB_TOKEN = optional. The long token that starts with eyJ.
 //   The short key is sent as api_key. The long token is sent as Bearer. Either one is enough.
-//   POE_KEY     = optional. Leave empty. Poe's free account cannot call models (they all ask for a subscription).
-//   GROQ_KEY, OPENROUTER_KEY, XKIRO_KEY, SERPAPI_KEY, YT_KEY = optional, same as before.
+//   POE_KEY = optional. Leave it empty.
+//   GROQ_KEY, OPENROUTER_KEY, XKIRO_KEY, SERPAPI_KEY, YT_KEY = optional.
 // Search (DuckDuckGo, Bing, Google), /ai and /tmdb work without Poe.
 const ALLOW = "*";
 
