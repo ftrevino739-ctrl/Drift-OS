@@ -1495,8 +1495,7 @@ function ai(root){
   async function geminiOfficial(list, o){
     const sys={parts:[{text:'You are Drift 2.1. Never say you are Gemini and never write "Gemini said". If you refer to yourself, say Drift. Reply in the user language with the full answer, not a summary. When they ask for code or a file, put the COMPLETE file in the answer inside one fenced block. Never leave the code only in thinking. Do not stop halfway and do not say you will send the file without pasting it. Do not tell them to open an app instead of writing the code.'}]};
     const codeAsk=/\b(c[oó]digo|code|html|css|javascript|script|lua|luau|python|tampermonkey|archivo completo)\b/i.test(geminiPlain(list));
-    const gen={maxOutputTokens:65536,temperature:0.4};
-    if(!codeAsk && !window.__driftNoThink) gen.thinkingConfig={thinkingBudget:512,includeThoughts:true};
+    const gen={maxOutputTokens:codeAsk?8192:4096,temperature:0.4,thinkingConfig:{thinkingBudget:0}};
     const body={systemInstruction:sys,contents:geminiContents(list),generationConfig:gen};
     let res=await geminiCall(body, o.signal);
     if(!res.ok && /thinkingConfig|Unknown name|invalid|includeThoughts/i.test(JSON.stringify(res.j&&res.j.error||''))){
