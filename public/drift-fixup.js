@@ -451,7 +451,254 @@
     loadList();
   }
   function moviesApp(root) {
-    return directSite('https://racialequityleadership.com/index.html')(root);
+    if (!document.getElementById('drift-mv-css')) {
+      var st = document.createElement('style');
+      st.id = 'drift-mv-css';
+      st.textContent = '#drift-mv{height:100%;overflow:auto;background:#0d0d0e;color:#f2f2f2;font-family:Inter,system-ui,sans-serif}'
+        + '#drift-mv *{box-sizing:border-box}'
+        + '#drift-mv .page-head{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 22px;background:rgba(13,13,14,.9);backdrop-filter:blur(14px)}'
+        + '#drift-mv .page-title{font-size:17px;font-weight:650}'
+        + '#drift-mv .search-btn{display:flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:999px;border:1px solid rgba(255,255,255,.08);background:#171718;color:rgba(242,242,242,.55);cursor:pointer}'
+        + '#drift-mv .hero{position:relative;margin:0 22px;height:min(420px,52vh);min-height:240px;border-radius:26px;overflow:hidden;border:1px solid rgba(255,255,255,.08);background:#111}'
+        + '#drift-mv .hero-bg{position:absolute;inset:0;background-size:cover;background-position:center 22%}'
+        + '#drift-mv .hero-shade{position:absolute;inset:0;background:linear-gradient(to right,rgba(8,8,8,.9),transparent 70%),linear-gradient(to top,rgba(8,8,8,.88),transparent 50%)}'
+        + '#drift-mv .hero-copy{position:absolute;left:0;bottom:0;z-index:2;padding:0 36px 32px;max-width:620px}'
+        + '#drift-mv .hero-copy h2{margin:0 0 8px;font-size:clamp(26px,4vw,44px);letter-spacing:-.03em}'
+        + '#drift-mv .hero-copy p{margin:0 0 16px;color:rgba(255,255,255,.78);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}'
+        + '#drift-mv .play{height:44px;padding:0 22px;border:0;border-radius:999px;background:#fff;color:#111;font-weight:700;cursor:pointer}'
+        + '#drift-mv .dots{position:absolute;right:18px;bottom:18px;z-index:3;display:flex;gap:6px}'
+        + '#drift-mv .dots button{width:8px;height:4px;border:0;border-radius:99px;background:rgba(255,255,255,.35);cursor:pointer}'
+        + '#drift-mv .dots button.on{width:26px;background:#fff}'
+        + '#drift-mv .sec{padding:26px 0 4px}'
+        + '#drift-mv .sec h3{margin:0 22px 12px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:rgba(242,242,242,.5);display:flex;justify-content:space-between;align-items:center;gap:10px}'
+        + '#drift-mv .row{display:flex;gap:14px;overflow-x:auto;padding:6px 22px 14px;scrollbar-width:none}'
+        + '#drift-mv .card{flex:none;width:250px;cursor:pointer;color:inherit}'
+        + '#drift-mv .thumb{position:relative;aspect-ratio:16/9;border-radius:18px;overflow:hidden;background:#171718;border:1px solid rgba(255,255,255,.08)}'
+        + '#drift-mv .thumb img{width:100%;height:100%;object-fit:cover;display:block}'
+        + '#drift-mv .rank{position:absolute;left:8px;bottom:-6px;font-size:54px;font-weight:800;color:transparent;-webkit-text-stroke:1.5px rgba(255,255,255,.35)}'
+        + '#drift-mv .meta{display:flex;gap:8px;align-items:center;font-size:12px;color:rgba(242,242,242,.55);margin-top:4px}'
+        + '#drift-mv .badge{font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:99px;background:rgba(255,255,255,.1)}'
+        + '#drift-mv .tog{display:flex;padding:3px;border-radius:99px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.08)}'
+        + '#drift-mv .tog button{border:0;background:transparent;color:rgba(242,242,242,.55);border-radius:99px;padding:5px 12px;cursor:pointer}'
+        + '#drift-mv .tog button.on{background:#fff;color:#111;font-weight:700}'
+        + '#drift-mv .chips,#drift-mv .pills{display:flex;gap:8px;overflow-x:auto;padding:0 22px 10px}'
+        + '#drift-mv .chip,#drift-mv .pill{flex:none;border-radius:16px;border:1px solid rgba(255,255,255,.08);background:#171718;color:rgba(242,242,242,.7);cursor:pointer}'
+        + '#drift-mv .chip{padding:12px 16px}'
+        + '#drift-mv .chip.on,#drift-mv .pill.on{border-color:rgba(255,255,255,.7);color:#fff}'
+        + '#drift-mv .pill{height:34px;padding:0 14px;border-radius:99px}'
+        + '#drift-mv .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;padding:0 22px 24px}'
+        + '#drift-mv .grid .card{width:auto}'
+        + '#drift-mv .ov{position:absolute;inset:0;z-index:20;background:rgba(5,5,5,.82);display:flex;align-items:flex-start;justify-content:center;padding:24px 12px;overflow:auto}'
+        + '#drift-mv .box{width:min(860px,100%);background:#111113;border:1px solid rgba(255,255,255,.16);border-radius:24px;overflow:hidden}'
+        + '#drift-mv .ep{display:flex;gap:12px;padding:10px;border-radius:14px;cursor:pointer}'
+        + '#drift-mv .ep:hover{background:rgba(255,255,255,.05)}'
+        + '#drift-mv .ep img{width:140px;height:78px;object-fit:cover;border-radius:10px;background:#222}'
+        + '#drift-mv .player{position:absolute;inset:0;z-index:30;background:#000;display:flex;flex-direction:column}'
+        + '#drift-mv .player iframe{flex:1;border:0;width:100%;background:#000}';
+      document.head.appendChild(st);
+    }
+    root.innerHTML = '';
+    root.style.cssText = 'height:100%;min-height:0;position:relative;overflow:hidden;background:#0d0d0e';
+    var host = document.createElement('div');
+    host.id = 'drift-mv';
+    root.appendChild(host);
+    var PROVIDERS = [
+      { id: 8, name: 'Netflix' }, { id: 9, name: 'Apple TV+' }, { id: 119, name: 'Prime' },
+      { id: 15, name: 'Hulu' }, { id: 1899, name: 'Max' }, { id: 531, name: 'Paramount+' }, { id: 337, name: 'Disney+' }
+    ];
+    var heroItems = [], heroIdx = 0, heroTimer = null, prov = PROVIDERS[0], provType = 'movie', ratedType = 'movie', genreType = 'movie', genreId = null;
+    function esc(s) { return String(s || '').replace(/[&<>"]/g, function (c) { return { '&': '&', '<': '<', '>': '>', '"': '"' }[c]; }); }
+    function pic(path, size) { return path ? 'https://image.tmdb.org/t/p/' + size + path : ''; }
+    function recent() { try { return JSON.parse(localStorage.getItem('wos:mv-recent') || '[]'); } catch (e) { return []; } }
+    function remember(item, type) {
+      var list = recent().filter(function (x) { return !(x.id === item.id && x.type === type); });
+      list.unshift({ id: item.id, type: type, title: item.title || item.name, backdrop_path: item.backdrop_path, poster_path: item.poster_path });
+      try { localStorage.setItem('wos:mv-recent', JSON.stringify(list.slice(0, 12))); } catch (e) {}
+    }
+    function card(item, type, rank) {
+      var title = item.title || item.name || '';
+      var year = (item.release_date || item.first_air_date || '').slice(0, 4);
+      var vote = item.vote_average ? Number(item.vote_average).toFixed(1) : '';
+      var el = document.createElement('div');
+      el.className = 'card';
+      el.innerHTML = '<div class="thumb">' + (pic(item.backdrop_path || item.poster_path, 'w780') ? '<img alt="" src="' + pic(item.backdrop_path || item.poster_path, 'w780') + '">' : '') + (rank ? '<div class="rank">' + rank + '</div>' : '') + '</div><b>' + esc(title) + '</b><div class="meta"><span class="badge">' + (type === 'tv' ? 'Series' : 'Movie') + '</span>' + (year ? '<span>' + year + '</span>' : '') + (vote ? '<span>★ ' + vote + '</span>' : '') + '</div>';
+      el.onclick = function () { if (type === 'tv') openSeasons(item); else play(item, 'movie'); };
+      return el;
+    }
+    function fill(sel, items, type, ranked) {
+      var el = host.querySelector(sel);
+      el.innerHTML = '';
+      (items || []).slice(0, ranked ? 10 : 14).forEach(function (item, i) { el.appendChild(card(item, type, ranked ? i + 1 : 0)); });
+      if (!el.childNodes.length) el.textContent = 'No results';
+    }
+    function hero() {
+      var item = heroItems[heroIdx];
+      if (!item) return;
+      var bg = host.querySelector('.hero-bg');
+      bg.style.backgroundImage = item.backdrop_path ? 'url("' + pic(item.backdrop_path, 'w1280') + '")' : '';
+      host.querySelector('.hero-copy h2').textContent = item.title || item.name || '';
+      host.querySelector('.hero-copy p').textContent = item.overview || '';
+      host.querySelector('.hero-copy .score').textContent = item.vote_average ? Math.round(item.vote_average * 10) + '%' : '';
+      host.querySelector('.play').onclick = function () { play(item, 'movie'); };
+      host.querySelectorAll('.dots button').forEach(function (b, i) { b.classList.toggle('on', i === heroIdx); });
+    }
+    function play(item, type, season, episode) {
+      remember(item, type);
+      var view = document.createElement('div');
+      view.className = 'player';
+      view.innerHTML = '<div style="display:flex;gap:10px;align-items:center;padding:10px 12px;background:#111"><button type="button" data-back style="border:0;border-radius:8px;padding:8px 12px;background:#222;color:#fff;cursor:pointer">Back</button><b></b></div><div data-slot style="flex:1;display:grid;place-items:center;color:#aaa">Loading…</div>';
+      view.querySelector('b').textContent = (item.title || item.name || '') + (episode ? ' · S' + season + 'E' + episode : '');
+      view.querySelector('[data-back]').onclick = function () { view.remove(); paintRecent(); };
+      host.appendChild(view);
+      var path = type === 'tv' ? '/tv/' + item.id + (episode ? '/season/' + season + '/episode/' + episode : '') + '/videos' : '/movie/' + item.id + '/videos';
+      tmdbGet(path).then(function (j) {
+        var vids = (j && j.results) || [];
+        var yt = vids.filter(function (v) { return v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser' || v.type === 'Clip'); })[0] || vids.filter(function (v) { return v.site === 'YouTube'; })[0];
+        var slot = view.querySelector('[data-slot]');
+        if (!yt) { slot.textContent = 'TMDB no tiene un video para este título.'; return; }
+        slot.outerHTML = '<iframe credentialless allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen src="https://www.youtube-nocookie.com/embed/' + encodeURIComponent(yt.key) + '?autoplay=1&rel=0"></iframe>';
+      }).catch(function () { var slot = view.querySelector('[data-slot]'); if (slot) slot.textContent = 'No se pudo abrir el video.'; });
+    }
+    function openSeasons(item) {
+      var ov = document.createElement('div');
+      ov.className = 'ov';
+      ov.innerHTML = '<div class="box"><div style="height:140px;background:#171718 center/cover"></div><div style="padding:14px 16px;display:flex;justify-content:space-between;gap:10px;align-items:center"><b></b><select data-s style="height:36px;border-radius:99px;background:#111;color:#fff;border:1px solid #333;padding:0 10px"></select></div><div data-eps style="padding:0 8px 12px;max-height:46vh;overflow:auto"></div></div>';
+      ov.querySelector('b').textContent = item.name || item.title || '';
+      if (item.backdrop_path) ov.querySelector('.box > div').style.backgroundImage = 'url("' + pic(item.backdrop_path, 'w780') + '")';
+      ov.addEventListener('click', function (e) { if (e.target === ov) ov.remove(); });
+      host.appendChild(ov);
+      var sel = ov.querySelector('[data-s]'), eps = ov.querySelector('[data-eps]');
+      function loadEps(n) {
+        eps.textContent = 'Loading episodes…';
+        tmdbGet('/tv/' + item.id + '/season/' + n).then(function (s) {
+          eps.innerHTML = '';
+          (s.episodes || []).forEach(function (ep) {
+            var row = document.createElement('div');
+            row.className = 'ep';
+            row.innerHTML = (ep.still_path ? '<img alt="" src="' + pic(ep.still_path, 'w300') + '">' : '<img alt="">') + '<div><b>E' + ep.episode_number + ' ' + esc(ep.name || '') + '</b><div style="opacity:.7;font-size:13px;margin-top:4px">' + esc(ep.overview || '') + '</div></div>';
+            row.onclick = function () { ov.remove(); play(item, 'tv', n, ep.episode_number); };
+            eps.appendChild(row);
+          });
+          if (!eps.childNodes.length) eps.textContent = 'No episodes.';
+        }).catch(function () { eps.textContent = 'Failed to load.'; });
+      }
+      tmdbGet('/tv/' + item.id).then(function (d) {
+        var seasons = (d.seasons || []).filter(function (s) { return s.season_number > 0; });
+        sel.innerHTML = seasons.map(function (s) { return '<option value="' + s.season_number + '">Season ' + s.season_number + '</option>'; }).join('');
+        sel.onchange = function () { loadEps(sel.value); };
+        if (seasons.length) loadEps(seasons[0].season_number);
+      }).catch(function () { eps.textContent = 'Failed to load.'; });
+    }
+    function paintRecent() {
+      var row = host.querySelector('[data-recent]');
+      var sec = host.querySelector('[data-recent-sec]');
+      var list = recent();
+      sec.style.display = list.length ? '' : 'none';
+      row.innerHTML = '';
+      list.forEach(function (item) { row.appendChild(card(item, item.type || 'movie', 0)); });
+    }
+    function shell() {
+      host.innerHTML = '<div class="page-head"><div class="page-title">Movies & Shows</div><button type="button" class="search-btn">Search movies & shows</button></div>'
+        + '<div class="hero"><div class="hero-bg"></div><div class="hero-shade"></div><div class="hero-copy"><h2></h2><div class="score" style="margin-bottom:8px;font-size:13px"></div><p></p><button type="button" class="play">Play</button></div><div class="dots"></div></div>'
+        + '<div class="sec" data-recent-sec style="display:none"><h3>Continue Watching</h3><div class="row" data-recent></div></div>'
+        + '<div class="sec"><h3>Top 10 Movies</h3><div class="row" data-movies></div></div>'
+        + '<div class="sec"><h3>Top 10 Shows</h3><div class="row" data-shows></div></div>'
+        + '<div class="sec"><h3>Streaming Providers <span class="tog" data-prov-tog><button type="button" class="on" data-t="movie">Movies</button><button type="button" data-t="tv">TV Shows</button></span></h3><div class="chips" data-chips></div><div class="row" data-prov></div></div>'
+        + '<div class="sec"><h3>Top Rated <span class="tog" data-rated-tog><button type="button" class="on" data-t="movie">Movies</button><button type="button" data-t="tv">TV Shows</button></span></h3><div class="row" data-rated></div></div>'
+        + '<div class="sec"><h3>Browse by Genre <span class="tog" data-genre-tog><button type="button" class="on" data-t="movie">Movies</button><button type="button" data-t="tv">TV Shows</button></span></h3><div class="pills" data-pills></div><div class="grid" data-genre></div></div>';
+      host.querySelector('.search-btn').onclick = openSearch;
+      host.querySelector('[data-prov-tog]').onclick = function (e) { var b = e.target.closest('button'); if (!b) return; provType = b.dataset.t; mark(host.querySelector('[data-prov-tog]'), b); loadProv(); };
+      host.querySelector('[data-rated-tog]').onclick = function (e) { var b = e.target.closest('button'); if (!b) return; ratedType = b.dataset.t; mark(host.querySelector('[data-rated-tog]'), b); loadRated(); };
+      host.querySelector('[data-genre-tog]').onclick = function (e) { var b = e.target.closest('button'); if (!b) return; genreType = b.dataset.t; genreId = null; mark(host.querySelector('[data-genre-tog]'), b); loadGenres(); };
+    }
+    function mark(wrap, btn) { wrap.querySelectorAll('button').forEach(function (x) { x.classList.toggle('on', x === btn); }); }
+    function chips() {
+      var el = host.querySelector('[data-chips]');
+      el.innerHTML = '';
+      PROVIDERS.forEach(function (p) {
+        var b = document.createElement('button');
+        b.type = 'button'; b.className = 'chip' + (p.id === prov.id ? ' on' : ''); b.textContent = p.name;
+        b.onclick = function () { prov = p; chips(); loadProv(); };
+        el.appendChild(b);
+      });
+    }
+    function loadProv() {
+      host.querySelector('[data-prov]').textContent = 'Loading…';
+      tmdbGet('/discover/' + provType + '?with_watch_providers=' + prov.id + '&watch_region=US&sort_by=popularity.desc').then(function (j) {
+        fill('[data-prov]', j.results || [], provType, false);
+      }).catch(function () { host.querySelector('[data-prov]').textContent = 'Failed to load'; });
+    }
+    function loadRated() {
+      tmdbGet('/' + ratedType + '/top_rated').then(function (j) { fill('[data-rated]', j.results || [], ratedType, false); }).catch(function () {});
+    }
+    function loadGenres() {
+      tmdbGet('/genre/' + genreType + '/list').then(function (j) {
+        var pills = host.querySelector('[data-pills]');
+        pills.innerHTML = '';
+        (j.genres || []).forEach(function (g, i) {
+          var b = document.createElement('button');
+          b.type = 'button'; b.className = 'pill' + ((!genreId && i === 0) || genreId === g.id ? ' on' : ''); b.textContent = g.name;
+          b.onclick = function () { genreId = g.id; pills.querySelectorAll('button').forEach(function (x) { x.classList.remove('on'); }); b.classList.add('on'); loadGenreGrid(); };
+          pills.appendChild(b);
+          if (!genreId && i === 0) genreId = g.id;
+        });
+        loadGenreGrid();
+      }).catch(function () {});
+    }
+    function loadGenreGrid() {
+      if (!genreId) return;
+      var grid = host.querySelector('[data-genre]');
+      grid.textContent = 'Loading…';
+      tmdbGet('/discover/' + genreType + '?with_genres=' + genreId + '&sort_by=popularity.desc').then(function (j) {
+        grid.innerHTML = '';
+        (j.results || []).slice(0, 12).forEach(function (item) { grid.appendChild(card(item, genreType, 0)); });
+      }).catch(function () { grid.textContent = 'Failed to load'; });
+    }
+    function openSearch() {
+      var ov = document.createElement('div');
+      ov.className = 'ov';
+      ov.innerHTML = '<div style="width:min(720px,100%)"><input data-q placeholder="Search movies & shows" style="width:100%;height:52px;border-radius:999px;border:1px solid rgba(255,255,255,.2);background:#171718;color:#fff;padding:0 18px;font-size:16px"><div class="grid" data-res style="padding-top:16px"></div></div>';
+      ov.addEventListener('click', function (e) { if (e.target === ov) ov.remove(); });
+      var t;
+      ov.querySelector('[data-q]').oninput = function (e) {
+        clearTimeout(t);
+        var q = e.target.value.trim();
+        var res = ov.querySelector('[data-res]');
+        if (!q) { res.innerHTML = ''; return; }
+        t = setTimeout(function () {
+          Promise.all([tmdbGet('/search/movie?query=' + encodeURIComponent(q)), tmdbGet('/search/tv?query=' + encodeURIComponent(q))]).then(function (both) {
+            res.innerHTML = '';
+            var items = (both[0].results || []).map(function (x) { x._t = 'movie'; return x; }).concat((both[1].results || []).map(function (x) { x._t = 'tv'; return x; }));
+            items.sort(function (a, b) { return (b.popularity || 0) - (a.popularity || 0); });
+            items.slice(0, 12).forEach(function (item) {
+              var c = card(item, item._t, 0);
+              var old = c.onclick;
+              c.onclick = function () { ov.remove(); old(); };
+              res.appendChild(c);
+            });
+          }).catch(function () { res.textContent = 'Search failed'; });
+        }, 280);
+      };
+      host.appendChild(ov);
+      ov.querySelector('[data-q]').focus();
+    }
+    shell();
+    paintRecent();
+    chips();
+    Promise.all([tmdbGet('/trending/movie/week'), tmdbGet('/trending/tv/week')]).then(function (both) {
+      var movies = (both[0] && both[0].results) || [];
+      var shows = (both[1] && both[1].results) || [];
+      heroItems = movies.filter(function (m) { return m.backdrop_path; }).slice(0, 5);
+      var dots = host.querySelector('.dots');
+      dots.innerHTML = heroItems.map(function (_, i) { return '<button type="button"' + (i === 0 ? ' class="on"' : '') + '></button>'; }).join('');
+      dots.querySelectorAll('button').forEach(function (b, i) { b.onclick = function () { heroIdx = i; hero(); clearInterval(heroTimer); heroTimer = setInterval(function () { heroIdx = (heroIdx + 1) % heroItems.length; hero(); }, 8000); }; });
+      if (heroItems.length) { hero(); heroTimer = setInterval(function () { heroIdx = (heroIdx + 1) % heroItems.length; hero(); }, 8000); }
+      fill('[data-movies]', movies, 'movie', true);
+      fill('[data-shows]', shows, 'tv', true);
+    }).catch(function () { host.querySelector('[data-movies]').textContent = 'No se pudo cargar TMDB.'; });
+    loadProv();
+    loadRated();
+    loadGenres();
   }
   function windowsEmulator(root) {
     root.innerHTML = '';
@@ -482,6 +729,13 @@
     window.XAPPS.tt = { n: 'TikTok', f: driftSite('https://www.tiktok.com/') };
     window.XAPPS.gem = { n: 'Gemini', f: driftSite('https://gemini.google.com/app') };
     window.XAPPS.movies = { n: 'Movies', f: moviesApp };
+    window.XAPPS.whatsapp = { n: 'WhatsApp', f: function (root) {
+      root.innerHTML = '';
+      root.style.cssText = 'height:100%;min-height:0;position:relative;background:#111b21';
+      try { if (typeof sjInit === 'function') sjInit(); } catch (e) {}
+      if (typeof window.openProxied === 'function') window.openProxied('https://web.whatsapp.com/', root);
+      else root.textContent = 'WhatsApp needs the proxy.';
+    } };
     applyBrandLogos();
     try {
       var changed = false;
@@ -584,17 +838,37 @@
           var menu = document.getElementById('menu');
           var open = menu && menu.classList.contains('show');
           var tilesFn = window.tiles;
+          var out;
           if (!open && typeof tilesFn === 'function') {
             window.tiles = function () {};
-            try { return orig(); } finally { window.tiles = tilesFn; }
-          }
-          return orig();
+            try { out = orig(); } finally { window.tiles = tilesFn; }
+          } else out = orig();
+          try { fitWindowsName(); } catch (err) {}
+          return out;
         };
         fast.__driftFast = 1;
         rend = fast;
       }
     } catch (e) {}
+    function fitWindowsName() {
+      document.querySelectorAll('.ico[data-app="winemu"], #pins [data-app="winemu"]').forEach(function (b) {
+        b.style.width = '108px';
+        b.style.maxWidth = 'none';
+        b.style.overflow = 'visible';
+        b.style.whiteSpace = 'normal';
+        b.style.lineHeight = '1.15';
+        b.style.fontSize = '11px';
+      });
+      document.querySelectorAll('#tbs .tb').forEach(function (b) {
+        if (!/Windows emulator/i.test(b.textContent || '')) return;
+        b.style.maxWidth = '220px';
+        b.style.overflow = 'visible';
+        b.style.whiteSpace = 'nowrap';
+      });
+    }
+    window.fitWindowsName = fitWindowsName;
     var prefetch = function () {
+      try { if (typeof sjInit === 'function') sjInit(); } catch (e) {}
       try {
         if (!sessionStorage.getItem('wos:noah-games')) {
           fetch('/api/noah-games').then(function (r) { return r.json(); }).then(function (list) {

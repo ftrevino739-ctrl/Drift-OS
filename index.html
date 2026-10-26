@@ -719,8 +719,46 @@ function calc(root,w){
     out.textContent=e||'0';
   }
   function frac(){
-    main.style.flex='1';main.style.minHeight='0';
-    main.innerHTML='<iframe credentialless src="https://www.calculator.net/fraction-calculator.html" title="Fraction calculator" style="width:100%;height:100%;min-height:480px;border:0;background:#fff"></iframe>';
+    main.style.flex='1';main.style.minHeight='0';main.style.overflow='auto';
+    main.innerHTML='<div style="display:flex;flex-direction:column;gap:10px;color:inherit;font:14px system-ui,sans-serif">'
+      +'<b>Fracciones</b>'
+      +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+      +'<span>A</span><input data-an inputmode="numeric" value="7" style="width:64px;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--omni);color:inherit"> / <input data-ad inputmode="numeric" value="2" style="width:64px;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--omni);color:inherit">'
+      +'<select data-op style="padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--omni);color:inherit"><option value="+">+</option><option value="-">−</option><option value="*">×</option><option value="/">÷</option></select>'
+      +'<span>B</span><input data-bn inputmode="numeric" value="3" style="width:64px;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--omni);color:inherit"> / <input data-bd inputmode="numeric" value="4" style="width:64px;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--omni);color:inherit">'
+      +'<button type="button" data-eq style="padding:8px 14px;border:0;border-radius:8px;background:#1a73e8;color:#fff;cursor:pointer">=</button></div>'
+      +'<div data-out style="font-size:22px;font-weight:700">—</div>'
+      +'<div data-more style="opacity:.8;font-size:13px"></div>'
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" data-use style="padding:6px 10px;border:0;border-radius:8px;background:var(--omni);color:inherit;cursor:pointer">Usar resultado</button><button type="button" data-sim style="padding:6px 10px;border:0;border-radius:8px;background:var(--omni);color:inherit;cursor:pointer">Solo simplificar A</button></div>'
+      +'<small style="opacity:.65">Sirve con fracciones impropias, como 7/2. También suma, resta, multiplica y divide.</small></div>';
+    const an=main.querySelector('[data-an]'),ad=main.querySelector('[data-ad]'),bn=main.querySelector('[data-bn]'),bd=main.querySelector('[data-bd]'),op=main.querySelector('[data-op]'),out=main.querySelector('[data-out]'),more=main.querySelector('[data-more]');
+    const gcd=(a,b)=>{a=Math.abs(a|0);b=Math.abs(b|0);while(b){const t=b;b=a%b;a=t}return a||1};
+    const num=el=>{const n=parseInt(el.value,10);return isNaN(n)?NaN:n};
+    function show(n,d){
+      if(!d){out.textContent='El denominador no puede ser 0';more.textContent='';return null}
+      const g=gcd(n,d);n/=g;d/=g;if(d<0){n=-n;d=-d}
+      out.textContent=n+'/'+d;
+      const w=n<0?Math.ceil(n/d):Math.floor(n/d),r=n-w*d;
+      const dec=(n/d).toLocaleString('es',{maximumFractionDigits:6});
+      more.textContent=(r?('Mixta: '+(w?w+' ':'')+(n<0&&w===0?'-':'')+Math.abs(r)+'/'+d+' · '):'Entera: '+w+' · ')+'Decimal: '+dec;
+      return {n:n,d:d};
+    }
+    let last=null;
+    function run(){
+      const aN=num(an),aD=num(ad),bN=num(bn),bD=num(bd);
+      if([aN,aD,bN,bD].some(x=>isNaN(x))){out.textContent='Escribe números enteros';more.textContent='';return}
+      let n,d;
+      if(op.value==='+'){n=aN*bD+bN*aD;d=aD*bD}
+      else if(op.value==='-'){n=aN*bD-bN*aD;d=aD*bD}
+      else if(op.value==='*'){n=aN*bN;d=aD*bD}
+      else {n=aN*bD;d=aD*bN}
+      last=show(n,d);
+    }
+    main.querySelector('[data-eq]').onclick=run;
+    main.querySelector('[data-sim]').onclick=()=>{const aN=num(an),aD=num(ad);if(isNaN(aN)||isNaN(aD)){out.textContent='Escribe la fracción A';return}last=show(aN,aD)};
+    main.querySelector('[data-use]').onclick=()=>{if(!last)return;an.value=String(last.n);ad.value=String(last.d)};
+    [an,ad,bn,bd,op].forEach(el=>{el.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();e.stopPropagation();run()}})});
+    run();
   }
   function conv(){
     main.innerHTML='<div class="cv"><select class="ct" aria-label="Categoría"></select><input class="cin2" type="number" inputmode="decimal" value="1" aria-label="Cantidad"><select class="cf" aria-label="De"></select><div class="sw">⇅</div><select class="cto" aria-label="A"></select><div class="cres">—</div><small class="cn"></small></div>';
@@ -739,7 +777,7 @@ function calc(root,w){
     fill();
     if(!ratesLive)fetch('https://api.frankfurter.app/latest?from=USD').then(r=>r.json()).then(j=>{Object.assign(RATES,j.rates);ratesLive=true;if(ct.isConnected&&ct.value==='Moneda')fill()}).catch(()=>{});
   }
-  w.addEventListener('keydown',evn=>{if(mode==='conv')return;const m={'/':'÷','*':'×','-':'−',Enter:'=',Backspace:'⌫',Escape:'C'};const k=m[evn.key]||evn.key;if('0123456789.+%()^!'.includes(k)||['÷','×','−','=','⌫','C'].includes(k)){evn.preventDefault();press(k)}});
+  w.addEventListener('keydown',evn=>{if(mode==='conv'||mode==='frac')return;const m={'/':'÷','*':'×','-':'−',Enter:'=',Backspace:'⌫',Escape:'C'};const k=m[evn.key]||evn.key;if('0123456789.+%()^!'.includes(k)||['÷','×','−','=','⌫','C'].includes(k)){evn.preventDefault();press(k)}});
   w.tabIndex=0;w.style.outline='none';
   setMode('basic');
 }
