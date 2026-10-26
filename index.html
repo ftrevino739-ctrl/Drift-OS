@@ -3,12 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Northwind Atlas</title>
+<title>Drift</title>
 <style>
 :root{--bg1:#1f3a4d;--bg2:#3d2c5c;--win:#fff;--ink:#1c1e21;--mute:#6b7280;--bar:#dee1e6;--tab:#fff;--line:#d5d8dd;--omni:#f1f3f4;--acc:#1a73e8;--task:rgba(20,22,30,.82);--key:#f1f3f4;--keyop:#e2e8f8}
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--win:#202124;--ink:#e8eaed;--mute:#9aa0a6;--bar:#35363a;--tab:#202124;--line:#4a4c50;--omni:#292a2d;--acc:#8ab4f8;--key:#303134;--keyop:#3c4458}}
 :root[data-theme="dark"]{--win:#202124;--ink:#e8eaed;--mute:#9aa0a6;--bar:#35363a;--tab:#202124;--line:#4a4c50;--omni:#292a2d;--acc:#8ab4f8;--key:#303134;--keyop:#3c4458}
 *{box-sizing:border-box}
+#gate,#gate-nebula,#gate-stars,.gate-ui{display:none!important;visibility:hidden!important;pointer-events:none!important}
 html,body{height:100%;margin:0;overflow:hidden;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#111;color:var(--ink)}
 :root{padding-top:env(safe-area-inset-top,0px)}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -258,7 +259,7 @@ h1{font-weight:500;margin:0 0 8px}
 
 /* AI code blocks: copy / download / preview */
 .am .a{position:relative}
-.codeblock{margin:10px 0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#0d1117;color:#e6edf3}
+.codeblock{margin:10px 0;border:1px solid #30363d;border-radius:18px;overflow:hidden;background:#0d1117;color:#e6edf3}
 .codeblock .cb-bar{display:flex;align-items:center;gap:6px;padding:6px 8px;background:#161b22;border-bottom:1px solid #30363d;font-size:12px;color:#8b949e}
 .codeblock .cb-bar span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .codeblock .cb-bar button{border:0;background:#21262d;color:#e6edf3;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer}
@@ -432,8 +433,9 @@ h1{font-weight:500;margin:0 0 8px}
 
 
 /* AI thinking + model tip */
-.think-panel{align-self:stretch;width:min(100%,740px);margin:8px 0 10px;border:1px solid #e5e5e5;border-radius:18px;background:#f3f4f6;overflow:hidden;font-size:14px;color:#6b7280}
-.think-panel summary{cursor:pointer;padding:14px 16px;color:#6b7280;list-style:none;display:flex;align-items:center;gap:8px;font-weight:600}
+.think-panel{flex:0 0 auto;align-self:flex-start;width:min(100%,640px);min-width:220px;min-height:52px;margin:8px 0 10px;border:1px solid #e5e5e5;border-radius:18px;background:#f3f4f6;overflow:hidden;font-size:14px;color:#6b7280}
+.think-panel summary{cursor:pointer;padding:14px 16px;min-height:48px;color:#6b7280;list-style:none;display:flex;align-items:center;gap:8px;font-weight:600}
+.am>.a,.am>.u,.think-panel{flex-shrink:0}
 .think-panel summary::-webkit-details-marker{display:none}
 .think-panel summary .chev{display:inline-block;transition:transform .15s;font-size:12px}
 .think-panel[open] summary .chev{transform:rotate(180deg)}
@@ -510,12 +512,12 @@ h1{font-weight:500;margin:0 0 8px}
   <div id="gate-nebula"></div>
   <div id="gate-stars"></div>
   <div class="gate-ui">
-    <h1>Northwind Atlas</h1>
+    <h1>Drift</h1>
     <div class="sub">Open knowledge surface · research desk</div>
 
     <div class="gate-card">
       <h2>Mission</h2>
-      <p>Northwind Atlas is a public-facing knowledge desk. The animated field behind this page is only a backdrop. The content below is general education and reference—science, history, media literacy, and study habits—so visitors have something useful to read before any restricted tools.</p>
+      <p>Drift.</p>
     </div>
 
     <div class="gate-card">
@@ -581,34 +583,7 @@ h1{font-weight:500;margin:0 0 8px}
       <div class="gate-err" id="gate-err"></div>
       <div id="gate-owner"></div>
     </div>
-    <div class="gate-foot">NORTHWIND ATLAS · PUBLIC LAYER · OPERATOR CODES ONLY</div>
-  </div>
-</div>
-<div id="gate-stars"></div>
-  <div class="gate-ui">
-    <h1>Orbit Lab</h1>
-    <div class="sub">Public education portal</div>
-    <div class="gate-card">
-      <h2>About this space</h2>
-      <p>Welcome to a quiet study of the cosmos. Here you can explore how stars form, why galaxies spin, and how light from billions of years ago still reaches us.</p>
-      <ul>
-        <li><b>Stars</b> — nuclear furnaces turning hydrogen into helium and light.</li>
-        <li><b>Planets</b> — worlds shaped by gravity, ice, rock, and time.</li>
-        <li><b>Black holes</b> — regions where gravity bends space so strongly that light cannot escape.</li>
-        <li><b>Expansion</b> — the universe is still stretching; distant galaxies race away from us.</li>
-      </ul>
-      <p style="margin-top:12px;color:#888">This public page is for learning. Restricted tools stay locked behind an access code issued only by the lab operator.</p>
-    </div>
-    <div class="gate-access">
-      <label for="gate-code">Access code</label>
-      <div class="gate-row">
-        <input id="gate-code" type="text" autocomplete="off" spellcheck="false" placeholder="XXXX-XX" maxlength="24"/>
-        <button type="button" id="gate-go">Enter</button>
-      </div>
-      <div class="gate-err" id="gate-err"></div>
-      <div id="gate-owner"></div>
-    </div>
-    <div class="gate-foot">ORBIT LAB · EDUCATIONAL SURFACE · BLACK / WHITE</div>
+    <div class="gate-foot"></div>
   </div>
 </div>
 
@@ -1345,7 +1320,7 @@ function ai(root){
     const started=Date.now();
     const thinkTimer=setInterval(()=>{thinkSec.textContent=Math.round((Date.now()-started)/1000)+'s'},250);
     let sources='', sourceRows=[], thoughtNote='';
-    const steps=['Reviso la pregunta y preparo la respuesta completa.'];
+    const steps=['El usuario pidió: «'+q.replace(/\s+/g,' ').slice(0,220)+'».'];
     function paintThink(){
       const bits=steps.slice();
       if(sources)bits.push(sources);
@@ -1362,7 +1337,7 @@ function ai(root){
         steps.push('Busqué en la web y leí '+sourceRows.length+' páginas.');
         paintThink();
       }else{sources='Busqué y no encontré páginas útiles.';steps.push(sources);paintThink()}
-    }).catch(()=>{sources='Intenté buscar y no pude leer las páginas.';steps.push(sources);paintThink()}):(function(){steps.push('No hizo falta buscar en la web. Respondo directo para que salga en unos segundos.');paintThink();return Promise.resolve()})();
+    }).catch(()=>{sources='Intenté buscar y no pude leer las páginas.';steps.push(sources);paintThink()}):(function(){if(/\b(c[oó]digo|html|css|javascript|python|script|lua|luau)\b/i.test(q))steps.push('Voy a escribir el archivo completo en un bloque de código, para copiarlo y descargarlo.');else steps.push('No hay páginas que abrir. Respondo directo a lo que pediste.');paintThink();return Promise.resolve()})();
     const out=add('a','');
     const pre=[
       'You are Drift 2.1 inside this web OS. Never say you are Gemini. Never write "Gemini said". If you refer to yourself, say Drift.',
@@ -1432,6 +1407,26 @@ function ai(root){
     const msgs=input.map(m=>({role:m.role,content:m.content}));
     if(o.images&&o.images.length){const last=msgs[msgs.length-1];const text=typeof last.content==='string'?last.content:'';last.content=[...await Promise.all(o.images.map(async b=>({type:'image',source:{type:'base64',media_type:b.type||'image/jpeg',data:await b64(b)}}))),{type:'text',text}]}
     if(o.model==='google/gemini-3.8-flash'){
+      const blob=msgs.map(m=>typeof m.content==='string'?m.content:'').join('\n');
+      const wantsCode=/\b(c[oó]digo|code|html|css|javascript|python|script|lua|luau|tampermonkey)\b/i.test(blob);
+      const hasFence=t=>/```[\s\S]{30,}```/.test(String(t||''))||/<!DOCTYPE html[\s\S]{40,}<\/html>/i.test(String(t||''))||/<html[\s\S]{40,}<\/html>/i.test(String(t||''));
+      if(wantsCode){
+        let live=true;
+        const quiet={...o,onThink:function(t){if(live&&o.onThink)o.onThink(t)},onText:function(t){if(live&&o.onText)o.onText(t)}};
+        const fast=fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'groq-llama',max_tokens:8192,messages:msgs,system:'You are Drift 2.1. Reply in the user language. Put the COMPLETE file first, inside one fenced block such as ```html. Every line. After the block, one short sentence. Never describe code you did not paste.'}),signal:o.signal}).then(r=>r.json()).then(j=>((j.content||[]).map(x=>x.text||'').join(''))).catch(()=>'');
+        const slow=geminiOfficial(msgs,quiet).then(x=>x&&x.text||'').catch(()=>'');
+        const winner=await new Promise(function(resolve){
+          let pending=2, best='';
+          function take(t){
+            t=String(t||'');
+            if(t.length>best.length) best=t;
+            if(hasFence(t)){live=false;resolve(t);return}
+            if(--pending===0) resolve(best);
+          }
+          fast.then(take); slow.then(take);
+        });
+        if(winner) return {text:winner};
+      }
       let official=null;
       try{ official=await geminiOfficial(msgs,o); }catch(err){ throw err; }
       if(official&&official.text) return official;
@@ -1526,6 +1521,9 @@ function ai(root){
       const lang=(String(thought).match(/```([a-z0-9.+#-]*)/i)||[])[1]||'txt';
       if(!String(text||'').includes(fromThought.slice(0,80))) text=String(text||'').trim()+(text?'\n\n':'')+'```'+lang+'\n'+fromThought.replace(/\n$/,'')+'\n```';
     }else if(!String(text||'').trim() && thought) text=thought;
+    const docSrc=(thought||'')+'\n'+(text||'');
+    const doc=docSrc.match(/<!DOCTYPE html[\s\S]*?<\/html>/i)||docSrc.match(/<html[\s\S]*?<\/html>/i);
+    if(doc && doc[0].length>40 && !String(text).includes(doc[0].slice(0,50))) text=String(text||'').trim()+(text?'\n\n':'')+'```html\n'+doc[0].trim()+'\n```';
     let finish=((res.j.candidates||[])[0]||{}).finishReason||'';
     const want=(geminiPlain(list).match(/\b(\d{2,4})\s*(lineas|líneas|linea|lines|line)\b/i)||[])[1];
     const lines=t=>{const blocks=[...String(t).matchAll(/```[^\n]*\n([\s\S]*?)```/g)]; if(!blocks.length)return String(t).split('\n').length; return Math.max.apply(null, blocks.map(b=>b[1].split('\n').length));};
@@ -2918,10 +2916,10 @@ function sjInit(){
     SJC.init();
     // Solo registrar SW si existe /scram (si no, evaluation failed)
     try{
-      const swr=await fetch('/sw.js',{method:'HEAD',cache:'no-store'});
+      const swr=await fetch('/sw.js',{method:'HEAD'});
       if(swr.ok){
         await navigator.serviceWorker.register('/sw.js');
-        await navigator.serviceWorker.ready;
+        await Promise.race([navigator.serviceWorker.ready, new Promise(function(res){setTimeout(res,1200)})]);
       }
     }catch(e){console.warn('SW skip',e)}
     if(typeof BareMux==='undefined')throw new Error('BareMux no cargó');
@@ -2933,6 +2931,7 @@ function sjInit(){
   SJP.catch(()=>{SJP=null});
   return SJP;
 }
+setTimeout(function(){try{sjInit()}catch(e){}},400);
 
 const sjStyle='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';
 async function sjLoad(box,url){
@@ -2953,7 +2952,7 @@ async function sjLoad(box,url){
 
 async function openProxied(url, box){
   try{
-    if(!(await scramjetAvailable()))throw new Error('no-scram');
+    if(!SJP && !(await scramjetAvailable()))throw new Error('no-scram');
     await sjInit();
     const f=SJC.createFrame();
     f.frame.style.cssText='width:100%;height:100%;border:0;background:#fff';
@@ -3294,7 +3293,7 @@ loadU(S.user);
 
 
 
-/* Northwind Atlas access gate — SHA-256 password, HWID 1 */
+/* Drift access */
 (function(){
   const A=window.DRIFT_ACCESS||{enabled:false};
   const gate=document.getElementById('gate');

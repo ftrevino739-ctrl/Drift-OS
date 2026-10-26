@@ -1192,7 +1192,15 @@
     };
   }
   function robloxShell(root) {
-    return operaPage('https://www.roblox.com/', 'firefox')(root);
+    root.innerHTML = '<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center;background:#111;color:#fff"><b style="font-size:18px">Roblox</b><div style="max-width:440px;opacity:.85;font-size:13px">Se abre en la ventana del navegador, sin proxy, para que el registro y las ventanas emergentes funcionen. Drift se queda abierto detrás.</div><button type="button" data-open style="padding:10px 16px;border:0;border-radius:10px;background:#fff;color:#111;font-weight:700;cursor:pointer">Abrir Roblox</button></div>';
+    function open() {
+      var w = window.open('https://www.roblox.com/', 'drift-roblox');
+      var n = root.querySelector('[data-open]');
+      if (!w && n) n.textContent = 'Permite ventanas emergentes y pulsa otra vez';
+    }
+    var btn = root.querySelector('[data-open]');
+    if (btn) btn.onclick = open;
+    open();
   }
   function inAppPage(url) {
     return function (root) {
@@ -1974,12 +1982,12 @@
   function orbMessage(text) {
     var panel = orbPanel();
     var row = document.createElement('div');
-    row.style.cssText = 'position:relative;padding:8px 28px 8px 8px;margin:0 0 8px;background:rgba(255,255,255,.04);border-radius:10px';
+    row.style.cssText = 'position:relative;padding:8px 8px 8px 32px;margin:0 0 8px;background:rgba(255,255,255,.04);border-radius:10px';
     var x = document.createElement('button');
     x.type = 'button';
     x.textContent = '×';
     x.setAttribute('aria-label', 'Dismiss message');
-    x.style.cssText = 'position:absolute;top:2px;right:4px;border:0;background:transparent;color:#ddd;font-size:20px;line-height:1;cursor:pointer';
+    x.style.cssText = 'position:absolute;top:2px;left:4px;border:0;background:transparent;color:#ddd;font-size:20px;line-height:1;cursor:pointer';
     x.onclick = function (e) {
       e.stopPropagation();
       row.remove();
