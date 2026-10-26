@@ -621,8 +621,88 @@
       row.innerHTML = '';
       list.forEach(function (item) { row.appendChild(card(item, item.type || 'movie', 0)); });
     }
+    function watchBase() {
+      try { return (localStorage.getItem('wos:watch-worker') || '').replace(/\/$/, ''); } catch (e) { return ''; }
+    }
+    function mountSwitch(active) {
+      var box = host.querySelector('[data-switch]');
+      if (!box) return;
+      var names = [['tmdb', 'TMDB'], ['watchmode', 'Watchmode'], ['motn', 'Dónde verla'], ['archive', 'Archive']];
+      box.innerHTML = names.map(function (n) {
+        return '<button type="button" data-p="' + n[0] + '" style="height:32px;padding:0 12px;border-radius:999px;border:1px solid rgba(255,255,255,.16);cursor:pointer;' + (n[0] === active ? 'background:#fff;color:#111' : 'background:transparent;color:#fff') + '">' + n[1] + '</button>';
+      }).join('') + '<input data-worker placeholder="URL del worker nuevo" style="height:32px;min-width:180px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:#171718;color:#fff;padding:0 12px">';
+      var inp = box.querySelector('[data-worker]');
+      inp.value = watchBase();
+      inp.onchange = function () { try { localStorage.setItem('wos:watch-worker', inp.value.trim()); } catch (e) {} };
+      box.querySelectorAll('[data-p]').forEach(function (b) {
+        b.onclick = function () { if (b.dataset.p === 'tmdb') bootTmdb(); else showCatalog(b.dataset.p); };
+      });
+    }
+    function showCatalog(kind) {
+      if (heroTimer) clearInterval(heroTimer);
+      host.innerHTML = '<div class="page-head"><div class="page-title">Movies & Shows</div></div><div data-switch style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:8px 22px"></div><div class="grid" data-cat style="padding-top:12px"></div>';
+      mountSwitch(kind);
+      var cat = host.querySelector('[data-cat]');
+      var base = watchBase();
+      if (!base) { cat.textContent = 'Pega arriba la URL del worker nuevo y pulsa el proveedor otra vez.'; return; }
+      cat.textContent = 'Loading…';
+      var path = kind === 'watchmode' ? '/watchmode/list' : kind === 'motn' ? '/motn/list' : '/archive/list';
+      fetch(base + path).then(function (r) { return r.json(); }).then(function (data) {
+        cat.innerHTML = '';
+        if (kind === 'archive') {
+          fetch(base + '/archive/live').then(function (r) { return r.json(); }).then(function (live) {
+            (live.items || []).forEach(function (ch) {
+              var el = document.createElement('div');
+              el.className = 'card';
+              el.innerHTML = '<div class="thumb"></div><b>' + esc(ch.title) + '</b><div class="meta"><span class="badge">Live</span></div>';
+              el.onclick = function () { playUrl(ch.title, ch.url); };
+              cat.appendChild(el);
+            });
+          }).catch(function () {});
+        }
+        var items = kind === 'watchmode' ? (data.titles || []) : kind === 'motn' ? (Array.isArray(data) ? data : (data.shows || [])) : (data.items || []);
+        if (data.error) { cat.textContent = data.error; return; }
+        items.slice(0, 24).forEach(function (item) {
+          var title = item.title || item.name || '';
+          var el = document.createElement('div');
+          el.className = 'card';
+          var img = item.image_url || item.posterMedium || (item.imageSet && item.imageSet.verticalPoster && item.imageSet.verticalPoster.w360) || '';
+          el.innerHTML = '<div class="thumb">' + (img ? '<img alt="" src="' + esc(img) + '">' : '') + '</div><b>' + esc(title) + '</b><div class="meta"><span class="badge">' + (kind === 'archive' ? 'Public domain' : 'Link') + '</span></div>';
+          el.onclick = function () {
+            if (kind === 'archive') {
+              fetch(base + '/archive/file?id=' + encodeURIComponent(item.id)).then(function (r) { return r.json(); }).then(function (f) {
+                if (f.url) playUrl(title, f.url); else cat.insertAdjacentHTML('afterbegin', '<div>No mp4</div>');
+              });
+              return;
+            }
+            if (kind === 'watchmode' && item.id) {
+              fetch(base + '/watchmode/sources?id=' + encodeURIComponent(item.id)).then(function (r) { return r.json(); }).then(function (s) {
+                var src = (Array.isArray(s) ? s : [])[0];
+                if (src && src.web_url) window.open(src.web_url, '_blank');
+                else cat.insertAdjacentHTML('afterbegin', '<div>Watchmode no dio un enlace.</div>');
+              });
+              return;
+            }
+            var link = (item.streamingOptions && item.streamingOptions.mx && item.streamingOptions.mx[0] && item.streamingOptions.mx[0].link) || item.streamingUrl || '';
+            if (link) window.open(link, '_blank');
+          };
+          cat.appendChild(el);
+        });
+        if (!cat.childNodes.length) cat.textContent = 'Sin resultados.';
+      }).catch(function () { cat.textContent = 'No se pudo cargar ese proveedor.'; });
+    }
+    function playUrl(title, url) {
+      var view = document.createElement('div');
+      view.className = 'player';
+      view.innerHTML = '<div style="display:flex;gap:10px;align-items:center;padding:10px 12px;background:#111"><button type="button" data-back style="border:0;border-radius:8px;padding:8px 12px;background:#222;color:#fff;cursor:pointer">Back</button><b></b></div><video controls autoplay style="flex:1;width:100%;background:#000"></video>';
+      view.querySelector('b').textContent = title;
+      view.querySelector('video').src = url;
+      view.querySelector('[data-back]').onclick = function () { view.remove(); };
+      host.appendChild(view);
+    }
     function shell() {
       host.innerHTML = '<div class="page-head"><div class="page-title">Movies & Shows</div><button type="button" class="search-btn">Search movies & shows</button></div>'
+        + '<div data-switch style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:8px 22px"></div>'
         + '<div class="hero"><div class="hero-bg"></div><div class="hero-shade"></div><div class="hero-copy"><h2></h2><div class="score" style="margin-bottom:8px;font-size:13px"></div><p></p><button type="button" class="play">Play</button></div><div class="dots"></div></div>'
         + '<div class="sec" data-recent-sec style="display:none"><h3>Continue Watching</h3><div class="row" data-recent></div></div>'
         + '<div class="sec"><h3>Top 10 Movies</h3><div class="row" data-movies></div></div>'
@@ -634,6 +714,7 @@
       host.querySelector('[data-prov-tog]').onclick = function (e) { var b = e.target.closest('button'); if (!b) return; provType = b.dataset.t; mark(host.querySelector('[data-prov-tog]'), b); loadProv(); };
       host.querySelector('[data-rated-tog]').onclick = function (e) { var b = e.target.closest('button'); if (!b) return; ratedType = b.dataset.t; mark(host.querySelector('[data-rated-tog]'), b); loadRated(); };
       host.querySelector('[data-genre-tog]').onclick = function (e) { var b = e.target.closest('button'); if (!b) return; genreType = b.dataset.t; genreId = null; mark(host.querySelector('[data-genre-tog]'), b); loadGenres(); };
+      mountSwitch('tmdb');
     }
     function mark(wrap, btn) { wrap.querySelectorAll('button').forEach(function (x) { x.classList.toggle('on', x === btn); }); }
     function chips() {
@@ -706,23 +787,26 @@
       host.appendChild(ov);
       ov.querySelector('[data-q]').focus();
     }
-    shell();
-    paintRecent();
-    chips();
-    Promise.all([tmdbGet('/trending/movie/week'), tmdbGet('/trending/tv/week')]).then(function (both) {
-      var movies = (both[0] && both[0].results) || [];
-      var shows = (both[1] && both[1].results) || [];
-      heroItems = movies.filter(function (m) { return m.backdrop_path; }).slice(0, 5);
-      var dots = host.querySelector('.dots');
-      dots.innerHTML = heroItems.map(function (_, i) { return '<button type="button"' + (i === 0 ? ' class="on"' : '') + '></button>'; }).join('');
-      dots.querySelectorAll('button').forEach(function (b, i) { b.onclick = function () { heroIdx = i; hero(); clearInterval(heroTimer); heroTimer = setInterval(function () { heroIdx = (heroIdx + 1) % heroItems.length; hero(); }, 8000); }; });
-      if (heroItems.length) { hero(); heroTimer = setInterval(function () { heroIdx = (heroIdx + 1) % heroItems.length; hero(); }, 8000); }
-      fill('[data-movies]', movies, 'movie', true);
-      fill('[data-shows]', shows, 'tv', true);
-    }).catch(function () { host.querySelector('[data-movies]').textContent = 'No se pudo cargar TMDB.'; });
-    loadProv();
-    loadRated();
-    loadGenres();
+    function bootTmdb() {
+      shell();
+      paintRecent();
+      chips();
+      Promise.all([tmdbGet('/trending/movie/week'), tmdbGet('/trending/tv/week')]).then(function (both) {
+        var movies = (both[0] && both[0].results) || [];
+        var shows = (both[1] && both[1].results) || [];
+        heroItems = movies.filter(function (m) { return m.backdrop_path; }).slice(0, 5);
+        var dots = host.querySelector('.dots');
+        dots.innerHTML = heroItems.map(function (_, i) { return '<button type="button"' + (i === 0 ? ' class="on"' : '') + '></button>'; }).join('');
+        dots.querySelectorAll('button').forEach(function (b, i) { b.onclick = function () { heroIdx = i; hero(); clearInterval(heroTimer); heroTimer = setInterval(function () { heroIdx = (heroIdx + 1) % heroItems.length; hero(); }, 8000); }; });
+        if (heroItems.length) { hero(); heroTimer = setInterval(function () { heroIdx = (heroIdx + 1) % heroItems.length; hero(); }, 8000); }
+        fill('[data-movies]', movies, 'movie', true);
+        fill('[data-shows]', shows, 'tv', true);
+      }).catch(function () { host.querySelector('[data-movies]').textContent = 'No se pudo cargar TMDB.'; });
+      loadProv();
+      loadRated();
+      loadGenres();
+    }
+    bootTmdb();
   }
   function windowsEmulator(root) {
     root.innerHTML = '';
