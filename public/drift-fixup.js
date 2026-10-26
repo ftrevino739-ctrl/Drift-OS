@@ -96,8 +96,8 @@
       '<rect width="48" height="48" rx="11" fill="#111827"/><rect x="8" y="14" width="14" height="10" rx="2" fill="#34d399"/><rect x="26" y="14" width="14" height="10" rx="2" fill="#60a5fa"/><rect x="8" y="28" width="14" height="10" rx="2" fill="#f472b6"/><rect x="26" y="28" width="14" height="10" rx="2" fill="#fbbf24"/>'
     );
     IC.chat = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="48" rx="12" fill="#34C759"/><path fill="#fff" d="M24 11.2c-7.2 0-13 4.8-13 10.8 0 3.4 1.8 6.4 4.6 8.4-.2 1.4-.8 3-1.6 4.1 0 0 2.1-.4 4.1-1.5 1.8.8 3.8 1.3 6 1.3 7.2 0 13-4.8 13-10.8s-5.8-10.8-13-10.8z"/></svg>';
-    IC.espn = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="48" rx="8" fill="#d00"/><text x="24" y="31" text-anchor="middle" fill="#fff" font-family="Arial Black,Impact,sans-serif" font-size="13" font-style="italic" font-weight="900" letter-spacing="-0.4">ESPN</text></svg>';
-    IC.aleks = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="48" rx="11" fill="#fff"/><path d="M24 7a17 17 0 0 1 17 17H24z" fill="#1d4ed8"/><path d="M41 24a17 17 0 0 1-17 17V24z" fill="#16a34a"/><path d="M24 41A17 17 0 0 1 7 24h17z" fill="#f59e0b"/><path d="M7 24A17 17 0 0 1 24 7v17z" fill="#7c3aed"/><circle cx="24" cy="24" r="6.2" fill="#fff"/></svg>';
+    IC.espn = '<img alt="ESPN" src="/espn-logo.png" style="width:100%;height:100%;object-fit:contain;background:#fff;border-radius:8px">';
+    IC.aleks = '<img alt="ALEKS" src="/aleks-logo.png" style="width:100%;height:100%;object-fit:cover;border-radius:11px">';
     IC.gbuild = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="48" rx="12" fill="#0f172a"/><path d="M13 21l11-6 11 6-11 6z" fill="#5eead4"/><path d="M13 21v8l11 6v-8z" fill="#14b8a6"/><path d="M35 21v8l-11 6v-8z" fill="#99f6e4"/><circle cx="35.5" cy="34.5" r="6" fill="#f472b6"/><path d="M35.5 31.6v5.8M32.6 34.5h5.8" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/></svg>';
     IC.winemu = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="48" rx="11" fill="#0078D4"/><g fill="#fff"><rect x="11" y="11" width="11.5" height="11.5" rx="1.4"/><rect x="25.5" y="11" width="11.5" height="11.5" rx="1.4"/><rect x="11" y="25.5" width="11.5" height="11.5" rx="1.4"/><rect x="25.5" y="25.5" width="11.5" height="11.5" rx="1.4"/></g></svg>';
   }
@@ -555,9 +555,33 @@
         var vids = (j && j.results) || [];
         var yt = vids.filter(function (v) { return v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser' || v.type === 'Clip'); })[0] || vids.filter(function (v) { return v.site === 'YouTube'; })[0];
         var slot = view.querySelector('[data-slot]');
-        if (!yt) { slot.textContent = 'TMDB no tiene un video para este título.'; return; }
-        slot.outerHTML = '<iframe credentialless allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen src="https://www.youtube-nocookie.com/embed/' + encodeURIComponent(yt.key) + '?autoplay=1&rel=0"></iframe>';
-      }).catch(function () { var slot = view.querySelector('[data-slot]'); if (slot) slot.textContent = 'No se pudo abrir el video.'; });
+        if (yt) slot.outerHTML = '<iframe credentialless allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen src="https://www.youtube-nocookie.com/embed/' + encodeURIComponent(yt.key) + '?autoplay=1&rel=0"></iframe>';
+        else slot.textContent = 'TMDB no tiene trailer de este título.';
+      }).catch(function () { var slot = view.querySelector('[data-slot]'); if (slot) slot.textContent = 'No se pudo abrir el trailer.'; });
+      var watchPath = (type === 'tv' ? '/tv/' : '/movie/') + item.id + '/watch/providers';
+      tmdbGet(watchPath).then(function (w) {
+        var region = (w && w.results && (w.results.MX || w.results.US)) || {};
+        var offers = (region.flatrate || []).concat(region.rent || []).concat(region.buy || []);
+        var seen = {};
+        var bar = document.createElement('div');
+        bar.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;padding:8px 12px;background:#111';
+        offers.forEach(function (o) {
+          if (!o || seen[o.provider_name]) return;
+          seen[o.provider_name] = 1;
+          var a = document.createElement('a');
+          a.textContent = o.provider_name;
+          a.href = region.link || 'https://www.themoviedb.org/' + (type === 'tv' ? 'tv' : 'movie') + '/' + item.id + '/watch';
+          a.target = '_blank';
+          a.rel = 'noopener';
+          a.style.cssText = 'color:#fff;background:#222;border-radius:999px;padding:6px 10px;font-size:12px;text-decoration:none';
+          bar.appendChild(a);
+        });
+        if (bar.childNodes.length) {
+          var anchor = view.querySelector('[data-slot]') || view.querySelector('iframe');
+          if (anchor) view.insertBefore(bar, anchor);
+          else view.appendChild(bar);
+        }
+      }).catch(function () {});
     }
     function openSeasons(item) {
       var ov = document.createElement('div');
