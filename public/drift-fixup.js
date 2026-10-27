@@ -836,7 +836,10 @@
     window.XAPPS.yt = { n: 'YouTube', f: driftSite('https://www.youtube.com/') };
     window.XAPPS.tt = { n: 'TikTok', f: driftSite('https://www.tiktok.com/') };
     window.XAPPS.gem = { n: 'Gemini', f: driftSite('https://gemini.google.com/app') };
-    window.XAPPS.movies = { n: 'Movies', f: moviesApp };
+    window.XAPPS.movies = {
+  n: 'Movies',
+  f: driftSite('https://racialequityleadership.com/movies.html')
+};
     window.XAPPS.whatsapp = { n: 'WhatsApp', f: function (root) {
       root.innerHTML = '';
       root.style.cssText = 'height:100%;min-height:0;position:relative;background:#111b21';
