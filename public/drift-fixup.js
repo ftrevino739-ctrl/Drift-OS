@@ -240,6 +240,168 @@
       });
   }
 
+  function peakMoviesApp(root) {
+    var homeUrl = 'https://racialequityleadership.com/movies.html';
+    var home = new URL(homeUrl);
+    var frame = null;
+    var timer = null;
+
+    root.innerHTML = '';
+    root.style.cssText = 'height:100%;min-height:0;position:relative;background:#000';
+
+    function applyPeakControls() {
+      if (!frame) return false;
+
+      var win, doc;
+      try {
+        win = frame.contentWindow;
+        doc = frame.contentDocument || (win && win.document);
+        if (!win || !doc || !doc.documentElement) return false;
+      } catch (e) {
+        return false;
+      }
+
+      // Hide only sidebar-like UI; leave the movie catalogue and player controls intact.
+      if (!doc.getElementById('drift-peak-sidebar-cleaner')) {
+        var style = doc.createElement('style');
+        style.id = 'drift-peak-sidebar-cleaner';
+        style.textContent = [
+          'aside[role="complementary"], [role="complementary"], [data-sidebar],',
+          '#sidebar, #side-bar, .sidebar, .side-bar,',
+          '[class*="sidebar" i], [id*="sidebar" i],',
+          '[class*="side-bar" i], [id*="side-bar" i],',
+          '[aria-label*="sidebar" i] {',
+          '  display: none !important;',
+          '  visibility: hidden !important;',
+          '  pointer-events: none !important;',
+          '}',
+          'main, [role="main"], [class*="main-content" i], [id*="main-content" i] {',
+          '  max-width: none !important;',
+          '  width: 100% !important;',
+          '  margin-left: 0 !important;',
+          '}'
+        ].join('\n');
+        (doc.head || doc.documentElement).appendChild(style);
+      }
+
+      // Install document-level guards once per loaded document.
+      if (!doc.documentElement.hasAttribute('data-drift-movies-guard')) {
+        doc.documentElement.setAttribute('data-drift-movies-guard', '1');
+
+        // Keep the Movie/TV experience inside the Movies app; embedded player iframes still work.
+        try {
+          if (!win.__driftMoviesPopupGuard) {
+            win.__driftMoviesPopupGuard = true;
+            win.open = function () { return null; };
+          }
+        } catch (e) {}
+
+        doc.addEventListener('click', function (event) {
+          var link = event.target && event.target.closest
+            ? event.target.closest('a[href]')
+            : null;
+          if (!link) return;
+
+          var target = (link.getAttribute('target') || '').toLowerCase();
+          if (target === '_blank' || target === '_top' || target === '_parent') {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            return;
+          }
+
+          try {
+            var destination = new win.URL(link.href, win.location.href);
+            if (destination.origin !== home.origin) {
+              event.preventDefault();
+              event.stopImmediatePropagation();
+            }
+          } catch (e) {}
+        }, true);
+
+        doc.addEventListener('submit', function (event) {
+          var form = event.target;
+          if (!form || !form.getAttribute) return;
+          var target = (form.getAttribute('target') || '').toLowerCase();
+          if (target === '_blank' || target === '_top' || target === '_parent') {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            return;
+          }
+          try {
+            var action = new win.URL(form.action || win.location.href, win.location.href);
+            if (action.origin !== home.origin) {
+              event.preventDefault();
+              event.stopImmediatePropagation();
+            }
+          } catch (e) {}
+        }, true);
+      }
+
+      // Back from a movie/show can return to the catalogue, but Back on the catalogue
+      // gets a fresh in-app history entry instead of leaving Movies for the Drift desktop.
+      if (!win.__driftMoviesHistoryGuard) {
+        win.__driftMoviesHistoryGuard = true;
+        try {
+          var currentState = win.history.state;
+          var guardState = currentState && typeof currentState === 'object'
+            ? Object.assign({}, currentState, { __driftMoviesGuard: true })
+            : { __driftMoviesGuard: true };
+          win.history.pushState(guardState, '', win.location.href);
+        } catch (e) {}
+
+        win.addEventListener('popstate', function (event) {
+          try {
+            var current = new win.URL(win.location.href);
+            if (current.origin !== home.origin) {
+              win.location.replace(homeUrl);
+              return;
+            }
+            if (current.pathname === home.pathname &&
+                !(event.state && event.state.__driftMoviesGuard)) {
+              var state = event.state && typeof event.state === 'object'
+                ? Object.assign({}, event.state, { __driftMoviesGuard: true })
+                : { __driftMoviesGuard: true };
+              win.history.pushState(state, '', win.location.href);
+            }
+          } catch (e) {}
+        });
+      }
+
+      return true;
+    }
+
+    (async function () {
+      try {
+        if (typeof window.openProxied !== 'function') {
+          root.textContent = 'Scramjet no está listo. Recarga Drift.';
+          return;
+        }
+
+        var opened = await window.openProxied(homeUrl, root);
+        frame = (opened && opened.frame) || root.querySelector('iframe');
+        if (!frame) return;
+
+        frame.addEventListener('load', function () {
+          setTimeout(applyPeakControls, 150);
+          setTimeout(applyPeakControls, 800);
+        });
+
+        var ticks = 0;
+        timer = setInterval(function () {
+          if (!root.isConnected || ++ticks > 180) {
+            clearInterval(timer);
+            return;
+          }
+          applyPeakControls();
+        }, 1000);
+
+        applyPeakControls();
+      } catch (error) {
+        root.textContent = 'No se pudo cargar Movies mediante Scramjet.';
+      }
+    })();
+  }
+
   function driftSite(url) {
     return function (root) {
       root.innerHTML = '';
@@ -837,9 +999,9 @@
     window.XAPPS.tt = { n: 'TikTok', f: driftSite('https://www.tiktok.com/') };
     window.XAPPS.gem = { n: 'Gemini', f: driftSite('https://gemini.google.com/app') };
     window.XAPPS.movies = {
-  n: 'Movies',
-  f: driftSite('https://racialequityleadership.com/movies.html')
-};
+      n: 'Movies',
+      f: peakMoviesApp
+    };
     window.XAPPS.whatsapp = { n: 'WhatsApp', f: function (root) {
       root.innerHTML = '';
       root.style.cssText = 'height:100%;min-height:0;position:relative;background:#111b21';
