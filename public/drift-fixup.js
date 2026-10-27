@@ -297,6 +297,32 @@
         } catch (e) {}
 
         doc.addEventListener('click', function (event) {
+          var clickable = event.target && event.target.closest
+            ? event.target.closest('button, [role="button"], a[href], [aria-label], [title]')
+            : null;
+
+          // The back control on a film/show always returns to the Movies catalogue.
+          if (clickable) {
+            var labels = [
+              clickable.getAttribute('aria-label') || '',
+              clickable.getAttribute('title') || '',
+              clickable.textContent || ''
+            ].map(function (value) {
+              return String(value).replace(/\\s+/g, ' ').trim();
+            });
+
+            var isBackControl = labels.some(function (label) {
+              return /^(?:←\\s*)?(?:back|go back|back to movies|back to home|return(?: to movies| to home)?|movies home|volver|regresar|atrás|atras)(?:\\s*→)?$/i.test(label);
+            });
+
+            if (isBackControl) {
+              event.preventDefault();
+              event.stopImmediatePropagation();
+              win.location.href = homeUrl;
+              return;
+            }
+          }
+
           var link = event.target && event.target.closest
             ? event.target.closest('a[href]')
             : null;
