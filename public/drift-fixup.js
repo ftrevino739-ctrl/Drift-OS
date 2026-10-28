@@ -301,93 +301,9 @@
         (doc.head || doc.documentElement).appendChild(adStyle);
       }
 
-      if (!doc.documentElement.hasAttribute('data-drift-peak-adblocker')) {
-        doc.documentElement.setAttribute('data-drift-peak-adblocker', '1');
-
-        var knownAdNetwork = /(?:doubleclick\.net|googlesyndication\.com|googleadservices\.com|adnxs\.com|adform\.net|popads\.net|popcash\.net|propellerads\.com|adsterra\.com|exoclick\.com|trafficjunky\.net|juicyads\.com|hilltopads\.com|adcash\.com|trafficstars\.com|clickadu\.com|clickadilla\.com|admaven\.com|monetag\.com|onclkds\.com|onclickads\.net|richpush\.io|taboola\.com|outbrain\.com|mgid\.com|criteo\.com|smartadserver\.com|pubmatic\.com|rubiconproject\.com)/i;
-
-        function isPeakAdResource(value) {
-          return knownAdNetwork.test(String(value || ''));
-        }
-
-        function isPeakAdElement(el) {
-          if (!el || el.nodeType !== 1) return false;
-          var tag = String(el.tagName || '').toUpperCase();
-          var source = el.getAttribute('src') || el.getAttribute('href') || '';
-          if (isPeakAdResource(source) &&
-              /^(IFRAME|SCRIPT|IMG|LINK|SOURCE)$/.test(tag)) return true;
-
-          if (el.hasAttribute('data-ad') ||
-              el.hasAttribute('data-ad-slot') ||
-              el.hasAttribute('data-ad-client')) return true;
-
-          var cls = typeof el.className === 'string' ? el.className : '';
-          var marker = (String(el.id || '') + ' ' + cls + ' ' +
-            String(el.getAttribute('aria-label') || '') + ' ' +
-            String(el.getAttribute('data-testid') || '')).toLowerCase();
-
-          // Use ad-specific markers, not generic words like "loading" or "header".
-          return /(^|[\s_-])(advert(?:isement)?|sponsored|sponsor|popunder)([\s_-]|$)|(^|[\s_-])ads?[\s_-]*(?:container|slot|banner|unit|wrapper|placeholder|zone|box)([\s_-]|$)|(^|[\s_-])(ad|ads)([\s_-]|$)/i.test(marker);
-        }
-
-        function removePeakAdElements(scope) {
-          if (!scope) return;
-          var candidates = [];
-          if (scope.nodeType === 1) candidates.push(scope);
-          if (scope.querySelectorAll) {
-            try {
-              candidates = candidates.concat(Array.prototype.slice.call(
-                scope.querySelectorAll(
-                  '[id], [class], [data-ad], [data-ad-slot], [data-ad-client], [src], [href]'
-                )
-              ));
-            } catch (e) {}
-          }
-          candidates.forEach(function (el) {
-            try {
-              if (isPeakAdElement(el) &&
-                  el !== doc.documentElement && el !== doc.body) el.remove();
-            } catch (e) {}
-          });
-        }
-
-        removePeakAdElements(doc.documentElement);
-        try {
-          var observer = new win.MutationObserver(function (records) {
-            records.forEach(function (record) {
-              if (record.type === 'attributes') {
-                removePeakAdElements(record.target);
-              } else {
-                Array.prototype.forEach.call(record.addedNodes || [], function (node) {
-                  removePeakAdElements(node);
-                });
-              }
-            });
-          });
-          observer.observe(doc.documentElement, {
-            subtree: true,
-            childList: true,
-            attributes: true,
-            attributeFilter: ['id', 'class', 'src', 'href', 'data-ad', 'data-ad-slot', 'data-ad-client']
-          });
-        } catch (e) {}
-
-        // Block ad-network fetch requests only; video hosts are not included.
-        try {
-          if (typeof win.fetch === 'function' && !win.__driftPeakFetchAdBlocker) {
-            win.__driftPeakFetchAdBlocker = true;
-            var nativeFetch = win.fetch;
-            win.fetch = function (input, init) {
-              var requestUrl = typeof input === 'string' ? input :
-                (input && input.url ? input.url : '');
-              if (isPeakAdResource(requestUrl) && typeof win.Response === 'function') {
-                return Promise.resolve(new win.Response(null, { status: 204 }));
-              }
-              return nativeFetch.apply(this, arguments);
-            };
-          }
-        } catch (e) {}
-      }
+      // Keep the Peak-only CSS ad filters above. Do not remove dynamic catalogue nodes
+      // or intercept fetch here: Peak uses dynamic requests to load movie/show listings
+      // and playback metadata, and those should remain untouched.
 
       // Hide only sidebar-like UI; leave the movie catalogue and player controls intact.
       if (!doc.getElementById('drift-peak-sidebar-cleaner')) {
