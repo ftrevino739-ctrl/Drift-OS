@@ -2968,7 +2968,7 @@ function sjInit(){
     if(!navigator.serviceWorker)throw new Error('Service workers requieren https (o localhost).');
     const {ScramjetController}=$scramjetLoadController();
     SJC=new ScramjetController({files:{wasm:'/scram/scramjet.wasm.wasm',all:'/scram/scramjet.all.js',sync:'/scram/scramjet.sync.js'}});
-    SJC.init();
+    await SJC.init();
     // Solo registrar SW si existe /scram (si no, evaluation failed)
     try{
       const swr=await fetch('/sw.js',{method:'HEAD'});

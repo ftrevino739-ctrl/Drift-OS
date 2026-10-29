@@ -241,238 +241,162 @@
   }
 
   function peakMoviesApp(root) {
+    // Load Peak's real Movies & Shows page through Drift's existing Scramjet proxy.
     var homeUrl = 'https://racialequityleadership.com/movies.html';
     var home = new URL(homeUrl);
-    var frame = null;
-    var timer = null;
 
     root.innerHTML = '';
     root.style.cssText = 'height:100%;min-height:0;position:relative;background:#000';
 
-    function applyPeakControls() {
-      if (!frame) return false;
-
-      var win, doc;
-      try {
-        win = frame.contentWindow;
-        doc = frame.contentDocument || (win && win.document);
-        if (!win || !doc || !doc.documentElement) return false;
-      } catch (e) {
-        return false;
-      }
-
-      // Peak-only ad blocker: styles and behavior stay inside the Peak frame.
-      if (!doc.getElementById('drift-peak-adblock-css')) {
-        var adStyle = doc.createElement('style');
-        adStyle.id = 'drift-peak-adblock-css';
-        adStyle.textContent = [
-          '[id="ad"], [id="ads"], [class~="ad"], [class~="ads"],',
-          '[id*="ad-container" i], [class*="ad-container" i],',
-          '[id*="ad-slot" i], [class*="ad-slot" i],',
-          '[id*="ad-banner" i], [class*="ad-banner" i],',
-          '[id*="advert" i], [class*="advert" i],',
-          '[id*="sponsor" i], [class*="sponsor" i],',
-          '[id*="popunder" i], [class*="popunder" i],',
-          '[data-ad], [data-ad-slot], [data-ad-client],',
-          'ins.adsbygoogle,',
-          'iframe[src*="doubleclick.net" i],',
-          'iframe[src*="googlesyndication.com" i],',
-          'iframe[src*="googleadservices.com" i],',
-          'iframe[src*="adnxs.com" i],',
-          'iframe[src*="popads.net" i],',
-          'iframe[src*="popcash.net" i],',
-          'iframe[src*="propellerads.com" i],',
-          'iframe[src*="adsterra.com" i],',
-          'iframe[src*="exoclick.com" i],',
-          'iframe[src*="trafficjunky.net" i],',
-          'iframe[src*="juicyads.com" i],',
-          'iframe[src*="hilltopads.com" i],',
-          'iframe[src*="clickadu.com" i],',
-          'iframe[src*="clickadilla.com" i],',
-          'iframe[src*="admaven.com" i],',
-          'iframe[src*="taboola.com" i],',
-          'iframe[src*="outbrain.com" i],',
-          'iframe[src*="mgid.com" i] {',
-          '  display:none !important;',
-          '  visibility:hidden !important;',
-          '  pointer-events:none !important;',
-          '}'
-        ].join('\n');
-        (doc.head || doc.documentElement).appendChild(adStyle);
-      }
-
-      // Keep the Peak-only CSS ad filters above. Do not remove dynamic catalogue nodes
-      // or intercept fetch here: Peak uses dynamic requests to load movie/show listings
-      // and playback metadata, and those should remain untouched.
-
-      // Hide only sidebar-like UI; leave the movie catalogue and player controls intact.
-      if (!doc.getElementById('drift-peak-sidebar-cleaner')) {
-        var style = doc.createElement('style');
-        style.id = 'drift-peak-sidebar-cleaner';
-        style.textContent = [
-          'aside[role="complementary"], [role="complementary"], [data-sidebar],',
-          '#sidebar, #side-bar, .sidebar, .side-bar,',
-          '[class*="sidebar" i], [id*="sidebar" i],',
-          '[class*="side-bar" i], [id*="side-bar" i],',
-          '[aria-label*="sidebar" i] {',
-          '  display: none !important;',
-          '  visibility: hidden !important;',
-          '  pointer-events: none !important;',
-          '}',
-          'main, [role="main"], [class*="main-content" i], [id*="main-content" i] {',
-          '  max-width: none !important;',
-          '  width: 100% !important;',
-          '  margin-left: 0 !important;',
-          '}'
-        ].join('\n');
-        (doc.head || doc.documentElement).appendChild(style);
-      }
-
-      // Install document-level guards once per loaded document.
-      if (!doc.documentElement.hasAttribute('data-drift-movies-guard')) {
-        doc.documentElement.setAttribute('data-drift-movies-guard', '1');
-
-        // Keep the Movie/TV experience inside the Movies app; embedded player iframes still work.
-        try {
-          if (!win.__driftMoviesPopupGuard) {
-            win.__driftMoviesPopupGuard = true;
-            win.open = function () { return null; };
-          }
-        } catch (e) {}
-
-        doc.addEventListener('click', function (event) {
-          var clickable = event.target && event.target.closest
-            ? event.target.closest('button, [role="button"], a[href], [aria-label], [title]')
-            : null;
-
-          // The back control on a film/show always returns to the Movies catalogue.
-          if (clickable) {
-            var labels = [
-              clickable.getAttribute('aria-label') || '',
-              clickable.getAttribute('title') || '',
-              clickable.textContent || ''
-            ].map(function (value) {
-              return String(value).replace(/\\s+/g, ' ').trim();
-            });
-
-            var isBackControl = labels.some(function (label) {
-              return /^(?:←\\s*)?(?:back|go back|back to movies|back to home|return(?: to movies| to home)?|movies home|volver|regresar|atrás|atras)(?:\\s*→)?$/i.test(label);
-            });
-
-            if (isBackControl) {
-              event.preventDefault();
-              event.stopImmediatePropagation();
-              win.location.href = homeUrl;
-              return;
-            }
-          }
-
-          var link = event.target && event.target.closest
-            ? event.target.closest('a[href]')
-            : null;
-          if (!link) return;
-
-          var target = (link.getAttribute('target') || '').toLowerCase();
-          if (target === '_blank' || target === '_top' || target === '_parent') {
-            event.preventDefault();
-            event.stopImmediatePropagation();
-            return;
-          }
-
-          try {
-            var destination = new win.URL(link.href, win.location.href);
-            if (destination.origin !== home.origin) {
-              event.preventDefault();
-              event.stopImmediatePropagation();
-            }
-          } catch (e) {}
-        }, true);
-
-        doc.addEventListener('submit', function (event) {
-          var form = event.target;
-          if (!form || !form.getAttribute) return;
-          var target = (form.getAttribute('target') || '').toLowerCase();
-          if (target === '_blank' || target === '_top' || target === '_parent') {
-            event.preventDefault();
-            event.stopImmediatePropagation();
-            return;
-          }
-          try {
-            var action = new win.URL(form.action || win.location.href, win.location.href);
-            if (action.origin !== home.origin) {
-              event.preventDefault();
-              event.stopImmediatePropagation();
-            }
-          } catch (e) {}
-        }, true);
-      }
-
-      // Back from a movie/show can return to the catalogue, but Back on the catalogue
-      // gets a fresh in-app history entry instead of leaving Movies for the Drift desktop.
-      if (!win.__driftMoviesHistoryGuard) {
-        win.__driftMoviesHistoryGuard = true;
-        try {
-          var currentState = win.history.state;
-          var guardState = currentState && typeof currentState === 'object'
-            ? Object.assign({}, currentState, { __driftMoviesGuard: true })
-            : { __driftMoviesGuard: true };
-          win.history.pushState(guardState, '', win.location.href);
-        } catch (e) {}
-
-        win.addEventListener('popstate', function (event) {
-          try {
-            var current = new win.URL(win.location.href);
-            if (current.origin !== home.origin) {
-              win.location.replace(homeUrl);
-              return;
-            }
-            if (current.pathname === home.pathname &&
-                !(event.state && event.state.__driftMoviesGuard)) {
-              var state = event.state && typeof event.state === 'object'
-                ? Object.assign({}, event.state, { __driftMoviesGuard: true })
-                : { __driftMoviesGuard: true };
-              win.history.pushState(state, '', win.location.href);
-            }
-          } catch (e) {}
-        });
-      }
-
-      return true;
+    if (typeof window.openProxied !== 'function') {
+      root.textContent = 'Scramjet no está listo. Recarga Drift.';
+      return;
     }
 
-    (async function () {
-      try {
-        if (typeof window.openProxied !== 'function') {
-          root.textContent = 'Scramjet no está listo. Recarga Drift.';
+    function attachPeakCleaners(opened) {
+      // openProxied owns iframe creation; do not append/create a second frame.
+      var frame = (opened && opened.frame) || root.querySelector('iframe');
+      if (!frame) return;
+
+      function cleanPeak() {
+        var win, doc;
+        try {
+          win = frame.contentWindow;
+          doc = frame.contentDocument || (win && win.document);
+          if (!win || !doc || !doc.documentElement) return;
+        } catch (e) {
           return;
         }
 
-        var opened = await window.openProxied(homeUrl, root);
-        frame = (opened && opened.frame) || root.querySelector('iframe');
-        if (!frame) return;
+        // Keep the real Peak catalogue and player; hide only sidebar and known ad slots.
+        if (!doc.getElementById('drift-peak-clean-style')) {
+          var style = doc.createElement('style');
+          style.id = 'drift-peak-clean-style';
+          style.textContent = [
+            '#sidebar, #side-bar, .sidebar, .side-bar, [data-sidebar],',
+            '[role="complementary"], [aria-label*="sidebar" i],',
+            '[class*="sidebar" i], [id*="sidebar" i],',
+            '[class*="side-bar" i], [id*="side-bar" i] {',
+            '  display:none !important; visibility:hidden !important;',
+            '  pointer-events:none !important;',
+            '}',
+            'main, [role="main"], [class*="main-content" i], [id*="main-content" i] {',
+            '  max-width:none !important; width:100% !important;',
+            '  margin-left:0 !important;',
+            '}',
+            '[id*="ad-container" i], [class*="ad-container" i],',
+            '[id*="ad-slot" i], [class*="ad-slot" i],',
+            '[id*="ad-banner" i], [class*="ad-banner" i],',
+            '[id*="advert" i], [class*="advert" i],',
+            '[id*="sponsor" i], [class*="sponsor" i],',
+            '[id*="popunder" i], [class*="popunder" i],',
+            '[data-ad], [data-ad-slot], [data-ad-client], ins.adsbygoogle,',
+            'iframe[src*="doubleclick.net" i],',
+            'iframe[src*="googlesyndication.com" i],',
+            'iframe[src*="googleadservices.com" i],',
+            'iframe[src*="popads.net" i], iframe[src*="popcash.net" i],',
+            'iframe[src*="propellerads.com" i], iframe[src*="adsterra.com" i],',
+            'iframe[src*="exoclick.com" i], iframe[src*="taboola.com" i],',
+            'iframe[src*="outbrain.com" i], iframe[src*="mgid.com" i] {',
+            '  display:none !important; visibility:hidden !important;',
+            '  pointer-events:none !important;',
+            '}'
+          ].join('\n');
+          (doc.head || doc.documentElement).appendChild(style);
+        }
 
-        frame.addEventListener('load', function () {
-          setTimeout(applyPeakControls, 150);
-          setTimeout(applyPeakControls, 800);
-        });
+        // Attach once. Do not intercept fetch, delete DOM nodes, or block window.open:
+        // those behaviors can break Peak's dynamic listings and movie/episode players.
+        if (doc.documentElement.hasAttribute('data-drift-peak-nav')) return;
+        doc.documentElement.setAttribute('data-drift-peak-nav', '1');
 
-        var ticks = 0;
-        timer = setInterval(function () {
-          if (!root.isConnected || ++ticks > 180) {
-            clearInterval(timer);
-            return;
+        function sendToMoviesHome() {
+          try {
+            win.location.href = homeUrl;
+          } catch (e) {
+            try { frame.src = homeUrl; } catch (_) {}
           }
-          applyPeakControls();
-        }, 1000);
+        }
 
-        applyPeakControls();
-      } catch (error) {
-        root.textContent = 'No se pudo cargar Movies mediante Scramjet.';
+        function redirectIfPeakRoot() {
+          try {
+            var current = new win.URL(win.location.href);
+            if (current.origin === home.origin &&
+                (current.pathname === '/' || current.pathname === '/index.html')) {
+              win.location.replace(homeUrl);
+            }
+          } catch (e) {}
+        }
+
+        doc.addEventListener('click', function (event) {
+          var element = event.target && event.target.closest
+            ? event.target.closest('button, [role="button"], a[href], [aria-label], [title]')
+            : null;
+
+          if (element) {
+            var label = [
+              element.getAttribute('aria-label') || '',
+              element.getAttribute('title') || '',
+              element.textContent || '',
+              element.id || '',
+              typeof element.className === 'string' ? element.className : ''
+            ].join(' ').replace(/\s+/g, ' ').trim();
+
+            // The in-site Back control returns to the movies/series catalogue.
+            if (/^(?:←\s*)?(?:back|go back|return|back to movies|back to home|movies home|volver|regresar|atrás|atras)(?:\s*→)?$/i.test(label)) {
+              event.preventDefault();
+              event.stopImmediatePropagation();
+              sendToMoviesHome();
+              return;
+            }
+          }
+
+          // If Peak's logo/home link goes to its landing page, keep the user in Movies.
+          // Do not block movie-detail routes, episode routes, player iframes, or other media links.
+          var link = event.target && event.target.closest
+            ? event.target.closest('a[href]')
+            : null;
+          if (link) {
+            try {
+              var destination = new win.URL(link.href, win.location.href);
+              if (destination.origin === home.origin &&
+                  (destination.pathname === '/' || destination.pathname === '/index.html')) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                sendToMoviesHome();
+              }
+            } catch (e) {}
+          }
+        }, true);
+
+        win.addEventListener('popstate', redirectIfPeakRoot);
+        redirectIfPeakRoot();
       }
-    })();
+
+      frame.addEventListener('load', function () {
+        setTimeout(cleanPeak, 100);
+        setTimeout(cleanPeak, 500);
+      });
+
+      // Apply once after open, plus a short retry in case Peak's document is still parsing.
+      setTimeout(cleanPeak, 150);
+      setTimeout(cleanPeak, 700);
+    }
+
+    // Use the same existing Scramjet loader as Drift's other proxied apps.
+    // This directly starts at movies.html each time Movies is opened.
+    try {
+      Promise.resolve(window.openProxied(homeUrl, root))
+        .then(attachPeakCleaners)
+        .catch(function (error) {
+          console.error('Peak Movies:', error);
+        });
+    } catch (error) {
+      console.error('Peak Movies:', error);
+    }
   }
 
-  function driftSite(url) {
+function driftSite(url) {
     return function (root) {
       root.innerHTML = '';
       root.style.cssText = 'height:100%;min-height:0;position:relative;background:#000';
