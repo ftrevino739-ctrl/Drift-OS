@@ -334,16 +334,25 @@
             : null;
 
           if (element) {
-            var label = [
+            var labels = [
               element.getAttribute('aria-label') || '',
               element.getAttribute('title') || '',
-              element.textContent || '',
+              element.textContent || ''
+            ].map(function (value) {
+              return String(value).replace(/\s+/g, ' ').trim();
+            });
+
+            var marker = [
               element.id || '',
               typeof element.className === 'string' ? element.className : ''
-            ].join(' ').replace(/\s+/g, ' ').trim();
+            ].join(' ');
 
-            // The in-site Back control returns to the movies/series catalogue.
-            if (/^(?:←\s*)?(?:back|go back|return|back to movies|back to home|movies home|volver|regresar|atrás|atras)(?:\s*→)?$/i.test(label)) {
+            // Match an actual Back/Return control without touching play or episode controls.
+            var isBackControl = labels.some(function (label) {
+              return /^(?:←\s*)?(?:back|go back|return|back to movies|back to home|back to catalogue|back to catalog|movies home|volver|regresar|atrás|atras)(?:\s*→)?$/i.test(label);
+            }) || /(?:^|[\s_-])(?:back|go-back|back-button|back-btn|return-button|back-home)(?:$|[\s_-])/i.test(marker);
+
+            if (isBackControl) {
               event.preventDefault();
               event.stopImmediatePropagation();
               sendToMoviesHome();
