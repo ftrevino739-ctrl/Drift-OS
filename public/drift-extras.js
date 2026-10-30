@@ -282,11 +282,19 @@
           contents: [{ role: 'user', parts: [{ text: q }] }],
           generationConfig: { maxOutputTokens: 8192, temperature: 0.3 }
         };
-        var r = await fetch('/api/gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-        var j = await r.json();
         var text = '';
-        if (r.ok) text = ((((j.candidates || [])[0] || {}).content || {}).parts || []).filter(function (p) { return !p.thought; }).map(function (p) { return p.text || ''; }).join('');
-        else throw new Error((j.error && (j.error.message || String(j.error))) || 'Drift 2.1 did not answer.');
+        var ep = (typeof EP === 'function' ? EP() : (window.DDG0 || 'https://holy-firefly-982c.fert0480.workers.dev')).replace(/\/$/, '');
+        try {
+          var rc = await fetch(ep + '/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'qwen/qwen3-coder-plus:free', max_tokens: 32768, messages: [{ role: 'user', content: q }], system: body.systemInstruction.parts[0].text }) });
+          var jc = await rc.json();
+          text = ((jc.content || []).map(function (x) { return x.text || ''; }).join(''));
+        } catch (errC) { text = ''; }
+        if (!String(text || '').trim()) {
+          var r = await fetch('/api/gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+          var j = await r.json();
+          if (r.ok) text = ((((j.candidates || [])[0] || {}).content || {}).parts || []).filter(function (p) { return !p.thought; }).map(function (p) { return p.text || ''; }).join('');
+          else throw new Error((j.error && (j.error.message || String(j.error))) || 'The code model did not answer.');
+        }
         text = String(text).replace(/^```[a-z]*\n?/i, '').replace(/```$/, '');
         if (!text) throw new Error('Empty response');
         code.value = text;

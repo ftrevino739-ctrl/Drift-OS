@@ -106,12 +106,10 @@
     var btn = document.getElementById('drift-settings-btn');
     if (!btn) return;
     btn.innerHTML =
-      '<svg width="22" height="22" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">' +
-      '<rect width="48" height="48" rx="12" fill="#9B95B0"/>' +
-      '<path fill="#EDEAF3" d="M24 13.5c-1.2 0-2.3.3-3.3.8l-1-1.7-2.2 1.3 1 1.7c-1.1.8-2 1.9-2.5 3.1l-1.9-.5-.7 2.4 1.9.5c-.1 1.2 0 2.4.3 3.5l-1.8.9 1 2.3 1.8-.9c.7 1.1 1.6 2 2.7 2.6l-.7 1.9 2.3.9.7-1.9c1.1.2 2.2.2 3.3 0l.7 1.9 2.3-.9-.7-1.9c1.1-.6 2-1.5 2.7-2.6l1.8.9 1-2.3-1.8-.9c.3-1.1.4-2.3.3-3.5l1.9-.5-.7-2.4-1.9.5c-.5-1.2-1.4-2.3-2.5-3.1l1-1.7-2.2-1.3-1 1.7c-1-.5-2.1-.8-3.3-.8zm0 7c2.2 0 4 1.8 4 4s-1.8 4-4 4-4-1.8-4-4 1.8-4 4-4z"/>' +
-      '</svg>';
+      '<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 8.2a3.8 3.8 0 1 0 0 7.6 3.8 3.8 0 0 0 0-7.6zm9.1 4.3-.9-.5a7.7 7.7 0 0 0 0-1.9l.9-.5a.8.8 0 0 0 .3-1.1l-.8-1.4a.8.8 0 0 0-1-.3l-1 .4a7.4 7.4 0 0 0-1.6-1l.2-1.1a.8.8 0 0 0-.8-.9h-1.6a.8.8 0 0 0-.8.8l.2 1.1a7.4 7.4 0 0 0-1.6 1l-1-.4a.8.8 0 0 0-1 .3l-.8 1.4a.8.8 0 0 0 .3 1.1l.9.5a7.7 7.7 0 0 0 0 1.9l-.9.5a.8.8 0 0 0-.3 1.1l.8 1.4a.8.8 0 0 0 1 .3l1-.4a7.4 7.4 0 0 0 1.6 1l-.2 1.1a.8.8 0 0 0 .8.9h1.6a.8.8 0 0 0 .8-.8l-.2-1.1a7.4 7.4 0 0 0 1.6-1l1 .4a.8.8 0 0 0 1-.3l.8-1.4a.8.8 0 0 0-.3-1.1z"/></svg>' +
+      '<span>Settings</span>';
     btn.style.cssText =
-      'display:inline-flex;align-items:center;justify-content:center;min-width:40px;padding:6px;margin-left:6px;border:0;border-radius:10px;background:transparent;cursor:pointer';
+      'display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px;margin-left:8px;border:1px solid rgba(126,200,255,.75);border-radius:999px;background:rgba(11,26,54,.55);color:#E8F4FF;cursor:pointer;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);font:650 12px system-ui;letter-spacing:.02em';
   }
 
   function noahGamesApp(root) {
@@ -1065,7 +1063,7 @@ function driftSite(url) {
       var i21 = MODELS.findIndex(function (m) { return m && m[0] === 'google/gemini-3.8-flash'; });
       if (i21 > 0) MODELS.unshift(MODELS.splice(i21, 1)[0]);
       var extra = [
-        ['mistralai/mistral-large-4-0', 'Drift 2.0', 'xKiro free · under Drift 2.1', 'default', 'Mistral Large 4. Strong, but Drift 2.1 stays above it.', { code: 1, vision: 1, files: 0, think: 1, fast: 0 }],
+        ['mistralai/mistral-large-2512', 'Drift 2.0', 'xKiro free · under Drift 2.1', 'default', 'Mistral Large 3, free on xKiro. Strong, but Drift 2.1 stays the default.', { code: 1, vision: 1, files: 0, think: 0, fast: 0 }],
         ['qwen/qwen3.8-omni-flash:free', 'Qwen3.8 Omni', 'xKiro free · vision', 'default', 'Free Qwen3.8 Omni. Sees images. Below Drift 2.1.', { code: 1, vision: 1, files: 0, think: 1, fast: 1 }],
         ['qwen/qwen3.8-max:free', 'Qwen3.8 Max', 'xKiro free', 'default', 'Free Qwen3.8 Max. Below Drift 2.1.', { code: 1, vision: 1, files: 0, think: 1, fast: 0 }],
         ['qwen/qwen3.6-plus:free', 'Qwen3.6 Plus', 'xKiro free', 'default', 'Free Qwen3.6 Plus. Below Drift 2.1.', { code: 1, vision: 1, files: 0, think: 1, fast: 0 }],
@@ -1076,7 +1074,11 @@ function driftSite(url) {
         ['mistralai/mistral-medium-3.5', 'Mistral Medium 3.5', 'xKiro free', 'default', 'Mistral Medium 3.5, free on xKiro. Below Drift 2.1.', { code: 1, vision: 1, files: 0, think: 1, fast: 1 }],
         ['mistralai/mistral-small-2603', 'Mistral Small', 'xKiro free', 'default', 'Mistral Small, free on xKiro. Below Drift 2.1.', { code: 1, vision: 1, files: 0, think: 1, fast: 1 }],
         ['mistralai/codestral-2508', 'Codestral', 'xKiro free · code', 'default', 'Codestral, free on xKiro. Below Drift 2.1.', { code: 1, vision: 0, files: 0, think: 0, fast: 1 }],
-        ['qwen/qwen3-coder-plus:free', 'Drift Code', 'xKiro free · code', 'default', 'Qwen3 Coder, free on xKiro. Below Drift 2.1.', { code: 1, vision: 1, files: 0, think: 1, fast: 1 }]
+        ['qwen/qwen3-coder-plus:free', 'Drift Code', 'xKiro free · best code', 'default', 'Qwen3 Coder Plus, free on xKiro. Best free coding model. JS Injector uses this. Below Drift 2.1 for normal chat.', { code: 1, vision: 1, files: 0, think: 1, fast: 1 }],
+        ['qwen/qwen3.7-max:free', 'Qwen3.7 Max', 'xKiro free', 'default', 'Free Qwen3.7 Max. 1M context. Below Drift 2.1.', { code: 1, vision: 0, files: 0, think: 1, fast: 0 }],
+        ['qwen/qwen3.7-plus:free', 'Qwen3.7 Plus', 'xKiro free · vision', 'default', 'Free Qwen3.7 Plus. Sees images. Below Drift 2.1.', { code: 1, vision: 1, files: 0, think: 1, fast: 1 }],
+        ['qwen/qwen3.5-397b-a17b:free', 'Qwen3.5 397B', 'xKiro free', 'default', 'Free Qwen3.5 397B. Below Drift 2.1.', { code: 1, vision: 1, files: 0, think: 1, fast: 0 }],
+        ['cohere/north-mini-code', 'North Mini Code', 'xKiro free · code', 'default', 'Cohere coding model, free on xKiro. Below Drift Code.', { code: 1, vision: 0, files: 0, think: 1, fast: 1 }]
       ];
       extra.forEach(function (m) {
         if (!MODELS.some(function (x) { return x && x[0] === m[0]; })) MODELS.push(m);
@@ -1179,7 +1181,7 @@ function driftSite(url) {
         'body.drift-liquid #task,body.drift-liquid .win,body.drift-liquid .win>.title,body.drift-liquid #menu,body.drift-liquid .sheet,body.drift-liquid .card,body.drift-liquid #drift-settings-panel,body.drift-liquid .ai-msg,body.drift-liquid #ain,body.drift-liquid .omni,body.drift-liquid #drift-tb-show,body.drift-liquid #drift-title-show,body.drift-liquid #drift-tb-hide,body.drift-liquid .drift-title-hide-btn{' +
         'background:rgba(28,28,36,.42)!important;backdrop-filter:saturate(180%) blur(28px)!important;-webkit-backdrop-filter:saturate(180%) blur(28px)!important;border-color:rgba(255,255,255,.18)!important}' +
         'body.drift-liquid #task{box-shadow:0 -8px 32px rgba(0,0,0,.15),inset 0 1px 0 rgba(255,255,255,.35)!important}' +
-        'body.drift-liquid #task{background:rgba(18,22,30,.14)!important;border-top:1px solid rgba(255,255,255,.32)!important;backdrop-filter:saturate(180%) blur(36px)!important;-webkit-backdrop-filter:saturate(180%) blur(36px)!important}' +
+        'body.drift-liquid #task{background:rgba(12,16,24,.08)!important;border-top:1px solid rgba(255,255,255,.28)!important;backdrop-filter:saturate(160%) blur(40px)!important;-webkit-backdrop-filter:saturate(160%) blur(40px)!important}' +
         'body.drift-liquid .win{box-shadow:0 16px 48px rgba(0,0,0,.28)!important}' +
         'body.drift-liquid #task button,body.drift-liquid .win .wb,body.drift-liquid .title button{background:rgba(255,255,255,.16)!important;border-radius:999px!important}';
     } else {

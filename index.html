@@ -1418,16 +1418,19 @@ function ai(root){
         const lang=(String(thoughtNote).match(/```([a-z0-9.+#-]*)/i)||[])[1]||'txt';
         txt=(txt?txt.trim()+'\n\n':'')+'```'+lang+'\n'+fromThought.replace(/\n$/,'')+'\n```';
       }
-      if(!txt.trim() && thoughtNote) txt=thoughtNote;
-      if(typeof window.driftAct==='function'){const __a=window.driftAct('',txt);if(typeof __a==='string')txt=__a}
+      const shown=(out.textContent||'').trim();
+      if(!txt.trim() && thoughtNote && !/<think/i.test(thoughtNote)) txt=thoughtNote;
+      if(!txt.trim()) txt=shown;
+      if(typeof window.driftAct==='function'){const __a=window.driftAct('',txt);if(typeof __a==='string'&&__a.trim())txt=__a}
       if(looksCode && !txt.includes('```')){
         const html=txt.match(/<!DOCTYPE[\s\S]+|<\s*html[\s\S]+/i);
         if(html && html[0].length>40) txt='```html\n'+html[0].trim()+'\n```';
       }
       if(txt.includes('```') && !/```[\s\S]*```/.test(txt)) txt=txt+'\n```';
       out.innerHTML='';
-      if(txt.includes('```')||txt.includes('|')||txt.includes('**')||txt.includes('##')||/https?:\/\//.test(txt)||/\[[^\]]+\]\(https?:/.test(txt)||/!\[[^\]]*\]\(/.test(txt)||/data:image\//.test(txt))renderMD(out,txt);
-      else out.textContent=txt;
+      if(!String(txt||'').trim()){out.className='e';out.textContent='No llegó la respuesta. Vuelve a preguntar.';}
+      else if(txt.includes('```')||txt.includes('|')||txt.includes('**')||txt.includes('##')||/https?:\/\//.test(txt)||/\[[^\]]+\]\(https?:/.test(txt)||/!\[[^\]]*\]\(/.test(txt)||/data:image\//.test(txt)){out.className='a';renderMD(out,txt);}
+      else {out.className='a';out.textContent=txt;}
       const bar=answerTools(out, txt);
       sourceRow(bar||out, sourceRows);
       if(thinkBody && sourceRows.length && !thinkBody.querySelector('.src-row'))sourceRow(thinkBody, sourceRows);
@@ -1462,26 +1465,27 @@ function ai(root){
         const fast=fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'groq-llama',max_tokens:8192,messages:msgs,system:'You are Drift 2.1. Reply in the user language. Put only the file they asked for inside one fenced block, with the right language tag. Every line. Then one short sentence. If they did not ask for a file, do not write one.',}),signal:o.signal}).then(r=>r.json()).then(j=>((j.content||[]).map(x=>x.text||'').join(''))).catch(()=>'');
         const slow=geminiOfficial(msgs,quiet).then(x=>x&&x.text||'').catch(()=>'');
         const winner=await new Promise(function(resolve){
-          let pending=2, best='';
+          let pending=2, best='', done=false;
+          function finish(){ if(done) return; done=true; live=false; resolve(best); }
           function take(t){
             t=String(t||'');
             if(t.length>best.length) best=t;
-            if(hasFence(t)){live=false;resolve(t);return}
-            if(--pending===0) resolve(best);
+            if(--pending<=0) finish();
           }
-          fast.then(take); slow.then(take);
+          fast.then(take, function(){ take(''); });
+          slow.then(take, function(){ take(''); });
+          setTimeout(finish, 50000);
         });
-        if(winner) return {text:winner};
+        if(winner && winner.trim()) return {text:winner};
       }
       let official=null;
       try{ official=await geminiOfficial(msgs,o); }catch(err){ throw err; }
-      if(official&&official.text) return official;
-      if(official) return official;
-      const r=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'google/gemini-3.8-flash',max_tokens:32768,messages:msgs,system:'You are Drift 2.1. Reply in the user language with the full answer. Never say you are Gemini. Do not say you are a text AI. If they ask for code, put every line in one fenced block and do not stop halfway.'}),signal:o.signal});
+      if(official&&String(official.text||'').trim()) return official;
+      const r=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'qwen/qwen3.8-max:free',max_tokens:32768,messages:msgs,system:'You are Drift 2.1. Reply in the user language with the full answer. Never say you are Gemini. If they ask for code, put every line in one fenced block and do not stop halfway.'}),signal:o.signal});
       const j=await r.json().catch(()=>({}));
       const text=((j.content||[]).map(x=>x.text||'').join(''))||'';
-      if(text)return {text};
-      return {text:''};
+      if(text.trim())return {text};
+      throw {message:(j.error&&(j.error.message||j.error))||'No se pudo obtener respuesta.'};
     }
     if(real)return real(input,o);
     const GKEY=LS.get('wos:gk','');
@@ -1541,7 +1545,7 @@ function ai(root){
   async function geminiOfficial(list, o){
     const sys={parts:[{text:'You are Drift 2.1. Never say you are Gemini and never write "Gemini said". If you refer to yourself, say Drift. Reply in the user language with the full answer, not a summary. A greeting such as hi or hola is not a request for code: answer in one or two sentences and do not write a file. When they ask for code or a file, put the COMPLETE file in the answer inside one fenced block. If they say edita and a file name, return that file in one fenced block. Never leave the code only in thinking. Do not stop halfway and do not say you will send the file without pasting it. Do not tell them to open an app instead of writing the code.'}]};
     const codeAsk=/\b(c[oó]digo|code|html|css|javascript|script|lua|luau|python|tampermonkey|archivo completo)\b/i.test(geminiPlain(list));
-    const gen={maxOutputTokens:codeAsk?8192:4096,temperature:0.4,thinkingConfig:{thinkingBudget:0}};
+    const gen={maxOutputTokens:codeAsk?32768:8192,temperature:0.4,thinkingConfig:{thinkingBudget:0}};
     const body={systemInstruction:sys,contents:geminiContents(list),generationConfig:gen};
     let res=await geminiCall(body, o.signal);
     if(!res.ok && /thinkingConfig|Unknown name|invalid|includeThoughts/i.test(JSON.stringify(res.j&&res.j.error||''))){
@@ -1743,9 +1747,9 @@ document.addEventListener('dragend',()=>$('#menu').classList.remove('drag'));
 /* ---- patch: barra Win11, drag, fullscreen, proxy, IG/TikTok ---- */
 (()=>{
 const st=document.createElement('style');st.textContent=`
-:root{--tk:rgba(238,241,248,.85);--tkc:#1c1e21;--mn:rgba(243,245,250,.94)}
-@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--tk:rgba(32,32,38,.88);--tkc:#fff;--mn:rgba(36,36,42,.94)}}
-:root[data-theme=dark]{--tk:rgba(32,32,38,.88);--tkc:#fff;--mn:rgba(36,36,42,.94)}
+:root{--tk:rgba(238,241,248,.34);--tkc:#1c1e21;--mn:rgba(243,245,250,.94)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--tk:rgba(32,32,38,.16);--tkc:#fff;--mn:rgba(36,36,42,.94)}}
+:root[data-theme=dark]{--tk:rgba(32,32,38,.16);--tkc:#fff;--mn:rgba(36,36,42,.94)}
 #task{justify-content:center;background:var(--tk);border-top:1px solid rgba(128,128,128,.25)}
 #task .tb{color:var(--tkc);background:none}#task .tb:hover,#pins button:hover{background:rgba(128,128,128,.22)}
 #task .tb.on{background:rgba(128,128,128,.22);box-shadow:inset 0 -3px 0 #4a9dff}
@@ -3201,7 +3205,16 @@ loadU(S.user);
     {id:'w8',name:'Lavender',url:'https://images.unsplash.com/photo-1499002238440-d64791939528?w=1920&q=80'},
     {id:'w9',name:'Snow peaks',url:'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1920&q=80'},
     {id:'w10',name:'Tropical',url:'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1920&q=80'},
+    {id:'w11',name:'Stars',url:'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1920&q=80'},
+    {id:'w12',name:'Fog valley',url:'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1920&q=80'},
+    {id:'w13',name:'Sun ridge',url:'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1920&q=80'},
+    {id:'w14',name:'Lake',url:'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=1920&q=80'},
+    {id:'w15',name:'Night sea',url:'https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=1920&q=80'},
+    {id:'w16',name:'Sakura',url:'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=1920&q=80'},
     {id:'grad1',name:'Gradient dusk',url:null,grad:'linear-gradient(160deg,#1f3a4d,#3d2c5c,#0f1620)'},
+    {id:'grad4',name:'Gradient midnight',url:null,grad:'linear-gradient(165deg,#020617,#1e1b4b,#0f172a)'},
+    {id:'grad5',name:'Gradient ice',url:null,grad:'linear-gradient(165deg,#082f49,#0e7490,#e0f2fe)'},
+    {id:'grad6',name:'Gradient ember',url:null,grad:'linear-gradient(165deg,#1c1917,#9a3412,#451a03)'},
     {id:'grad2',name:'Gradient ocean',url:null,grad:'linear-gradient(160deg,#0c4a6e,#164e63,#082f49)'},
     {id:'grad3',name:'Gradient forest',url:null,grad:'linear-gradient(160deg,#14532d,#166534,#052e16)'},
   ];

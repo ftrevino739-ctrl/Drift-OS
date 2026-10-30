@@ -112,10 +112,10 @@ function loadAndPatchIndex() {
 	);
 
 	const tag =
-		'<script src="/drift-extras.js?v=20261024a" defer></script>' +
+		'<script src="/drift-extras.js?v=20261030-ai" defer></script>' +
 		'<script src="/chromebook-proxy.js?v=20261020f" defer></script>' +
 		'<script src="/wayground-ai.js?v=20261024a" defer></script>' +
-		'<script src="/drift-fixup.js?v=20261030-edge-roblox" defer></script>' +
+		'<script src="/drift-fixup.js?v=20261030-ai" defer></script>' +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +
