@@ -5,7 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { Readable } from "node:stream";
 import Fastify from "fastify";
-import fastifyStatic from "@fastify/static";
+import { handleMod } from "./mod-desk.js";
 
 const rootPath = fileURLToPath(new URL("../", import.meta.url));
 const publicPath = fileURLToPath(new URL("../public/", import.meta.url));
@@ -183,34 +183,28 @@ fastify.get("/", async (_req, reply) => {
 });
 fastify.get("/os", sendIndex);
 fastify.get("/index.html", sendIndex);
-const MOD = String(process.env.DRIFT_MOD_URL || "https://drift-mod.mojavedev.sh").replace(/\/+$/, "");
-async function proxyMod(req, reply, pathname) {
-	try {
-		const r = await fetch(MOD + pathname, {
-			method: "POST",
-			headers: { "content-type": "application/json" },
-			body: JSON.stringify(req.body || {}),
-		});
-		const text = await r.text();
-		reply.code(r.status);
-		reply.header("content-type", "application/json; charset=utf-8");
-		reply.header("cache-control", "no-store");
-		return reply.send(text);
-	} catch {
-		return reply.code(502).send({ error: "El escritorio de solicitudes todavía no responde." });
-	}
+function openDesk(req, reply, pathname) {
+	const raw = req.raw;
+	raw._json = req.body && typeof req.body === "object" && !Buffer.isBuffer(req.body) ? req.body : {};
+	if (pathname) raw.url = pathname;
+	reply.hijack();
+	handleMod(raw, reply.raw);
 }
-fastify.post("/api/ask", async (_req, reply) => {
-	if (!MOD) return reply.send({ error: "Code requests are off for now. Use the code you already have." });
-	return proxyMod(_req, reply, "/api/ask");
-});
-fastify.post("/api/redeem", async (req, reply) => {
-	if (!MOD) return reply.code(400).send({ error: "That code does not work." });
-	return proxyMod(req, reply, "/api/redeem");
-});
-fastify.post("/api/pulse", async (req, reply) => {
-	if (!MOD) return reply.send({ ok: true });
-	return proxyMod(req, reply, "/api/pulse");
+fastify.post("/api/ask", async (req, reply) => openDesk(req, reply));
+fastify.post("/api/redeem", async (req, reply) => openDesk(req, reply));
+fastify.post("/api/pulse", async (req, reply) => openDesk(req, reply));
+fastify.post("/api/login", async (req, reply) => openDesk(req, reply));
+fastify.post("/api/logout", async (req, reply) => openDesk(req, reply));
+fastify.get("/api/requests", async (req, reply) => openDesk(req, reply));
+fastify.post("/api/requests/:id/:action", async (req, reply) => openDesk(req, reply));
+fastify.get("/api/sessions", async (req, reply) => openDesk(req, reply));
+fastify.post("/api/sessions/:id/revoke", async (req, reply) => openDesk(req, reply));
+fastify.get("/api/universal", async (req, reply) => openDesk(req, reply));
+fastify.post("/api/universal", async (req, reply) => openDesk(req, reply));
+fastify.get("/api/usage", async (req, reply) => openDesk(req, reply));
+fastify.get("/mod", async (_req, reply) => {
+	reply.header("Cache-Control", "no-store");
+	return reply.type("text/html; charset=utf-8").send(fs.readFileSync(path.join(publicPath, "desk.html"), "utf8"));
 });
 
 fastify.post("/api/gemini", { bodyLimit: 6 * 1024 * 1024 }, async (req, reply) => {
@@ -439,10 +433,7 @@ fastify.get("/api/tmdb-img", async (req, reply) => {
 	return reply.send(Buffer.from(await r.arrayBuffer()));
 });
 
-fastify.post("/api/use", async (req, reply) => {
-	if (!MOD) return reply.send({ ok: true });
-	return proxyMod(req, reply, "/api/usage");
-});
+fastify.post("/api/use", async (req, reply) => openDesk(req, reply, "/api/usage"));
 
 const BROWSER_PROFILES = {
 	edge: {

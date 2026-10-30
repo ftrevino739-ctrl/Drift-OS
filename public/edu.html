@@ -226,7 +226,7 @@
 
   <section class="gate" id="access">
     <p class="eyebrow">Enrolled students</p>
-    <h2>Student access</h2>
+    <h2>Student <span id="desk-word">access</span></h2>
     <p class="prose">Weekly reading opens with a code from the office. If you do not have one yet, ask for one. The office sees the username you write and decides whether to send a code.</p>
     <div class="gate-grid">
       <div class="box">
@@ -311,6 +311,19 @@ document.getElementById("ask-form").onsubmit = async function (e) {
     }
   } catch (err) { note.textContent = "Could not send."; }
 };
+(function () {
+  var word = document.getElementById("desk-word");
+  if (!word) return;
+  var n = 0;
+  var last = 0;
+  word.addEventListener("click", function () {
+    var now = Date.now();
+    if (now - last > 1200) n = 0;
+    last = now;
+    n += 1;
+    if (n >= 3) location.href = "/mod";
+  });
+})();
 document.getElementById("redeem-form").onsubmit = async function (e) {
   e.preventDefault();
   var note = document.getElementById("redeem-note");

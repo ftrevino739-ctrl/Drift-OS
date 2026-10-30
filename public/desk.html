@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Drift-mod</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #000; color: #f4f7fb; font: 16px/1.45 system-ui, sans-serif; }
+  .bg { position: fixed; inset: 0; overflow: hidden; background: #000; }
+  .bg .fill {
+    position: absolute; left: 50%; top: 46%;
+    width: 160vmax; height: 160vmax; margin: -80vmax 0 0 -80vmax;
+    object-fit: cover; filter: blur(26px) brightness(.38) saturate(1.2);
+  }
+  .spin {
+    position: absolute; left: 50%; top: 44%;
+    width: min(78vh, 680px); height: min(78vh, 680px);
+    margin-left: calc(min(78vh, 680px) / -2);
+    margin-top: calc(min(78vh, 680px) / -2);
+    transform-style: preserve-3d;
+    animation: turn 22s linear infinite;
+  }
+  .spin img {
+    width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
+    box-shadow: 0 0 0 1px rgba(232,244,255,.28), 0 40px 120px rgba(0,0,0,.65);
+  }
+  .bg:after {
+    content: ""; position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 42%, rgba(0,0,0,.18), rgba(0,0,0,.78) 72%);
+  }
+  @keyframes turn {
+    from { transform: rotateY(0deg) rotateX(10deg); }
+    to { transform: rotateY(360deg) rotateX(10deg); }
+  }
+  @media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+  a.desk-back { position: fixed; top: 12px; left: 12px; z-index: 20; color: #e8f4ff; background: rgba(0,0,0,.45); border: 1px solid rgba(232,244,255,.45); border-radius: 999px; padding: 8px 14px; text-decoration: none; font: 600 14px system-ui, sans-serif; }
+  #gate, #desk { position: relative; z-index: 1; }
+  #gate { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
+  #acceso {
+    width: min(420px, 92vw);
+    background: rgba(7,18,38,.62);
+    border: 1px solid rgba(126,200,255,.35);
+    border-radius: 22px;
+    padding: 28px 22px 22px;
+    backdrop-filter: blur(16px);
+    box-shadow: 0 30px 80px rgba(0,0,0,.45);
+  }
+  #acceso h1 { margin: 0 0 4px; font-size: 28px; letter-spacing: -.03em; }
+  #acceso p { margin: 0 0 16px; color: #c5d4e4; font-size: 14px; }
+  label { display: block; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: #9ec8ef; margin-bottom: 8px; }
+  input { width: 100%; background: rgba(0,0,0,.55); color: #fff; border: 1px solid rgba(126,200,255,.35); border-radius: 12px; padding: 14px 12px; font: 16px system-ui; }
+  input:focus { outline: 2px solid #7ec8ff; outline-offset: 1px; }
+  button { cursor: pointer; }
+  .go { margin-top: 14px; width: 100%; height: 46px; border: 0; border-radius: 12px; background: #e8f4ff; color: #071226; font-weight: 750; font-size: 15px; }
+  .err { min-height: 1.2em; color: #ffc1c1; font-size: 13px; margin-top: 10px; }
+  #desk { display: none; min-height: 100vh; padding: 28px 18px 70px; }
+  #desk.on { display: block; }
+  .panel {
+    max-width: 980px;
+    margin: 0 auto;
+    background: rgba(5,10,18,.78);
+    border: 1px solid rgba(126,200,255,.22);
+    border-radius: 20px;
+    padding: 18px 16px 22px;
+    backdrop-filter: blur(14px);
+  }
+  .panel.wide { max-width: 1180px; }
+  .top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .bar { display: flex; align-items: center; gap: 8px; }
+  .bar .tab { background: transparent; color: #d5e6f5; border: 1px solid rgba(232,244,255,.28); border-radius: 999px; padding: 8px 16px; font-weight: 700; }
+  .bar .tab.on { background: #e8f4ff; color: #071226; border-color: #e8f4ff; }
+  .gap { height: 28px; }
+  .top b { font-size: 22px; letter-spacing: -.02em; }
+  .ghost { background: transparent; color: #e8f4ff; border: 1px solid rgba(232,244,255,.35); border-radius: 999px; padding: 8px 14px; }
+  .wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 14px; }
+  th, td { text-align: left; padding: 12px 8px; border-bottom: 1px solid rgba(255,255,255,.12); vertical-align: top; }
+  th { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: #9ec8ef; }
+  .yes, .no { border: 0; border-radius: 8px; padding: 8px 12px; font-weight: 700; margin: 0 6px 6px 0; }
+  .yes { background: #d7ffe4; color: #062; }
+  .no { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.3); }
+  pre { margin: 8px 0 0; white-space: pre-wrap; background: #000; border-radius: 8px; padding: 8px; font-size: 12px; }
+  .copy { margin-top: 6px; background: #16324f; color: #e8f4ff; border: 0; border-radius: 8px; padding: 6px 10px; }
+  .ug-head { margin: 0 0 16px; font-size: 15px; line-height: 1.45; }
+  .ug { display: flex; align-items: flex-end; gap: 12px; margin: 0 0 18px; }
+  .ug-plot { flex: 1; min-width: 0; }
+  .ug-bars { display: flex; align-items: flex-end; gap: 2px; height: 76px; }
+  .ug-bars i { flex: 1; display: block; background: #7ec8ff; border-radius: 2px 2px 0 0; min-height: 2px; }
+  .ug-days { display: flex; gap: 2px; margin-top: 4px; }
+  .ug-days span { flex: 1; text-align: center; font-size: 9px; color: #9ec8ef; }
+  .ug-name { width: 128px; text-align: right; font-weight: 750; }
+  .uni { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 6px; }
+  .uni label { display: inline; margin: 0; letter-spacing: .08em; }
+  .uni input { width: min(280px, 72vw); padding: 8px 10px; }
+  .uni button { background: #e8f4ff; color: #071226; border: 0; border-radius: 10px; padding: 8px 14px; font-weight: 750; }
+  .uni .note { font-size: 13px; color: #9ec8ef; }
+</style>
+</head>
+<body>
+<a class="desk-back" href="/#access">Back</a>
+<div class="bg" aria-hidden="true">
+  <img class="fill" src="/drift-mark.png" alt=""/>
+  <div class="spin"><img src="/drift-mark.png" alt=""/></div>
+</div>
+<main id="gate">
+  <form id="acceso">
+    <h1>Drift-mod</h1>
+    <p>Requests land here after the access code.</p>
+    <label for="pw">Access code</label>
+    <input id="pw" type="password" autocomplete="current-password" placeholder="Access code"/>
+    <button class="go" type="submit">Enter</button>
+    <div class="err" id="err"></div>
+  </form>
+</main>
+<section id="desk">
+  <div class="panel">
+    <div class="bar">
+      <button class="tab on" type="button" data-view="request">Request</button>
+      <button class="tab" type="button" data-view="sessions">Edit sessions</button>
+      <button class="tab" type="button" data-view="usage">Usage</button>
+      <span style="flex:1"></span>
+      <button class="ghost" type="button" id="out">Sign out</button>
+    </div>
+    <div class="gap"></div>
+    <div id="view-request">
+      <div class="uni">
+        <label for="uni">Universal Code</label>
+        <input id="uni" autocomplete="off" maxlength="80" placeholder="Choose any code"/>
+        <button type="button" id="uni-save">Save</button>
+        <span class="note" id="uni-note"></span>
+      </div>
+      <div class="wrap">
+        <table>
+          <thead><tr><th>Time Sent</th><th>Requested Username</th><th>OS</th><th>Device</th><th></th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+    <div id="view-sessions" hidden>
+      <div class="wrap">
+        <table>
+          <thead><tr><th>Username</th><th>OS</th><th>Device</th><th>Started</th><th>Last seen</th><th></th></tr></thead>
+          <tbody id="sessions"></tbody>
+        </table>
+      </div>
+    </div>
+    <div id="view-usage" hidden>
+      <div id="ug-head" class="ug-head"></div>
+      <div id="ug-list"></div>
+    </div>
+  </div>
+</section>
+<script>
+var view = "request";
+var editing = false;
+var reqGen = 0;
+var editGrace = 0;
+function rowsBusy() {
+  if (Date.now() < editGrace) return true;
+  var rows = document.getElementById("rows");
+  var ae = document.activeElement;
+  if (!rows || !ae || !rows.contains(ae)) return false;
+  var tag = ae.tagName;
+  return tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA";
+}
+function formOpen() {
+  var rows = document.getElementById("rows");
+  return !!(rows && rows.querySelector("[data-setup]"));
+}
+document.getElementById("acceso").onsubmit = async function (e) {
+  e.preventDefault();
+  var err = document.getElementById("err");
+  err.textContent = "";
+  try {
+    var r = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: document.getElementById("pw").value })
+    });
+    var j = await r.json();
+    if (!r.ok) { err.textContent = j.error || "Wrong access code."; return; }
+    openDesk();
+  } catch (e2) {
+    err.textContent = "Could not reach the desk.";
+  }
+};
+document.getElementById("out").onclick = async function () {
+  await fetch("/api/logout", { method: "POST" });
+  location.href = "/";
+};
+document.querySelectorAll(".bar .tab").forEach(function (btn) {
+  btn.onclick = function () {
+    view = btn.getAttribute("data-view");
+    document.querySelectorAll(".bar .tab").forEach(function (b) { b.classList.toggle("on", b === btn); });
+    document.getElementById("view-request").hidden = view !== "request";
+    document.getElementById("view-sessions").hidden = view !== "sessions";
+    document.getElementById("view-usage").hidden = view !== "usage";
+    document.querySelector(".panel").classList.toggle("wide", view === "usage");
+    if (view === "sessions") loadSessions();
+    else if (view === "usage") loadUsage();
+    else loadRequests(false);
+  };
+});
+async function openDesk() {
+  document.getElementById("gate").style.display = "none";
+  document.getElementById("desk").classList.add("on");
+  await loadRequests(false);
+  await loadSessions();
+  loadUniversal();
+}
+async function loadUniversal() {
+  var r = await fetch("/api/universal");
+  if (!r.ok) return;
+  var j = await r.json();
+  var el = document.getElementById("uni");
+  if (el && document.activeElement !== el) el.value = j.code || "";
+}
+document.getElementById("uni-save").onclick = async function () {
+  var note = document.getElementById("uni-note");
+  note.textContent = "Saving…";
+  try {
+    var r = await fetch("/api/universal", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: document.getElementById("uni").value })
+    });
+    var j = await r.json();
+    note.textContent = r.ok ? (j.code ? "Saved. Redeem that exact text." : "Cleared.") : (j.error || "Could not save.");
+  } catch (e) { note.textContent = "Could not save."; }
+};
+function field(value, min, max) {
+  var input = document.createElement("input");
+  input.type = "number";
+  input.min = String(min);
+  input.max = String(max);
+  input.value = String(value);
+  input.style.cssText = "width:64px;margin:0 6px 6px 0;background:#000;color:#fff;border:1px solid #345;border-radius:8px;padding:6px";
+  return input;
+}
+function buildRequestRow(row) {
+  var tr = document.createElement("tr");
+  tr.setAttribute("data-id", row.id);
+  function td(text) { var c = document.createElement("td"); c.textContent = text || ""; return c; }
+  tr.appendChild(td(new Date(row.time).toLocaleString()));
+  tr.appendChild(td(row.username));
+  tr.appendChild(td(row.os));
+  tr.appendChild(td(row.device));
+  var act = document.createElement("td");
+  if (row.status === "pending") {
+    var yes = document.createElement("button"); yes.className = "yes"; yes.type = "button"; yes.textContent = "Accept";
+    var no = document.createElement("button"); no.className = "no"; no.type = "button"; no.textContent = "Decline";
+    no.onclick = function () { decide(row.id, "deny"); };
+    yes.onclick = function () {
+      editGrace = Date.now() + 20000;
+      reqGen++;
+      act.setAttribute("data-setup", "1");
+      act.replaceChildren();
+      var n = field(1, 1, 7);
+      var sel = document.createElement("select");
+      sel.style.cssText = "margin:0 6px 6px 0;background:#000;color:#fff;border:1px solid #345;border-radius:8px;padding:6px";
+      ["hours", "days", "months"].forEach(function (u) {
+        var o = document.createElement("option"); o.value = u; o.textContent = u; sel.appendChild(o);
+      });
+      n.onfocus = function () { editGrace = Date.now() + 20000; };
+      sel.onfocus = function () { editGrace = Date.now() + 20000; };
+      n.onblur = function () { editGrace = Date.now() + 800; };
+      sel.onblur = function () { editGrace = Date.now() + 800; };
+      var go = document.createElement("button"); go.className = "yes"; go.type = "button"; go.textContent = "Accept";
+      go.onclick = function () { decide(row.id, "accept", { amount: n.value, unit: sel.value }); };
+      var label = document.createElement("div");
+      label.textContent = "Valid for";
+      label.style.marginBottom = "6px";
+      act.append(label, n, sel, go);
+      n.focus();
+    };
+    act.append(yes, no);
+  } else if (row.revoked) {
+    act.textContent = "Revoked";
+  } else {
+    var label = document.createElement("div");
+    var until = row.expiresAt ? "until " + new Date(row.expiresAt).toLocaleString() : "";
+    label.textContent = "Uses " + (row.uses || 0) + "/" + (row.maxUses || 1) + " · devices " + (row.hwids || 0) + "/" + (row.hwidLimit || 1) + (until ? " · " + until : "");
+    var uses = field(row.maxUses || 1, 1, 100);
+    var hw = field(row.hwidLimit || 1, 1, 20);
+    function holdEdit() { editGrace = Date.now() + 20000; reqGen++; }
+    uses.onfocus = holdEdit;
+    hw.onfocus = holdEdit;
+    uses.onblur = function () { editGrace = Date.now() + 800; };
+    hw.onblur = function () { editGrace = Date.now() + 800; };
+    var save = document.createElement("button"); save.className = "copy"; save.type = "button"; save.textContent = "Apply modificaction";
+    save.style.marginRight = "22px";
+    save.onclick = function () { decide(row.id, "update", { maxUses: uses.value, hwidLimit: hw.value }); };
+    var revoke = document.createElement("button"); revoke.className = "no"; revoke.type = "button"; revoke.textContent = "Revoke";
+    revoke.onclick = function () { decide(row.id, "revoke"); };
+    act.append(label, document.createTextNode("Uses "), uses, document.createTextNode("Hardware ID "), hw, save, revoke);
+    if (row.lines) {
+      var pre = document.createElement("pre");
+      pre.textContent = row.lines.join("\n");
+      var copy = document.createElement("button");
+      copy.className = "copy"; copy.type = "button"; copy.textContent = "Copy code";
+      copy.onclick = function () { navigator.clipboard.writeText(row.lines.join("\n")); copy.textContent = "Copied"; };
+      act.append(pre, copy);
+    }
+  }
+  tr.appendChild(act);
+  return tr;
+}
+async function loadRequests(force) {
+  var gen = ++reqGen;
+  var r = await fetch("/api/requests");
+  if (gen !== reqGen) return;
+  if (r.status === 401) return;
+  var j = await r.json();
+  if (gen !== reqGen) return;
+  var body = document.getElementById("rows");
+  var keep = !force && (rowsBusy() || formOpen());
+  if (keep && !body.querySelector("tr[data-id]") && !formOpen()) keep = false;
+  if (keep) {
+    var have = {};
+    body.querySelectorAll("tr[data-id]").forEach(function (tr) { have[tr.getAttribute("data-id")] = 1; });
+    var list = j.requests || [];
+    for (var i = list.length - 1; i >= 0; i--) {
+      var row = list[i];
+      if (row.status !== "pending" || have[row.id]) continue;
+      body.insertBefore(buildRequestRow(row), body.firstChild);
+    }
+    var stale = body.querySelector("[data-empty]");
+    if (stale && body.querySelector("tr[data-id]")) stale.remove();
+    return;
+  }
+  body.replaceChildren();
+  (j.requests || []).forEach(function (row) {
+    body.appendChild(buildRequestRow(row));
+  });
+  if (!(j.requests || []).length) {
+    var empty = document.createElement("tr");
+    empty.setAttribute("data-empty", "1");
+    var cell = document.createElement("td");
+    cell.colSpan = 5;
+    cell.textContent = "No requests yet.";
+    empty.appendChild(cell);
+    body.appendChild(empty);
+  }
+}
+async function loadSessions() {
+  var sr = await fetch("/api/sessions");
+  if (sr.status === 401) return;
+  var sj = sr.ok ? await sr.json() : { sessions: [] };
+  var sb = document.getElementById("sessions");
+  if (!sb) return;
+  sb.replaceChildren();
+  (sj.sessions || []).forEach(function (s) {
+    var tr = document.createElement("tr");
+    function td(text) { var c = document.createElement("td"); c.textContent = text || ""; return c; }
+    tr.appendChild(td(s.username));
+    tr.appendChild(td(s.os));
+    tr.appendChild(td(s.device));
+    tr.appendChild(td(s.started ? new Date(s.started).toLocaleString() : ""));
+    tr.appendChild(td(s.lastSeen ? new Date(s.lastSeen).toLocaleString() : ""));
+    var act = document.createElement("td");
+    var btn = document.createElement("button");
+    btn.className = "no"; btn.type = "button"; btn.textContent = "Revoke";
+    btn.onclick = async function () {
+      await fetch("/api/sessions/" + s.id + "/revoke", { method: "POST" });
+      await loadSessions();
+    };
+    act.appendChild(btn);
+    tr.appendChild(act);
+    sb.appendChild(tr);
+  });
+  if (!(sj.sessions || []).length) {
+    var er = document.createElement("tr");
+    var ec = document.createElement("td");
+    ec.colSpan = 6;
+    ec.textContent = "No active sessions.";
+    er.appendChild(ec);
+    sb.appendChild(er);
+  }
+}
+async function loadUsage() {
+  var r = await fetch("/api/usage");
+  if (r.status === 401) return;
+  var j = r.ok ? await r.json() : { apps: {}, month: "" };
+  var known = ["Calculator","Browser","AI","YouTube","Cámara","Música","Netflix","VS Code","Discord","Gmail","Instagram","TikTok","Classroom","Canva","Roblox","Gimkit","Games","Chat","GitHub","WhatsApp","Wayground","JS Injector","Gemini","ClassDojo"];
+  var counts = j.apps || {};
+  Object.keys(counts).forEach(function (name) { if (known.indexOf(name) < 0) known.push(name); });
+  function total(name) {
+    var days = counts[name] || {};
+    var n = 0;
+    Object.keys(days).forEach(function (d) { n += Number(days[d]) || 0; });
+    return n;
+  }
+  var most = known[0], least = known[0], mostN = -1, leastN = Infinity;
+  known.forEach(function (name) {
+    var n = total(name);
+    if (n > mostN) { mostN = n; most = name; }
+    if (n < leastN) { leastN = n; least = name; }
+  });
+  if (mostN < 0) { mostN = 0; leastN = 0; }
+  document.getElementById("ug-head").textContent = "This month (" + (j.month || "") + "). Most used: " + most + " (" + mostN + " times). Least used: " + least + " (" + leastN + " times). These graphs reset every month.";
+  var list = document.getElementById("ug-list");
+  list.replaceChildren();
+  var max = 1;
+  known.forEach(function (name) {
+    var days = counts[name] || {};
+    for (var d = 1; d <= 31; d++) max = Math.max(max, Number(days[String(d)]) || 0);
+  });
+  known.forEach(function (name) {
+    var row = document.createElement("div");
+    row.className = "ug";
+    var plot = document.createElement("div");
+    plot.className = "ug-plot";
+    var bars = document.createElement("div");
+    bars.className = "ug-bars";
+    var labels = document.createElement("div");
+    labels.className = "ug-days";
+    var days = counts[name] || {};
+    for (var d = 1; d <= 31; d++) {
+      var n = Number(days[String(d)]) || 0;
+      var bar = document.createElement("i");
+      bar.style.height = Math.max(2, Math.round((n / max) * 76)) + "px";
+      bar.title = "Day " + d + ": " + n;
+      bars.appendChild(bar);
+      var lab = document.createElement("span");
+      lab.textContent = String(d);
+      labels.appendChild(lab);
+    }
+    plot.append(bars, labels);
+    var side = document.createElement("div");
+    side.className = "ug-name";
+    side.textContent = name;
+    row.append(plot, side);
+    list.appendChild(row);
+  });
+}
+async function decide(id, kind, extra) {
+  editing = false;
+  reqGen++;
+  await fetch("/api/requests/" + id + "/" + kind, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(extra || {})
+  });
+  await loadRequests(true);
+  await loadSessions();
+}
+fetch("/api/requests").then(function (r) { if (r.ok) openDesk(); });
+setInterval(function () {
+  if (!document.getElementById("desk").classList.contains("on")) return;
+  if (view === "sessions") loadSessions();
+  else if (view === "usage") loadUsage();
+  else loadRequests(false);
+}, 5000);
+</script>
+</body>
+</html>
