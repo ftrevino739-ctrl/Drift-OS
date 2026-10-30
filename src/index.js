@@ -183,13 +183,7 @@ fastify.get("/", async (_req, reply) => {
 });
 fastify.get("/os", sendIndex);
 fastify.get("/index.html", sendIndex);
-const MOD = process.env.DRIFT_MOD_URL || "";
-const LOCAL_CODE = "drift-the-goat";
-function deskUrl(req) {
-	const host = String(req.headers["x-forwarded-host"] || req.headers.host || "drift.cc.cd").split(",")[0].trim();
-	const proto = String(req.headers["x-forwarded-proto"] || "https").split(",")[0].trim();
-	return proto + "://" + host + "/os";
-}
+const MOD = String(process.env.DRIFT_MOD_URL || "https://drift-mod.mojavedev.sh").replace(/\/+$/, "");
 async function proxyMod(req, reply, pathname) {
 	try {
 		const r = await fetch(MOD + pathname, {
@@ -211,14 +205,11 @@ fastify.post("/api/ask", async (_req, reply) => {
 	return proxyMod(_req, reply, "/api/ask");
 });
 fastify.post("/api/redeem", async (req, reply) => {
-	const code = String((req.body && req.body.code) || "").trim();
-	if (code === LOCAL_CODE) return reply.send({ ok: true, url: deskUrl(req), ticket: "local" });
 	if (!MOD) return reply.code(400).send({ error: "That code does not work." });
 	return proxyMod(req, reply, "/api/redeem");
 });
 fastify.post("/api/pulse", async (req, reply) => {
-	const ticket = String((req.body && req.body.ticket) || "");
-	if (ticket === "local" || !MOD) return reply.send({ ok: true });
+	if (!MOD) return reply.send({ ok: true });
 	return proxyMod(req, reply, "/api/pulse");
 });
 
