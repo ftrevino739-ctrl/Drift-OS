@@ -1179,6 +1179,7 @@ function driftSite(url) {
         'body.drift-liquid #task,body.drift-liquid .win,body.drift-liquid .win>.title,body.drift-liquid #menu,body.drift-liquid .sheet,body.drift-liquid .card,body.drift-liquid #drift-settings-panel,body.drift-liquid .ai-msg,body.drift-liquid #ain,body.drift-liquid .omni,body.drift-liquid #drift-tb-show,body.drift-liquid #drift-title-show,body.drift-liquid #drift-tb-hide,body.drift-liquid .drift-title-hide-btn{' +
         'background:rgba(28,28,36,.42)!important;backdrop-filter:saturate(180%) blur(28px)!important;-webkit-backdrop-filter:saturate(180%) blur(28px)!important;border-color:rgba(255,255,255,.18)!important}' +
         'body.drift-liquid #task{box-shadow:0 -8px 32px rgba(0,0,0,.15),inset 0 1px 0 rgba(255,255,255,.35)!important}' +
+        'body.drift-liquid #task{background:rgba(18,22,30,.14)!important;border-top:1px solid rgba(255,255,255,.32)!important;backdrop-filter:saturate(180%) blur(36px)!important;-webkit-backdrop-filter:saturate(180%) blur(36px)!important}' +
         'body.drift-liquid .win{box-shadow:0 16px 48px rgba(0,0,0,.28)!important}' +
         'body.drift-liquid #task button,body.drift-liquid .win .wb,body.drift-liquid .title button{background:rgba(255,255,255,.16)!important;border-radius:999px!important}';
     } else {
@@ -1507,15 +1508,7 @@ function driftSite(url) {
     };
   }
   function robloxShell(root) {
-    root.innerHTML = '<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center;background:#111;color:#fff"><b style="font-size:18px">Roblox</b><div style="max-width:440px;opacity:.85;font-size:13px">Se abre en la ventana del navegador, sin proxy, para que el registro y las ventanas emergentes funcionen. Drift se queda abierto detrás.</div><button type="button" data-open style="padding:10px 16px;border:0;border-radius:10px;background:#fff;color:#111;font-weight:700;cursor:pointer">Abrir Roblox</button></div>';
-    function open() {
-      var w = window.open('https://www.roblox.com/', 'drift-roblox');
-      var n = root.querySelector('[data-open]');
-      if (!w && n) n.textContent = 'Permite ventanas emergentes y pulsa otra vez';
-    }
-    var btn = root.querySelector('[data-open]');
-    if (btn) btn.onclick = open;
-    open();
+    operaPage('https://www.roblox.com/', 'edge')(root);
   }
   function inAppPage(url) {
     return function (root) {
@@ -1811,7 +1804,7 @@ function driftSite(url) {
       '<p><b>BareMux no respondió / Scramjet server is down or blocked.</b> Render is waking up or the school network blocks the WebSocket. Wait 30–60 seconds, stay on the tab, then press Retry. Do not reload in a loop.</p>' +
       '<p><b>Some apps stay blank for a few minutes.</b> The proxy is still connecting. Wait. TikTok, Gemini and Gimkit need that first connection.</p>' +
       '<p><b>ServiceWorker script evaluation failed.</b> Hard refresh. If it stays, close the tab and open Drift again. Do not use an old bookmark to a Vercel preview.</p>' +
-      '<p><b>Gmail and Classroom login.</b> Gmail stays inside the app as Firefox. Continue no longer reloads the email step. Classroom login stays as Edge. Classroom Oauth opens the sign-in on another page and, when you close it, Classroom loads here. Canva still opens in this Chromebook’s Chrome, because Canva blocks the server. Roblox opens inside Drift on Windows and ChromeOS. It does not open Chrome.</p>' +
+      '<p><b>Gmail and Classroom login.</b> Gmail stays inside the app as Firefox. Continue no longer reloads the email step. Classroom login stays as Edge. Classroom Oauth opens the sign-in on another page and, when you close it, Classroom loads here. Canva still opens in this Chromebook’s Chrome, because Canva blocks the server. Roblox opens in this same window as Microsoft Edge. It does not open a new window.</p>' +
       '<p><b>SharedWorker / cdn.jsdelivr.net/baremux.</b> Unity cannot use a worker from another site. Drift blocks that CDN and uses /baremux on the same origin. If the game still fails, use Open outside proxy (Unity).</p>' +
       '<h3>Windows</h3>' +
       '<p><b>Same proxy errors as ChromeOS</b> (BareMux, cold start, Service Worker). Same fix: wait, then Ctrl+Shift+R.</p>' +
