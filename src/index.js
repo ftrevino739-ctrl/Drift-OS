@@ -4,7 +4,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { Readable } from "node:stream";
-import Fastify from "fastify";
+import fastifyStatic from "@fastify/static";
 import { handleMod } from "./mod-desk.js";
 
 const rootPath = fileURLToPath(new URL("../", import.meta.url));
