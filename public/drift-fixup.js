@@ -1115,8 +1115,8 @@ function driftSite(url) {
     window.XAPPS.movies = {
       n: 'Movies',
       f: function moviesPick(root) {
-        var src = 'tmdb';
-        try { src = localStorage.getItem('wos:movies') || 'tmdb'; } catch (e) {}
+        var src = 'racial';
+        try { src = localStorage.getItem('wos:movies') || 'racial'; } catch (e) {}
         if (src === 'serum') src = 'noah';
         if (src === 'racial') return peakMoviesApp(root);
         if (src === 'noah' && typeof movies === 'function') return movies(root);
@@ -1725,7 +1725,16 @@ function driftSite(url) {
     return 'win';
   }
   function robloxShell(root) {
-    operaPage('https://www.roblox.com/login', robloxOs())(root);
+    var url = 'https://now.gg/apps/roblox-corporation/5349/roblox';
+    root.innerHTML = '<div class="sjt" style="height:100%;min-height:0;position:relative;background:#0e1014"></div>';
+    var box = root.querySelector('.sjt');
+    var frame = document.createElement('iframe');
+    frame.setAttribute('allow', 'fullscreen; autoplay; gamepad; keyboard-map; pointer-lock; clipboard-read; clipboard-write; accelerometer; gyroscope');
+    frame.setAttribute('allowfullscreen', 'true');
+    frame.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+    frame.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#0e1014';
+    frame.src = url;
+    box.appendChild(frame);
   }
   function inAppPage(url) {
     return function (root) {
@@ -2286,7 +2295,7 @@ function driftSite(url) {
       '<div style="flex:1"><b>Protector</b>' +
       '<div style="opacity:.75;font-size:12px;margin-top:4px">If Drift detects someone is viewing your screen on Linewize it instantly redirects you to classroom.google.com. It leaves on Class started, Streaming screen, a screenshot upload, or Heartbeat sent twice in a few seconds. The extension can stay installed. It does not leave just because Linewize is on.</div></div>' +
       switchHTML('drift-prot-sw', localStorage.getItem('wos:protector') === '1') + '</div>' +
-      '<div style="margin:-6px 0 14px;padding-left:2px"><div style="font-size:12px;font-weight:650;margin-bottom:6px">When a class connects</div>' +
+      '<div style="margin:22px 0 14px;padding-left:2px"><div style="font-size:12px;font-weight:650;margin-bottom:6px">When a class connects</div>' +
       '<label style="display:flex;gap:8px;align-items:center;margin-top:6px;cursor:pointer"><input type="radio" name="prot-class" value="alert"/> Only alert</label>' +
       '<label style="display:flex;gap:8px;align-items:center;margin-top:6px;cursor:pointer"><input type="radio" name="prot-class" value="classroom"/> Alert and open Classroom</label></div>' +
       '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:16px;border-top:1px solid rgba(255,255,255,.08);padding-top:14px">' +
@@ -2295,12 +2304,12 @@ function driftSite(url) {
       switchHTML('drift-lens-sw', lensOn) + '</div>' +
       '<div style="margin-top:16px;border-top:1px solid rgba(255,255,255,.08);padding-top:14px">' +
       '<b>Classroom</b>' +
-      '<div style="opacity:.75;font-size:12px;margin-top:4px">Drag this bookmarklet to the bookmarks bar of your real browser. On a Google search it opens that search through drift.hostless.app/scramjet/ in the real browser, not in a Drift app or tab.</div>' +
-      '<a id="drift-bm-class" style="display:inline-block;margin-top:8px;padding:8px 12px;border-radius:10px;background:#1a73e8;color:#fff;text-decoration:none;font-weight:650">Classroom</a></div>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Click the button to copy the bookmarklet and open the setup tutorial. On a Google search in your real browser it opens that search through drift.hostless.app/scramjet/, not in a Drift app or tab.</div>' +
+      '<a id="drift-bm-class" href="#" style="display:inline-block;margin-top:8px;padding:8px 12px;border-radius:10px;background:#1a73e8;color:#fff;text-decoration:none;font-weight:650">Full bypasser (DRIFT)</a></div>' +
       '<div style="margin-top:16px">' +
-      '<b>Google guest</b>' +
-      '<div style="opacity:.75;font-size:12px;margin-top:4px">Same kind of bookmarklet. It opens the page through drift.hostless.app/scramjet/ as a Google guest in the real browser.</div>' +
-      '<a id="drift-bm-guest" style="display:inline-block;margin-top:8px;padding:8px 12px;border-radius:10px;background:#1a73e8;color:#fff;text-decoration:none;font-weight:650">Google guest</a></div>' +
+      '<b>Full bypasser</b>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Click the button to copy this bookmarklet and open the same kind of tutorial. It opens the page through drift.hostless.app/scramjet/ as a Google guest in the real browser.</div>' +
+      '<a id="drift-bm-guest" href="#" style="display:inline-block;margin-top:8px;padding:8px 12px;border-radius:10px;background:#1a73e8;color:#fff;text-decoration:none;font-weight:650">Full bypasser</a></div>' +
       '<button type="button" id="drift-docs-btn" style="margin-top:12px;width:100%;padding:10px;border:1px solid rgba(255,255,255,.14);border-radius:10px;background:transparent;color:#fff;font-weight:600;cursor:pointer">Drift docs</button></section></div></div>';
     panel.querySelector('[data-x]').onclick = function (e) { e.stopPropagation(); panel.remove(); };
     function showSec(id) {
@@ -2317,13 +2326,61 @@ function driftSite(url) {
     showSec('ui');
     var bmClass = panel.querySelector('#drift-bm-class');
     var bmGuest = panel.querySelector('#drift-bm-guest');
+    var classJs = 'javascript:' + "(function(){var q='';try{q=new URL(location.href).searchParams.get('q')||'';}catch(e){}var target=q?('https://www.google.com/search?q='+encodeURIComponent(q)):location.href;location.replace('https://drift.hostless.app/scramjet/'+encodeURIComponent(target));})();";
+    var guestJs = 'javascript:' + "(function(){var guest=location.href;try{var u=new URL(location.href);if(/google\\./i.test(u.hostname)){u.searchParams.set('igu','1');guest=u.toString();}else guest='https://www.google.com/search?igu=1&q='+encodeURIComponent(document.title||location.href);}catch(e){}location.replace('https://drift.hostless.app/scramjet/'+encodeURIComponent(guest));})();";
+    function copyBm(text, title, how) {
+      function done() {
+        var old = document.getElementById('drift-copied');
+        if (old) old.remove();
+        var n = document.createElement('div');
+        n.id = 'drift-copied';
+        n.textContent = 'Copied to clipboard';
+        n.style.cssText = 'position:fixed;z-index:2147483646;left:50%;bottom:24px;transform:translateX(-50%);background:#1a73e8;color:#fff;font:600 14px system-ui;padding:12px 16px;border-radius:12px;box-shadow:0 10px 28px rgba(0,0,0,.35)';
+        document.body.appendChild(n);
+        setTimeout(function () { if (n.parentNode) n.remove(); }, 2400);
+        var oldT = document.getElementById('drift-bypass-help');
+        if (oldT) oldT.remove();
+        var help = document.createElement('div');
+        help.id = 'drift-bypass-help';
+        help.style.cssText = 'position:fixed;z-index:2147483646;left:50%;top:50%;transform:translate(-50%,-50%);width:min(460px,92vw);max-height:80vh;overflow:auto;background:#14141c;color:#eee;border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:16px;font:14px/1.45 system-ui;box-shadow:0 16px 50px rgba(0,0,0,.45)';
+        help.innerHTML = '<b style="display:block;font-size:16px;margin-bottom:8px">' + title + '</b>' +
+          '<div>Setup in your real browser, not inside Drift:</div>' +
+          '<ol style="margin:8px 0 8px 18px;padding:0"><li>Show the bookmarks bar. Chrome and ChromeOS: Ctrl+Shift+B. Mac: Shift+Command+B.</li><li>Right-click the bookmarks bar, then Add page or Add bookmark.</li><li>Name it ' + title + '.</li><li>Paste into the URL field. It is already copied.</li><li>Save.</li></ol>' +
+          '<div>How to use it:</div>' +
+          '<ol style="margin:8px 0 8px 18px;padding:0"><li>Open Google in that same real browser.</li><li>Search, or open the page you want.</li><li>Click the bookmark. ' + how + '</li></ol>' +
+          '<button type="button" data-ok style="margin-top:6px;padding:8px 12px;border:0;border-radius:10px;background:#1a73e8;color:#fff;font-weight:650;cursor:pointer">OK</button>';
+        document.body.appendChild(help);
+        help.querySelector('[data-ok]').onclick = function () { help.remove(); };
+      }
+      function fallback() {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.style.cssText = 'position:fixed;left:-999px';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        ta.remove();
+        done();
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback);
+      else fallback();
+    }
     if (bmClass) {
-      bmClass.href = 'javascript:' + "(function(){var q='';try{q=new URL(location.href).searchParams.get('q')||'';}catch(e){}var target=q?('https://www.google.com/search?q='+encodeURIComponent(q)):location.href;location.replace('https://drift.hostless.app/scramjet/'+encodeURIComponent(target));})();";
-      bmClass.onclick = function (e) { e.preventDefault(); };
+      bmClass.setAttribute('href', '#');
+      bmClass.onclick = function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        copyBm(classJs, 'Full bypasser (DRIFT)', 'Full bypasser (DRIFT) opens that Google search through drift.hostless.app/scramjet/ in the real browser.');
+      };
     }
     if (bmGuest) {
-      bmGuest.href = 'javascript:' + "(function(){var guest=location.href;try{var u=new URL(location.href);if(/google\\./i.test(u.hostname)){u.searchParams.set('igu','1');guest=u.toString();}else guest='https://www.google.com/search?igu=1&q='+encodeURIComponent(document.title||location.href);}catch(e){}location.replace('https://drift.hostless.app/scramjet/'+encodeURIComponent(guest));})();";
-      bmGuest.onclick = function (e) { e.preventDefault(); };
+      bmGuest.setAttribute('href', '#');
+      bmGuest.onclick = function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        copyBm(guestJs, 'Full bypasser', 'Full bypasser opens the page through drift.hostless.app/scramjet/ as a Google guest in the real browser.');
+      };
     }
     var homeNow = 'drift';
     try { homeNow = localStorage.getItem('wos:home-btn') || 'drift'; } catch (e) {}
@@ -2404,7 +2461,7 @@ function driftSite(url) {
     }
     var movieNow = 'noah', gameNow = 'noah';
     try {
-      movieNow = localStorage.getItem('wos:movies') || 'tmdb';
+      movieNow = localStorage.getItem('wos:movies') || 'racial';
       if (movieNow === 'serum') movieNow = 'noah';
       gameNow = localStorage.getItem('wos:games-lib') || 'noah';
     } catch (e) {}
@@ -2437,7 +2494,7 @@ function driftSite(url) {
       var blocked = false;
       items.forEach(function (it) {
         var w = null;
-        try { w = window.open(it.url, '_blank', 'noopener,width=1100,height=760'); } catch (e) { w = null; }
+        try { w = window.open(it.url, '_blank', 'popup,width=1100,height=760'); } catch (e) { w = null; }
         if (!w) blocked = true;
       });
       if (blocked) {
@@ -2996,6 +3053,10 @@ function driftSite(url) {
     return answer;
   };
   function armAppLoader(app) {
+    var id = String(app || '');
+    var name = (window.APPS && window.APPS[app]) || id || 'app';
+    if (/^(mus|code|injector|ai|cam|browser|chat)$/i.test(id)) return;
+    if (/^(Music|VS Code|JS Injector|AI|Camera|Browser|Chat)$/i.test(String(name))) return;
     var list = document.querySelectorAll('.win');
     var w = list[list.length - 1];
     if (!w || w.querySelector('.drift-appload')) return;
@@ -3004,14 +3065,98 @@ function driftSite(url) {
     if (!document.getElementById('drift-appload-style')) {
       var css = document.createElement('style');
       css.id = 'drift-appload-style';
-      css.textContent = '.drift-appload{position:absolute;left:0;right:0;bottom:0;top:36px;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:#0e1016;color:#eee;font:15px/1.4 system-ui,sans-serif;pointer-events:none}.drift-spin{width:36px;height:36px;border-radius:50%;border:3px solid rgba(255,255,255,.2);border-top-color:#fff;animation:drift-spin .7s linear infinite}@keyframes drift-spin{to{transform:rotate(360deg)}}';
+      css.textContent = '.drift-appload{position:absolute;left:0;right:0;bottom:0;top:36px;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:#0e1016;color:#eee;font:15px/1.4 system-ui,sans-serif;pointer-events:none}.drift-spin{width:36px;height:36px;border-radius:50%;border:3px solid rgba(255,255,255,.2);border-top-color:#fff;animation:drift-spin .7s linear infinite}@keyframes drift-spin{to{transform:rotate(360deg)}}.drift-appload [data-play]{pointer-events:auto;margin-top:4px;padding:8px 14px;border:0;border-radius:10px;background:#1a73e8;color:#fff;font-weight:700;cursor:pointer}.drift-appload [data-game]{display:none;position:absolute;inset:0;width:100%;height:100%;background:#111}';
       document.head.appendChild(css);
     }
-    var name = (window.APPS && window.APPS[app]) || app || 'app';
     var overlay = document.createElement('div');
     overlay.className = 'drift-appload';
-    overlay.innerHTML = '<div class="drift-spin"></div><b>Loading app…</b><div data-type style="min-height:1.4em;opacity:.8;text-align:center;padding:0 18px"></div>';
+    overlay.innerHTML = '<div class="drift-spin"></div><b>Loading app…</b><div data-type style="min-height:1.4em;opacity:.8;text-align:center;padding:0 18px"></div><button type="button" data-play>Play</button><canvas data-game></canvas>';
     w.appendChild(overlay);
+    var stopGame = function () {};
+    overlay.querySelector('[data-play]').onclick = function (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      var btn = overlay.querySelector('[data-play]');
+      if (btn) btn.style.display = 'none';
+      var spin = overlay.querySelector('.drift-spin');
+      if (spin) spin.style.display = 'none';
+      var cv = overlay.querySelector('[data-game]');
+      cv.style.display = 'block';
+      cv.style.pointerEvents = 'auto';
+      overlay.style.pointerEvents = 'auto';
+      stopGame = playCube(cv);
+    };
+    function playCube(cv) {
+      var ctx = cv.getContext('2d');
+      var y = 0, vy = 0, dead = false, score = 0, tickN = 0, raf = 0;
+      var obs = [];
+      function size() {
+        var w0 = cv.clientWidth || 640, h0 = cv.clientHeight || 360;
+        if (cv.width !== w0) cv.width = w0;
+        if (cv.height !== h0) cv.height = h0;
+        return { w: cv.width, h: cv.height };
+      }
+      function reset() {
+        var box = size();
+        y = box.h - 72;
+        vy = 0;
+        dead = false;
+        score = 0;
+        tickN = 0;
+        obs = [{ x: box.w + 60, hgt: 34 }];
+      }
+      function jump() {
+        if (!cv.isConnected) return;
+        if (dead) { reset(); return; }
+        var box = size();
+        if (y >= box.h - 74) vy = -8.4;
+      }
+      function onKey(e) {
+        if (e.code !== 'Space' && e.key !== ' ') return;
+        e.preventDefault();
+        jump();
+      }
+      cv.addEventListener('pointerdown', jump);
+      window.addEventListener('keydown', onKey);
+      reset();
+      function frame() {
+        if (!cv.isConnected) { window.removeEventListener('keydown', onKey); return; }
+        var box = size();
+        var ground = box.h - 50;
+        tickN++;
+        if (!dead) {
+          vy += 0.4;
+          y += vy;
+          if (y > ground - 22) { y = ground - 22; vy = 0; }
+          var speed = 4.1 + Math.min(3.5, score / 14);
+          if (tickN % 78 === 0) obs.push({ x: box.w + 16, hgt: 26 + Math.random() * 52 });
+          for (var i = 0; i < obs.length; i++) {
+            obs[i].x -= speed;
+            var ox = obs[i].x, oh = obs[i].hgt, oy = ground - oh;
+            if (78 < ox + 22 && 78 + 22 > ox && y < oy + oh && y + 22 > oy) dead = true;
+          }
+          obs = obs.filter(function (o) { return o.x > -40; });
+          if (tickN % 8 === 0) score++;
+        }
+        ctx.fillStyle = '#11151c';
+        ctx.fillRect(0, 0, box.w, box.h);
+        ctx.fillStyle = '#243044';
+        ctx.fillRect(0, ground, box.w, box.h - ground);
+        ctx.fillStyle = '#d7e6f5';
+        for (var j = 0; j < obs.length; j++) ctx.fillRect(obs[j].x, ground - obs[j].hgt, 22, obs[j].hgt);
+        ctx.fillStyle = '#7ec8ff';
+        ctx.fillRect(78, y, 22, 22);
+        ctx.fillStyle = '#fff';
+        ctx.font = '16px system-ui';
+        ctx.fillText(dead ? 'Tap to retry  ' + score : String(score), 16, 28);
+        raf = requestAnimationFrame(frame);
+      }
+      raf = requestAnimationFrame(frame);
+      return function () {
+        cancelAnimationFrame(raf);
+        window.removeEventListener('keydown', onKey);
+      };
+    }
     var phrases = [
       'Wait until we set up to you',
       'Almost there',
@@ -3034,6 +3179,7 @@ function driftSite(url) {
     tick();
     function hide() {
       clearTimeout(timer);
+      try { stopGame(); } catch (e) {}
       if (overlay.parentNode) overlay.remove();
     }
     function watch() {

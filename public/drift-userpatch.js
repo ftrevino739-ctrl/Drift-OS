@@ -167,7 +167,9 @@
   } catch (e) {}
   if (!window.open.__driftStay) {
     var open0 = window.open;
-    window.open = function (u) {
+    window.__driftRealOpen = open0;
+    window.open = function (u, name, features) {
+      if (features && /width\s*=|height\s*=|popup/i.test(String(features))) return open0.apply(window, arguments);
       var s = u == null ? '' : String(u);
       if (badNav(s)) return null;
       if (/^https?:/i.test(s)) {
@@ -324,6 +326,11 @@
   }
   function snowFrame() {
     if (!snowOn || !snowCtx || !snowCanvas) return;
+    try { snowDraw(); } catch (err) {}
+    if (!snowOn) return;
+    snowTimer = requestAnimationFrame(snowFrame);
+  }
+  function snowDraw() {
     var w = snowCanvas.width;
     var h = snowCanvas.height;
     snowCtx.clearRect(0, 0, w, h);
@@ -386,18 +393,25 @@
     });
     var falling = 0;
     for (var c = 0; c < flakes.length; c++) if (!flakes[c].rest) falling++;
-    if (falling < 150) {
+    var burst = Math.min(8, 420 - falling);
+    for (var sp = 0; sp < burst; sp++) {
       flakes.push({
         x: Math.random() * w,
-        y: -4,
-        vx: (Math.random() - 0.5) * 0.18,
-        vy: 0.28 + Math.random() * 0.45,
-        r: 0.45 + Math.random() * 0.9,
+        y: -4 - sp * 6,
+        vx: (Math.random() - 0.5) * 0.22,
+        vy: 0.32 + Math.random() * 0.55,
+        r: 0.55 + Math.random() * 1.15,
         a: 0.55 + Math.random() * 0.4
       });
     }
     var color = '#f4f7fb';
     var next = [];
+    var colTop = Object.create(null);
+    for (var ci = 0; ci < rest.length; ci++) {
+      var cell0 = (rest[ci].x / 5) | 0;
+      var yy = rest[ci].y == null ? ground : rest[ci].y;
+      if (colTop[cell0] == null || yy < colTop[cell0]) colTop[cell0] = yy;
+    }
     for (var i = 0; i < flakes.length; i++) {
       var f = flakes[i];
       var sdx = f.x - mx, sdy = f.y - my;
@@ -457,26 +471,27 @@
         continue;
       }
       if (f.y >= ground) {
-        var crowded = false;
-        for (var g = 0; g < rest.length; g++) {
-          if (Math.abs(rest[g].x - f.x) < 4 && rest[g].a > 0.4) { crowded = true; break; }
+        var cell = (f.x / 5) | 0;
+        var top = colTop[cell] == null ? ground : colTop[cell];
+        var landY = top - Math.max(1.15, f.r * 0.9);
+        var quarter = ground - h * 0.25;
+        if (landY < quarter) {
+          var nFade = Math.min(rest.length, 16);
+          for (var fadeI = 0; fadeI < nFade; fadeI++) rest[fadeI].a = (rest[fadeI].a || 0.8) - 0.05;
+          continue;
         }
-        if (!crowded) rest.push({ x: f.x, r: f.r, a: 0.82 });
-        else {
-          f.a = (f.a || 0.8) - 0.05;
-          f.vx += Math.random() < 0.5 ? -0.35 : 0.35;
-          if (f.a >= 0.12) { f.y = ground - 2; next.push(f); }
-        }
+        colTop[cell] = landY;
+        rest.push({ x: f.x, y: landY, r: f.r, a: 0.82 });
         continue;
       }
       if (f.y > h + 30) continue;
       next.push(f);
     }
     flakes = next;
-    var cover = Math.max(18, Math.floor(w / 14));
-    if (rest.length > cover) {
-      var nFade = Math.min(rest.length, 6 + Math.floor((rest.length - cover) / 4));
-      for (var fadeI = 0; fadeI < nFade; fadeI++) rest[fadeI].a = (rest[fadeI].a || 0.8) - 0.04;
+    var maxRest = Math.max(120, Math.floor(w * h * 0.25 / 48));
+    if (rest.length > maxRest) {
+      var nFade2 = Math.min(rest.length, (rest.length - maxRest) + 10);
+      for (var fadeJ = 0; fadeJ < nFade2; fadeJ++) rest[fadeJ].a = (rest[fadeJ].a || 0.8) - 0.05;
     }
     rest = rest.filter(function (g) { return g.a >= 0.08; });
     snowCtx.fillStyle = color;
@@ -485,7 +500,7 @@
       snowCtx.globalAlpha = grain.a;
       snowCtx.beginPath();
       snowCtx.save();
-      snowCtx.translate(grain.x, ground - grain.r);
+      snowCtx.translate(grain.x, (grain.y == null ? ground : grain.y) - grain.r);
       snowCtx.scale(1.35, 0.55);
       snowCtx.arc(0, 0, grain.r, 0, Math.PI * 2);
       snowCtx.fill();
@@ -520,9 +535,39 @@
       snowCtx.restore();
     }
     snowCtx.globalAlpha = 1;
-    if (!snowOn) return;
-    snowTimer = requestAnimationFrame(snowFrame);
   }
+  document.addEventListener('visibilitychange', function () {
+    if (!snowOn || document.visibilityState !== 'visible') return;
+    if (snowTimer) cancelAnimationFrame(snowTimer);
+    snowTimer = requestAnimationFrame(snowFrame);
+  });
+  window.addEventListener('pageshow', function () {
+    if (!snowOn) return;
+    if (snowTimer) cancelAnimationFrame(snowTimer);
+    snowTimer = requestAnimationFrame(snowFrame);
+  });
+  window.addEventListener('focus', function () {
+    if (!snowOn) return;
+    if (snowTimer) cancelAnimationFrame(snowTimer);
+    snowTimer = requestAnimationFrame(snowFrame);
+  });
+  var snowBeat = 0;
+  var snowFrame0 = snowFrame;
+  snowFrame = function () {
+    snowBeat = Date.now();
+    snowFrame0();
+  };
+  setInterval(function () {
+    if (!snowOn || !snowCanvas || !snowCtx) return;
+    if (document.visibilityState === 'hidden') {
+      try { snowDraw(); } catch (e) {}
+      return;
+    }
+    if (Date.now() - snowBeat > 800) {
+      if (snowTimer) cancelAnimationFrame(snowTimer);
+      snowTimer = requestAnimationFrame(snowFrame);
+    }
+  }, 1000);
   window.driftSnow = function (on) {
     snowOn = !!on;
     try { localStorage.setItem('wos:xmas', snowOn ? '1' : '0'); } catch (e) {}

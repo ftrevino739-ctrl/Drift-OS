@@ -1564,34 +1564,7 @@ function ai(root){
     const msgs=input.map(m=>({role:m.role,content:m.content}));
     if(o.images&&o.images.length){const last=msgs[msgs.length-1];const text=typeof last.content==='string'?last.content:'';last.content=[...await Promise.all(o.images.map(async b=>({type:'image',source:{type:'base64',media_type:b.type||'image/jpeg',data:await b64(b)}}))),{type:'text',text}]}
     if(o.model==='google/gemini-3.8-flash'){
-      const lastUser=[...msgs].reverse().find(m=>m.role==='user');
-      let asked=lastUser&&typeof lastUser.content==='string'?lastUser.content:'';
-      if(asked.indexOf('You are Drift 2.1')===0){const cut=asked.indexOf('\n\n');if(cut>=0)asked=asked.slice(cut+2)}
-      const wantsCode=/\b(c[oó]digo|code|html|css|javascript|python|script|lua|luau|tampermonkey)\b/i.test(asked);
-      const hasFence=t=>/```[\s\S]{30,}```/.test(String(t||''))||/<!DOCTYPE html[\s\S]{40,}<\/html>/i.test(String(t||''))||/<html[\s\S]{40,}<\/html>/i.test(String(t||''));
-      if(wantsCode){
-        let live=true;
-        const quiet={...o,onThink:function(t){if(live&&o.onThink)o.onThink(t)},onText:function(t){if(live&&o.onText)o.onText(t)}};
-        const fast=fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'groq-llama',max_tokens:8192,messages:msgs,system:'You are Drift 2.1. Reply in the user language. Put only the file they asked for inside one fenced block, with the right language tag. Every line. Then one short sentence. If they did not ask for a file, do not write one.',}),signal:o.signal}).then(r=>r.json()).then(j=>((j.content||[]).map(x=>x.text||'').join(''))).catch(()=>'');
-        const slow=geminiOfficial(msgs,quiet).then(x=>x&&x.text||'').catch(()=>'');
-        const winner=await new Promise(function(resolve){
-          let pending=2, best='', done=false;
-          function finish(){ if(done) return; done=true; live=false; resolve(best); }
-          function take(t){
-            t=String(t||'');
-            if(t.length>best.length) best=t;
-            if(--pending<=0) finish();
-          }
-          fast.then(take, function(){ take(''); });
-          slow.then(take, function(){ take(''); });
-          setTimeout(finish, 50000);
-        });
-        if(winner && winner.trim()) return {text:winner};
-      }
-      let official=null;
-      try{ official=await geminiOfficial(msgs,o); }catch(err){ throw err; }
-      if(official&&String(official.text||'').trim()) return official;
-      const r=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'qwen/qwen3.8-max:free',max_tokens:32768,messages:msgs,system:'You are the assistant inside Drift. Do not introduce yourself. Reply in the user language with the full answer. If they ask for code, put every line in one fenced block.',instructions:LS.get('wos:cinst','')}),signal:o.signal});
+      const r=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'groq-llama',max_tokens:8192,messages:msgs,system:'You are Drift 2.1. Never say you are Gemini and never write "Gemini said". If you refer to yourself, say Drift. Reply in the user language with the full answer, right away. If they ask for code, put every line in one fenced block.',instructions:LS.get('wos:cinst','')}),signal:o.signal});
       const j=await r.json().catch(()=>({}));
       const text=((j.content||[]).map(x=>x.text||'').join(''))||'';
       if(text.trim())return {text};
@@ -1783,7 +1756,7 @@ function ai(root){
   }
   window.driftAsk=async function(question, imageBlob){
     const q=String(question||'').trim();
-    const pre='You are Drift 2.1. Never say you are Gemini and never write "Gemini said". Write the full answer in the user language, well organized, with the detail of a long answer: a short heading, the explanation, and a fenced code block when they ask for code. Do not stop at one vague line.';
+    const pre='You are Drift 2.1. Never say you are Gemini and never write "Gemini said". Write the full answer in the user language. If they ask for code or a file, put the COMPLETE file in one fenced block. Then one short sentence about what it is.';
     const msg={role:'user',content:pre+'\n\n'+q};
     if(imageBlob){
       try{
@@ -1791,15 +1764,10 @@ function ai(root){
         msg.content=[{type:'image',source:{type:'base64',media_type:imageBlob.type||'image/jpeg',data}},{type:'text',text:pre+'\n\n'+q}];
       }catch(e){}
     }
-    const o={model:'google/gemini-3.8-flash',signal:{aborted:false}};
-    try{
-      const official=await geminiOfficial([msg], o);
-      if(official&&official.text) return official.text;
-    }catch(e){}
-    try{
-      const site=await geminiSite([{role:'user',content:pre+'\n\n'+q}], o);
-      if(site&&site.text) return site.text;
-    }catch(e){}
+    const r=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'groq-llama',max_tokens:8192,messages:[msg],system:pre})});
+    const j=await r.json().catch(()=>({}));
+    const text=((j.content||[]).map(x=>x.text||'').join(''))||'';
+    if(text.trim()) return text;
     throw new Error('Drift 2.1 did not answer. Ask again in a moment.');
   };
   if(window.claude)claude.use('sample').then(s=>{real=s}).catch(()=>{});
