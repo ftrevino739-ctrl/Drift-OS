@@ -221,21 +221,23 @@
   function editorShell(root, title, storageKey) {
     root.innerHTML =
       '<div style="display:flex;height:100%;min-height:0;background:#1e1e1e;color:#d4d4d4;font-family:ui-sans-serif,system-ui,sans-serif">' +
-      '<aside style="width:280px;flex:none;display:flex;flex-direction:column;border-right:1px solid #333;background:#252526">' +
-      '<div style="padding:10px 12px;font-weight:700;font-size:13px">AI</div>' +
-      '<textarea data-ai placeholder="Describe the code to generate…" style="flex:1;margin:0 10px;min-height:80px;resize:none;border:1px solid #444;border-radius:8px;background:#1e1e1e;color:#eee;padding:8px"></textarea>' +
-      '<button type="button" data-gen style="margin:10px;padding:8px;border:0;border-radius:8px;background:#007acc;color:#fff;cursor:pointer">Generate</button>' +
-      '<pre data-aiout style="margin:0 10px 10px;font-size:11px;white-space:pre-wrap;max-height:80px;overflow:auto;color:#9cdcfe"></pre>' +
-      '</aside>' +
       '<div style="flex:1;display:flex;flex-direction:column;min-width:0">' +
       '<div style="display:flex;gap:8px;align-items:center;padding:8px;border-bottom:1px solid #333">' +
       '<b style="font-size:13px">' + title + '</b>' +
       '<button type="button" data-check style="padding:6px 10px;border-radius:8px;border:1px solid #444;background:#333;color:#fff;cursor:pointer">Check</button>' +
       '<button type="button" data-run style="padding:6px 10px;border:0;border-radius:8px;background:#16825d;color:#fff;cursor:pointer">Run / Install</button>' +
+      '<button type="button" data-clear style="margin-left:auto;padding:6px 10px;border-radius:8px;border:1px solid #7f1d1d;background:#3f1212;color:#fecaca;cursor:pointer">Clear all injections</button>' +
       '</div>' +
       '<textarea data-code spellcheck="false" style="flex:1;border:0;resize:none;background:#1e1e1e;color:#d4d4d4;padding:12px;font-family:ui-monospace,monospace;font-size:13px;line-height:1.45;outline:none" placeholder="// JavaScript"></textarea>' +
       '<pre data-err style="margin:0;padding:8px 12px;min-height:36px;background:#111;color:#f88;font-size:12px;white-space:pre-wrap"></pre>' +
-      '</div></div>';
+      '</div>' +
+      '<aside style="width:300px;flex:none;display:flex;flex-direction:column;border-left:1px solid #333;background:#252526">' +
+      '<div style="padding:10px 12px;font-weight:700;font-size:13px">AI</div>' +
+      '<div data-log style="flex:1;overflow:auto;padding:8px;display:flex;flex-direction:column;gap:8px"></div>' +
+      '<textarea data-ai placeholder="Ask for the script…" style="margin:0 10px;min-height:72px;resize:none;border:1px solid #444;border-radius:10px;background:#1e1e1e;color:#eee;padding:8px"></textarea>' +
+      '<button type="button" data-gen style="margin:10px;padding:8px;border:0;border-radius:8px;background:#007acc;color:#fff;cursor:pointer">Send</button>' +
+      '<pre data-aiout style="margin:0 10px 10px;font-size:11px;white-space:pre-wrap;max-height:48px;overflow:auto;color:#9cdcfe"></pre>' +
+      '</aside></div>';
     var code = root.querySelector('[data-code]');
     var err = root.querySelector('[data-err]');
     try { code.value = localStorage.getItem(storageKey) || ''; } catch (e) {}
@@ -248,12 +250,27 @@
         err.textContent = 'No syntax errors.';
         return true;
       } catch (e) {
-        err.style.color = '#f88';
+        err.style.color = '#ff8d8d';
         err.textContent = 'Error: ' + (e && e.message ? e.message : e);
         return false;
       }
     }
     root.querySelector('[data-check]').onclick = check;
+    root.querySelector('[data-clear]').onclick = function () {
+      if (!confirm('Remove every injection you installed?')) return;
+      var list = {};
+      try { list = JSON.parse(localStorage.getItem('wos:userscripts') || '{}'); } catch (e) {}
+      var apps = A();
+      var x = X();
+      Object.keys(list).forEach(function (id) {
+        if (apps) delete apps[id];
+        if (x) delete x[id];
+      });
+      try { localStorage.removeItem('wos:userscripts'); } catch (e) {}
+      refreshUI();
+      err.style.color = '#8ec5ff';
+      err.textContent = 'All injections were removed.';
+    };
     code.addEventListener('input', function () {
       clearTimeout(code._t);
       code._t = setTimeout(check, 400);
@@ -276,6 +293,14 @@
       var out = root.querySelector('[data-aiout]');
       if (!q) return;
       out.textContent = 'Generating…';
+      var log = root.querySelector('[data-log]');
+      if (log) {
+        var mine = document.createElement('div');
+        mine.style.cssText = 'align-self:flex-end;max-width:94%;padding:8px 10px;border-radius:12px;background:#007acc;color:#fff;font-size:12px;white-space:pre-wrap';
+        mine.textContent = q;
+        log.appendChild(mine);
+        log.scrollTop = log.scrollHeight;
+      }
       try {
         var body = {
           systemInstruction: { parts: [{ text: 'You are Drift 2.1. Write only JavaScript for a browser userscript. Output code only, no markdown fences.' }] },
@@ -336,7 +361,7 @@
   }
 
   function wrapVscode() {
-    if (typeof vscode !== 'function' || vscode.__drift) return;
+    if (typeof vscode === 'function' && String(vscode).indexOf('vschat') >= 0) return;
     var orig = vscode;
     function wrapped(root) {
       var holder = document.createElement('div');

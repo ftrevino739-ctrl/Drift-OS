@@ -99,17 +99,19 @@
     IC.espn = '<img alt="ESPN" src="/espn-logo.png" style="width:100%;height:100%;object-fit:contain;background:#fff;border-radius:8px">';
     IC.aleks = '<img alt="ALEKS" src="/aleks-logo.png" style="width:100%;height:100%;object-fit:cover;border-radius:11px">';
     IC.gbuild = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="48" rx="12" fill="#0f172a"/><path d="M13 21l11-6 11 6-11 6z" fill="#5eead4"/><path d="M13 21v8l11 6v-8z" fill="#14b8a6"/><path d="M35 21v8l-11 6v-8z" fill="#99f6e4"/><circle cx="35.5" cy="34.5" r="6" fill="#f472b6"/><path d="M35.5 31.6v5.8M32.6 34.5h5.8" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/></svg>';
-    IC.winemu = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="48" rx="11" fill="#0078D4"/><g fill="#fff"><rect x="11" y="11" width="11.5" height="11.5" rx="1.4"/><rect x="25.5" y="11" width="11.5" height="11.5" rx="1.4"/><rect x="11" y="25.5" width="11.5" height="11.5" rx="1.4"/><rect x="25.5" y="25.5" width="11.5" height="11.5" rx="1.4"/></g></svg>';
+    IC.code = '<img alt="Visual Studio Code" src="/vscode-logo.svg" style="width:100%;height:100%;object-fit:contain;border-radius:11px;background:transparent">';
   }
 
   function styleSettingsBtn() {
     var btn = document.getElementById('drift-settings-btn');
     if (!btn) return;
     btn.innerHTML =
-      '<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 8.2a3.8 3.8 0 1 0 0 7.6 3.8 3.8 0 0 0 0-7.6zm9.1 4.3-.9-.5a7.7 7.7 0 0 0 0-1.9l.9-.5a.8.8 0 0 0 .3-1.1l-.8-1.4a.8.8 0 0 0-1-.3l-1 .4a7.4 7.4 0 0 0-1.6-1l.2-1.1a.8.8 0 0 0-.8-.9h-1.6a.8.8 0 0 0-.8.8l.2 1.1a7.4 7.4 0 0 0-1.6 1l-1-.4a.8.8 0 0 0-1 .3l-.8 1.4a.8.8 0 0 0 .3 1.1l.9.5a7.7 7.7 0 0 0 0 1.9l-.9.5a.8.8 0 0 0-.3 1.1l.8 1.4a.8.8 0 0 0 1 .3l1-.4a7.4 7.4 0 0 0 1.6 1l-.2 1.1a.8.8 0 0 0 .8.9h1.6a.8.8 0 0 0 .8-.8l-.2-1.1a7.4 7.4 0 0 0 1.6-1l1 .4a.8.8 0 0 0 1-.3l.8-1.4a.8.8 0 0 0-.3-1.1z"/></svg>' +
-      '<span>Settings</span>';
+      '<svg width="36" height="36" viewBox="0 0 48 48" aria-hidden="true">' +
+      '<rect width="48" height="48" rx="12" fill="#C9C4D8"/>' +
+      '<path fill="#F4F1F8" d="M24 13.5c-1.2 0-2.3.3-3.3.8l-1-1.7-2.2 1.3 1 1.7c-1.1.8-2 1.9-2.5 3.1l-1.9-.5-.7 2.4 1.9.5c-.1 1.2 0 2.4.3 3.5l-1.8.9 1 2.3 1.8-.9c.7 1.1 1.6 2 2.7 2.6l-.7 1.9 2.3.9.7-1.9c1.1.2 2.2.2 3.3 0l.7 1.9 2.3-.9-.7-1.9c1.1-.6 2-1.5 2.7-2.6l1.8.9 1-2.3-1.8-.9c.3-1.1.4-2.3.3-3.5l1.9-.5-.7-2.4-1.9.5c-.5-1.2-1.4-2.3-2.5-3.1l1-1.7-2.2-1.3-1 1.7c-1-.5-2.1-.8-3.3-.8zm0 7c2.2 0 4 1.8 4 4s-1.8 4-4 4-4-1.8-4-4 1.8-4 4-4z"/>' +
+      '</svg>';
     btn.style.cssText =
-      'display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px;margin-left:8px;border:1px solid rgba(126,200,255,.75);border-radius:999px;background:rgba(11,26,54,.55);color:#E8F4FF;cursor:pointer;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);font:650 12px system-ui;letter-spacing:.02em';
+      'display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;margin:0 0 14px 8px;padding:0;border:0;border-radius:12px;background:transparent;cursor:pointer';
   }
 
   function noahGamesApp(root) {
@@ -1182,6 +1184,7 @@ function driftSite(url) {
         'background:rgba(28,28,36,.42)!important;backdrop-filter:saturate(180%) blur(28px)!important;-webkit-backdrop-filter:saturate(180%) blur(28px)!important;border-color:rgba(255,255,255,.18)!important}' +
         'body.drift-liquid #task{box-shadow:0 -8px 32px rgba(0,0,0,.15),inset 0 1px 0 rgba(255,255,255,.35)!important}' +
         'body.drift-liquid #task{background:rgba(12,16,24,.08)!important;border-top:1px solid rgba(255,255,255,.28)!important;backdrop-filter:saturate(160%) blur(40px)!important;-webkit-backdrop-filter:saturate(160%) blur(40px)!important}' +
+        'body.drift-liquid #drift-tb-show{background:rgba(255,255,255,.06)!important;color:#fff!important;border-color:rgba(255,255,255,.28)!important;backdrop-filter:blur(28px) saturate(160%)!important;-webkit-backdrop-filter:blur(28px) saturate(160%)!important}' +
         'body.drift-liquid .win{box-shadow:0 16px 48px rgba(0,0,0,.28)!important}' +
         'body.drift-liquid #task button,body.drift-liquid .win .wb,body.drift-liquid .title button{background:rgba(255,255,255,.16)!important;border-radius:999px!important}';
     } else {
@@ -1510,7 +1513,9 @@ function driftSite(url) {
     };
   }
   function robloxShell(root) {
-    operaPage('https://www.roblox.com/', 'edge')(root);
+    var cros = false;
+    try { cros = /CrOS|Chrome OS/i.test(navigator.userAgent) || (navigator.userAgentData && /Chrome OS|ChromeOS/i.test(navigator.userAgentData.platform || '')); } catch (e) {}
+    operaPage(cros ? 'https://www.roblox.com/login' : 'https://www.roblox.com/', cros ? 'chrome' : 'edge')(root);
   }
   function inAppPage(url) {
     return function (root) {
@@ -1697,11 +1702,19 @@ function driftSite(url) {
   function wireLoginApps() {
     try {
       if (!window.XAPPS) return;
-      window.XAPPS.gmail = { n: 'Gmail', f: operaPage('https://accounts.google.com/ServiceLogin?service=mail&continue=https%3A%2F%2Fmail.google.com%2Fmail%2F&flowName=GlifWebSignIn&flowEntry=ServiceLogin', 'firefox') };
-      window.XAPPS.classroom = { n: 'Classroom', f: sessionInside('https://classroom.google.com/', 'https://accounts.google.com/ServiceLogin?service=classroom&continue=' + encodeURIComponent('https://classroom.google.com/'), 'Classroom') };
+      window.XAPPS.gmail = { n: 'Gmail', f: operaPage('https://accounts.google.com/ServiceLogin?service=mail&continue=https%3A%2F%2Fmail.google.com%2Fmail%2F&flowName=GlifWebSignIn&flowEntry=ServiceLogin', 'edge') };
+      window.XAPPS.classroom = { n: 'Classroom', f: function (root) {
+        root.innerHTML = '<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center"><b style="font-size:18px">Classroom</b><div style="max-width:460px;opacity:.8;font-size:13px">Opens classroom.google.com with the Google account already signed in on this browser. It does not use the proxy, so the session is yours.</div><button type="button" data-open style="padding:10px 16px;border:0;border-radius:10px;background:#0F9D58;color:#fff;font-weight:650;cursor:pointer">Open Classroom</button></div>';
+        function open() {
+          var w = window.open('https://classroom.google.com/', 'drift-classroom');
+          if (!w) root.querySelector('[data-open]').textContent = 'Allow pop-ups, then press Open Classroom';
+        }
+        root.querySelector('[data-open]').onclick = open;
+        open();
+      } };
       window.XAPPS.canva = { n: 'Canva', f: sessionInside('https://www.canva.com/', 'https://www.canva.com/login', 'Canva') };
       window.__driftRoblox = robloxShell;
-      window.__driftGmail = operaPage('https://accounts.google.com/ServiceLogin?service=mail&continue=https%3A%2F%2Fmail.google.com%2Fmail%2F&flowName=GlifWebSignIn&flowEntry=ServiceLogin', 'firefox');
+      window.__driftGmail = operaPage('https://accounts.google.com/ServiceLogin?service=mail&continue=https%3A%2F%2Fmail.google.com%2Fmail%2F&flowName=GlifWebSignIn&flowEntry=ServiceLogin', 'edge');
       window.XAPPS.roblox = { n: 'Roblox', f: robloxShell };
     } catch (e) {}
   }
@@ -1838,7 +1851,7 @@ function driftSite(url) {
     var panel = document.createElement('div');
     panel.id = 'drift-settings-panel';
     panel.style.cssText =
-      'position:fixed;right:16px;bottom:70px;z-index:2147483001;width:min(380px,94vw);max-height:min(75vh,560px);overflow:auto;scrollbar-width:none;-ms-overflow-style:none;' +
+      'position:fixed;right:16px;bottom:108px;z-index:2147483001;width:min(380px,94vw);max-height:min(70vh,520px);overflow:auto;scrollbar-width:none;-ms-overflow-style:none;' +
       'background:#1c1c24;color:#eee;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px 16px;' +
       'box-shadow:0 12px 40px rgba(0,0,0,.45);font:13px/1.45 system-ui,sans-serif';
     var liquidOn = false, eduOn = false, gk = 'lazy', kbHide = 'F9', kbClass = 'F10', appSize = 'lg', tbSize = 'lg', orbOn = true;
@@ -2102,6 +2115,12 @@ function driftSite(url) {
     btn.title = 'Settings';
     create.parentNode.insertBefore(btn, create.nextSibling);
     styleSettingsBtn();
+    if (!document.getElementById('drift-menu-lift')) {
+      var lift = document.createElement('style');
+      lift.id = 'drift-menu-lift';
+      lift.textContent = '#menu{bottom:calc(var(--tbh, 56px) + 28px + env(safe-area-inset-bottom,0px))!important}';
+      document.head.appendChild(lift);
+    }
     btn.onclick = function (e) { e.stopPropagation(); openSettingsPanel(); };
   }
 

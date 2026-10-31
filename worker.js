@@ -210,7 +210,9 @@ export default {
       if (u.pathname === "/ai" && request.method === "POST") {
         const b = await request.json();
         const budget = tokenBudget(b.messages, b.max_tokens);
-        const msgs = toOpenAIMessages(b.messages, (b.system && String(b.system)) || BASE);
+        const custom = b.instructions ? String(b.instructions).slice(0, 2000) : "";
+        const system = (custom ? "Custom instructions, follow these before anything else:\n" + custom + "\n\n" : "") + ((b.system && String(b.system)) || BASE);
+        const msgs = toOpenAIMessages(b.messages, system);
         const name = String(b.model || "groq-llama");
         let route = routeModel(name);
         const tried = [];

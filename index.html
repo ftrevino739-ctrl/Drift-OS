@@ -271,10 +271,11 @@ h1{font-weight:500;margin:0 0 8px}
 .ans-bar{display:flex;align-items:center;gap:2px;margin-top:10px;flex-wrap:wrap}
 .ans-bar button{width:34px;height:34px;border:0;background:transparent;border-radius:10px;color:#6b7280;cursor:pointer;display:grid;place-items:center;padding:0}
 .ans-bar button:hover{background:rgba(0,0,0,.06)}
-.ans-bar .src-row{margin:0 0 0 6px}
-.src-row{display:flex;align-items:center;gap:8px;font-size:13px;color:#6b7280}
+.ans-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ans-bar .src-row{margin:0}
+.src-row{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#fff;background:#111;border-radius:999px;padding:3px 10px 3px 6px}
 .src-favs{display:flex;align-items:center}
-.src-fav{width:22px;height:22px;border-radius:50%;object-fit:cover;margin-left:-6px;border:2px solid #fff;background:#eee}
+.src-fav{width:18px;height:18px;border-radius:50%;object-fit:cover;margin-left:-5px;border:2px solid #111;background:#222}
 .src-fav:first-child{margin-left:0}
 .file-card{display:flex;align-items:center;gap:10px;margin:8px 0;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:var(--omni);color:inherit;text-decoration:none;max-width:440px}
 .file-card b{display:block;font-size:14px}
@@ -355,7 +356,27 @@ h1{font-weight:500;margin:0 0 8px}
 
 
 /* VS Code / Monaco */
-.vsapp{display:flex;flex-direction:column;height:100%;background:#1e1e1e;color:#ccc}
+.vsapp{display:flex;flex-direction:row;height:100%;background:#1e1e1e;color:#ccc;min-height:0}
+.vsapp .vscenter{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0}
+.vsapp .vsex{width:210px;flex:none;background:#252526;border-right:1px solid #333;overflow:auto}
+.vsapp .vsex-h{padding:10px 12px 4px;font-size:11px;letter-spacing:.04em;text-transform:uppercase;opacity:.7}
+.vsapp .vsex-dir{padding:8px 12px 2px;font-size:12px;color:#ccc}
+.vsapp .vsex-file{display:block;width:100%;text-align:left;border:0;background:transparent;color:#ccc;padding:4px 12px 4px 22px;cursor:pointer;font:12px system-ui}
+.vsapp .vsex-file.on{background:#37373d;color:#fff}
+.vsapp .vschat{width:280px;flex:none;display:flex;flex-direction:column;border-left:1px solid #333;background:#252526;min-height:0}
+.vsapp .vschat>b{padding:10px 12px 0;font-size:13px}
+.vsapp .vschat-log{flex:1;overflow:auto;padding:8px;display:flex;flex-direction:column;gap:8px}
+.vsapp .vschat-m{border-radius:12px;padding:8px 10px;font-size:13px;white-space:pre-wrap;word-break:break-word}
+.vsapp .vschat-m.u{align-self:flex-end;background:#007acc;color:#fff;max-width:92%}
+.vsapp .vschat-m.a{align-self:flex-start;background:#1e1e1e;color:#ddd;max-width:96%}
+.vsapp .vschat textarea{margin:8px;min-height:64px;resize:none;border:1px solid #444;border-radius:10px;background:#1e1e1e;color:#eee;padding:8px}
+.vsapp .vschat [data-a="ask"]{margin:0 8px 8px;height:32px;border:0;border-radius:8px;background:#007acc;color:#fff;cursor:pointer}
+.drift-lens-err{background:rgba(255,80,80,.18)}
+.drift-lens-warn{background:rgba(230,190,40,.16)}
+.drift-lens-info{background:rgba(80,160,255,.14)}
+.drift-lens-err-t{color:#ff8d8d!important;font-style:italic}
+.drift-lens-warn-t{color:#e6c200!important;font-style:italic}
+.drift-lens-info-t{color:#8ec5ff!important;font-style:italic}
 .vsapp .vsbar{display:flex;align-items:center;gap:8px;padding:6px 10px;background:#252526;border-bottom:1px solid #333;flex:none;flex-wrap:wrap}
 .vsapp .vsbar select,.vsapp .vsbar button{height:30px;border-radius:6px;border:1px solid #444;background:#333;color:#ddd;padding:0 10px;font-size:12px;cursor:pointer}
 .vsapp .vsbar button:hover{background:#404040}
@@ -1077,13 +1098,14 @@ async function go(){
 }
 
 const MODELS=[
-['google/gemini-3.8-flash','Drift 2.1','Recommended · default · code','default','Gemini itself, shown in Drift as Drift 2.1. This is the default chat and the VS Code model.',{code:1,vision:1,files:1,think:1,fast:1}],
-['qwen/qwen3-coder-plus:free','Drift Code','coding','default','Older coding model. New chats and VS Code use Drift 2.1.',{code:1,vision:1,files:0,think:1,fast:1}],
-['groq-llama','Drift 1.0','Recommended · Groq · fast','default','Code, fast chat, reasoning. Great for general tasks and programming.',{code:1,vision:0,files:0,think:0,fast:1}],
-['or-deepseek','Drift 1.1','Recommended · OpenRouter','default','Deep reasoning. Shows thinking steps. Strong for hard problems and code.',{code:1,vision:0,files:0,think:1,fast:0}],
-['or-gemini','Drift 1.2','Recommended · OpenRouter free','default','Multimodal-capable routing, quick answers, balanced quality.',{code:1,vision:1,files:0,think:0,fast:1}],
-['or-qwen','Drift 1.3','Recommended · OpenRouter free','default','Long context, code, tables/markdown. May show planning/thinking.',{code:1,vision:0,files:0,think:1,fast:0}],
-['or-llama','Drift 1.4','Recommended · OpenRouter free','default','Stable general chat, writing, and ideas.',{code:1,vision:0,files:0,think:0,fast:1}],
+['qwen/qwen3.7-flash:free','Drift Fast','Default · faster than Gemini','quick','Qwen3.7 Flash, free on xKiro. Default because it answers faster than Gemini 3.8.',{code:1,vision:1,files:0,think:1,fast:1}],
+['google/gemini-3.8-flash','Drift 2.1','Gemini · not the default','default','Gemini itself. Kept in the list. It is slower, so new chats start on Drift Fast.',{code:1,vision:1,files:1,think:1,fast:0}],
+['qwen/qwen3-coder-plus:free','Drift Code','Best free code model','default','Qwen3 Coder Plus. VS Code and JS Injector use this.',{code:1,vision:1,files:0,think:1,fast:1}],
+['qwen/qwen3.8-max:free','Drift 1.0','xKiro free · replaced the old Groq model','default','Was a small Groq model. Now Qwen3.8 Max.',{code:1,vision:1,files:0,think:1,fast:0}],
+['qwen/qwen3.6-plus:free','Drift 1.1','xKiro free · replaced the old model','default','Was an old OpenRouter route. Now Qwen3.6 Plus.',{code:1,vision:1,files:0,think:1,fast:1}],
+['mistralai/mistral-medium-3.5','Drift 1.2','xKiro free · replaced the old model','default','Was a weak free route. Now Mistral Medium 3.5.',{code:1,vision:1,files:0,think:1,fast:1}],
+['cohere/command-a-plus','Drift 1.3','xKiro free · replaced the old model','default','Was a weak free route. Now Command A+.',{code:1,vision:1,files:0,think:1,fast:0}],
+['cohere/north-mini-code','Drift 1.4','xKiro free · code','default','Was a general Llama route. Now North Mini Code.',{code:1,vision:0,files:0,think:1,fast:1}],
 ['groq-llama-8b','Llama 3.1 8B','Groq · instant','quick','Ultra fast short replies and drafts.',{code:1,vision:0,files:0,think:0,fast:1}],
 ['groq-gemma','Gemma 2 9B','Groq','default','Light and quick for short questions.',{code:0,vision:0,files:0,think:0,fast:1}],
 ['or-mistral','Mistral Small','OpenRouter · free','default','Everyday chat and light assistance.',{code:1,vision:0,files:0,think:0,fast:1}],
@@ -1100,15 +1122,30 @@ const EFF=['Low','Medium','High'],EFI={Low:'Reply very briefly and directly.',Me
 function ai(root){
   root.innerHTML=`<div class="ai"><div class="ah"><button class="hb" data-a="menu" aria-label="Chats">☰</button><b class="at">New chat</b><button class="hb" data-a="new" aria-label="New chat">＋</button></div><div class="ai-tools"><button type="button" data-t="caveman" title="Minimal answers only">Caveman</button><button type="button" data-t="instr" title="Custom instructions">Instructions</button></div><div class="am"></div><div class="cmp"><textarea rows="1" placeholder="Ask anything — try: open Browser" aria-label="Message"></textarea><div class="thumbs"></div><div class="cr"><button class="rb" data-a="att" aria-label="Adjuntar fotos">＋</button><input type="file" accept="image/*" multiple hidden><button class="pill" data-a="mdl"></button><span style="flex:1"></span><button class="rb mic" data-a="mic" aria-label="Dictar"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg></button><button class="rb snd" data-a="send" aria-label="Enviar">↑</button></div></div><div class="drw"><div class="dh"><b>Chats</b><button class="hb" data-a="cl" aria-label="Close">✕</button></div><button class="nw" data-a="new">＋ Chat nuevo</button><div class="cl"></div></div><div class="sheet"></div></div>`;
   const am=$('.am',root),ta=$('textarea',root),th=$('.thumbs',root),pill=$('.pill',root),sd=$('.snd',root),drw=$('.drw',root),cl=$('.cl',root),sh=$('.sheet',root),fi=$('input[type=file]',root),mic=$('[data-a=mic]',root),title=$('.at',root);
-  let hist=[],curId=null,busy=false,sample=null,ctl=null,pend=[],model='google/gemini-3.8-flash',eff='Medium',caveman=false,customInstr=LS.get('wos:cinst','');
+  let hist=[],curId=null,busy=false,sample=null,ctl=null,pend=[],model='qwen/qwen3.7-flash:free',eff='Medium',caveman=false,customInstr=LS.get('wos:cinst','');
   const cur=()=>S.d.chats.find(c=>c.id===curId);
   const setPill=()=>{const M=MODELS.find(m=>m[0]===model)||MODELS[0];pill.innerHTML=M[1]+' <span>'+eff+'</span>'};
   root.querySelectorAll('[data-t]').forEach(b=>{
     b.onclick=()=>{
       if(b.dataset.t==='caveman'){caveman=!caveman;b.classList.toggle('on',caveman);return}
       if(b.dataset.t==='instr'){
-        const v=prompt('Custom instructions (saved on this device):', customInstr||'');
-        if(v!==null){customInstr=v;LS.set('wos:cinst',v)}
+        let box=root.querySelector('.cinst');
+        if(box){box.remove();return}
+        box=document.createElement('div');
+        box.className='cinst';
+        box.style.cssText='margin:8px 12px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--omni)';
+        box.innerHTML='<b style="font-size:13px">Custom instructions</b><div style="font-size:12px;opacity:.7;margin:4px 0 8px">These change how Drift thinks, including the worker.</div>';
+        const area=document.createElement('textarea');
+        area.value=customInstr||'';
+        area.style.cssText='width:100%;min-height:84px;box-sizing:border-box;border-radius:10px;border:1px solid var(--line);background:var(--win);color:inherit;padding:8px';
+        const row=document.createElement('div');
+        row.style.cssText='display:flex;gap:8px;margin-top:8px';
+        const saveb=document.createElement('button'); saveb.type='button'; saveb.textContent='Save'; saveb.style.cssText='padding:6px 12px;border:0;border-radius:8px;background:#1a73e8;color:#fff;cursor:pointer';
+        const clearb=document.createElement('button'); clearb.type='button'; clearb.textContent='Clear'; clearb.style.cssText='padding:6px 12px;border:1px solid var(--line);border-radius:8px;background:transparent;color:inherit;cursor:pointer';
+        saveb.onclick=()=>{customInstr=area.value;LS.set('wos:cinst',customInstr);box.remove()};
+        clearb.onclick=()=>{area.value='';customInstr='';LS.set('wos:cinst','')};
+        row.append(saveb,clearb); box.append(area,row);
+        const tools=root.querySelector('.ai-tools'); if(tools) tools.after(box);
       }
     };
   });
@@ -1251,7 +1288,7 @@ function ai(root){
       img.src='https://www.google.com/s2/favicons?domain='+encodeURIComponent(host)+'&sz=64';
       favs.appendChild(img);
     });
-    const lab=document.createElement('span');lab.textContent='Fuentes';
+    const lab=document.createElement('span');lab.textContent=rows.length+(rows.length===1?' source':' sources');
     row.append(favs,lab);
     el.appendChild(row);
   }
@@ -1297,8 +1334,8 @@ function ai(root){
         inp.onkeydown=e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape'){inp.value='';inp.blur()}}}};
     $('.ai',root).appendChild(m);
   }
-  function load(id){if(ctl)ctl.abort();busy=false;sd.disabled=false;curId=id;const c=cur();hist=c.msgs;if(c.model==='qwen/qwen3-coder-plus:free')c.model='google/gemini-3.8-flash';if(c.model&&MODELS.some(m=>m[0]===c.model))model=c.model;else model='google/gemini-3.8-flash';eff=c.eff||eff;title.textContent=c.title;am.innerHTML='';if(!hist.length)empty();else paintThread(hist);setPill();renderList()}
-  function newChat(){model='google/gemini-3.8-flash';const c={id:'c'+Date.now(),title:'Chat nuevo',model,eff,msgs:[]};S.d.chats.unshift(c);save();load(c.id);drw.classList.remove('open')}
+  function load(id){if(ctl)ctl.abort();busy=false;sd.disabled=false;curId=id;const c=cur();hist=c.msgs;if(c.model&&MODELS.some(m=>m[0]===c.model))model=c.model;else model='qwen/qwen3.7-flash:free';eff=c.eff||eff;title.textContent=c.title;am.innerHTML='';if(!hist.length)empty();else paintThread(hist);setPill();renderList()}
+  function newChat(){model='qwen/qwen3.7-flash:free';const c={id:'c'+Date.now(),title:'Chat nuevo',model,eff,msgs:[]};S.d.chats.unshift(c);save();load(c.id);drw.classList.remove('open')}
   function sheet(){
   sh.innerHTML=`<div class="sh"><button class="hb" data-a="xs" aria-label="Close">✕</button><b>Select model</b><span style="width:38px"></span></div><div class="card">${MODELS.map(m=>`<div class="mo-wrap"><button class="mo" data-m="${m[0]}"><span><b>${m[1]}</b><small>${m[2]}</small></span>${m[0]===model?'<i>✓</i>':''}</button><button type="button" class="mo-more" data-tip="${m[0]}" title="Capabilities">⋯</button><div class="mo-tip" data-tipbox="${m[0]}"></div></div>`).join('')}</div><div class="card"><button class="mo" data-e="1"><b>Effort</b><small>${eff} ›</small></button></div>`;
   sh.classList.add('show');
@@ -1346,7 +1383,7 @@ function ai(root){
   ta.oninput=()=>{ta.style.height='auto';ta.style.height=Math.min(ta.scrollHeight,120)+'px'};
   ta.onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();go()}};
   async function go(){
-    const q=ta.value.trim()||(pend.length?'Describe la imagen.':'');
+    const q=ta.value.trim()||(pend.length?'responde:':'');
     if(!q||busy)return;
     const c=cur(),mine=hist;
     ta.value='';ta.style.height='';busy=true;sd.disabled=true;c.model=model;c.eff=eff;
@@ -1362,7 +1399,8 @@ function ai(root){
     const started=Date.now();
     const thinkTimer=setInterval(()=>{thinkSec.textContent=Math.round((Date.now()-started)/1000)+'s'},250);
     let sources='', sourceRows=[], thoughtNote='';
-    const steps=['El usuario pidió: «'+q.replace(/\s+/g,' ').slice(0,220)+'».'];
+    const replyLang=/[áéíóúñ¿¡]|\b(dame|c[oó]digo|hola|qu[eé]|por favor)\b/i.test(q)?'Spanish':'English';
+    const steps=['The user is telling us: "'+q.replace(/\s+/g,' ').slice(0,220)+'".','We need an answer clearly in '+replyLang+'.','We will not introduce ourselves. We only say Drift if they ask who we are.', customInstr?('Custom instructions are on, and the worker must follow them: '+customInstr.replace(/\s+/g,' ').slice(0,180)):'No custom instructions.'];
     function paintThink(){
       const bits=steps.slice();
       if(sources)bits.push(sources);
@@ -1376,14 +1414,14 @@ function ai(root){
       sourceRows=(sj.results||[]).filter(x=>x&&x.url).slice(0,5);
       if(sourceRows.length){
         sources='Páginas que abrí:\n'+sourceRows.map(x=>'• '+(x.title||x.url)+'\n  '+x.url).join('\n');
-        steps.push('Busqué en la web y leí '+sourceRows.length+' páginas.');
+        steps.push('Websites viewed: '+sourceRows.length+'.');
         paintThink();
       }else{sources='Busqué y no encontré páginas útiles.';steps.push(sources);paintThink()}
-    }).catch(()=>{sources='Intenté buscar y no pude leer las páginas.';steps.push(sources);paintThink()}):(function(){if(/\b(c[oó]digo|html|css|javascript|python|script|lua|luau)\b/i.test(q))steps.push('Voy a escribir el archivo completo en un bloque de código, para copiarlo y descargarlo.');else steps.push('No hay páginas que abrir. Respondo directo a lo que pediste.');paintThink();return Promise.resolve()})();
+    }).catch(()=>{sources='Intenté buscar y no pude leer las páginas.';steps.push(sources);paintThink()}):(function(){if(/\b(c[oó]digo|html|css|javascript|python|script|lua|luau)\b/i.test(q))steps.push('Voy a escribir el archivo completo en un bloque de código, para copiarlo y descargarlo.');else steps.push('No websites to open. We answer directly.');paintThink();return Promise.resolve()})();
     const out=add('a','');
     const pre=[
-      'You are Drift 2.1 inside this web OS. Never say you are Gemini. Never write "Gemini said". If you refer to yourself, say Drift.',
-      'Reply in the user language with a complete, well-written answer. Do not stall, and do not stop at one vague line.',
+      'You are the assistant inside this web OS. Do not introduce yourself. Do not say soy Drift, I am Drift, or your name unless the user asks who you are. If they ask, answer only: Drift.',
+      'Reply in the user language with the answer only. If they ask for code, the reply MUST contain the complete file inside one fenced block. Never answer with only a list of what the code includes.',
       caveman?'CAVEMAN MODE: answer in the fewest words possible. No filler.':'',
       customInstr?'User custom instructions: '+customInstr:'',
       'If the user asks for code, in any language, put the complete code in one fenced block with the language tag, for example ```luau. The app adds Copy, Download and Preview. Write every line. Do not emit OPEN_APP just because they asked for code.',
@@ -1422,11 +1460,18 @@ function ai(root){
       if(!txt.trim() && thoughtNote && !/<think/i.test(thoughtNote)) txt=thoughtNote;
       if(!txt.trim()) txt=shown;
       if(typeof window.driftAct==='function'){const __a=window.driftAct('',txt);if(typeof __a==='string'&&__a.trim())txt=__a}
-      if(looksCode && !txt.includes('```')){
+      if(looksCode && fenceBody(txt).length<80){
+        try{
+          const again=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'qwen/qwen3-coder-plus:free',max_tokens:32768,messages:[{role:'user',content:q}],system:'Return ONLY one fenced block with the complete file they asked for. No outline. No list of features. Every line.',instructions:customInstr||''})});
+          const jt=await again.json();
+          const more=((jt.content||[]).map(x=>x.text||'').join(''));
+          if(fenceBody(more).length>fenceBody(txt).length) txt=more;
+        }catch(e){}
         const html=txt.match(/<!DOCTYPE[\s\S]+|<\s*html[\s\S]+/i);
-        if(html && html[0].length>40) txt='```html\n'+html[0].trim()+'\n```';
+        if(html && html[0].length>40 && !txt.includes('```')) txt='```html\n'+html[0].trim()+'\n```';
       }
       if(txt.includes('```') && !/```[\s\S]*```/.test(txt)) txt=txt+'\n```';
+      if(!/\b(qui[eé]n eres|who are you|c[oó]mo te llamas|your name|te llamas)\b/i.test(q)) txt=txt.replace(/^(hola[,.! ]*)?(soy|i am|i'm)\s+drift\b[^.!\n]*[.!]?\s*/i,'');
       out.innerHTML='';
       if(!String(txt||'').trim()){out.className='e';out.textContent='No llegó la respuesta. Vuelve a preguntar.';}
       else if(txt.includes('```')||txt.includes('|')||txt.includes('**')||txt.includes('##')||/https?:\/\//.test(txt)||/\[[^\]]+\]\(https?:/.test(txt)||/!\[[^\]]*\]\(/.test(txt)||/data:image\//.test(txt)){out.className='a';renderMD(out,txt);}
@@ -1481,7 +1526,7 @@ function ai(root){
       let official=null;
       try{ official=await geminiOfficial(msgs,o); }catch(err){ throw err; }
       if(official&&String(official.text||'').trim()) return official;
-      const r=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'qwen/qwen3.8-max:free',max_tokens:32768,messages:msgs,system:'You are Drift 2.1. Reply in the user language with the full answer. Never say you are Gemini. If they ask for code, put every line in one fenced block and do not stop halfway.'}),signal:o.signal});
+      const r=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'qwen/qwen3.8-max:free',max_tokens:32768,messages:msgs,system:'You are the assistant inside Drift. Do not introduce yourself. Reply in the user language with the full answer. If they ask for code, put every line in one fenced block.',instructions:LS.get('wos:cinst','')}),signal:o.signal});
       const j=await r.json().catch(()=>({}));
       const text=((j.content||[]).map(x=>x.text||'').join(''))||'';
       if(text.trim())return {text};
@@ -2203,6 +2248,7 @@ function movies(root){
 }
 
 function vscode(root){
+  vscode.__desk=true;
   const langOf=name=>{
     const ext=(String(name).split('.').pop()||'').toLowerCase();
     return ({js:'javascript',mjs:'javascript',cjs:'javascript',ts:'typescript',tsx:'typescript',jsx:'javascript',html:'html',htm:'html',css:'css',py:'python',lua:'lua',luau:'lua',json:'json',md:'markdown',sql:'sql',sh:'shell',bash:'shell',txt:'plaintext',xml:'xml',yml:'yaml',yaml:'yaml'})[ext]||'plaintext';
@@ -2211,30 +2257,52 @@ function vscode(root){
   let files=[];
   try{const saved=JSON.parse(localStorage.getItem('wos:vscode-files')||'[]');if(Array.isArray(saved)&&saved.length)files=saved.filter(f=>f&&f.name)}catch(e){}
   if(!files.length)files=[{name:'main.js',text:'// Drift VS Code\nconsole.log("hello");\n'}];
-  let active=0,editor=null,pending=[];
+  let active=0,editor=null,pending=[],chatHist=[];
   const saveFiles=()=>{try{if(editor&&files[active])files[active].text=editor.getValue();localStorage.setItem('wos:vscode-files',JSON.stringify(files))}catch(e){}};
   root.innerHTML=`<div class="vsapp">
-    <div class="vsbar">
-      <button type="button" data-a="run" title="Run" aria-label="Run">▶</button>
-      <button type="button" data-a="add" title="New file">+</button>
-      <button type="button" data-a="del" title="Delete file">Delete</button>
-      <div class="vstabs" data-tabs></div>
+    <aside class="vsex" data-ex></aside>
+    <div class="vscenter">
+      <div class="vsbar">
+        <button type="button" data-a="run" title="Run this file">▶ Run</button>
+        <button type="button" data-a="add" title="New file">+</button>
+        <button type="button" data-a="del" title="Delete file">Delete</button>
+        <div class="vstabs" data-tabs></div>
+      </div>
+      <div id="monaco-host"></div>
+      <div class="vsstatus"><span data-lang></span><span id="vspos">Ln 1, Col 1</span></div>
     </div>
-    <div id="monaco-host"></div>
-    <pre class="vsout" data-out></pre>
-    <div class="vsstatus"><span data-lang></span><span id="vspos">Ln 1, Col 1</span></div>
+    <aside class="vschat">
+      <b>AI</b>
+      <div class="vschat-log" data-log></div>
+      <textarea data-ai placeholder="Ask for a file…"></textarea>
+      <button type="button" data-a="ask">Send</button>
+    </aside>
   </div>`;
-  const host=$('#monaco-host',root), tabs=root.querySelector('[data-tabs]'), out=root.querySelector('[data-out]');
+  const host=$('#monaco-host',root), tabs=root.querySelector('[data-tabs]'), ex=root.querySelector('[data-ex]'), log=root.querySelector('[data-log]');
   host.innerHTML='<div class="ym" style="color:#888;padding:20px">Cargando Monaco (VS Code)…</div>';
+  function folderOf(name){const i=String(name).lastIndexOf('/');return i>0?name.slice(0,i):''}
+  function baseOf(name){const i=String(name).lastIndexOf('/');return i>=0?name.slice(i+1):name}
+  function paintExplorer(){
+    ex.innerHTML='<div class="vsex-h">Explorer</div>';
+    const groups={};
+    files.forEach((f,i)=>{const g=folderOf(f.name)||'files';(groups[g]||(groups[g]=[])).push(i)});
+    Object.keys(groups).forEach(g=>{
+      const h=document.createElement('div');h.className='vsex-dir';h.textContent=g;ex.appendChild(h);
+      groups[g].forEach(i=>{
+        const b=document.createElement('button');b.type='button';b.className='vsex-file'+(i===active?' on':'');b.textContent=baseOf(files[i].name);
+        b.onclick=()=>show(i);ex.appendChild(b);
+      });
+    });
+  }
   function paint(){
     tabs.innerHTML='';
     files.forEach((f,i)=>{
       const b=document.createElement('button');
       b.type='button';b.className='vstab'+(i===active?' on':'');
       const dot=document.createElement('i');dot.className='dot';dot.style.background=dotOf(f.name);
-      const label=document.createElement('span');label.textContent=f.name;
+      const label=document.createElement('span');label.textContent=baseOf(f.name);
       const x=document.createElement('button');
-      x.type='button';x.className='x';x.textContent='×';x.setAttribute('aria-label','Delete '+f.name);
+      x.type='button';x.className='x';x.textContent='×';x.setAttribute('aria-label','Close '+f.name);
       x.onclick=e=>{e.stopPropagation();removeAt(i)};
       b.append(dot,label,x);
       b.onclick=()=>show(i);
@@ -2242,6 +2310,7 @@ function vscode(root){
     });
     const langEl=root.querySelector('[data-lang]');
     if(langEl&&files[active])langEl.textContent=files[active].name;
+    paintExplorer();
   }
   function show(i){
     if(editor&&files[active])files[active].text=editor.getValue();
@@ -2253,13 +2322,18 @@ function vscode(root){
     const old=editor.getModel();
     editor.setModel(model);
     if(old&&old!==model)old.dispose();
+    lint();
     saveFiles();
   }
+  function cleanName(name){
+    name=String(name||'file.js').replace(/\\/g,'').replace(/\.\./g,'').trim()||'file.js';
+    if(!/\.[A-Za-z0-9]+$/.test(name.split('/').pop()))name+='.js';
+    return name;
+  }
   function addFile(name,text){
-    name=String(name||'file.js').replace(/[\\/]/g,'').trim()||'file.js';
-    if(!/\.[A-Za-z0-9]+$/.test(name))name+='.js';
+    name=cleanName(name);
     let n=name,k=2;
-    while(files.some(f=>f.name===n)){const dot=name.lastIndexOf('.');const base=dot>0?name.slice(0,dot):name;const ext=dot>0?name.slice(dot):'';n=base+'-'+k+ext;k++}
+    while(files.some(f=>f.name===n)){const slash=name.lastIndexOf('/');const file=slash>=0?name.slice(slash+1):name;const pre=slash>=0?name.slice(0,slash+1):'';const dot=file.lastIndexOf('.');const base=dot>0?file.slice(0,dot):file;const ext=dot>0?file.slice(dot):'';n=pre+base+'-'+k+ext;k++}
     files.push({name:n,text:text||''});
     saveFiles();
     if(editor)show(files.length-1);else{active=files.length-1;paint()}
@@ -2273,11 +2347,94 @@ function vscode(root){
     saveFiles();
     if(editor)show(active);else paint();
   }
+  function lint(){
+    if(!editor||!window.monaco)return;
+    const model=editor.getModel(); if(!model||!files[active])return;
+    const code=model.getValue();
+    const lang=langOf(files[active].name);
+    const markers=[];
+    function mark(sev,line,msg){markers.push({severity:sev,message:msg,startLineNumber:line,startColumn:1,endLineNumber:line,endColumn:Math.max(2,(model.getLineContent(line)||'').length+1)})}
+    const Err=monaco.MarkerSeverity.Error, Warn=monaco.MarkerSeverity.Warning, Info=monaco.MarkerSeverity.Info;
+    if(lang==='javascript'||lang==='typescript'){
+      try{ new Function(code); }
+      catch(e){
+        let line=1; const mm=String(e&&e.stack||'').match(/<anonymous>:(\d+)/); if(mm) line=Math.max(1,Number(mm[1])-2);
+        mark(Err, Math.min(line, model.getLineCount()), e.message||'Syntax error');
+      }
+    }else if(lang==='json' && code.trim()){
+      try{ JSON.parse(code); }
+      catch(e){ mark(Err, 1, e.message||'Invalid JSON'); }
+    }else if(lang==='python'){
+      code.split('\n').forEach((line,i)=>{
+        const dq=(line.match(/"/g)||[]).length, sq=(line.match(/'/g)||[]).length;
+        if(dq%2||sq%2) mark(Err, i+1, 'Quote was not closed');
+      });
+    }
+    code.split('\n').forEach((line,i)=>{
+      if(/\bTODO\b|\bFIXME\b/.test(line)) mark(Info, i+1, 'Suggestion: finish this note');
+      else if(/[^=!<>]==[^=]/.test(line)) mark(Warn, i+1, 'Prefer ===');
+      else if(/\bconsole\.log\b/.test(line) && lang!=='javascript') mark(Info, i+1, 'Suggestion: this looks like JavaScript');
+    });
+    monaco.editor.setModelMarkers(model,'drift',markers);
+    const decos=markers.map(mk=>{
+      const kind=mk.severity===Err?'err':mk.severity===Warn?'warn':'info';
+      return {range:new monaco.Range(mk.startLineNumber,1,mk.startLineNumber,1),options:{isWholeLine:true,className:'drift-lens-'+kind,after:{content:'    '+mk.message,inlineClassName:'drift-lens-'+kind+'-t'}}};
+    });
+    editor.__lens=editor.deltaDecorations(editor.__lens||[],decos);
+  }
+  function resultPopup(name, html, w, h){
+    const win=window.open('', 'drift-result', 'width='+(w||760)+',height='+(h||520)+',noopener');
+    if(!win){ alert('Allow pop-ups to see Result: '+name); return; }
+    try{ win.document.title='Result: '+name; win.document.open(); win.document.write(html); win.document.close(); }catch(e){}
+  }
+  function runFile(){
+    if(!editor||!files[active])return;
+    files[active].text=editor.getValue();
+    const name=files[active].name, code=files[active].text, lang=langOf(name);
+    const title='Result: '+name;
+    if(lang==='html'){
+      resultPopup(name, code, 900, 640);
+      return;
+    }
+    if(lang==='javascript'||lang==='typescript'){
+      const page='<!DOCTYPE html><html><head><meta charset=utf-8><title>'+title.replace(/</g,'')+'</title></head><body style="margin:0;background:#111;color:#eee;font:14px ui-monospace,monospace"><pre id="o" style="padding:16px;white-space:pre-wrap"></pre><script>const o=document.getElementById("o");const c={log:function(){o.textContent+=Array.prototype.join.call(arguments," ")+"\\n"},error:function(){o.textContent+="error: "+Array.prototype.join.call(arguments," ")+"\\n"},warn:function(){o.textContent+="warn: "+Array.prototype.join.call(arguments," ")+"\\n"}};try{const r=Function("console",'+JSON.stringify('"use strict";\n'+code).replace(/<\//g,'<\\/')+')(c);if(r!==undefined)c.log(r)}catch(e){c.error(e&&e.message||e)}<\/script></body></html>';
+      resultPopup(name, page, 640, 420);
+      return;
+    }
+    if(lang==='python'){
+      const page='<!DOCTYPE html><html><head><meta charset=utf-8><title>'+title.replace(/</g,'')+'</title></head><body style="margin:0;background:#111;color:#eee;font:14px system-ui"><div id="turtle" style="min-height:280px"></div><pre id="o" style="padding:12px;white-space:pre-wrap"></pre><script src="https://skulpt.org/js/skulpt.min.js"><\/script><script src="https://skulpt.org/js/skulpt-stdlib.js"><\/script><script>const o=document.getElementById("o");function outf(t){o.textContent+=t}function builtinRead(x){if(Sk.builtinFiles===undefined||Sk.builtinFiles.files[x]===undefined)throw "File not found: "+x;return Sk.builtinFiles.files[x]}Sk.configure({output:outf,read:builtinRead,__future__:Sk.python3});Sk.TurtleGraphics={target:"turtle",width:720,height:360};const code='+JSON.stringify(code).replace(/<\//g,'<\\/')+';Sk.misceval.asyncToPromise(function(){return Sk.importMainWithBody("<stdin>",false,code,true)}).then(function(){},function(e){o.textContent+=String(e)});<\/script></body></html>';
+      resultPopup(name, page, 780, 560);
+      return;
+    }
+    resultPopup(name, '<!DOCTYPE html><pre style="font:14px ui-monospace,monospace;padding:16px">'+code.replace(/[&<>]/g,function(c){return {'&':'&','<':'<','>':'>'}[c]})+'</pre>', 640, 420);
+  }
+  function chatSay(who, text){
+    const d=document.createElement('div');d.className='vschat-m '+(who==='u'?'u':'a');d.textContent=text;log.appendChild(d);log.scrollTop=log.scrollHeight;return d;
+  }
+  async function askAI(){
+    const box=root.querySelector('[data-ai]');
+    const q=(box.value||'').trim(); if(!q)return;
+    box.value='';
+    chatSay('u', q);
+    const hold=chatSay('a','…');
+    const ep=(typeof EP==='function'?EP():(window.DDG0||'https://holy-firefly-982c.fert0480.workers.dev')).replace(/\/$/,'');
+    const sys='You are the coding assistant inside Drift VS Code. Do not introduce yourself. If they ask for code, reply with FILE: name.ext and then one fenced block containing the COMPLETE file. Never stop halfway.';
+    try{
+      const r=await fetch(ep+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'qwen/qwen3-coder-plus:free',max_tokens:32768,messages:[{role:'user',content:q}],system:sys,instructions:(typeof LS!=='undefined'?LS.get('wos:cinst',''):'')})});
+      const j=await r.json();
+      let text=((j.content||[]).map(x=>x.text||'').join(''))||(j.error&&(j.error.message||String(j.error)))||'No answer.';
+      hold.textContent=text;
+      const made=[];
+      const re=/FILE:\s*([^\n]+)\n```[^\n]*\n([\s\S]*?)```/g; let m;
+      while((m=re.exec(text))) made.push([m[1].trim(), m[2].replace(/\s+$/,'')]);
+      if(!made.length){const fence=text.match(/```([a-z0-9.+#-]*)\n([\s\S]*?)```/i); if(fence){const map={python:'py',py:'py',javascript:'js',js:'js',html:'html',css:'css',lua:'lua',luau:'lua',json:'json'}; made.push(['ai.'+(map[(fence[1]||'').toLowerCase()]||'txt'), fence[2].replace(/\s+$/,'')]);}}
+      made.forEach(pair=>addFile(pair[0], pair[1]));
+    }catch(e){ hold.textContent=String(e.message||e); }
+  }
   window.DriftVS={
     addFile:function(name,text){if(!editor){pending.push([name,text]);return name}return addFile(name,text)},
     writeFile:function(name,text){
-      name=String(name||'').replace(/[\\/]/g,'').trim();
-      if(!name)return '';
+      name=cleanName(name);
       const i=files.findIndex(f=>f&&String(f.name).toLowerCase()===name.toLowerCase());
       if(i<0)return addFile(name,text==null?'':String(text));
       files[i].text=text==null?'':String(text);
@@ -2292,10 +2449,9 @@ function vscode(root){
     const f=files[active]||files[0];
     editor=monaco.editor.create(host,{value:f.text||'',language:langOf(f.name),theme:'vs-dark',automaticLayout:true,fontSize:14,minimap:{enabled:true},scrollBeyondLastLine:false,tabSize:2});
     editor.onDidChangeCursorPosition(e=>{const pos=e.position;$('#vspos',root).textContent='Ln '+pos.lineNumber+', Col '+pos.column});
-    editor.onDidChangeModelContent(()=>{if(files[active])files[active].text=editor.getValue();saveFiles()});
-    paint();
-    const queued=pending.splice(0);
-    queued.forEach(pair=>addFile(pair[0],pair[1]));
+    editor.onDidChangeModelContent(()=>{if(files[active])files[active].text=editor.getValue();saveFiles();clearTimeout(editor.__lt);editor.__lt=setTimeout(lint,250)});
+    paint(); lint();
+    pending.splice(0).forEach(pair=>addFile(pair[0],pair[1]));
   }
   function bootMonaco(){
     if(window.require&&window.monaco){create();return}
@@ -2315,7 +2471,7 @@ function vscode(root){
     document.head.appendChild(s);
   }
   root.querySelector('[data-a="add"]').onclick=()=>{
-    const name=prompt('File name with extension, for example notes.py, data.json or app.js','file.js');
+    const name=prompt('File name with extension. A folder is allowed, for example starter/app.py','file.js');
     if(!name)return;
     addFile(name,'');
   };
@@ -2324,39 +2480,12 @@ function vscode(root){
     if(!confirm('Delete '+files[active].name+'?'))return;
     removeAt(active);
   };
-  root.querySelector('[data-a="run"]').onclick=()=>{
-    if(!editor||!files[active])return;
-    files[active].text=editor.getValue();
-    const name=files[active].name, code=files[active].text, lang=langOf(name);
-    out.textContent='';
-    if(lang==='html'){
-      const frame=document.createElement('iframe');
-      frame.setAttribute('sandbox','allow-scripts allow-modals');
-      frame.style.cssText='width:100%;height:180px;border:0;background:#fff';
-      out.appendChild(frame);
-      frame.srcdoc=code;
-      return;
-    }
-    if(lang==='javascript'||lang==='typescript'){
-      const logs=[];
-      const fake={
-        log:function(){logs.push(Array.prototype.map.call(arguments,function(x){return String(x)}).join(' '))},
-        error:function(){logs.push('error: '+Array.prototype.map.call(arguments,function(x){return String(x)}).join(' '))},
-        warn:function(){logs.push('warn: '+Array.prototype.map.call(arguments,function(x){return String(x)}).join(' '))}
-      };
-      try{
-        const r=Function('console','"use strict";\n'+code).call(window,fake);
-        if(r!==undefined)logs.push(String(r));
-        out.textContent=logs.join('\n')||'Ran. No console output.';
-      }catch(e){out.textContent='Error: '+(e&&e.message||e)}
-      return;
-    }
-    out.textContent='Run works for .js, .ts and .html. '+name+' stays in the editor.';
-  };
+  root.querySelector('[data-a="run"]').onclick=runFile;
+  root.querySelector('[data-a="ask"]').onclick=askAI;
+  root.querySelector('[data-ai]').onkeydown=function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();askAI()}};
   paint();
   bootMonaco();
 }
-
 function noahChat(root){
   root.innerHTML='<div class="nchat" id="dc"></div>';
   const host=$('#dc',root);
@@ -3151,13 +3280,19 @@ async function nano(b){
 LOCAL['local-nano']=[];
 Object.assign(IC,{gem:'<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="11" fill="#fff"/><path d="M24 7c1.6 9.2 7.8 15.4 17 17-9.2 1.6-15.4 7.8-17 17-1.6-9.2-7.8-15.4-17-17 9.2-1.6 15.4-7.8 17-17z" fill="#4c8df6"/></svg>'});
 Object.assign(APPS,{gem:'Gemini'});
-XAPPS.gem={n:'Gemini',f:function(root){root.innerHTML='';root.style.cssText='height:100%;min-height:0;position:relative;background:#fff';if(typeof openProxied==='function')openProxied('https://gemini.google.com/app',root);else root.innerHTML='<div class="ym">Gemini needs Scramjet.</div>';}};
+XAPPS.gem={n:'Gemini',f:function(root){
+  root.innerHTML='<div style="height:100%;display:flex;flex-direction:column;background:#0e0f13;color:#eee"><div style="padding:12px 14px;font-weight:700">Gemini</div><div data-log style="flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px"></div><div style="display:flex;gap:8px;padding:10px"><textarea data-q placeholder="Ask Gemini" style="flex:1;min-height:44px;border-radius:12px;border:1px solid #333;background:#17181d;color:#eee;padding:8px"></textarea><button type="button" data-go style="border:0;border-radius:12px;background:#1a73e8;color:#fff;padding:0 14px;cursor:pointer">Send</button></div></div>';
+  const log=root.querySelector('[data-log]'), q=root.querySelector('[data-q]');
+  function add(cls,text){const d=document.createElement('div');d.style.cssText='max-width:86%;padding:8px 10px;border-radius:12px;white-space:pre-wrap;'+(cls==='u'?'align-self:flex-end;background:#1a73e8':'align-self:flex-start;background:#1b1c22');d.textContent=text;log.appendChild(d);log.scrollTop=log.scrollHeight;return d}
+  async function go(){const text=(q.value||'').trim();if(!text)return;q.value='';add('u',text);const hold=add('a','…');const ep=(typeof EP==='function'?EP():'https://holy-firefly-982c.fert0480.workers.dev').replace(/\/$/,'');try{const r=await fetch(ep+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'qwen/qwen3.7-flash:free',max_tokens:4096,messages:[{role:'user',content:text}],system:'Answer in the user language. Do not introduce yourself. If they ask for code, put the complete file in one fenced block.',instructions:(typeof LS!=='undefined'?LS.get('wos:cinst',''):'')})});const j=await r.json();hold.textContent=((j.content||[]).map(x=>x.text||'').join(''))||(j.error&&(j.error.message||'No answer'))||'No answer';}catch(e){hold.textContent=String(e.message||e)}}
+  root.querySelector('[data-go]').onclick=go; q.onkeydown=function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();go()}};
+}};
 
 /* ---- apps nuevas por defecto en barra y escritorio (una vez por usuario) ---- */
 
 Object.assign(IC,{
   movies:'<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="8" fill="#141414"/><path d="M14 10h6.2l7.6 28H21.6L14 10zm14 0h6v28h-6V10z" fill="#E50914"/><path d="M14 10l13.8 28h6.4L20.2 10H14z" fill="#E50914" opacity=".85"/></svg>',
-  code:'<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="11" fill="#007acc"/><path d="M18 16l-8 8 8 8M30 16l8 8-8 8M26 14l-4 20" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+  code:'<img alt="VS Code" src="/vscode-logo.svg" style="width:100%;height:100%;object-fit:contain;border-radius:11px;background:transparent">'
 });
 Object.assign(APPS,{movies:'Movies',code:'VS Code',discord:'Discord',gmail:'Gmail',ig:'Instagram',tt:'TikTok'});
 Object.assign(IC,{
@@ -3185,6 +3320,7 @@ loadU=u=>{L0(u);if(!u){S.d.chats=[];save()}if(!S.d.v3){S.d.v3=1;['pins','desk'].
   if(!S.d.v10){S.d.v10=1;['pins','desk'].forEach(k=>{['classroom','canva','roblox'].forEach(a=>{if(!S.d[k].includes(a))S.d[k].push(a)})});save();rend()}
 if(!S.d.v11){S.d.v11=1;['pins','desk'].forEach(k=>{['chat','games','gimkit'].forEach(a=>{if(!S.d[k].includes(a))S.d[k].push(a)})});save();rend()}
   if(!S.d.v12){S.d.v12=1;['pins','desk'].forEach(k=>{if(!S.d[k].includes('classdojo'))S.d[k].push('classdojo')});save();rend()}
+  if(!S.d.v13){S.d.v13=1;if(!S.d.desk.includes('injector'))S.d.desk.push('injector');save();rend()}
 };
 loadU(S.user);
 })();
