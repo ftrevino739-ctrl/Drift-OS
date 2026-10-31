@@ -1109,7 +1109,7 @@ function driftSite(url) {
     window.XAPPS.winemu = { n: 'Windows emulator', f: windowsEmulator };
     window.XAPPS.gbuild = { n: 'Game Builder', f: driftSite('https://tesana.com/create') };
     window.XAPPS.espn = { n: 'ESPN', f: driftSite('https://www.espn.com/') };
-    window.XAPPS.yt = { n: 'YouTube', f: driftSite('https://www.youtube.com/') };
+    window.XAPPS.yt = { n: 'YouTube', f: driftSite('https://www.youtube.com/?hl=en&gl=US&persist_hl=1') };
     window.XAPPS.tt = { n: 'TikTok', f: typeof window.__driftTtFeed === 'function' ? window.__driftTtFeed : driftSite('https://www.tiktok.com/foryou') };
     window.XAPPS.gem = { n: 'Gemini', f: driftSite('https://gemini.google.com/app') };
     window.XAPPS.movies = {
@@ -1474,7 +1474,33 @@ function driftSite(url) {
       '#pins button .mi{width:calc(18px * var(--drift-tb, 2));height:calc(18px * var(--drift-tb, 2))}';
     try { if (typeof layout === 'function') layout(); } catch (e) {}
   }
+  function deviceKind() {
+    var ua = navigator.userAgent || '';
+    var plat = '';
+    try { plat = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || ''; } catch (e) {}
+    var touchMac = plat === 'MacIntel' && navigator.maxTouchPoints > 1;
+    if (/iPad|iPhone|iPod/i.test(ua) || touchMac) return 'ipad';
+    if (/CrOS/i.test(ua) || /Chrome OS|ChromeOS/i.test(plat)) return 'cros';
+    if (/Win/i.test(plat) || /Windows/i.test(ua)) return 'win';
+    if (/Android/i.test(ua)) return 'android';
+    if (/Linux/i.test(plat) || /Linux/i.test(ua)) return 'linux';
+    if (/Mac/i.test(plat)) return 'mac';
+    return 'other';
+  }
+  function rejectAdapt(swId) {
+    var sw = document.getElementById(swId);
+    if (!sw) return;
+    sw.setAttribute('data-on', '0');
+    sw.setAttribute('aria-checked', 'false');
+    sw.style.background = 'rgba(120,120,128,.32)';
+    var knob = sw.querySelector('span');
+    if (knob) knob.style.left = '2px';
+  }
   function setChromeOSAdapt(on) {
+    if (on && deviceKind() !== 'cros') {
+      on = false;
+      rejectAdapt('drift-cros-sw');
+    }
     try { localStorage.setItem('wos:cros-adapt', on ? '1' : '0'); } catch (e) {}
     document.body.classList.toggle('drift-cros', !!on);
     var task = document.getElementById('task');
@@ -1489,6 +1515,10 @@ function driftSite(url) {
     applySize();
   }
   function setIpadAdapt(on) {
+    if (on && deviceKind() !== 'ipad') {
+      on = false;
+      rejectAdapt('drift-ipad-sw');
+    }
     try { localStorage.setItem('wos:ipad-adapt', on ? '1' : '0'); } catch (e) {}
     document.body.classList.toggle('drift-ipad', !!on);
     if (!document.getElementById('drift-ipad-style')) {
@@ -1832,6 +1862,15 @@ function driftSite(url) {
       window.XAPPS.roblox = { n: 'Roblox', f: robloxShell };
     } catch (e) {}
   }
+  function classAction(message) {
+    var mode = 'alert';
+    try { mode = localStorage.getItem('wos:prot-class') || 'alert'; } catch (e) {}
+    var text = message || 'Protector: you connected to a class.';
+    try { alert(text); } catch (err) {}
+    if (mode === 'classroom') {
+      try { if (typeof openApp === 'function') openApp('classroom'); } catch (err2) {}
+    }
+  }
   function protectorHit(why) {
     var on = false;
     try { on = localStorage.getItem('wos:protector') === '1'; } catch (e) {}
@@ -1939,8 +1978,7 @@ function driftSite(url) {
       if (!/linewize|classwize|goguardian|securly|class started|clase iniciada|joined class|en clase|sesi[oó]n iniciada/i.test(blob)) return;
       if (window.__driftClassAt) return;
       window.__driftClassAt = Date.now();
-      try { alert('Protector: se detectó que te uniste a una clase.'); } catch (err) {}
-      protectorHit('class');
+      classAction('Protector: you connected to a class.');
     }
     function scanLinewize() {
       if (window.__driftClassAt) return;
@@ -1956,7 +1994,7 @@ function driftSite(url) {
         if (!/linewize|classwize|goguardian|securly/i.test(blob + ' ' + text) && !/you are (now )?connected|conectado a|class session|en clase|joined class/i.test(text)) continue;
         window.__driftClassAt = Date.now();
         var msg = text.replace(/\s+/g, ' ').trim().slice(0, 140);
-        try { alert('Protector: Linewize muestra una clase' + (msg ? ': ' + msg : '.')); } catch (err) {}
+        classAction('Protector: you connected to a class' + (msg ? ': ' + msg : '.'));
         return;
       }
     }
@@ -2047,7 +2085,7 @@ function driftSite(url) {
       '<b>Settings</b><button type="button" data-x style="border:0;background:transparent;color:#aaa;font-size:18px;cursor:pointer">×</button></div>' +
       '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px">' +
       '<div style="flex:1"><b>Christmas mode</b>' +
-      '<div style="opacity:.75;font-size:12px;margin-top:4px">Slow snow you can push with the mouse. It rests on your windows and fades so it never piles up.</div></div>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Sand-like snow that keeps falling. It rests on open windows. Move or shake a window and the snow comes off.</div></div>' +
       switchHTML('drift-xmas-sw', xmasOn) + '</div>' +
       '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px">' +
       '<div style="flex:1"><b>Enable Liquid Glass (experimental)</b>' +
@@ -2138,6 +2176,9 @@ function driftSite(url) {
       '<div style="flex:1"><b>Protector</b>' +
       '<div style="opacity:.75;font-size:12px;margin-top:4px">If Drift detects someone is viewing your screen on Linewize it instantly redirects you to classroom.google.com. It leaves on Class started, Streaming screen, a screenshot upload, or Heartbeat sent twice in a few seconds. The extension can stay installed. It does not leave just because Linewize is on.</div></div>' +
       switchHTML('drift-prot-sw', localStorage.getItem('wos:protector') === '1') + '</div>' +
+      '<div style="margin:-6px 0 14px;padding-left:2px"><div style="font-size:12px;font-weight:650;margin-bottom:6px">When a class connects</div>' +
+      '<label style="display:flex;gap:8px;align-items:center;margin-top:6px;cursor:pointer"><input type="radio" name="prot-class" value="alert"/> Only alert</label>' +
+      '<label style="display:flex;gap:8px;align-items:center;margin-top:6px;cursor:pointer"><input type="radio" name="prot-class" value="classroom"/> Alert and open Classroom</label></div>' +
       '<button type="button" id="drift-docs-btn" style="margin-top:12px;width:100%;padding:10px;border:1px solid rgba(255,255,255,.14);border-radius:10px;background:transparent;color:#fff;font-weight:600;cursor:pointer">Drift docs</button>';
     panel.querySelector('[data-x]').onclick = function () { panel.remove(); };
     var homeNow = 'drift';
@@ -2189,6 +2230,15 @@ function driftSite(url) {
     wireKeyCapture(panel.querySelector('#kb-docs'), 'wos:kb-docs', '');
     wireSwitch(panel.querySelector('#drift-prot-sw'), function (on) {
       try { localStorage.setItem('wos:protector', on ? '1' : '0'); } catch (e) {}
+    });
+    var classMode = 'alert';
+    try { classMode = localStorage.getItem('wos:prot-class') || 'alert'; } catch (e) {}
+    panel.querySelectorAll('input[name="prot-class"]').forEach(function (r) {
+      r.checked = r.value === classMode;
+      r.onchange = function () {
+        if (!r.checked) return;
+        try { localStorage.setItem('wos:prot-class', r.value); } catch (e) {}
+      };
     });
     panel.querySelector('#drift-docs-btn').onclick = function () { openDriftDocs(); };
     if (!document.getElementById('drift-settings-scroll')) {
@@ -2784,6 +2834,63 @@ function driftSite(url) {
     if (!answer && did) return 'Done.';
     return answer;
   };
+  function armAppLoader(app) {
+    var list = document.querySelectorAll('.win');
+    var w = list[list.length - 1];
+    if (!w || w.querySelector('.drift-appload')) return;
+    var body = w.querySelector('.body');
+    if (!body) return;
+    if (!document.getElementById('drift-appload-style')) {
+      var css = document.createElement('style');
+      css.id = 'drift-appload-style';
+      css.textContent = '.drift-appload{position:absolute;left:0;right:0;bottom:0;top:36px;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:#0e1016;color:#eee;font:15px/1.4 system-ui,sans-serif;pointer-events:none}.drift-spin{width:36px;height:36px;border-radius:50%;border:3px solid rgba(255,255,255,.2);border-top-color:#fff;animation:drift-spin .7s linear infinite}@keyframes drift-spin{to{transform:rotate(360deg)}}';
+      document.head.appendChild(css);
+    }
+    var name = (window.APPS && window.APPS[app]) || app || 'app';
+    var overlay = document.createElement('div');
+    overlay.className = 'drift-appload';
+    overlay.innerHTML = '<div class="drift-spin"></div><b>Loading app…</b><div data-type style="min-height:1.4em;opacity:.8;text-align:center;padding:0 18px"></div>';
+    w.appendChild(overlay);
+    var phrases = [
+      'Wait until we set up to you',
+      'Almost there',
+      'This shouldn\u2019t take too much',
+      'this is not broken',
+      'wait until we load ' + name
+    ];
+    var el = overlay.querySelector('[data-type]');
+    var pi = 0, ci = 0, dir = 1;
+    var timer = 0;
+    function tick() {
+      if (!overlay.isConnected) return;
+      var full = phrases[pi];
+      ci += dir;
+      if (ci > full.length) { dir = -1; ci = full.length; el.textContent = full; timer = setTimeout(tick, 650); return; }
+      if (ci < 0) { dir = 1; ci = 0; pi = (pi + 1) % phrases.length; el.textContent = ''; timer = setTimeout(tick, 220); return; }
+      el.textContent = full.slice(0, ci);
+      timer = setTimeout(tick, dir > 0 ? 38 : 24);
+    }
+    tick();
+    function hide() {
+      clearTimeout(timer);
+      if (overlay.parentNode) overlay.remove();
+    }
+    function watch() {
+      if (!overlay.isConnected || !body.isConnected) { hide(); return; }
+      var frame = body.querySelector('iframe');
+      if (frame && !frame.__driftLoadWatch) {
+        frame.__driftLoadWatch = 1;
+        frame.addEventListener('load', function () { setTimeout(hide, 180); });
+      }
+      var note = body.querySelector('.ym');
+      var waiting = note && /loading|cargando|opening|starting|proxy/i.test(note.textContent || '');
+      if (frame) { setTimeout(watch, 400); return; }
+      if (!waiting && body.childElementCount > 0) { setTimeout(hide, 160); return; }
+      setTimeout(watch, 250);
+    }
+    setTimeout(watch, 160);
+    setTimeout(hide, 18000);
+  }
   function hookOpenApp() {
     if (typeof window.openApp !== 'function' || window.openApp.__driftUse) return;
     var orig = window.openApp;
@@ -2792,7 +2899,9 @@ function driftSite(url) {
         var name = (window.APPS && window.APPS[app]) || app;
         fetch('/api/use', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ app: String(name).slice(0, 48) }) }).catch(function () {});
       } catch (e) {}
-      return orig(app);
+      var out = orig(app);
+      try { armAppLoader(app); } catch (e2) {}
+      return out;
     }
     wrapped.__driftUse = true;
     window.openApp = wrapped;

@@ -414,8 +414,8 @@ h1{font-weight:500;margin:0 0 8px}
 .vsapp .vstab:hover .vdel,.vsapp .vsex-row:hover .vdel{display:inline}
 .vsapp .vsex-row{display:flex;align-items:center;gap:4px}
 .vsapp .vsex-row .vsex-file{flex:1;text-align:left}
-.vsapp .flogo{display:inline-grid;place-items:center;width:16px;height:16px;flex:none}
-.vsapp .flogo svg{width:16px;height:16px;display:block}
+.vsapp .flogo{display:inline-grid;place-items:center;width:16px;height:16px;flex:none;font-size:8px;font-weight:800;color:#fff}
+.vsapp .flogo svg,.vsapp .flogo img{width:16px;height:16px;display:block;object-fit:contain}
 .vsapp .vstab.on{background:#1e1e1e;color:#fff;border-color:#007acc}
 .vsapp .vstab .dot{width:8px;height:8px;border-radius:50%;flex:none;display:block}
 .vsapp .vstab .x{border:0;background:transparent;color:#aaa;cursor:pointer;font-size:14px;line-height:1;padding:0 2px}
@@ -931,10 +931,10 @@ function youtube(root){
       <div class="yt-logo"><span style="color:#f00;font-weight:800">▶</span> YouTube</div>
       <div class="yt-top-actions"><button type="button" data-a="search" aria-label="Search">🔍</button></div>
     </div>
-    <div class="yh yt-searchbar" hidden><input placeholder="Search en YouTube" aria-label="Search"><button type="button">Search</button></div>
+    <div class="yh yt-searchbar" hidden><input placeholder="Search YouTube" aria-label="Search"><button type="button">Search</button></div>
     <div class="yb yt-body"><div class="ym">Loading…</div></div>
     <nav class="yt-tabbar">
-      <button type="button" class="on" data-tab="home"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>Principal</span></button>
+      <button type="button" class="on" data-tab="home"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>Home</span></button>
       <button type="button" data-tab="shorts"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M10 14.65v-5.3L15 12l-5 2.65zm7.65-3.48c.32.18.52.53.52.91v4.84c0 .38-.2.73-.52.91L10.65 21c-.32.18-.71.18-1.03 0L3.87 17.83c-.32-.18-.52-.53-.52-.91V9.08c0-.38.2-.73.52-.91l5.75-3.17c.32-.18.71-.18 1.03 0l5.75 3.17zM10 3.35 4.52 6.35 10 9.35l5.48-3L10 3.35z"/></svg><span>Shorts</span></button>
       <button type="button" data-tab="search"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><span>Search</span></button>
     </nav>
@@ -949,7 +949,7 @@ function youtube(root){
     yb.style.overflow=t==='shorts'?'hidden':'auto';
     if(t==='home')loadHome();
     else if(t==='shorts')loadShorts();
-    else{yb.innerHTML='<div class="ym">Escribe palabras clave y pulsa Search.<br><small style="color:var(--mute)">Ej: MrBeast, música, tutorial Python</small></div>';setTimeout(()=>inp.focus(),50)}
+    else{yb.innerHTML='<div class="ym">Type keywords and press Search.<br><small style="color:var(--mute)">e.g. MrBeast, music, Python tutorial</small></div>';setTimeout(()=>inp.focus(),50)}
   };
   tabs.forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
   $('[data-a="search"]',root).onclick=()=>setTab('search');
@@ -959,7 +959,7 @@ function youtube(root){
     u.searchParams.set('key',YTKEY);
     Object.entries(params).forEach(([k,v])=>u.searchParams.set(k,v));
     const r=await fetch(u);const j=await r.json();
-    if(j.error)throw new Error(j.error.message||'Error API');
+    if(j.error)throw new Error(j.error.message||'YouTube error');
     return j;
   }
   const mapSearch=j=>(j.items||[]).map(x=>{
@@ -971,7 +971,7 @@ function youtube(root){
   }).filter(Boolean);
   const mapVideos=j=>(j.items||[]).map(x=>{
     const sn=x.snippet||{},st=x.statistics||{};
-    return{type:'video',id:x.id,title:sn.title||'',channel:sn.channelTitle||'',channelId:sn.channelId||'',thumb:(sn.thumbnails&&(sn.thumbnails.medium||sn.thumbnails.high||sn.thumbnails.default)||{}).url||'',views:st.viewCount?Number(st.viewCount).toLocaleString('es')+' vistas':''};
+    return{type:'video',id:x.id,title:sn.title||'',channel:sn.channelTitle||'',channelId:sn.channelId||'',thumb:(sn.thumbnails&&(sn.thumbnails.medium||sn.thumbnails.high||sn.thumbnails.default)||{}).url||'',views:st.viewCount?Number(st.viewCount).toLocaleString('en')+' views':''};
   });
 
   function grid(items){
@@ -979,7 +979,7 @@ function youtube(root){
     items.forEach(it=>{
       if(it.type==='channel'){
         const b=document.createElement('button');b.className='yc yt-chrow';
-        b.innerHTML=`<img src="${it.thumb}" alt="" style="width:56px;height:56px;border-radius:50%;object-fit:cover"><div style="text-align:left"><b>${dec(it.title)}</b><small style="color:var(--mute);display:block">Canal · Ver perfil</small></div>`;
+        b.innerHTML=`<img src="${it.thumb}" alt="" style="width:56px;height:56px;border-radius:50%;object-fit:cover"><div style="text-align:left"><b>${dec(it.title)}</b><small style="color:var(--mute);display:block">Channel · View profile</small></div>`;
         b.onclick=()=>showChannel(it.id);g.appendChild(b);return;
       }
       const b=document.createElement('button');b.className='yc';
@@ -1013,7 +1013,7 @@ function youtube(root){
     })();
   }
   function play(id){
-    yb.innerHTML='<button class="ybk">← Volver</button><div class="yp" style="position:relative;height:min(70vh,640px)"></div>';
+    yb.innerHTML='<button class="ybk">← Back</button><div class="yp" style="position:relative;height:min(70vh,640px)"></div>';
     $('.ybk',yb).onclick=()=>{if(last.length)grid(last);else setTab(mode)};
     ytPlayBox($('.yp',yb), id);
   }
@@ -1025,10 +1025,10 @@ function youtube(root){
       const sn=ch.snippet||{},st=ch.statistics||{};
       const th=(sn.thumbnails&&(sn.thumbnails.high||sn.thumbnails.medium||sn.thumbnails.default)||{}).url||'';
       const banner=(ch.brandingSettings&&ch.brandingSettings.image&&ch.brandingSettings.image.bannerExternalUrl)||'';
-      yb.innerHTML=`<button class="ybk">← Volver</button><div class="yt-ch">
+      yb.innerHTML=`<button class="ybk">← Back</button><div class="yt-ch">
         ${banner?`<img class="banner" src="${banner}=w1280" alt="">`:''}
         <div class="row"><img src="${th}" alt=""><div><b>${dec(sn.title||'')}</b>
-          <small>${st.subscriberCount?Number(st.subscriberCount).toLocaleString('es')+' suscriptores':''}${st.videoCount?' · '+Number(st.videoCount).toLocaleString('es')+' videos':''}</small></div></div>
+          <small>${st.subscriberCount?Number(st.subscriberCount).toLocaleString('en')+' subscribers':''}${st.videoCount?' · '+Number(st.videoCount).toLocaleString('en')+' videos':''}</small></div></div>
         <p class="desc">${dec((sn.description||'').slice(0,500))}</p>
         <div class="yg" id="chvids"></div></div>`;
       $('.ybk',yb).onclick=()=>{if(last.length)grid(last);else setTab(mode)};
@@ -1038,7 +1038,7 @@ function youtube(root){
         b.innerHTML=`<img src="${it.thumb}" loading="lazy"><b>${dec(it.title)}</b><small>${dec(it.channel)}</small>`;
         b.onclick=()=>play(it.id);$('#chvids',yb).appendChild(b);
       });
-    }catch(e){yb.innerHTML='<div class="ym">No se pudo cargar el canal.</div><button class="ybk">← Volver</button>';$('.ybk',yb).onclick=()=>setTab(mode)}
+    }catch(e){yb.innerHTML='<div class="ym">Couldn\u2019t load the channel.</div><button class="ybk">← Back</button>';$('.ybk',yb).onclick=()=>setTab(mode)}
   }
   async function loadHome(){
     yb.innerHTML='<div class="ym">Loading…</div>';
@@ -1047,15 +1047,15 @@ function youtube(root){
       const j=await r.json();
       if(!r.ok||j.error) throw new Error(j.error||'YouTube');
       last=mapVideos(j);
-      if(!last.length) throw new Error('Sin videos');
+      if(!last.length) throw new Error('No videos');
       grid(last);
     }catch(e){
       try{
         const j=await ytApi('videos',{part:'snippet,statistics',chart:'mostPopular',regionCode:'MX',maxResults:'24'});
         last=mapVideos(j);
-        if(!last.length) throw new Error('Sin videos');
+        if(!last.length) throw new Error('No videos');
         grid(last);
-      }catch(e2){yb.innerHTML='<div class="ym">No se pudo cargar. '+((e2&&e2.message)||e.message||'')+'</div>'}
+      }catch(e2){yb.innerHTML='<div class="ym">Couldn\u2019t load. '+((e2&&e2.message)||e.message||'')+'</div>'}
     }
   }
   async function loadShorts(){
@@ -1072,7 +1072,7 @@ function youtube(root){
         const meta=document.createElement('div');meta.className='meta';
         meta.innerHTML='<b>'+dec(it.title)+'</b><small>@'+dec(it.channel)+'</small>';
         const side=document.createElement('div');side.className='side';
-        side.innerHTML='<button type="button" title="Like">♥</button><button type="button" title="Comentarios">💬</button><button type="button" title="Compartir">↗</button>';
+        side.innerHTML='<button type="button" title="Like">♥</button><button type="button" title="Comments">💬</button><button type="button" title="Share">↗</button>';
         s.append(frameBox,meta,side);feed.appendChild(s);
       });
       items=items.concat(list);
@@ -1087,7 +1087,7 @@ function youtube(root){
     const loadMore=async()=>{
       if(loading)return;loading=true;
       try{
-        const params={part:'snippet',type:'video',q:'#shorts',videoDuration:'short',maxResults:'12',relevanceLanguage:'es'};
+        const params={part:'snippet',type:'video',q:'#shorts',videoDuration:'short',maxResults:'12',relevanceLanguage:'en'};
         if(pageToken)params.pageToken=pageToken;
         const j=await ytApi('search',params);
         pageToken=j.nextPageToken||'';
@@ -1097,7 +1097,7 @@ function youtube(root){
         addItems(batch);
         if(!pageToken){/* no more */}
       }catch(e){
-        if(!items.length)yb.innerHTML='<div class="ym">No se pudieron cargar Shorts. '+(e.message||'')+'</div>';
+        if(!items.length)yb.innerHTML='<div class="ym">Couldn\u2019t load Shorts. '+(e.message||'')+'</div>';
       }
       loading=false;
     };
@@ -1110,7 +1110,7 @@ async function go(){
     const q=inp.value.trim();if(!q)return;
     const id=vid(q);if(id){play(id);return}
     mode='search';tabs.forEach(b=>b.classList.toggle('on',b.dataset.tab==='search'));
-    searchBar.hidden=false;yb.innerHTML='<div class="ym">Buscando…</div>';
+    searchBar.hidden=false;yb.innerHTML='<div class="ym">Searching…</div>';
     try{
       const r=await fetch('/api/yt-list?q='+encodeURIComponent(q));
       const j=await r.json();
@@ -1122,8 +1122,8 @@ async function go(){
       try{
         const jv=await ytApi('search',{part:'snippet',type:'video',q,maxResults:'20',safeSearch:'moderate'});
         last=mapSearch(jv);
-        if(last.length)grid(last);else yb.innerHTML='<div class="ym">Sin resultados para «'+dec(q)+'».</div>';
-      }catch(e2){yb.innerHTML='<div class="ym">Error al buscar. '+((e2&&e2.message)||e.message||'')+'</div>'}
+        if(last.length)grid(last);else yb.innerHTML='<div class="ym">No results for “'+dec(q)+'”.</div>';
+      }catch(e2){yb.innerHTML='<div class="ym">Couldn\u2019t search. '+((e2&&e2.message)||e.message||'')+'</div>'}
     }
   }
   $('button',searchBar).onclick=go;inp.onkeydown=e=>{if(e.key==='Enter')go()};
@@ -2048,7 +2048,7 @@ openApp=a=>{
   v.onclick=go;i.onkeydown=e=>{if(e.key==='Enter')go()};f.onclick=()=>full(yb,c.home,c.n)};
 const Y0=youtube;
 youtube=root=>{if(skipYT)return;Y0(root);
-  const b=document.createElement('button');b.textContent='Completo';b.style.background='#555';b.onclick=()=>full($('.yb',root),'https://m.youtube.com','YouTube');$('.yh',root).appendChild(b);
+  const b=document.createElement('button');b.textContent='Full';b.style.background='#555';b.onclick=()=>full($('.yb',root),'https://m.youtube.com','YouTube');$('.yh',root).appendChild(b);
 };
 
 /* ---- Apps nuevas: Cámara y Música ---- */
@@ -2201,7 +2201,7 @@ function music(root){
       if(!L.length)ml.innerHTML='<div class="ym">No results.</div>'}
     catch{ml.innerHTML='<div class="ym">No se pudo buscar. Revisa tu conexión.</div>'}};
   $('.yh button',root).onclick=go;inp.onkeydown=e=>{if(e.key==='Enter')go()};
-  $('[data-f]',root).onclick=async()=>{const s=L[cur];if(!s)return;au.pause();fr.textContent='Buscando en YouTube…';
+  $('[data-f]',root).onclick=async()=>{const s=L[cur];if(!s)return;au.pause();fr.textContent='Searching YouTube…';
     try{const j=await(await fetch(EP()+'/yt?q='+encodeURIComponent(s.artistName+' '+s.trackName+' audio'))).json(),v=(j.items||[])[0];if(!v)throw 0;
       fr.innerHTML='<iframe src="https://www.youtube.com/embed/'+v.id+'?autoplay=1&rel=0" allow="autoplay;encrypted-media" allowfullscreen style="width:100%;height:210px;border:0;border-radius:10px"></iframe>'}
     catch{fr.textContent='No se pudo cargar la versión completa.'}};
@@ -2349,26 +2349,40 @@ function vscode(root){
   function baseOf(name){const i=String(name).lastIndexOf('/');return i>=0?name.slice(i+1):name}
   function fileBadge(name){
     const ext=(String(name).split('.').pop()||'').toLowerCase();
-    const key=({mjs:'js',cjs:'js',jsx:'js',htm:'html',cc:'cpp',cxx:'cpp',hpp:'cpp',h:'c',yml:'yaml',luau:'lua'})[ext]||ext;
-    const logos={
-      js:'<svg viewBox="0 0 16 16"><rect width="16" height="16" rx="2" fill="#f7df1e"/><text x="8" y="11.5" text-anchor="middle" font-size="7.2" font-weight="800" fill="#111" font-family="Arial">JS</text></svg>',
-      ts:'<svg viewBox="0 0 16 16"><rect width="16" height="16" rx="2" fill="#3178c6"/><text x="8" y="11.5" text-anchor="middle" font-size="7.2" font-weight="800" fill="#fff" font-family="Arial">TS</text></svg>',
-      html:'<svg viewBox="0 0 16 16"><rect width="16" height="16" rx="2" fill="#e44d26"/><text x="8" y="11.5" text-anchor="middle" font-size="5.4" font-weight="800" fill="#fff" font-family="Arial">HTML</text></svg>',
-      css:'<svg viewBox="0 0 16 16"><rect width="16" height="16" rx="2" fill="#2965f1"/><text x="8" y="11.5" text-anchor="middle" font-size="6" font-weight="800" fill="#fff" font-family="Arial">CSS</text></svg>',
-      py:'<svg viewBox="0 0 16 16"><rect width="16" height="16" rx="3" fill="#3776ab"/><circle cx="6" cy="6" r="2.1" fill="#ffd343"/><circle cx="10" cy="10" r="2.1" fill="#fff"/></svg>',
-      json:'<svg viewBox="0 0 16 16"><rect width="16" height="16" rx="2" fill="#1e1e1e"/><text x="8" y="11.5" text-anchor="middle" font-size="8" font-weight="800" fill="#cbcb41" font-family="Arial">{}</text></svg>',
-      lua:'<svg viewBox="0 0 16 16"><rect width="16" height="16" rx="8" fill="#000080"/><circle cx="8" cy="8" r="3.2" fill="#fff"/></svg>',
-      cpp:'<svg viewBox="0 0 16 16"><rect width="16" height="16" rx="2" fill="#00599c"/><text x="8" y="11.5" text-anchor="middle" font-size="6.2" font-weight="800" fill="#fff" font-family="Arial">C++</text></svg>',
-      c:'<svg viewBox="0 0 16 16"><rect width="16" height="16" rx="2" fill="#555"/><text x="8" y="11.5" text-anchor="middle" font-size="8" font-weight="800" fill="#fff" font-family="Arial">C</text></svg>',
-      java:'<svg viewBox="0 0 16 16"><rect width="16" height="16" rx="2" fill="#e76f00"/><text x="8" y="11" text-anchor="middle" font-size="5.2" font-weight="800" fill="#fff" font-family="Arial">Java</text></svg>',
-      md:'<svg viewBox="0 0 16 16"><rect width="16" height="16" rx="2" fill="#083fa1"/><text x="8" y="11.5" text-anchor="middle" font-size="6.4" font-weight="800" fill="#fff" font-family="Arial">MD</text></svg>',
-      sql:'<svg viewBox="0 0 16 16"><rect width="16" height="16" rx="2" fill="#e38c00"/><text x="8" y="11.5" text-anchor="middle" font-size="6" font-weight="800" fill="#111" font-family="Arial">SQL</text></svg>',
-      sh:'<svg viewBox="0 0 16 16"><rect width="16" height="16" rx="2" fill="#4eaa25"/><text x="8" y="11.5" text-anchor="middle" font-size="7" font-weight="800" fill="#fff" font-family="Arial">SH</text></svg>'
-    };
+    const file=({
+      py:'python.png',python:'python.png',java:'java.png',js:'javascript.png',mjs:'javascript.png',cjs:'javascript.png',
+      ts:'typescript.png',c:'c.png',h:'c.png',cpp:'cpp.png',cc:'cpp.png',cxx:'cpp.png',hpp:'cpp.png',hh:'cpp.png',
+      cs:'csharp.png',go:'go.png',rs:'rust.png',rb:'ruby.png',php:'php.png',swift:'swift.png',kt:'kotlin.png',kts:'kotlin.png',
+      mm:'objective-c.png',m:'matlab.png',dart:'dart.png',scala:'scala.png',sc:'scala.png',pl:'perl.png',pm:'perl.png',
+      pls:'pl-sql.svg',pkb:'pl-sql.svg',pks:'pl-sql.svg',lua:'lua.png',luau:'lua.png',r:'r.png',jl:'julia.png',
+      ex:'elixir.png',exs:'elixir.png',erl:'erlang.svg',hrl:'erlang.svg',hs:'haskell.png',lhs:'haskell.png',
+      ml:'ocaml.png',mli:'ocaml.png',fs:'fsharp.png',fsx:'fsharp.png',fsi:'fsharp.png',clj:'clojure.png',cljs:'clojure.png',
+      cljc:'clojure.png',edn:'clojure.png',groovy:'groovy.svg',gvy:'groovy.svg',vb:'visual-basic.svg',vbs:'visual-basic.svg',
+      pas:'delphi-pascal.svg',dpr:'delphi-pascal.svg',dfm:'delphi-pascal.svg',nim:'nim.png',cr:'crystal.png',zig:'zig.svg',
+      html:'html.png',htm:'html.png',css:'css.png',wat:'wasm.svg',wasm:'wasm.svg',elm:'elm.svg',coffee:'coffeescript.svg',
+      svelte:'svelte.svg',sass:'sass-scss.png',scss:'sass-scss.png',less:'less.png',sv:'systemverilog-verilog.svg',
+      svh:'systemverilog-verilog.svg',sql:'sql.png',graphql:'graphql.png',gql:'graphql.png',lisp:'common-lisp-lisp.png',
+      lsp:'common-lisp-lisp.png',cl:'common-lisp-lisp.png',gd:'gdscript.png',rkt:'racket.png',sh:'bash-shell.png',
+      bash:'bash-shell.png',ps1:'powershell.png',psm1:'powershell.png',json:'json.png',yml:'yaml.svg',yaml:'yaml.svg',
+      md:'markdown.png',markdown:'markdown.png',tex:'latex.png',latex:'latex.png',sol:'solidity.svg',
+      jsx:'jsx-tsx-react-extensions.png',tsx:'jsx-tsx-react-extensions.png',f:'fortran.svg',f90:'fortran.svg',
+      f95:'fortran.svg',for:'fortran.svg',cbl:'cobol.svg',cob:'cobol.svg',cobol:'cobol.svg',qml:'qml-qt-meta-language.svg',
+      gml:'gml-gamemaker-language.png',verse:'verse-unreal-editor-for-fortnite.png',glsl:'glsl-hlsl-shading-languages.svg',
+      hlsl:'glsl-hlsl-shading-languages.svg',frag:'glsl-hlsl-shading-languages.svg',vert:'glsl-hlsl-shading-languages.svg',
+      fish:'fish.png',bat:'batch-bat.png',cmd:'batch-bat.png',applescript:'applescript.svg',scpt:'applescript.svg',
+      tf:'hcl-hashicorp-configuration-language.png',hcl:'hcl-hashicorp-configuration-language.png',slx:'simulink.svg',
+      xml:'xml.svg',toml:'toml.svg',nix:'nix.svg'
+    })[ext];
     const s=document.createElement('i');
     s.className='flogo';
-    s.title=key||'file';
-    s.innerHTML=logos[key]||('<svg viewBox="0 0 16 16"><rect width="16" height="16" rx="2" fill="#555"/><text x="8" y="11.5" text-anchor="middle" font-size="5.5" font-weight="800" fill="#fff" font-family="Arial">'+esc((key||'file').slice(0,4).toUpperCase())+'</text></svg>');
+    s.title=ext||'file';
+    if(file){
+      const img=document.createElement('img');
+      img.alt=ext;
+      img.src='/lang/'+file;
+      img.onerror=function(){img.remove();s.textContent=(ext||'file').slice(0,4).toUpperCase()};
+      s.appendChild(img);
+    }else s.textContent=(ext||'file').slice(0,4).toUpperCase();
     return s;
   }
   function paintLang(){
@@ -3206,7 +3220,7 @@ function ttApp(root){
 
 const XAPPS={cam:{n:'Camera',f:camera},mus:{n:'Music',f:music},movies:{n:'Netflix',f:movies},code:{n:'VS Code',f:vscode},discord:{n:'Discord',f:discordApp},gmail:{n:'Gmail',f:gmailApp},ig:{n:'Instagram',f:igApp},tt:{n:'TikTok',f:ttApp},classroom:{n:'Classroom',f:classroomApp},canva:{n:'Canva',f:canvaApp},roblox:{n:'Roblox',f:robloxApp}};
 function driftSite(url){return function(root){root.innerHTML='';root.style.cssText='height:100%;min-height:0;position:relative;background:#000';if(typeof openProxied==='function')openProxied(url,root);else root.textContent='Scramjet no está listo.';};}
-XAPPS.yt={n:'YouTube',f:driftSite('https://www.youtube.com/')};
+XAPPS.yt={n:'YouTube',f:driftSite('https://www.youtube.com/?hl=en&gl=US&persist_hl=1')};
 XAPPS.tt={n:'TikTok',f:ttApp};
 window.__driftTtFeed=ttApp;
 

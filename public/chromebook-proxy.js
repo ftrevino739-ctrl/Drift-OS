@@ -183,7 +183,7 @@
       f.frame.style.cssText = 'width:100%;height:100%;min-height:70vh;border:0;border-radius:12px;background:#fff';
       box.innerHTML = '';
       box.appendChild(f.frame);
-      f.go(url);
+      setTimeout(function () { try { f.go(url); } catch (err) {} }, 0);
       return f;
     } catch (e) {
       failBox(box, url, e && e.message || e);
@@ -219,10 +219,11 @@
       f.frame.style.cssText = 'width:100%;height:100%;border:0;background:#fff';
       box.innerHTML = '';
       box.appendChild(f.frame);
-      try { f.go(target); } catch (e) {
-        failBox(box, target, 'Could not navigate: ' + (e && e.message || e));
-        return null;
-      }
+      setTimeout(function () {
+        try { f.go(target); } catch (e) {
+          failBox(box, target, 'Could not navigate: ' + (e && e.message || e));
+        }
+      }, 0);
       return f;
     } catch (e) {
       failBox(box, target, e && e.message || e);
