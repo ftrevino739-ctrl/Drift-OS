@@ -13,7 +13,10 @@ try {
       var req = event.request;
       var u = new URL(req.url);
       if (req.mode === "navigate" && req.destination === "document" && /\/scramjet\//i.test(u.pathname)) {
-        event.respondWith(Response.redirect("/os", 302));
+        event.respondWith(new Response('<!doctype html><meta charset="utf-8"><title> </title><script>location.replace("about:blank")</script>', {
+          status: 200,
+          headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" }
+        }));
         return;
       }
     } catch (e) {}

@@ -71,7 +71,8 @@ html{scroll-padding-top:env(safe-area-inset-top,0px)}
 .tiles{display:flex;gap:12px;margin-top:30px;flex-wrap:wrap;justify-content:center}
 .tile{width:92px;border:0;background:none;color:var(--ink);cursor:pointer;font-size:12px;padding:8px;border-radius:10px}
 .tile:hover{background:var(--omni)}
-.tile i{display:grid;place-items:center;width:48px;height:48px;margin:0 auto 6px;background:var(--omni);border-radius:50%;font-style:normal;font-size:22px}
+.tile i{display:grid;place-items:center;width:48px;height:48px;margin:0 auto 6px;background:transparent;border-radius:12px;font-style:normal;font-size:22px;overflow:hidden}
+.tile i img{width:48px;height:48px;object-fit:cover;display:block;border-radius:12px}
 .res{margin:0 0 22px}.res a,.link{color:var(--acc);cursor:pointer;font-size:19px;text-decoration:none}.res a:hover,.link:hover{text-decoration:underline}
 .res small{display:block;color:var(--mute)}
 h1{font-weight:500;margin:0 0 8px}
@@ -387,7 +388,7 @@ h1{font-weight:500;margin:0 0 8px}
 #tbs .tb.drift-winemu{flex-direction:column;justify-content:center;align-items:center;width:auto!important;min-width:0;max-width:none!important;height:auto!important;max-height:calc(var(--tbh, 76px) - 6px)!important;white-space:nowrap!important;overflow:visible;text-align:center;font-size:16px;line-height:1;padding:2px 8px 3px!important;gap:1px;box-sizing:border-box;flex:0 0 auto}
 #tbs .tb.drift-winemu .mi{width:24px;height:24px;display:grid;place-items:center;flex:none}
 #tbs .tb.drift-winemu .mi svg{width:24px;height:24px}
-#tbs .tb.drift-winemu .wem-name{display:block;width:max-content;max-width:none;white-space:nowrap;font-size:16px;font-weight:800;line-height:1.05;text-align:center}
+#tbs .tb.drift-winemu .wem-name{display:block;width:max-content;max-width:none;white-space:nowrap;font-size:16px;font-weight:800;line-height:1.05;text-align:center;transform:translateX(42px)}
 #menu .lf{align-items:center}
 #drift-settings-btn{margin:0!important;background:transparent!important;align-self:center;box-shadow:none!important}
 @keyframes drift-fall{to{background-position:0 220px,30px 340px,0 0}}
@@ -413,7 +414,8 @@ h1{font-weight:500;margin:0 0 8px}
 .vsapp .vstab:hover .vdel,.vsapp .vsex-row:hover .vdel{display:inline}
 .vsapp .vsex-row{display:flex;align-items:center;gap:4px}
 .vsapp .vsex-row .vsex-file{flex:1;text-align:left}
-.vsapp .flogo{display:inline-grid;place-items:center;min-width:18px;height:16px;padding:0 3px;border-radius:3px;font:700 8px/1 ui-sans-serif,system-ui;flex:none}
+.vsapp .flogo{display:inline-grid;place-items:center;width:16px;height:16px;flex:none}
+.vsapp .flogo svg{width:16px;height:16px;display:block}
 .vsapp .vstab.on{background:#1e1e1e;color:#fff;border-color:#007acc}
 .vsapp .vstab .dot{width:8px;height:8px;border-radius:50%;flex:none;display:block}
 .vsapp .vstab .x{border:0;background:transparent;color:#aaa;cursor:pointer;font-size:14px;line-height:1;padding:0 2px}
@@ -1156,6 +1158,7 @@ function ai(root){
   let hist=[],curId=null,busy=false,sample=null,ctl=null,pend=[],model='qwen/qwen3.7-flash:free',eff='Medium',caveman=false,customInstr=LS.get('wos:cinst','');
   const cur=()=>S.d.chats.find(c=>c.id===curId);
   const setPill=()=>{const M=MODELS.find(m=>m[0]===model)||MODELS[0];pill.innerHTML=M[1]+' <span>'+eff+'</span>'};
+  try{const seed=sessionStorage.getItem('wos:ai-seed');if(seed){sessionStorage.removeItem('wos:ai-seed');setTimeout(function(){ta.value=seed;go()},50)}}catch(e){}
   root.querySelectorAll('[data-t]').forEach(b=>{
     b.onclick=()=>{
       if(b.dataset.t==='caveman'){caveman=!caveman;b.classList.toggle('on',caveman);return}
@@ -1780,8 +1783,19 @@ const save=()=>LS.set('wos:u:'+(S.user||'_g'),S.d);
 const H=async(u,p)=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(u+':'+p)))].map(b=>b.toString(16).padStart(2,'0')).join('');
 function loadU(u){S.user=u;S.d=LS.get('wos:u:'+(u||'_g'),null)||defD();['pins','desk'].forEach(k=>S.d[k]=(S.d[k]||[]).filter(a=>!!a));S.d.chats=S.d.chats||[];if(!S.d.v2){S.d.v2=1;['pins','desk'].forEach(k=>{if(!S.d[k].includes('yt'))S.d[k].push('yt')});save()}LS.set('wos:cur',u);rend();if(typeof window.driftAsk!=='function'){try{ai(document.createElement('div'))}catch(e){}}}
 function sw(u){Object.keys(wins).forEach(k=>{wins[k].w.remove();wins[k].tb.remove();delete wins[k]});loadU(u)}
-function tiles(){const f=($('#lq').value||'').toLowerCase(),D=S.d;
-  $('#apps').innerHTML=Object.keys(APPS).filter(a=>APPS[a].toLowerCase().includes(f)).map(a=>`<div class="tl" draggable="true" data-d="${a}"><button data-app="${a}"><span class="mi">${IC[a]||''}</span>${APPS[a]}</button></div>`).join('')}
+function tiles(){const raw=$('#lq').value||'',f=raw.toLowerCase().trim(),D=S.d;
+  const keys=Object.keys(APPS).filter(a=>((APPS[a]||'')+' '+a).toLowerCase().includes(f));
+  const exact=!!f&&keys.some(a=>((APPS[a]||'').toLowerCase()===f)||a===f);
+  let html=keys.map(a=>`<div class="tl" draggable="true" data-d="${a}"><button data-app="${a}"><span class="mi">${IC[a]||''}</span>${APPS[a]}</button></div>`).join('');
+  if(f&&!exact){
+    const q=esc(raw.trim());
+    html+=`<div class="tl"><button type="button" data-seek="browser"><span class="mi">${IC.browser||''}</span>Search on Browser (${q})</button></div><div class="tl"><button type="button" data-seek="ai"><span class="mi">${IC.ai||''}</span>Ask AI (${q})</button></div>`;
+  }
+  $('#apps').innerHTML=html;
+  const br=$('#apps [data-seek="browser"]'), ar=$('#apps [data-seek="ai"]');
+  if(br)br.onclick=()=>{$('#menu').classList.remove('show');window.__driftBrowserOpen=[raw.trim()];if(typeof openApp==='function')openApp('browser')};
+  if(ar)ar.onclick=()=>{$('#menu').classList.remove('show');try{sessionStorage.setItem('wos:ai-seed',raw.trim())}catch(e){}if(typeof openApp==='function')openApp('ai')};
+}
 function rend(){const D=S.d,nm=S.user||'Invitado';
   $('.icons').innerHTML=D.desk.map(a=>`<button class="ico" data-app="${a}"><i>${IC[a]||''}</i>${APPS[a]||''}</button>`).join('');
   $('#pins').innerHTML=D.pins.map(a=>`<button data-app="${a}" title="${APPS[a]||''}" aria-label="${APPS[a]||a}"><span class="mi">${IC[a]||''}</span></button>`).join('');
@@ -2282,15 +2296,32 @@ function vscode(root){
   vscode.__desk=true;
   const langOf=name=>{
     const ext=(String(name).split('.').pop()||'').toLowerCase();
-    return ({js:'javascript',mjs:'javascript',cjs:'javascript',ts:'typescript',tsx:'typescript',jsx:'javascript',html:'html',htm:'html',css:'css',py:'python',lua:'lua',luau:'lua',json:'json',md:'markdown',sql:'sql',sh:'shell',bash:'shell',txt:'plaintext',xml:'xml',yml:'yaml',yaml:'yaml'})[ext]||'plaintext';
+    return ({js:'javascript',mjs:'javascript',cjs:'javascript',ts:'typescript',tsx:'typescript',jsx:'javascript',html:'html',htm:'html',css:'css',py:'python',lua:'lua',luau:'lua',json:'json',md:'markdown',sql:'sql',sh:'shell',bash:'shell',txt:'plaintext',xml:'xml',yml:'yaml',yaml:'yaml',cpp:'cpp',cc:'cpp',cxx:'cpp',c:'c',h:'cpp',hpp:'cpp',java:'java',cs:'csharp',go:'go',rs:'rust',php:'php',rb:'ruby',kt:'kotlin',swift:'swift'})[ext]||'plaintext';
   };
   const dotOf=name=>{let h=0;const s=String(name);for(let i=0;i<s.length;i++)h=(h*33+s.charCodeAt(i))>>>0;return ['#c586c0','#4fc1ff','#dcdcaa','#ce9178','#6a9955','#569cd6','#d7ba7d'][h%7]};
   let files=[];
   try{const saved=JSON.parse(localStorage.getItem('wos:vscode-files')||'[]');if(Array.isArray(saved)&&saved.length)files=saved.filter(f=>f&&f.name)}catch(e){}
   files=files.filter(f=>f&&f.name&&!(f.name==='main.js'&&f.text==='// Drift VS Code\nconsole.log("hello");\n')&&!(f.name==='untitled.js'&&!String(f.text||'').trim()));
   files.forEach(f=>{ if(typeof f.open!=='boolean') f.open=true; });
-  let active=0,editor=null,pending=[],chatHist=[];
-  const saveFiles=()=>{try{if(editor&&files[active])files[active].text=editor.getValue();localStorage.setItem('wos:vscode-files',JSON.stringify(files))}catch(e){}};
+  let active=0,editor=null,pending=[],chatHist=[],fileLock=0;
+  const models=new Map();
+  function ownerIndex(model){
+    if(!model) return -1;
+    for(const [name,m] of models){ if(m===model) return files.findIndex(f=>f&&f.name===name); }
+    return -1;
+  }
+  function syncEditor(allowEmpty){
+    if(!editor) return;
+    const model=editor.getModel();
+    if(!model) return;
+    let idx=ownerIndex(model);
+    if(idx<0) idx=active;
+    if(!files[idx]) return;
+    const val=model.getValue();
+    if(!allowEmpty && val==='' && files[idx].text) return;
+    files[idx].text=val;
+  }
+  const saveFiles=()=>{try{localStorage.setItem('wos:vscode-files',JSON.stringify(files.map(f=>({name:f.name,text:f.text||'',open:f.open!==false}))))}catch(e){}};
   root.innerHTML=`<div class="vsapp">
     <aside class="vsex" data-ex></aside>
     <div class="vscenter">
@@ -2318,9 +2349,26 @@ function vscode(root){
   function baseOf(name){const i=String(name).lastIndexOf('/');return i>=0?name.slice(i+1):name}
   function fileBadge(name){
     const ext=(String(name).split('.').pop()||'').toLowerCase();
-    const spec=({js:['#f7df1e','JS','#111'],mjs:['#f7df1e','JS','#111'],cjs:['#f7df1e','JS','#111'],ts:['#3178c6','TS','#fff'],tsx:['#3178c6','TS','#fff'],jsx:['#61dafb','JSX','#111'],html:['#e44d26','HTML','#fff'],htm:['#e44d26','HTML','#fff'],css:['#2965f1','CSS','#fff'],py:['#3776ab','PY','#fff'],json:['#cbcb41','{}','#111'],lua:['#000080','Lua','#fff'],luau:['#00a2ff','Lua','#111'],md:['#083fa1','MD','#fff'],sql:['#e38c00','SQL','#111'],sh:['#4eaa25','SH','#fff'],xml:['#f16529','XML','#fff'],yml:['#cb171e','YML','#fff'],yaml:['#cb171e','YML','#fff']})[ext]||['#555',(ext||'FILE').slice(0,4).toUpperCase(),'#fff'];
-    const s=document.createElement('i'); s.className='flogo'; s.textContent=spec[1];
-    s.style.background=spec[0]; s.style.color=spec[2];
+    const key=({mjs:'js',cjs:'js',jsx:'js',htm:'html',cc:'cpp',cxx:'cpp',hpp:'cpp',h:'c',yml:'yaml',luau:'lua'})[ext]||ext;
+    const logos={
+      js:'<svg viewBox="0 0 16 16"><rect width="16" height="16" rx="2" fill="#f7df1e"/><text x="8" y="11.5" text-anchor="middle" font-size="7.2" font-weight="800" fill="#111" font-family="Arial">JS</text></svg>',
+      ts:'<svg viewBox="0 0 16 16"><rect width="16" height="16" rx="2" fill="#3178c6"/><text x="8" y="11.5" text-anchor="middle" font-size="7.2" font-weight="800" fill="#fff" font-family="Arial">TS</text></svg>',
+      html:'<svg viewBox="0 0 16 16"><rect width="16" height="16" rx="2" fill="#e44d26"/><text x="8" y="11.5" text-anchor="middle" font-size="5.4" font-weight="800" fill="#fff" font-family="Arial">HTML</text></svg>',
+      css:'<svg viewBox="0 0 16 16"><rect width="16" height="16" rx="2" fill="#2965f1"/><text x="8" y="11.5" text-anchor="middle" font-size="6" font-weight="800" fill="#fff" font-family="Arial">CSS</text></svg>',
+      py:'<svg viewBox="0 0 16 16"><rect width="16" height="16" rx="3" fill="#3776ab"/><circle cx="6" cy="6" r="2.1" fill="#ffd343"/><circle cx="10" cy="10" r="2.1" fill="#fff"/></svg>',
+      json:'<svg viewBox="0 0 16 16"><rect width="16" height="16" rx="2" fill="#1e1e1e"/><text x="8" y="11.5" text-anchor="middle" font-size="8" font-weight="800" fill="#cbcb41" font-family="Arial">{}</text></svg>',
+      lua:'<svg viewBox="0 0 16 16"><rect width="16" height="16" rx="8" fill="#000080"/><circle cx="8" cy="8" r="3.2" fill="#fff"/></svg>',
+      cpp:'<svg viewBox="0 0 16 16"><rect width="16" height="16" rx="2" fill="#00599c"/><text x="8" y="11.5" text-anchor="middle" font-size="6.2" font-weight="800" fill="#fff" font-family="Arial">C++</text></svg>',
+      c:'<svg viewBox="0 0 16 16"><rect width="16" height="16" rx="2" fill="#555"/><text x="8" y="11.5" text-anchor="middle" font-size="8" font-weight="800" fill="#fff" font-family="Arial">C</text></svg>',
+      java:'<svg viewBox="0 0 16 16"><rect width="16" height="16" rx="2" fill="#e76f00"/><text x="8" y="11" text-anchor="middle" font-size="5.2" font-weight="800" fill="#fff" font-family="Arial">Java</text></svg>',
+      md:'<svg viewBox="0 0 16 16"><rect width="16" height="16" rx="2" fill="#083fa1"/><text x="8" y="11.5" text-anchor="middle" font-size="6.4" font-weight="800" fill="#fff" font-family="Arial">MD</text></svg>',
+      sql:'<svg viewBox="0 0 16 16"><rect width="16" height="16" rx="2" fill="#e38c00"/><text x="8" y="11.5" text-anchor="middle" font-size="6" font-weight="800" fill="#111" font-family="Arial">SQL</text></svg>',
+      sh:'<svg viewBox="0 0 16 16"><rect width="16" height="16" rx="2" fill="#4eaa25"/><text x="8" y="11.5" text-anchor="middle" font-size="7" font-weight="800" fill="#fff" font-family="Arial">SH</text></svg>'
+    };
+    const s=document.createElement('i');
+    s.className='flogo';
+    s.title=key||'file';
+    s.innerHTML=logos[key]||('<svg viewBox="0 0 16 16"><rect width="16" height="16" rx="2" fill="#555"/><text x="8" y="11.5" text-anchor="middle" font-size="5.5" font-weight="800" fill="#fff" font-family="Arial">'+esc((key||'file').slice(0,4).toUpperCase())+'</text></svg>');
     return s;
   }
   function paintLang(){
@@ -2366,21 +2414,32 @@ function vscode(root){
     paintLang();
     paintExplorer();
   }
+  function modelFor(f){
+    let m=models.get(f.name);
+    try{ if(m&&m.isDisposed&&m.isDisposed()) m=null; }catch(e){ m=null; }
+    if(!m){ m=monaco.editor.createModel(f.text||'',langOf(f.name)); models.set(f.name,m); }
+    return m;
+  }
   function show(i){
     if(!files.length){showEmpty();return}
     const next=Math.max(0,Math.min(i,files.length-1));
-    if(editor&&files[active]&&active!==next)files[active].text=editor.getValue();
-    active=next;
-    if(files[active])files[active].open=true;
-    paint();
-    if(!editor||!window.monaco)return;
-    const f=files[active];
-    const model=monaco.editor.createModel(f.text||'',langOf(f.name));
-    const old=editor.getModel();
-    editor.setModel(model);
-    if(old&&old!==model)old.dispose();
-    lint();
+    fileLock++;
+    try{
+      syncEditor(false);
+      active=next;
+      if(files[active])files[active].open=true;
+      paint();
+      if(!editor||!window.monaco||!files[active])return;
+      const f=files[active];
+      const model=modelFor(f);
+      const live=model.getValue();
+      if(!f.text && live) f.text=live;
+      else if((f.text||'')!==live) model.setValue(f.text||'');
+      try{ monaco.editor.setModelLanguage(model,langOf(f.name)); }catch(e){}
+      if(editor.getModel()!==model)editor.setModel(model);
+    }finally{ fileLock--; }
     saveFiles();
+    lint();
   }
   function cleanName(name){
     name=String(name||'file.js').replace(/\\/g,'').replace(/\.\./g,'').trim()||'file.js';
@@ -2405,30 +2464,46 @@ function vscode(root){
   }
   function closeTab(i){
     if(!files[i])return;
-    if(editor&&files[active])files[active].text=editor.getValue();
+    syncEditor(false);
     files[i].open=false;
-    const next=files.findIndex(f=>f&&f.open!==false);
+    let next=-1;
+    for(let k=i-1;k>=0;k--) if(files[k]&&files[k].open!==false){next=k;break}
+    if(next<0) next=files.findIndex((f,idx)=>idx>i&&f&&f.open!==false);
     saveFiles();
     if(next<0){
       active=0;
-      if(editor){try{const m=editor.getModel();editor.setModel(null);if(m)m.dispose();editor.dispose()}catch(e){}editor=null}
+      fileLock++;
+      try{ if(editor){ editor.setModel(null); editor.dispose(); } }catch(e){}
+      editor=null;
+      fileLock--;
       showEmpty();
       return;
     }
-    if(editor)show(next);else{active=next;paint()}
+    if(next!==active&&editor)show(next);else{active=next;paint()}
   }
   function removeAt(i){
-    if(editor&&files[active])files[active].text=editor.getValue();
+    if(!files[i])return;
+    if(!fileLock&&editor&&i===active&&files[active])files[active].text=editor.getValue();
+    const name=files[i].name;
+    const was=i===active;
     files.splice(i,1);
+    const dead=models.get(name);
+    if(dead){ fileLock++; try{ if(editor&&editor.getModel()===dead)editor.setModel(null); dead.dispose(); }catch(e){} fileLock--; models.delete(name); }
     if(!files.length){
       active=0;saveFiles();
-      if(editor){try{const m=editor.getModel();editor.setModel(null);if(m)m.dispose();editor.dispose()}catch(e){}editor=null}
+      fileLock++;
+      try{ if(editor){ editor.dispose(); editor=null; } }catch(e){}
+      fileLock--;
       showEmpty();
       return;
     }
-    if(active>=files.length)active=files.length-1;
+    if(was){
+      let n=files.findIndex((f,idx)=>idx>=Math.min(i,files.length-1)&&f.open!==false);
+      if(n<0)n=files.findIndex(f=>f.open!==false);
+      active=n<0?0:n;
+    }else if(i<active)active--;
     saveFiles();
-    if(editor)show(active);else paint();
+    if(was&&editor)show(active);else paint();
   }
   function lint(){
     if(!editor||!window.monaco)return;
@@ -2514,19 +2589,34 @@ function vscode(root){
     chatSay('u', q);
     const hold=chatSay('a','…');
     const ep=(typeof EP==='function'?EP():(window.DDG0||'https://holy-firefly-982c.fert0480.workers.dev')).replace(/\/$/,'');
-    const sys='You are the coding assistant inside Drift VS Code. Do not introduce yourself. If they ask for code, reply with FILE: name.ext and then one fenced block containing the COMPLETE file. Never stop halfway.';
+    const sys='You are the coding assistant inside Drift VS Code. Reply fast. If they want code or a change, the first line is FILE: exact-name.ext. Use the filename they named when they ask to modify a file. Then one fenced block with the COMPLETE file. After the fence, one line ABOUT: a short sentence of what you did and what it is. Do not paste code outside the fence.';
     try{
-      const r=await fetch(ep+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'qwen/qwen3-coder-plus:free',max_tokens:4096,messages:[{role:'user',content:q}],system:sys,instructions:(typeof LS!=='undefined'?LS.get('wos:cinst',''):'')})});
+      const r=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({max_tokens:1800,messages:[{role:'user',content:q}],system:sys})});
       const j=await r.json();
       let text=((j.content||[]).map(x=>x.text||'').join(''))||(j.error&&(j.error.message||String(j.error)))||'No answer.';
+      const about=((text.match(/ABOUT:\s*(.+)/i)||[])[1]||'').trim();
       const made=[];
       const re=/FILE:\s*([^\n]+)\n```[^\n]*\n([\s\S]*?)```/g; let m;
       while((m=re.exec(text))) made.push([m[1].trim(), m[2].replace(/\s+$/,'')]);
-      if(!made.length){const fence=text.match(/```([a-z0-9.+#-]*)\n([\s\S]*?)```/i); if(fence){const map={python:'py',py:'py',javascript:'js',js:'js',html:'html',css:'css',lua:'lua',luau:'lua',json:'json'}; made.push(['ai.'+(map[(fence[1]||'').toLowerCase()]||'txt'), fence[2].replace(/\s+$/,'')]);}}
+      if(!made.length){const fence=text.match(/```([a-z0-9.+#-]*)\n([\s\S]*?)```/i); if(fence){const map={python:'py',py:'py',javascript:'js',js:'js',typescript:'ts',ts:'ts',html:'html',css:'css',lua:'lua',luau:'lua',json:'json',cpp:'cpp','c++':'cpp',c:'c',java:'java',cs:'cs',go:'go',rust:'rs',rs:'rs',php:'php',ruby:'rb',rb:'rb'}; made.push(['ai.'+(map[(fence[1]||'').toLowerCase()]||'txt'), fence[2].replace(/\s+$/,'')]);}}
+      const named=(q.match(/\b([A-Za-z0-9_.-]+\.[A-Za-z0-9]+)\b/)||[])[1]||'';
+      const edit=/\b(modifica|modify|edit|cambia|actualiza|update|arregla|fix)\b/i.test(q);
       if(made.length){
-        const names=made.map(pair=>addFile(pair[0], pair[1]));
-        hold.textContent='Created '+names.join(', ');
-      }else hold.textContent=text;
+        const names=made.map(pair=>{
+          const want=cleanName(named||pair[0]);
+          const hit=files.findIndex(f=>f&&(String(f.name).toLowerCase()===want.toLowerCase()||baseOf(f.name).toLowerCase()===baseOf(want).toLowerCase()));
+          if(hit>=0&&(edit||!!named||String(files[hit].name).toLowerCase()===cleanName(pair[0]).toLowerCase())){
+            files[hit].text=pair[1]; files[hit].open=true;
+            const mdl=models.get(files[hit].name);
+            if(mdl){ fileLock++; try{ mdl.setValue(pair[1]); }catch(e){} fileLock--; }
+            if(editor)show(hit);else{active=hit;saveFiles();paint()}
+            return files[hit].name;
+          }
+          return addFile(edit&&named?named:pair[0], pair[1]);
+        });
+        const verb=names.some(n=>files.some(f=>f.name===n&&edit))||edit?'Updated ':'Created ';
+        hold.textContent=verb+names.join(', ')+(about?'. '+about:'');
+      }else hold.textContent=about||text.replace(/```[\s\S]*?```/g,'').trim()||'No answer.';
     }catch(e){ hold.textContent=String(e.message||e); }
   }
   window.DriftVS={
@@ -2534,9 +2624,12 @@ function vscode(root){
     writeFile:function(name,text){
       name=cleanName(name);
       const i=files.findIndex(f=>f&&String(f.name).toLowerCase()===name.toLowerCase());
-      if(i<0)return addFile(name,text==null?'':String(text));
-      files[i].text=text==null?'':String(text);
+      const body=text==null?'':String(text);
+      if(i<0)return addFile(name,body);
+      files[i].text=body;
       files[i].open=true;
+      const mdl=models.get(files[i].name);
+      if(mdl){ fileLock++; try{ mdl.setValue(body); }catch(e){} fileLock--; }
       saveFiles();
       if(editor)show(i);else{active=i;paint()}
       return files[i].name;
@@ -2549,7 +2642,7 @@ function vscode(root){
     const f=files[active]||files[0];
     editor=monaco.editor.create(host,{value:f.text||'',language:langOf(f.name),theme:'vs-dark',automaticLayout:true,fontSize:14,minimap:{enabled:true},scrollBeyondLastLine:false,tabSize:2});
     editor.onDidChangeCursorPosition(e=>{const pos=e.position;$('#vspos',root).textContent='Ln '+pos.lineNumber+', Col '+pos.column});
-    editor.onDidChangeModelContent(()=>{if(files[active])files[active].text=editor.getValue();saveFiles();clearTimeout(editor.__lt);editor.__lt=setTimeout(lint,250)});
+    editor.onDidChangeModelContent(()=>{if(fileLock||!files[active])return;syncEditor(true);saveFiles();clearTimeout(editor.__lt);editor.__lt=setTimeout(lint,250)});
     paint(); lint();
     pending.splice(0).forEach(pair=>addFile(pair[0],pair[1]));
   }
@@ -2583,6 +2676,8 @@ function vscode(root){
   root.querySelector('[data-a="run"]').onclick=runFile;
   root.querySelector('[data-a="ask"]').onclick=askAI;
   root.querySelector('[data-ai]').onkeydown=function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();askAI()}};
+  const vsWin=root.closest('.win');
+  if(vsWin){ const x=vsWin.querySelector('.title [data-a="x"]'); if(x) x.addEventListener('pointerdown',function(){syncEditor(false);saveFiles()},true); }
   paint();
   if(files.some(f=>f.open!==false)){if(!files[active]||files[active].open===false)active=Math.max(0,files.findIndex(f=>f.open!==false));bootMonaco();}else showEmpty();
 }
@@ -3045,8 +3140,8 @@ window.unsafeWindow=window;
     box.innerHTML='';
     try{
       if(typeof scramjetAvailable==='function'&&!(await scramjetAvailable())){
-        st.textContent='Scramjet offline — open Railway/npm start host, or use New tab.';
-        box.innerHTML='<div class="ym">Scramjet proxy required for in-app Gimkit.<br><a href="'+url+'" target="_blank" rel="noopener">Open Gimkit in new tab</a></div>';
+        st.textContent='Scramjet offline. Ábrelo otra vez en un momento.';
+        box.innerHTML='<div class="ym">Scramjet proxy required for in-app Gimkit.</div>';
         return;
       }
       await sjInit();
@@ -3059,7 +3154,7 @@ window.unsafeWindow=window;
       setTimeout(tryInject,1500);
     }catch(e){
       st.textContent='Proxy error: '+(e&&e.message||e);
-      box.innerHTML='<div class="ym">'+esc(String(e&&e.message||e))+'<br><a href="'+url+'" target="_blank" rel="noopener">Open in new tab</a></div>';
+      box.innerHTML='<div class="ym">'+esc(String(e&&e.message||e))+'</div>';
     }
   }
 
@@ -3086,94 +3181,34 @@ function discordApp(root){
 
 
 function proxySite(root,url,label){
-  root.innerHTML='<div style="display:flex;flex-direction:column;height:100%"><div style="padding:6px 10px;font-size:11px;color:var(--mute);border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center;justify-content:space-between"><span>'+label+' · proxy</span><a href="'+url+'" target="_blank" rel="noopener" style="color:var(--acc);font-size:11px">Open in new tab</a></div><div class="sjt" style="flex:1;min-height:0;position:relative"></div></div>';
+  root.innerHTML='<div style="display:flex;flex-direction:column;height:100%"><div style="padding:6px 10px;font-size:11px;color:var(--mute);border-bottom:1px solid var(--line)"><span>'+label+'</span></div><div class="sjt" style="flex:1;min-height:0;position:relative"></div></div>';
   const box=$('.sjt',root);
   openProxied(url, box);
 }
 function gmailApp(root){proxySite(root,'https://mail.google.com/','Gmail')}
 function igApp(root){proxySite(root,'https://www.instagram.com/','Instagram')}
 function ttApp(root){
-  root.style.position='relative';
-  root.style.height='100%';
-  root.style.minHeight='0';
-  root.innerHTML='<div class="yt-shorts" data-feed></div>';
-  const feed=root.querySelector('[data-feed]');
-  const seen={};
-  let cursor='0', loading=false, done=false;
-  function arm(slide){
-    const v=slide.querySelector('video');
-    if(!v || v.dataset.on) return;
-    v.dataset.on='1';
-    v.src=slide.dataset.play;
-  }
-  function add(items){
-    items.forEach(it=>{
-      if(!it.id || seen[it.id]) return;
-      seen[it.id]=1;
-      const s=document.createElement('div');
-      s.className='ss';
-      s.dataset.play=it.play;
-      const v=document.createElement('video');
-      v.controls=true; v.playsInline=true; v.loop=true; v.preload='metadata';
-      v.addEventListener('error', function(){
-        if(s.querySelector('.ym')) return;
-        const m=document.createElement('div');
-        m.className='ym'; m.style.color='#fff';
-        m.textContent='This video did not start.';
-        s.appendChild(m);
-      });
-      const meta=document.createElement('div');
-      meta.className='meta';
-      const b=document.createElement('b'); b.textContent=it.title||'';
-      const sm=document.createElement('small'); sm.textContent=it.author?('@'+it.author):'';
-      meta.append(b, sm);
-      s.append(v, meta);
-      feed.appendChild(s);
-    });
-  }
-  function sync(){
-    const slides=[...feed.querySelectorAll('.ss')];
-    const fr=feed.getBoundingClientRect();
-    slides.forEach(s=>{
-      const r=s.getBoundingClientRect();
-      const vis=r.top < fr.bottom - fr.height*0.35 && r.bottom > fr.top + fr.height*0.35;
-      const v=s.querySelector('video');
-      if(!v) return;
-      if(vis){
-        arm(s);
-        const p=v.play();
-        if(p&&p.catch) p.catch(function(){ v.muted=true; const q=v.play(); if(q&&q.catch) q.catch(function(){}); });
-      } else v.pause();
-    });
-  }
-  async function more(){
-    if(loading || done) return;
-    loading=true;
-    try{
-      const r=await fetch('/api/tt-feed?cursor='+encodeURIComponent(cursor), {cache:'no-store'});
-      const j=await r.json();
-      const batch=(j.items||[]).filter(it=>it && it.play && !seen[it.id]);
-      if(!batch.length && !feed.children.length){
-        feed.innerHTML='<div class="ym" style="color:#fff">TikTok did not load. Try again.</div>';
-        done=true;
-      } else if(!batch.length) done=true;
-      else { add(batch); cursor=String(j.cursor||cursor); sync(); }
-    }catch(e){
-      if(!feed.children.length) feed.innerHTML='<div class="ym" style="color:#fff">TikTok did not load. Try again.</div>';
+  root.style.cssText='height:100%;min-height:0;position:relative;background:#000';
+  root.innerHTML='';
+  let n=0;
+  function open(){
+    if(typeof openProxied!=='function'){
+      root.innerHTML='<div class="ym" style="color:#fff">TikTok no cargó. Ábrelo otra vez.</div>';
+      return;
     }
-    loading=false;
+    Promise.resolve(openProxied('https://www.tiktok.com/foryou', root)).then(function(f){
+      if(f&&f.frame) return;
+      if(++n<3) setTimeout(open, 800);
+    }).catch(function(){ if(++n<3) setTimeout(open, 800); });
   }
-  feed.addEventListener('scroll', function(){
-    sync();
-    if(feed.scrollTop+feed.clientHeight>feed.scrollHeight-240) more();
-  });
-  more();
+  open();
 }
 
 const XAPPS={cam:{n:'Camera',f:camera},mus:{n:'Music',f:music},movies:{n:'Netflix',f:movies},code:{n:'VS Code',f:vscode},discord:{n:'Discord',f:discordApp},gmail:{n:'Gmail',f:gmailApp},ig:{n:'Instagram',f:igApp},tt:{n:'TikTok',f:ttApp},classroom:{n:'Classroom',f:classroomApp},canva:{n:'Canva',f:canvaApp},roblox:{n:'Roblox',f:robloxApp}};
 function driftSite(url){return function(root){root.innerHTML='';root.style.cssText='height:100%;min-height:0;position:relative;background:#000';if(typeof openProxied==='function')openProxied(url,root);else root.textContent='Scramjet no está listo.';};}
 XAPPS.yt={n:'YouTube',f:driftSite('https://www.youtube.com/')};
-XAPPS.tt={n:'TikTok',f:driftSite('https://www.tiktok.com/')};
+XAPPS.tt={n:'TikTok',f:ttApp};
+window.__driftTtFeed=ttApp;
 
 /* ---- Browser real con Scramjet (solo si el servidor Node está detrás) ---- */
 const SJ=()=>!!navigator.serviceWorker; // real check inside sjInit (assets on server)
@@ -3235,25 +3270,33 @@ async function sjLoad(box,url){
   }catch(e){
     const heavy=/discord|youtube|instagram|tiktok|reddit|twitter|x\.com/i.test(String(url));
     box.innerHTML='<div class="ym">Could not start proxy: '+esc(String(e&&e.message||e))+
-      (heavy?'<br><br><b>Sitio pesado</b>: Discord/YouTube/Instagram necesitan WebOS servido con Scramjet (Node: /scram, /sw.js, /wisp). El HTML solo no alcanza.<br>YouTube: usa la app <b>YouTube</b> del escritorio.':'')+
+      (heavy?'<br><br><b>Sitio pesado</b>: Discord/YouTube/Instagram se quedan en esta app. YouTube: usa la app <b>YouTube</b> del escritorio.':'')+
       '</div>';
     return null;
   }
 }
 
+function lockFrame(frame){
+  if(!frame)return;
+  try{
+    frame.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-modals allow-downloads allow-pointer-lock');
+    frame.setAttribute('referrerpolicy','no-referrer');
+  }catch(e){}
+}
 async function openProxied(url, box){
   try{
     if(!SJP && !(await scramjetAvailable()))throw new Error('no-scram');
     await sjInit();
     const f=SJC.createFrame();
+    lockFrame(f.frame);
     f.frame.style.cssText='width:100%;height:100%;border:0;background:#fff';
     box.innerHTML='';box.appendChild(f.frame);
     try{f.go(url)}catch(e){
-      box.innerHTML='<div class="ym"><b>Proxy error loading URL</b><br>Try: check internet, verify the address, clear site data for this host, or restart the Scramjet server.<br><br><a href="'+esc(url)+'" target="_blank" rel="noopener">Open in new tab instead</a></div>';
+      box.innerHTML='<div class="ym"><b>Proxy error loading URL</b><br>Try: check internet, verify the address, clear site data for this host, or restart the Scramjet server.</div>';
     }
     return f;
   }catch(e){
-    box.innerHTML='<div class="ym"><b>UH OH — proxy unavailable</b><br>'+esc(String(e&&e.message||e))+'<br><br>On Chromebook this often means the Scramjet server is down or blocked.<br><a href="'+esc(url)+'" target="_blank" rel="noopener" style="color:var(--acc)">Open in new tab</a></div>';
+    box.innerHTML='<div class="ym"><b>UH OH — proxy unavailable</b><br>'+esc(String(e&&e.message||e))+'<br><br>On Chromebook this often means the Scramjet server is down or blocked.</div>';
     return null;
   }
 }
@@ -3275,8 +3318,8 @@ function sjBrowser(root){
     return ENGS[ENG()]+encodeURIComponent(v)};
   const home=t=>{
     t.box.innerHTML='<div class="center"><div class="logo"><span>W</span><span>e</span><span>b</span><span>O</span><span>S</span></div><input class="sb" placeholder="Search or type an address" aria-label="Search"><div class="tiles">'+
-      [['Google','https://www.google.com','#4285f4'],['Bing','https://www.bing.com','#2582ea'],['DuckDuckGo','https://duckduckgo.com','#de5833'],['YouTube','https://www.youtube.com','#ff0033'],['Discord','https://discord.com/app','#5865F2'],['Instagram','https://www.instagram.com','#d62976'],['TikTok','https://www.tiktok.com','#111'],['Reddit','https://www.reddit.com','#ff4500'],['Wikipedia','https://es.wikipedia.org','#666']]
-      .map(x=>`<button class="tile" data-u="${x[1]}"><i style="background:${x[2]};color:#fff">${x[0][0]}</i>${x[0]}</button>`).join('')+'</div></div>';
+      [['Google','https://www.google.com','/sites/google.svg'],['Bing','https://www.bing.com','/sites/bing.svg'],['DuckDuckGo','https://duckduckgo.com','/sites/duckduckgo.svg'],['YouTube','https://www.youtube.com','/sites/youtube.svg'],['Discord','https://discord.com/app','/sites/discord.svg'],['Instagram','https://www.instagram.com','/sites/instagram.svg'],['TikTok','https://www.tiktok.com','/sites/tiktok.svg'],['Reddit','https://www.reddit.com','/sites/reddit.svg'],['Wikipedia','https://es.wikipedia.org','/sites/wikipedia.svg']]
+      .map(x=>`<button class="tile" data-u="${x[1]}"><i><img src="${x[2]}" alt=""></i>${x[0]}</button>`).join('')+'</div></div>';
     const sb=$('.sb',t.box);sb.onkeydown=e=>{if(e.key==='Enter')go(sb.value)};
     t.box.querySelectorAll('.tile').forEach(b=>b.onclick=()=>go(b.dataset.u))};
   function asUrl(v){
@@ -3288,7 +3331,7 @@ function sjBrowser(root){
   async function openFrame(u){
     const t=T();
     if(!t.fr){t.box.innerHTML='<div class="ld">Loading…</div>';await sjInit();
-      const f=SJC.createFrame();f.frame.style.cssText=sjStyle;t.box.innerHTML='';t.box.appendChild(f.frame);t.fr=f}
+      const f=SJC.createFrame();lockFrame(f.frame);f.frame.style.cssText=sjStyle;t.box.innerHTML='';t.box.appendChild(f.frame);t.fr=f}
     t.url=u;t.title=u.replace(/^https?:\/\//,'').slice(0,30);t.fr.go(u);bar();
   }
   async function showResults(q){
@@ -3345,10 +3388,11 @@ function sjBrowser(root){
       if(u&&/^https?:/.test(u))t.url=u;
       const ti=w.document&&w.document.title;if(ti)t.title=ti.slice(0,30)}catch{}});
     bar()},800);
+  window.driftBrowse=function(url){add();return openFrame(url)};
   const queued=Array.isArray(window.__driftBrowserOpen)?window.__driftBrowserOpen.slice():null;
   window.__driftBrowserOpen=null;
   if(queued&&queued.length){
-    (async()=>{for(let i=0;i<queued.length;i++){add();try{await openFrame(queued[i])}catch(e){}}})();
+    (async()=>{for(let i=0;i<queued.length;i++){add();try{await go(queued[i])}catch(e){}}})();
   }else add();
 }
 const B1=browser;

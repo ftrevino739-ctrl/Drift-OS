@@ -203,8 +203,7 @@
 
   function waygroundApp(root) {
     if (typeof window.waygroundApp === 'function') return window.waygroundApp(root);
-    root.innerHTML = '<div style="padding:16px">Opening Wayground in Chrome…</div>';
-    window.open('https://wayground.com/', 'drift-wayground', 'width=1200,height=800');
+    root.textContent = 'Wayground is still loading. Open it again.';
   }
 
   function whatsappApp(root) {
@@ -310,42 +309,66 @@
     root.querySelector('[data-gen]').onclick = async function () {
       var q = root.querySelector('[data-ai]').value.trim();
       var out = root.querySelector('[data-aiout]');
-      if (!q) return;
-      out.textContent = 'Generating…';
       var log = root.querySelector('[data-log]');
+      var reply = null;
+      if (!q) return;
+      out.textContent = '…';
       if (log) {
         var mine = document.createElement('div');
         mine.style.cssText = 'align-self:flex-end;max-width:94%;padding:8px 10px;border-radius:12px;background:#007acc;color:#fff;font-size:12px;white-space:pre-wrap';
         mine.textContent = q;
         log.appendChild(mine);
+        reply = document.createElement('div');
+        reply.style.cssText = 'align-self:flex-start;max-width:94%;padding:8px 10px;border-radius:12px;background:#1e1e1e;color:#ddd;font-size:12px;white-space:pre-wrap';
+        reply.textContent = '…';
+        log.appendChild(reply);
         log.scrollTop = log.scrollHeight;
       }
+      function say(msg) {
+        out.textContent = msg;
+        if (reply) reply.textContent = msg;
+        if (log) log.scrollTop = log.scrollHeight;
+      }
+      function writeNamed(name, body) {
+        name = String(name || '').trim();
+        if (window.DriftVS && typeof window.DriftVS.writeFile === 'function') return window.DriftVS.writeFile(name, body);
+        var list = [];
+        try { list = JSON.parse(localStorage.getItem('wos:vscode-files') || '[]'); } catch (e) {}
+        if (!Array.isArray(list)) list = [];
+        var i = -1;
+        for (var k = 0; k < list.length; k++) if (list[k] && String(list[k].name).toLowerCase() === name.toLowerCase()) i = k;
+        if (i < 0) list.push({ name: name, text: body, open: true });
+        else { list[i].text = body; list[i].open = true; }
+        try { localStorage.setItem('wos:vscode-files', JSON.stringify(list)); } catch (e2) {}
+        return name;
+      }
       try {
-        var body = {
-          systemInstruction: { parts: [{ text: 'You are Drift 2.1. Write only JavaScript for a browser userscript. Output code only, no markdown fences.' }] },
-          contents: [{ role: 'user', parts: [{ text: q }] }],
-          generationConfig: { maxOutputTokens: 8192, temperature: 0.3 }
-        };
-        var text = '';
-        var ep = (typeof EP === 'function' ? EP() : (window.DDG0 || 'https://holy-firefly-982c.fert0480.workers.dev')).replace(/\/$/, '');
-        try {
-          var rc = await fetch(ep + '/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'qwen/qwen3-coder-plus:free', max_tokens: 32768, messages: [{ role: 'user', content: q }], system: body.systemInstruction.parts[0].text }) });
-          var jc = await rc.json();
-          text = ((jc.content || []).map(function (x) { return x.text || ''; }).join(''));
-        } catch (errC) { text = ''; }
-        if (!String(text || '').trim()) {
-          var r = await fetch('/api/gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-          var j = await r.json();
-          if (r.ok) text = ((((j.candidates || [])[0] || {}).content || {}).parts || []).filter(function (p) { return !p.thought; }).map(function (p) { return p.text || ''; }).join('');
-          else throw new Error((j.error && (j.error.message || String(j.error))) || 'The code model did not answer.');
+        var sys = 'You are Drift inside JS Injector. Reply fast. First line is ABOUT: one short sentence of what you did and what it is. If they name a file to modify, the next line is FILE: that exact filename. Then one fenced javascript block with the COMPLETE file. Do not paste code outside the fence.';
+        var r = await fetch('/api/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ max_tokens: 1800, messages: [{ role: 'user', content: q }], system: sys }) });
+        var j = await r.json();
+        var text = ((j.content || []).map(function (x) { return x.text || ''; }).join('')) || '';
+        if (!String(text).trim()) throw new Error((j.error && (j.error.message || String(j.error))) || 'No answer.');
+        var about = ((text.match(/ABOUT:\s*(.+)/i) || [])[1] || '').trim();
+        var named = (q.match(/\b([A-Za-z0-9_.-]+\.[A-Za-z0-9]+)\b/) || [])[1] || '';
+        var fileLine = ((text.match(/FILE:\s*([^\n]+)/i) || [])[1] || '').trim();
+        var edit = /\b(modifica|modify|edit|cambia|actualiza|update|arregla|fix)\b/i.test(q);
+        var fence = text.match(/```[^\n]*\n([\s\S]*?)```/);
+        var codeText = fence ? fence[1].replace(/\s+$/, '') : '';
+        if (edit && (named || fileLine) && codeText) {
+          var target = named || fileLine;
+          writeNamed(target, codeText);
+          say('Updated ' + target + (about ? '. ' + about : '.'));
+          return;
         }
-        text = String(text).replace(/^```[a-z]*\n?/i, '').replace(/```$/, '');
-        if (!text) throw new Error('Empty response');
-        code.value = text;
-        check();
-        out.textContent = 'Inserted into the editor.';
+        if (codeText) {
+          code.value = codeText;
+          check();
+          say((about ? about : 'Created the script in the editor.'));
+          return;
+        }
+        say(about || text.replace(/```[\s\S]*?```/g, '').trim() || 'No answer.');
       } catch (e) {
-        out.textContent = String(e.message || e);
+        say(String(e.message || e));
       }
     };
   }
@@ -493,10 +516,13 @@
   }
 
   function classdojoApp(root) {
-    var page = 'https://www.classdojo.com/dojo-islands/';
+    var page = 'https://www.classdojo.com/';
     var scriptUrl = 'https://raw.githubusercontent.com/appsandoranges/Class-Dojo-Plus/master/class-dojo-plus.js';
-    root.innerHTML = '<div style="display:flex;flex-direction:column;height:100%;min-height:0"><div style="padding:8px 10px;border-bottom:1px solid var(--line);font-size:12px">ClassDojo · Dojo Islands</div><div class="sjt" style="flex:1;min-height:0;position:relative"></div></div>';
-    var box = root.querySelector('.sjt');
+    root.innerHTML = '';
+    root.style.cssText = 'height:100%;min-height:0;position:relative;background:#fff';
+    var box = document.createElement('div');
+    box.style.cssText = 'position:absolute;inset:0';
+    root.appendChild(box);
     var src = '';
     var seen = '';
     function inject() {
@@ -529,8 +555,6 @@
         if (frame && frame.frame) frame.frame.addEventListener('load', function () { setTimeout(inject, 400); });
         setTimeout(inject, 800);
       }).catch(function () {});
-    } else if (typeof window.proxySite === 'function') {
-      window.proxySite(box, page, 'ClassDojo');
     } else {
       box.textContent = page;
     }

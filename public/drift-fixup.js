@@ -998,13 +998,8 @@ function driftSite(url) {
     root.style.cssText = 'height:100%;min-height:0;display:flex;flex-direction:column;background:#0b0b0d;color:#eee';
     var bar = document.createElement('div');
     bar.style.cssText = 'flex:none;display:flex;gap:6px;align-items:center;padding:6px 8px;background:#1a1a1f;overflow:auto;border-bottom:1px solid #2a2a32';
-    var add = document.createElement('button');
-    add.type = 'button';
-    add.textContent = '+ .js';
-    add.style.cssText = 'padding:6px 10px;border:0;border-radius:8px;background:#0078d4;color:#fff;cursor:pointer;font-weight:650';
     var filesBox = document.createElement('div');
     filesBox.style.cssText = 'display:flex;gap:6px;align-items:center;min-width:0';
-    bar.appendChild(add);
     bar.appendChild(filesBox);
     var stage = document.createElement('div');
     stage.style.cssText = 'flex:1;min-height:0;display:flex;flex-direction:column';
@@ -1089,17 +1084,10 @@ function driftSite(url) {
       editor.style.display = 'none';
       paint();
     };
-    add.onclick = function () {
-      var name = prompt('File name (.js only)', 'script.js');
-      if (!name) return;
-      name = String(name).trim().replace(/[\\/]/g, '').replace(/\.js$/i, '') + '.js';
-      if (!/^[A-Za-z0-9._-]+\.js$/.test(name)) { alert('Only .js files'); return; }
-      if (files.some(function (f) { return String(f.name).toLowerCase() === name.toLowerCase(); })) { alert('That file already exists'); return; }
-      files.push({ name: name, text: '' });
-      persist(files);
-      openFile(files.length - 1);
-    };
     paint();
+    root.querySelectorAll('button').forEach(function (b) {
+      if (/^\+\s*\.?js$/i.test(String(b.textContent || '').trim())) b.remove();
+    });
     if (typeof window.openProxied === 'function') window.openProxied('https://win11.blueedge.me/', frameHost);
     else {
       var fr = document.createElement('iframe');
@@ -1122,7 +1110,7 @@ function driftSite(url) {
     window.XAPPS.gbuild = { n: 'Game Builder', f: driftSite('https://tesana.com/create') };
     window.XAPPS.espn = { n: 'ESPN', f: driftSite('https://www.espn.com/') };
     window.XAPPS.yt = { n: 'YouTube', f: driftSite('https://www.youtube.com/') };
-    window.XAPPS.tt = { n: 'TikTok', f: driftSite('https://www.tiktok.com/') };
+    window.XAPPS.tt = { n: 'TikTok', f: typeof window.__driftTtFeed === 'function' ? window.__driftTtFeed : driftSite('https://www.tiktok.com/foryou') };
     window.XAPPS.gem = { n: 'Gemini', f: driftSite('https://gemini.google.com/app') };
     window.XAPPS.movies = {
       n: 'Movies',
@@ -1835,12 +1823,12 @@ function driftSite(url) {
   function wireLoginApps() {
     try {
       if (!window.XAPPS) return;
-      window.XAPPS.gmail = { n: 'Gmail', f: operaPage('https://mail.google.com/mail/u/0/', 'edge') };
+      window.XAPPS.gmail = { n: 'Gmail', f: operaPage('https://mail.google.com/mail/u/0/h/', 'firefox') };
       window.XAPPS.classroom = { n: 'Classroom', f: operaPage('https://classroom.google.com/', 'chrome') };
       delete window.XAPPS.canva;
       if (window.APPS) delete window.APPS.canva;
       window.__driftRoblox = robloxShell;
-      window.__driftGmail = operaPage('https://mail.google.com/mail/u/0/', 'edge');
+      window.__driftGmail = operaPage('https://mail.google.com/mail/u/0/h/', 'firefox');
       window.XAPPS.roblox = { n: 'Roblox', f: robloxShell };
     } catch (e) {}
   }
@@ -1930,6 +1918,60 @@ function driftSite(url) {
         });
       });
       po.observe({ type: 'resource', buffered: true });
+    } catch (e) {}
+    var joinRe = /class started|clase iniciada|joined class|you(?:'ve| have) joined|now in class|connected to class|teacher started|en clase|sesi[oó]n iniciada|class is in session/i;
+    function classBlob(node) {
+      if (!node || node.nodeType !== 1) return '';
+      if (node.closest && node.closest('#drift-settings-panel,#drift-docs,#drift-snow')) return '';
+      var blob = '';
+      try {
+        blob += (node.id || '') + ' ' + (typeof node.className === 'string' ? node.className : '') + ' ';
+        if (node.src) blob += node.src + ' ';
+        if (node.getAttribute) blob += (node.getAttribute('src') || '') + ' ' + (node.getAttribute('title') || '') + ' ';
+        var tx = node.childNodes && node.childNodes.length < 8 ? (node.innerText || '') : '';
+        if (tx && tx.length < 240) blob += tx;
+      } catch (err) {}
+      return blob;
+    }
+    function sawClass(node) {
+      var blob = classBlob(node);
+      if (!blob || !joinRe.test(blob)) return;
+      if (!/linewize|classwize|goguardian|securly|class started|clase iniciada|joined class|en clase|sesi[oó]n iniciada/i.test(blob)) return;
+      if (window.__driftClassAt) return;
+      window.__driftClassAt = Date.now();
+      try { alert('Protector: se detectó que te uniste a una clase.'); } catch (err) {}
+      protectorHit('class');
+    }
+    function scanLinewize() {
+      if (window.__driftClassAt) return;
+      var nodes = document.querySelectorAll('iframe,div,span');
+      for (var i = 0; i < nodes.length; i++) {
+        var node = nodes[i];
+        if (!node || (node.closest && node.closest('#desk,#menu,#task,.win,#drift-settings-panel,#drift-snow,#drift-docs'))) continue;
+        var src = '';
+        try { src = node.getAttribute ? (node.getAttribute('src') || '') : ''; } catch (e) {}
+        var blob = (node.id || '') + ' ' + (typeof node.className === 'string' ? node.className : '') + ' ' + src;
+        var text = '';
+        try { if (node.childNodes && node.childNodes.length < 6) text = (node.innerText || '').slice(0, 180); } catch (e2) {}
+        if (!/linewize|classwize|goguardian|securly/i.test(blob + ' ' + text) && !/you are (now )?connected|conectado a|class session|en clase|joined class/i.test(text)) continue;
+        window.__driftClassAt = Date.now();
+        var msg = text.replace(/\s+/g, ' ').trim().slice(0, 140);
+        try { alert('Protector: Linewize muestra una clase' + (msg ? ': ' + msg : '.')); } catch (err) {}
+        return;
+      }
+    }
+    try {
+      var classObs = new MutationObserver(function (list) {
+        for (var i = 0; i < list.length; i++) {
+          var rec = list[i];
+          if (rec.target) sawClass(rec.target);
+          var added = rec.addedNodes || [];
+          for (var k = 0; k < added.length; k++) sawClass(added[k]);
+        }
+        scanLinewize();
+      });
+      classObs.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['src', 'class', 'id'] });
+      setInterval(scanLinewize, 4000);
     } catch (e) {}
   }
   function openDriftDocs() {

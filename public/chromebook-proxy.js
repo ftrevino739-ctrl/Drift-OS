@@ -62,7 +62,6 @@
     box.innerHTML =
       '<div class="ym" style="padding:16px;line-height:1.5">' +
       '<b>Proxy failed</b><br>' + esc(msg) +
-      '<br><br><a href="' + esc(url) + '" target="_blank" rel="noopener" style="color:var(--acc)">Open in new tab</a>' +
       (isChromeOS()
         ? '<br><br><small>ChromeOS: wait 30s if Render is waking up, then retry. Keep this tab open.</small>'
         : '') +
@@ -155,6 +154,21 @@
       }
 
       window.SJC = SJC;
+      if (!SJC.createFrame.__driftLock) {
+        var create0 = SJC.createFrame.bind(SJC);
+        var createLocked = function () {
+          var frame = create0();
+          try {
+            if (frame && frame.frame) {
+              frame.frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-modals allow-downloads allow-pointer-lock');
+              frame.frame.setAttribute('referrerpolicy', 'no-referrer');
+            }
+          } catch (err) {}
+          return frame;
+        };
+        createLocked.__driftLock = true;
+        SJC.createFrame = createLocked;
+      }
       return SJC;
     })();
     cache.catch(function () { cache = null; });
@@ -221,11 +235,9 @@
     root.innerHTML =
       '<div style="display:flex;flex-direction:column;height:100%;min-height:0">' +
       '<div style="padding:6px 10px;font-size:11px;color:var(--mute);border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center;justify-content:space-between">' +
-      '<span>' + esc(label || 'Site') + ' · proxy</span>' +
-      '<span style="display:flex;gap:10px">' +
+      '<span>' + esc(label || 'Site') + '</span>' +
       '<button type="button" data-retry style="border:0;background:transparent;color:var(--acc);cursor:pointer;font-size:11px">Retry</button>' +
-      '<a href="' + esc(target) + '" target="_blank" rel="noopener" style="color:var(--acc);font-size:11px">Open in new tab</a>' +
-      '</span></div>' +
+      '</div>' +
       '<div class="sjt" style="flex:1;min-height:0;position:relative"></div></div>';
     var box = root.querySelector('.sjt');
     function go() { window.openProxied(target, box); }

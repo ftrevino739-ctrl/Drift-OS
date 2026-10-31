@@ -65,10 +65,7 @@
   function injectInto(doc, cheatSrc, statusEl) {
     if (!doc) return false;
     try {
-      if (doc.documentElement.getAttribute('data-wg-inj') === '1') {
-        if (statusEl) statusEl.textContent = 'Mod menu already injected';
-        return true;
-      }
+      if (doc.documentElement.getAttribute('data-wg-inj') === '1') return false;
       var s0 = doc.createElement('script');
       s0.textContent = GM_BOOT + GM_AI;
       (doc.head || doc.documentElement).appendChild(s0);
@@ -78,15 +75,7 @@
       var hide = doc.createElement('script');
       hide.textContent = "(function(){function clip(root){if(!root||!root.querySelectorAll)return;var nodes=root.querySelectorAll('*');for(var i=0;i<nodes.length;i++){var sr=nodes[i].shadowRoot;if(!sr||sr.querySelector('#drift-wg-hide'))continue;if(!sr.querySelector('#toggle-ai-checkbox'))continue;var st=document.createElement('style');st.id='drift-wg-hide';st.textContent='#btn-apikey,#btn-apikeyconfig,#test-api-btn,#apikey-input,#api-provider,#apiProvider{display:none!important}.apikey_menu .settings-item:not(:has(#toggle-ai-checkbox)){display:none!important}';sr.appendChild(st);} }var n=0;var t=setInterval(function(){clip(document);if(++n>20)clearInterval(t);},500);})();";
       (doc.head || doc.documentElement).appendChild(hide);
-      try {
-        var badge = doc.createElement('div');
-        badge.textContent = 'Drift Mod · Worker AI (vision)';
-        badge.style.cssText =
-          'position:fixed;top:12px;right:12px;z-index:2147483646;background:#111827;color:#fff;padding:8px 12px;border-radius:10px;font:12px system-ui;box-shadow:0 8px 24px rgba(0,0,0,.35)';
-        (doc.body || doc.documentElement).appendChild(badge);
-      } catch (e) {}
       doc.documentElement.setAttribute('data-wg-inj', '1');
-      if (statusEl) statusEl.textContent = 'Mod menu injected · answers via Drift worker (vision)';
       return true;
     } catch (e) {
       if (statusEl) statusEl.textContent = 'Inject later: ' + (e.message || e);
@@ -98,69 +87,52 @@
     root.innerHTML =
       '<div style="display:flex;flex-direction:column;height:100%;min-height:0;background:#11131a;color:#eee">' +
       '<div style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;flex-wrap:wrap;gap:8px;align-items:center">' +
-      '<b>Wayground</b><span style="font-size:12px;opacity:.75">Drift Intelligence</span>' +
-      '<button type="button" data-inj style="margin-left:auto;padding:6px 12px;border-radius:8px;border:0;background:#7c5cff;color:#fff;cursor:pointer">Inject mod</button>' +
-      '<button type="button" data-read style="padding:6px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.16);background:transparent;color:#fff;cursor:pointer">Read screen</button></div>' +
-      '<div data-status style="padding:6px 10px;font-size:12px;opacity:.85">Opening Wayground inside the app…</div>' +
-      '<div data-ans style="display:none;max-height:160px;overflow:auto;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.08)"></div>' +
+      '<b>Wayground</b><span style="font-size:12px;opacity:.75">Drift Intelligence</span></div>' +
       '<div data-box style="flex:1;min-height:0;position:relative;background:#fff"></div></div>';
-    var st = root.querySelector('[data-status]');
-    var ans = root.querySelector('[data-ans]');
     var box = root.querySelector('[data-box]');
     var cheatSrc = null;
     var seen = '';
+    var injects = 0;
 
     function frame() { return box.querySelector('iframe'); }
 
-    function showAnswer(text) {
-      ans.style.display = 'block';
-      if (typeof window.driftPaint === 'function') window.driftPaint(ans, text);
-      else ans.textContent = text;
-    }
-
     async function ensureCheat() {
       if (cheatSrc) return cheatSrc;
-      st.textContent = 'Downloading mod menu…';
       cheatSrc = await loadCheat();
       return cheatSrc;
     }
 
-    async function tryInject(force) {
+    async function tryInject() {
+      if (injects >= 2) return;
       try {
         await ensureCheat();
         var el = frame();
         var doc = el && el.contentDocument;
-        if (force && doc && doc.documentElement) doc.documentElement.removeAttribute('data-wg-inj');
-        if (doc && injectInto(doc, cheatSrc, st)) {
-          st.textContent = 'Mod menu injected · Drift Intelligence';
-          return;
-        }
+        if (!doc || !doc.documentElement) return;
+        if (doc.documentElement.getAttribute('data-wg-inj') === '1') return;
+        if (injectInto(doc, cheatSrc, null)) injects++;
       } catch (e) {}
-      st.textContent = 'Wayground is open. Press Inject mod if the menu is not there yet.';
     }
 
     box.innerHTML = '';
-    st.textContent = 'Opening Wayground with the mod…';
     function armFrame(el) {
       if (!el) return;
       el.addEventListener('load', function () {
         seen = '';
-        setTimeout(function () { tryInject(false); }, 800);
+        setTimeout(function () { tryInject(); }, 800);
       });
     }
     if (typeof openProxied === 'function') {
       openProxied('https://wayground.com/', box).then(function (fr) {
         armFrame(fr && fr.frame);
-        setTimeout(function () { tryInject(false); }, 1200);
-      }).catch(function () {
-        st.textContent = 'Wayground could not open. Press Inject mod after it loads.';
-      });
+        setTimeout(function () { tryInject(); }, 1200);
+      }).catch(function () {});
     } else {
       var frameEl = document.createElement('iframe');
       frameEl.title = 'Wayground';
       frameEl.setAttribute('credentialless', '');
       frameEl.setAttribute('referrerpolicy', 'no-referrer');
-      frameEl.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals');
+      frameEl.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-modals allow-downloads');
       frameEl.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';
       frameEl.src = 'https://wayground.com/';
       box.appendChild(frameEl);
@@ -170,7 +142,7 @@
     if (!root.dataset.wgWatch) {
       root.dataset.wgWatch = '1';
       var timer = setInterval(function () {
-        if (!root.isConnected) { clearInterval(timer); return; }
+        if (!root.isConnected || injects >= 2) { clearInterval(timer); return; }
         var el = frame();
         if (!el) return;
         var href = '';
@@ -179,55 +151,12 @@
         if (!doc || !doc.documentElement || !href) return;
         if (href !== seen) {
           seen = href;
-          try { doc.documentElement.removeAttribute('data-wg-inj'); } catch (e) {}
-          tryInject(false);
+          tryInject();
         } else if (doc.documentElement.getAttribute('data-wg-inj') !== '1') {
-          tryInject(false);
+          tryInject();
         }
       }, 1500);
     }
-
-    async function readScreen() {
-      var stream;
-      try { stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false }); }
-      catch (e) { st.textContent = 'Screen share was blocked. Allow it and press Read screen again.'; return; }
-      var video = document.createElement('video');
-      video.srcObject = stream; video.muted = true;
-      try { await video.play(); } catch (e) {}
-      await new Promise(function (res) { if (video.videoWidth) res(); else video.onloadeddata = res; setTimeout(res, 800); });
-      var w = Math.min(1280, video.videoWidth || 1280);
-      var h = Math.round(w * ((video.videoHeight || 720) / (video.videoWidth || 1280)));
-      var canvas = document.createElement('canvas');
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(video, 0, 0, w, h);
-      stream.getTracks().forEach(function (t) { t.stop(); });
-      var data = canvas.toDataURL('image/jpeg', 0.72).split(',')[1];
-      st.textContent = 'Drift Intelligence is reading the screen…';
-      try {
-        var r = await fetch(DRIFT_AI, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: DRIFT_MODEL,
-            max_tokens: 2048,
-            messages: [{ role: 'user', content: [
-              { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: data } },
-              { type: 'text', text: 'This is a screenshot of a quiz. If the answer is a list, use a markdown table. If it is code, use a fenced code block. Do not wrap the answer in asterisks. Then one short reason.' }
-            ]}],
-            system: 'You are Drift Intelligence. Render real markdown tables and fenced code. Never answer with only asterisks.'
-          })
-        });
-        var j = await r.json();
-        var text = ((j.content || []).map(function (x) { return x.text || ''; }).join('')) || (j.error && (j.error.message || j.error)) || 'No answer.';
-        showAnswer(text);
-        st.textContent = 'Answer from Drift Intelligence';
-      } catch (e) {
-        st.textContent = String(e.message || e);
-      }
-    }
-
-    root.querySelector('[data-inj]').onclick = function () { tryInject(true); };
-    root.querySelector('[data-read]').onclick = function () { readScreen(); };
   };
 
   function wire() {

@@ -150,9 +150,17 @@
   } catch (e) {}
   if (!window.open.__driftStay) {
     var open0 = window.open;
-    window.open = function (u, target) {
-      if (badNav(u)) return null;
-      if (typeof u === 'string' && /classroom\.google\.com/i.test(u) && typeof openApp === 'function') {
+    window.open = function (u) {
+      var s = u == null ? '' : String(u);
+      if (badNav(s)) return null;
+      if (/^https?:/i.test(s)) {
+        try {
+          window.__driftBrowserOpen = [s];
+          if (typeof openApp === 'function') openApp('browser');
+        } catch (e) {}
+        return null;
+      }
+      if (typeof s === 'string' && /classroom\.google\.com/i.test(s) && typeof openApp === 'function') {
         openApp('classroom');
         return null;
       }
@@ -160,6 +168,22 @@
     };
     window.open.__driftStay = true;
   }
+  document.addEventListener('click', function (e) {
+    var a = e.target && e.target.closest && e.target.closest('a[href]');
+    if (!a) return;
+    var href = a.getAttribute('href') || '';
+    if (!href) return;
+    if (/\/scramjet\//i.test(href)) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    if (a.getAttribute('target') === '_blank' && /^https?:/i.test(href)) {
+      e.preventDefault();
+      e.stopPropagation();
+      window.open(href);
+    }
+  }, true);
 
   function svg(inner) {
     return '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">' + inner + '</svg>';
@@ -271,6 +295,9 @@
   var mx = -9999;
   var my = -9999;
   var cm35 = 132;
+  var sandBins = [];
+  var sandLevel = 0;
+  var sandWin = {};
   function measureCm() {
     var p = document.createElement('div');
     p.style.cssText = 'position:absolute;left:-999px;height:3.5cm';
@@ -292,132 +319,149 @@
     });
     var ground = h - 6;
     var task = document.getElementById('task');
-    if (task) ground = task.getBoundingClientRect().top;
-    if (flakes.length < 220 && Math.random() < 0.92) {
+    var taskH = 76;
+    if (task) {
+      var tr = task.getBoundingClientRect();
+      ground = tr.top;
+      if (tr.height > 20) taskH = tr.height;
+    }
+    var sandStop = taskH * 2.25;
+    var cols = Math.max(1, Math.ceil(w / 4));
+    if (sandBins.length !== cols) {
+      var nb = new Array(cols);
+      for (var c = 0; c < cols; c++) nb[c] = sandBins[c] || 0;
+      sandBins = nb;
+    }
+    var seenWin = {};
+    for (var li = 0; li < lips.length; li++) {
+      var lip0 = lips[li];
+      seenWin[lip0.id] = 1;
+      var pile = sandWin[lip0.id];
+      if (!pile) pile = sandWin[lip0.id] = { h: 0, x: lip0.x, y: lip0.y, w: lip0.w };
+      else { pile.x = lip0.x; pile.y = lip0.y; pile.w = lip0.w; }
+    }
+    Object.keys(sandWin).forEach(function (id) {
+      if (seenWin[id]) return;
+      var gone = sandWin[id];
+      var nspill = Math.min(18, Math.ceil((gone.h || 0) / 6));
+      for (var s = 0; s < nspill; s++) {
+        flakes.push({
+          x: gone.x + Math.random() * Math.max(8, gone.w),
+          y: gone.y + 4,
+          vx: (Math.random() - 0.5) * 1.2,
+          vy: 0.6,
+          r: 0.7 + Math.random() * 1.4,
+          a: 0.8
+        });
+      }
+      delete sandWin[id];
+    });
+    if (sandLevel < sandStop && flakes.length < 280) {
       flakes.push({
         x: Math.random() * w,
-        y: -8,
-        vx: (Math.random() - 0.5) * 0.3,
-        vy: 0.35 + Math.random() * 0.45,
-        r: 2.8 + Math.random() * 3.2,
-        a: 0.72 + Math.random() * 0.28,
-        stuck: 0,
-        win: '',
-        ox: 0,
-        lift: 0
+        y: -6,
+        vx: (Math.random() - 0.5) * 0.22,
+        vy: 0.32 + Math.random() * 0.5,
+        r: 0.55 + Math.random() * 1.15,
+        a: 0.5 + Math.random() * 0.45
       });
+    }
+    function addGround(x, amt) {
+      sandLevel = Math.min(sandStop, sandLevel + amt);
+      var col = Math.max(0, Math.min(cols - 1, Math.floor(x / 4)));
+      sandBins[col] = Math.min(12, (sandBins[col] || 0) + amt * 4);
+      if (col > 0) sandBins[col - 1] = Math.min(12, (sandBins[col - 1] || 0) + amt);
+      if (col + 1 < cols) sandBins[col + 1] = Math.min(12, (sandBins[col + 1] || 0) + amt);
+    }
+    if (mx >= 0 && my > ground - sandLevel - 40 && my < ground + 14) {
+      var mc = Math.floor(mx / 4);
+      for (var pk = -8; pk <= 8; pk++) {
+        var ci = mc + pk;
+        if (ci < 0 || ci >= cols) continue;
+        if (sandBins[ci] > 0) sandBins[ci] = Math.max(0, sandBins[ci] - 0.8);
+      }
+      if (sandLevel > 0) sandLevel = Math.max(0, sandLevel - 0.35);
+      if (flakes.length < 340) {
+        flakes.push({ x: mx + (Math.random() - 0.5) * 20, y: Math.max(0, ground - sandLevel - 4), vx: (Math.random() - 0.5) * 2.4, vy: -1.2, r: 0.8, a: 0.85 });
+      }
     }
     var next = [];
     for (var i = 0; i < flakes.length; i++) {
       var f = flakes[i];
-      if (f.stuck) {
-        var sdx = f.x - mx;
-        var sdy = f.y - my;
-        var sd = Math.sqrt(sdx * sdx + sdy * sdy) || 1;
-        if (sd < 34) {
-          f.stuck = 0;
-          f.win = '';
-          f.lift = 0;
-          f.vx = (sdx / sd) * 1.8;
-          f.vy = (sdy / sd) * 0.5;
+      var dx = f.x - mx;
+      var dy = f.y - my;
+      var dist = Math.sqrt(dx * dx + dy * dy) || 1;
+      if (dist < 36) {
+        var push = (36 - dist) / 36;
+        f.vx += (dx / dist) * push * 1.2;
+        f.vy += (dy / dist) * push * 0.45;
+      }
+      f.vx *= 0.98;
+      f.vy = Math.min(1.15, (f.vy || 0) + 0.012);
+      f.x += f.vx;
+      f.y += f.vy;
+      if (f.x < -8) f.x = w + 4;
+      if (f.x > w + 8) f.x = -4;
+      var landed = null;
+      for (var k = 0; k < lips.length; k++) {
+        var lip = lips[k];
+        var top = lip.y - ((sandWin[lip.id] && sandWin[lip.id].h) || 0);
+        if (f.x >= lip.x + 2 && f.x <= lip.x + lip.w - 2 && f.y >= top - f.r && f.y <= top + 10 && f.vy > 0) {
+          landed = lip;
+          break;
         }
       }
-      if (!f.stuck) {
-        var dx = f.x - mx;
-        var dy = f.y - my;
-        var dist = Math.sqrt(dx * dx + dy * dy) || 1;
-        if (dist < 36) {
-          var push = (36 - dist) / 36;
-          f.vx += (dx / dist) * push * 1.2;
-          f.vy += (dy / dist) * push * 0.5;
-        }
-        f.vx *= 0.98;
-        f.vy = Math.min(1.05, f.vy + 0.004);
-        f.x += f.vx;
-        f.y += f.vy;
-        if (f.x < -8) f.x = w + 4;
-        if (f.x > w + 8) f.x = -4;
-        var landed = null;
-        for (var k = 0; k < lips.length; k++) {
-          var lip = lips[k];
-          if (f.x >= lip.x + 2 && f.x <= lip.x + lip.w - 2 && f.y >= lip.y - f.r && f.y <= lip.y + 8 && f.vy > 0) {
-            landed = lip;
-            break;
-          }
-        }
-        if (landed) {
-          var lift = 0;
-          for (var n = 0; n < flakes.length; n++) {
-            var o = flakes[n];
-            if (o === f || !o.stuck || o.win !== landed.id) continue;
-            if (Math.abs(o.x - f.x) < o.r + f.r) lift = Math.max(lift, (o.lift || 0) + o.r + f.r);
-          }
-          f.stuck = 1;
-          f.win = landed.id;
-          f.ox = f.x - landed.x;
-          f.lift = lift;
-          f.y = landed.y + 1 - lift;
-          f.vx = 0;
-          f.vy = 0;
-        } else if (f.y >= ground) {
-          var glift = 0;
-          for (var g = 0; g < flakes.length; g++) {
-            var q = flakes[g];
-            if (q === f || !q.stuck || q.win) continue;
-            if (Math.abs(q.x - f.x) < q.r + f.r) glift = Math.max(glift, (q.lift || 0) + q.r + f.r);
-          }
-          f.stuck = 1;
-          f.win = '';
-          f.lift = glift;
-          f.y = ground - glift;
-          f.vx = 0;
-          f.vy = 0;
-        }
-      } else if (f.win) {
-        var host = document.getElementById(f.win);
-        if (!host || !host.isConnected || host.classList.contains('min')) {
-          f.stuck = 0;
-          f.win = '';
-          f.lift = 0;
-          f.vy = 0.7;
-        } else {
-          var hr = host.getBoundingClientRect();
-          var nx = hr.left + f.ox;
-          var ny = hr.top + 1 - (f.lift || 0);
-          if (Math.abs(nx - f.x) > 2 || Math.abs((hr.top + 1) - (f.y + (f.lift || 0))) > 2 || f.ox < 0 || f.ox > hr.width) {
-            f.stuck = 0;
-            f.win = '';
-            f.lift = 0;
-            f.vx += (nx - f.x) * 0.08;
-            f.vy = 0.65;
-          } else {
-            f.x = nx;
-            f.y = ny;
-          }
-        }
+      if (landed) {
+        var wp = sandWin[landed.id];
+        if (wp && wp.h < sandStop) wp.h = Math.min(sandStop, wp.h + 0.45);
+        continue;
+      }
+      if (f.y >= ground - sandLevel) {
+        addGround(f.x, 0.085);
+        continue;
       }
       next.push(f);
     }
-    var piles = {};
-    next.forEach(function (f) {
-      if (!f.stuck) return;
-      var key = f.win || 'ground';
-      piles[key] = Math.max(piles[key] || 0, f.lift || 0);
+    flakes = next;
+    for (var b = 1; b < cols - 1; b++) sandBins[b] = sandBins[b] * 0.992;
+    snowCtx.fillStyle = '#f6f7fb';
+    snowCtx.beginPath();
+    snowCtx.moveTo(0, ground);
+    snowCtx.lineTo(0, ground - sandLevel - (sandBins[0] || 0));
+    for (var d = 1; d < cols; d++) snowCtx.lineTo(d * 4, ground - sandLevel - (sandBins[d] || 0));
+    snowCtx.lineTo(w, ground - sandLevel - (sandBins[cols - 1] || 0));
+    snowCtx.lineTo(w, ground);
+    snowCtx.closePath();
+    snowCtx.fill();
+    snowCtx.fillStyle = 'rgba(255,255,255,.72)';
+    Object.keys(sandWin).forEach(function (id) {
+      var p = sandWin[id];
+      if (!p.h) return;
+      snowCtx.beginPath();
+      snowCtx.moveTo(p.x, p.y);
+      var steps = Math.max(2, Math.floor(p.w / 8));
+      for (var st = 0; st <= steps; st++) {
+        var xx = p.x + (p.w * st) / steps;
+        var wave = Math.sin(xx * 0.17) * Math.min(2.5, p.h * 0.12);
+        snowCtx.lineTo(xx, p.y - p.h - wave);
+      }
+      snowCtx.lineTo(p.x + p.w, p.y);
+      snowCtx.closePath();
+      snowCtx.fill();
     });
-    var kept = [];
-    for (var z = 0; z < next.length; z++) {
-      var flake = next[z];
-      if (flake.stuck && (piles[flake.win || 'ground'] || 0) >= cm35) flake.a -= 0.004;
-      if (flake.a <= 0.04 || flake.y > h + 20) continue;
-      kept.push(flake);
-      snowCtx.globalAlpha = Math.max(0, Math.min(1, flake.a));
+    for (var z = 0; z < flakes.length; z++) {
+      var flake = flakes[z];
+      snowCtx.globalAlpha = Math.max(0, Math.min(1, flake.a || 0.8));
       snowCtx.fillStyle = '#fff';
       snowCtx.beginPath();
-      snowCtx.arc(flake.x, flake.y, flake.r, 0, Math.PI * 2);
+      snowCtx.save();
+      snowCtx.translate(flake.x, flake.y);
+      snowCtx.scale(1.25, 0.62);
+      snowCtx.arc(0, 0, flake.r, 0, Math.PI * 2);
       snowCtx.fill();
+      snowCtx.restore();
     }
     snowCtx.globalAlpha = 1;
-    flakes = kept;
     snowTimer = requestAnimationFrame(snowFrame);
   }
   window.driftSnow = function (on) {
@@ -427,6 +471,9 @@
       if (snowTimer) cancelAnimationFrame(snowTimer);
       snowTimer = 0;
       flakes = [];
+      sandBins = [];
+      sandLevel = 0;
+      sandWin = {};
       if (snowCanvas && snowCanvas.parentNode) snowCanvas.parentNode.removeChild(snowCanvas);
       snowCanvas = null;
       snowCtx = null;

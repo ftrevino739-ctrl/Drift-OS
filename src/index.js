@@ -74,7 +74,7 @@ function loadAndPatchIndex() {
 	);
 
 	const xapps =
-		"const XAPPS={cam:{n:'Camera',f:camera},mus:{n:'Music',f:music},movies:{n:'Movies',f:movies},code:{n:'VS Code',f:vscode},discord:{n:'Discord',f:discordApp},gmail:{n:'Gmail',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#fff';var fr=document.createElement('iframe');fr.setAttribute('credentialless','');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';fr.src='/api/opera?u='+encodeURIComponent('https://mail.google.com/mail/u/0/#inbox')+'&b=firefox';r.appendChild(fr)}},ig:{n:'Instagram',f:igApp},tt:{n:'TikTok',f:ttApp}," +
+		"const XAPPS={cam:{n:'Camera',f:camera},mus:{n:'Music',f:music},movies:{n:'Movies',f:movies},code:{n:'VS Code',f:vscode},discord:{n:'Discord',f:discordApp},gmail:{n:'Gmail',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#fff';var fr=document.createElement('iframe');fr.setAttribute('credentialless','');fr.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';fr.src='/api/opera?u='+encodeURIComponent('https://mail.google.com/mail/u/0/h/')+'&b=firefox';r.appendChild(fr)}},ig:{n:'Instagram',f:igApp},tt:{n:'TikTok',f:ttApp}," +
 		"classroom:{n:'Classroom',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#fff';var fr=document.createElement('iframe');fr.setAttribute('referrerpolicy','no-referrer');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';fr.src='/api/opera?u='+encodeURIComponent('https://classroom.google.com/')+'&b=chrome';r.appendChild(fr)}}," +
 		"roblox:{n:'Roblox',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#fff';var fr=document.createElement('iframe');fr.setAttribute('referrerpolicy','no-referrer');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';fr.src='/api/opera?u='+encodeURIComponent('https://www.roblox.com/login')+'&b=win';r.appendChild(fr)}}," +
 		"gimkit:{n:'Gimkit',f:gimkitApp},games:{n:'Games',f:function(r){return (window.noahGamesApp||gamesHub)(r)}},chat:{n:'Chat',f:noahChat}};" +
@@ -111,11 +111,11 @@ function loadAndPatchIndex() {
 	);
 
 	const tag =
-		'<script src="/drift-extras.js?v=20261031-user7" defer></script>' +
-		'<script src="/chromebook-proxy.js?v=20261020f" defer></script>' +
-		'<script src="/wayground-ai.js?v=20261024a" defer></script>' +
-		'<script src="/drift-fixup.js?v=20261031-user7" defer></script>' +
-		'<script src="/drift-userpatch.js?v=20261031-user7" defer></script>' +
+		'<script src="/drift-extras.js?v=20261031-user9" defer></script>' +
+		'<script src="/chromebook-proxy.js?v=20261031-user9" defer></script>' +
+		'<script src="/wayground-ai.js?v=20261031-user9" defer></script>' +
+		'<script src="/drift-fixup.js?v=20261031-user9" defer></script>' +
+		'<script src="/drift-userpatch.js?v=20261031-user9" defer></script>' +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +
@@ -617,12 +617,18 @@ function operaBoot(browser) {
   try { Object.defineProperty(navigator, "vendor", { configurable: true, get: function(){ return "Google Inc."; } }); } catch (e) {}
   try { Object.defineProperty(navigator, "platform", { configurable: true, get: function(){ return navPlat; } }); } catch (e) {}
   try { Object.defineProperty(navigator, "webdriver", { configurable: true, get: function(){ return false; } }); } catch (e) {}
+  var FX = ${name === "firefox" ? "true" : "false"};
+  if (!FX) {
   try {
     var brands = [{ brand: "Google Chrome", version: "131" }, { brand: "Chromium", version: "131" }, { brand: "Not_A Brand", version: "24" }];
     var uad = { brands: brands, mobile: ${name === "ipad" ? "true" : "false"}, platform: ${JSON.stringify(name === "mac" ? "macOS" : name === "ipad" ? "iOS" : name === "cros" ? "Chrome OS" : "Windows")}, getHighEntropyValues: function(){ return Promise.resolve({ brands: brands, mobile: this.mobile, platform: this.platform, uaFullVersion: "131.0.0.0" }); } };
     Object.defineProperty(navigator, "userAgentData", { configurable: true, get: function(){ return uad; } });
   } catch (e) {}
   try { if (!window.chrome) window.chrome = { runtime: {}, app: { isInstalled: false }, loadTimes: function(){ return {}; }, csi: function(){ return {}; } }; } catch (e) {}
+  try { Object.defineProperty(navigator, "vendor", { configurable: true, get: function(){ return "Google Inc."; } }); } catch (e) {}
+  } else {
+  try { Object.defineProperty(navigator, "vendor", { configurable: true, get: function(){ return ""; } }); } catch (e) {}
+  }
   function abs(u){ try { return new URL(u, document.baseURI).href; } catch (e) { return ""; } }
   function ours(path){ return location.origin + path; }
   function googleHost(u){
@@ -739,7 +745,18 @@ function operaBoot(browser) {
       Object.defineProperty(Location.prototype, "href", {
         configurable: true,
         get: function(){ return desc.get.call(this); },
-        set: function(v){ if (hop(v)) return; var absU = abs(v); if (googleHost(absU)) return; desc.set.call(this, v); }
+        set: function(v){
+          var absU = abs(v);
+          var here = "";
+          try { here = document.baseURI || ""; } catch (e) {}
+          if (/mail\\.google\\.com|accounts\\.google\\.com/i.test(here) && /^https?:/i.test(absU)) {
+            if (absU.indexOf("/api/opera?u=") === -1) desc.set.call(this, ours("/api/opera?u=" + encodeURIComponent(absU) + "&b=" + encodeURIComponent(BROWSER)));
+            return;
+          }
+          if (hop(v)) return;
+          if (googleHost(absU)) return;
+          desc.set.call(this, v);
+        }
       });
     }
   } catch (e) {}
@@ -752,8 +769,10 @@ function operaBoot(browser) {
       hop(absU);
       return true;
     }
-    history.pushState = function(s, t, u){ if (via(u)) return; return ps.apply(this, arguments); };
-    history.replaceState = function(s, t, u){ if (via(u)) return; return rs.apply(this, arguments); };
+    function mailHere(){ try { return /mail\\.google\\.com|accounts\\.google\\.com/i.test(document.baseURI); } catch (e) { return false; } }
+    function mailDest(u){ try { return /mail\\.google\\.com|accounts\\.google\\.com/i.test(new URL(abs(u)).hostname); } catch (e) { return false; } }
+    history.pushState = function(s, t, u){ if (mailHere() && (!u || mailDest(u))) return ps.apply(this, arguments); if (via(u)) return; return ps.apply(this, arguments); };
+    history.replaceState = function(s, t, u){ if (mailHere() && (!u || mailDest(u))) return rs.apply(this, arguments); if (via(u)) return; return rs.apply(this, arguments); };
   } catch (e) {}
   try {
     if (window.top && window.top !== window) {
@@ -784,7 +803,16 @@ function operaBoot(browser) {
     var href = a.getAttribute("href") || "";
     var u = abs(href);
     if (href.indexOf("/api/opera?u=") !== -1 || u.indexOf("/api/opera?u=") !== -1) return;
-    if (/^https?:/i.test(u)) { if (hop(u) || googleHost(u)) e.preventDefault(); }
+    if (/^https?:/i.test(u)) {
+      var mail = "";
+      try { mail = document.baseURI || ""; } catch (e) {}
+      if (/mail\\.google\\.com|accounts\\.google\\.com/i.test(mail)) {
+        e.preventDefault();
+        if (u.indexOf("/api/opera?u=") === -1) location.href = ours("/api/opera?u=" + encodeURIComponent(u) + "&b=" + encodeURIComponent(BROWSER));
+        return;
+      }
+      if (hop(u) || googleHost(u)) e.preventDefault();
+    }
   }, true);
   document.addEventListener("keydown", function(){ armed = true; }, true);
   setInterval(function(){
