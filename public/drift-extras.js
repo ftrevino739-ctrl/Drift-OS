@@ -228,7 +228,10 @@
       '<button type="button" data-run style="padding:6px 10px;border:0;border-radius:8px;background:#16825d;color:#fff;cursor:pointer">Run / Install</button>' +
       '<button type="button" data-clear style="margin-left:auto;padding:6px 10px;border-radius:8px;border:1px solid #7f1d1d;background:#3f1212;color:#fecaca;cursor:pointer">Clear all injections</button>' +
       '</div>' +
-      '<textarea data-code spellcheck="false" style="flex:1;border:0;resize:none;background:#1e1e1e;color:#d4d4d4;padding:12px;font-family:ui-monospace,monospace;font-size:13px;line-height:1.45;outline:none" placeholder="// JavaScript"></textarea>' +
+      '<div data-wrap style="flex:1;min-height:0;position:relative;background:#1e1e1e">' +
+      '<div data-lens style="position:absolute;left:0;right:0;height:18.85px;background:rgba(255,80,80,.28);display:none;pointer-events:none;z-index:1"></div>' +
+      '<textarea data-code spellcheck="false" style="position:absolute;inset:0;width:100%;height:100%;border:0;resize:none;background:transparent;color:#d4d4d4;padding:12px;font-family:ui-monospace,monospace;font-size:13px;line-height:1.45;outline:none;z-index:2" placeholder="// JavaScript"></textarea>' +
+      '</div>' +
       '<pre data-err style="margin:0;padding:8px 12px;min-height:36px;background:#111;color:#f88;font-size:12px;white-space:pre-wrap"></pre>' +
       '</div>' +
       '<aside style="width:300px;flex:none;display:flex;flex-direction:column;border-left:1px solid #333;background:#252526">' +
@@ -241,19 +244,34 @@
     var code = root.querySelector('[data-code]');
     var err = root.querySelector('[data-err]');
     try { code.value = localStorage.getItem(storageKey) || ''; } catch (e) {}
+    function placeLens(line) {
+      var lens = root.querySelector('[data-lens]');
+      if (!lens) return;
+      if (!line) { lens.style.display = 'none'; code._line = 0; return; }
+      var lh = 13 * 1.45;
+      lens.style.display = 'block';
+      lens.style.height = lh + 'px';
+      lens.style.top = (12 + (line - 1) * lh - code.scrollTop) + 'px';
+      code._line = line;
+    }
     function check() {
       var src = code.value;
       try { localStorage.setItem(storageKey, src); } catch (e) {}
-      try {
-        new Function(src);
+      var issue = (typeof window.driftJsIssue === 'function') ? window.driftJsIssue(src) : null;
+      if (!issue) {
+        try { new Function(src); }
+        catch (e) { issue = { line: 1, message: (e && e.message) || String(e) }; }
+      }
+      if (!issue) {
         err.style.color = '#86efac';
         err.textContent = 'No syntax errors.';
+        placeLens(0);
         return true;
-      } catch (e) {
-        err.style.color = '#ff8d8d';
-        err.textContent = 'Error: ' + (e && e.message ? e.message : e);
-        return false;
       }
+      err.style.color = '#ff8d8d';
+      err.textContent = 'Line ' + issue.line + ': ' + issue.message;
+      placeLens(issue.line);
+      return false;
     }
     root.querySelector('[data-check]').onclick = check;
     root.querySelector('[data-clear]').onclick = function () {
@@ -271,6 +289,7 @@
       err.style.color = '#8ec5ff';
       err.textContent = 'All injections were removed.';
     };
+    code.addEventListener('scroll', function () { if (code._line) placeLens(code._line); });
     code.addEventListener('input', function () {
       clearTimeout(code._t);
       code._t = setTimeout(check, 400);
@@ -531,7 +550,7 @@
     x.wayground = { n: 'Wayground', f: waygroundApp };
     x.injector = { n: 'JS Injector', f: injectorApp };
     x.classdojo = { n: 'ClassDojo', f: classdojoApp };
-    x.mus = { n: 'Music', f: musicApp };
+    x.mus = { n: 'Música', f: musicApp };
     if (typeof discordApp === 'function') x.discord = { n: 'Discord', f: discordApp };
     loadCustomApps();
     wrapVscode();

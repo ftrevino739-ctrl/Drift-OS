@@ -66,7 +66,7 @@ function loadAndPatchIndex() {
 
 	html = html.replace(
 		"const APPS={calc:'Calculator',browser:'Browser',ai:'AI',yt:'YouTube'};",
-		"const APPS={calc:'Calculator',browser:'Browser',ai:'AI',yt:'YouTube',cam:'Camera',mus:'Music',movies:'Movies',code:'VS Code',discord:'Discord',gmail:'Gmail',ig:'Instagram',tt:'TikTok',classroom:'Classroom',canva:'Canva',roblox:'Roblox',gimkit:'Gimkit',games:'Games',chat:'Chat',github:'GitHub',whatsapp:'WhatsApp',wayground:'Wayground',injector:'JS Injector'};"
+		"const APPS={calc:'Calculator',browser:'Browser',ai:'AI',yt:'YouTube',cam:'Camera',mus:'Música',movies:'Movies',code:'VS Code',discord:'Discord',gmail:'Gmail',ig:'Instagram',tt:'TikTok',classroom:'Classroom',roblox:'Roblox',gimkit:'Gimkit',games:'Games',chat:'Chat',github:'GitHub',whatsapp:'WhatsApp',wayground:'Wayground',injector:'JS Injector'};"
 	);
 	html = html.replace(
 		"const defD=()=>({pins:['calc','browser','ai','yt'],desk:['calc','browser','ai','yt'],chats:[]});",
@@ -74,10 +74,9 @@ function loadAndPatchIndex() {
 	);
 
 	const xapps =
-		"const XAPPS={cam:{n:'Camera',f:camera},mus:{n:'Music',f:music},movies:{n:'Movies',f:movies},code:{n:'VS Code',f:vscode},discord:{n:'Discord',f:discordApp},gmail:{n:'Gmail',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#fff';var fr=document.createElement('iframe');fr.setAttribute('credentialless','');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';fr.src='/api/opera?u='+encodeURIComponent('https://mail.google.com/mail/u/0/#inbox')+'&b=firefox';r.appendChild(fr)}},ig:{n:'Instagram',f:igApp},tt:{n:'TikTok',f:ttApp}," +
-		"classroom:{n:'Classroom',f:function(r){proxySite(r,'https://classroom.google.com','Classroom')}}," +
-		"canva:{n:'Canva',f:function(r){proxySite(r,'https://www.canva.com','Canva')}}," +
-		"roblox:{n:'Roblox',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#fff';var fr=document.createElement('iframe');fr.setAttribute('referrerpolicy','no-referrer');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';fr.src='/api/opera?u='+encodeURIComponent('https://www.roblox.com/')+'&b=edge';r.appendChild(fr)}}," +
+		"const XAPPS={cam:{n:'Camera',f:camera},mus:{n:'Música',f:music},movies:{n:'Movies',f:movies},code:{n:'VS Code',f:vscode},discord:{n:'Discord',f:discordApp},gmail:{n:'Gmail',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#fff';var fr=document.createElement('iframe');fr.setAttribute('credentialless','');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';fr.src='/api/opera?u='+encodeURIComponent('https://mail.google.com/mail/u/0/#inbox')+'&b=firefox';r.appendChild(fr)}},ig:{n:'Instagram',f:igApp},tt:{n:'TikTok',f:ttApp}," +
+		"classroom:{n:'Classroom',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#fff';var fr=document.createElement('iframe');fr.setAttribute('referrerpolicy','no-referrer');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';fr.src='/api/opera?u='+encodeURIComponent('https://classroom.google.com/')+'&b=chrome';r.appendChild(fr)}}," +
+		"roblox:{n:'Roblox',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#fff';var fr=document.createElement('iframe');fr.setAttribute('referrerpolicy','no-referrer');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';fr.src='/api/opera?u='+encodeURIComponent('https://www.roblox.com/login')+'&b=win';r.appendChild(fr)}}," +
 		"gimkit:{n:'Gimkit',f:gimkitApp},games:{n:'Games',f:function(r){return (window.noahGamesApp||gamesHub)(r)}},chat:{n:'Chat',f:noahChat}};" +
 		"window.XAPPS=XAPPS;window.APPS=APPS;try{window.IC=IC}catch(e){}try{window.proxySite=proxySite}catch(e){}try{window.vscode=vscode}catch(e){}try{window.S=S}catch(e){}try{window.discordApp=discordApp}catch(e){};";
 	html = html.replace(
@@ -112,10 +111,11 @@ function loadAndPatchIndex() {
 	);
 
 	const tag =
-		'<script src="/drift-extras.js?v=20261030-ide" defer></script>' +
+		'<script src="/drift-extras.js?v=20261031-user3" defer></script>' +
 		'<script src="/chromebook-proxy.js?v=20261020f" defer></script>' +
 		'<script src="/wayground-ai.js?v=20261024a" defer></script>' +
-		'<script src="/drift-fixup.js?v=20261030-ide" defer></script>' +
+		'<script src="/drift-fixup.js?v=20261031-user5" defer></script>' +
+		'<script src="/drift-userpatch.js?v=20261031-user5" defer></script>' +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +
@@ -176,12 +176,7 @@ const sendIndex = async (_req, reply) => {
 	return reply.type("text/html; charset=utf-8").send(html);
 };
 
-fastify.get("/", async (_req, reply) => {
-	const edu = path.join(publicPath, "edu.html");
-	if (!fs.existsSync(edu)) return sendIndex(_req, reply);
-	reply.header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
-	return reply.type("text/html; charset=utf-8").send(fs.readFileSync(edu, "utf8"));
-});
+fastify.get("/", sendIndex);
 fastify.get("/os", sendIndex);
 fastify.get("/index.html", sendIndex);
 function openDesk(req, reply, pathname) {
@@ -206,6 +201,55 @@ fastify.get("/api/usage", async (req, reply) => openDesk(req, reply));
 fastify.get("/mod", async (_req, reply) => {
 	reply.header("Cache-Control", "no-store");
 	return reply.type("text/html; charset=utf-8").send(fs.readFileSync(path.join(publicPath, "desk.html"), "utf8"));
+});
+
+fastify.post("/api/ai", { bodyLimit: 6 * 1024 * 1024 }, async (req, reply) => {
+	const body = req.body && typeof req.body === "object" ? req.body : {};
+	const incoming = Array.isArray(body.messages) ? body.messages.slice(0, 40) : [];
+	const chat = [];
+	const system = String(body.system || body.instructions || "").slice(0, 12000);
+	if (system) chat.push({ role: "system", content: system });
+	for (const m of incoming) {
+		if (!m) continue;
+		const content = typeof m.content === "string" ? m.content : JSON.stringify(m.content || "");
+		if (!content) continue;
+		chat.push({ role: m.role === "assistant" ? "assistant" : "user", content: content.slice(0, 120000) });
+	}
+	if (!chat.length) chat.push({ role: "user", content: "Hello" });
+	const maxTokens = Math.min(8192, Math.max(256, Number(body.max_tokens) || 4096));
+	async function fromChat(url, key, modelName) {
+		const r = await fetch(url, {
+			method: "POST",
+			headers: { "content-type": "application/json", authorization: "Bearer " + key },
+			body: JSON.stringify({ model: modelName, messages: chat, max_tokens: maxTokens }),
+			signal: AbortSignal.timeout(55000),
+		});
+		if (!r.ok) throw new Error("upstream");
+		const j = await r.json();
+		const text = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
+		if (!text) throw new Error("empty");
+		return String(text);
+	}
+	let text = "";
+	try {
+		if (process.env.GROQ_KEY) text = await fromChat("https://api.groq.com/openai/v1/chat/completions", process.env.GROQ_KEY, "llama-3.3-70b-versatile");
+		else if (process.env.OPENROUTER_KEY) text = await fromChat("https://openrouter.ai/api/v1/chat/completions", process.env.OPENROUTER_KEY, "openai/gpt-oss-20b:free");
+	} catch { text = ""; }
+	if (!text) {
+		try {
+			const r = await fetch("https://text.pollinations.ai/openai", {
+				method: "POST",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({ model: "openai", messages: chat, max_tokens: maxTokens }),
+				signal: AbortSignal.timeout(55000),
+			});
+			const j = await r.json();
+			text = (j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || "";
+		} catch { text = ""; }
+	}
+	if (!text) return reply.code(502).send({ error: { message: "The model did not answer." } });
+	reply.header("cache-control", "no-store");
+	return reply.send({ content: [{ type: "text", text: String(text) }] });
 });
 
 fastify.post("/api/gemini", { bodyLimit: 6 * 1024 * 1024 }, async (req, reply) => {
@@ -456,6 +500,28 @@ const BROWSER_PROFILES = {
 	brave: {
 		ua: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
 		ch: "\"Brave\";v=\"131\", \"Chromium\";v=\"131\", \"Not_A Brand\";v=\"24\"",
+		plat: "\"Windows\"",
+	},
+	win: {
+		ua: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+		ch: "\"Google Chrome\";v=\"131\", \"Chromium\";v=\"131\", \"Not_A Brand\";v=\"24\"",
+		plat: "\"Windows\"",
+	},
+	mac: {
+		ua: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+		ch: "\"Google Chrome\";v=\"131\", \"Chromium\";v=\"131\", \"Not_A Brand\";v=\"24\"",
+		plat: "\"macOS\"",
+	},
+	ipad: {
+		ua: "Mozilla/5.0 (iPad; CPU OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/131.0.6778.73 Mobile/15E148 Safari/604.1",
+		ch: "\"Google Chrome\";v=\"131\", \"Chromium\";v=\"131\", \"Not_A Brand\";v=\"24\"",
+		plat: "\"iOS\"",
+		mobile: "?1",
+	},
+	cros: {
+		ua: "Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+		ch: "\"Google Chrome\";v=\"131\", \"Chromium\";v=\"131\", \"Not_A Brand\";v=\"24\"",
+		plat: "\"Chrome OS\"",
 	},
 };
 function browserName(raw) {
@@ -474,7 +540,13 @@ function operaHostOk(host) {
 		host === "accounts.youtube.com" ||
 		host === "roblox.com" || host.endsWith(".roblox.com") ||
 		host === "rbxcdn.com" || host.endsWith(".rbxcdn.com") ||
-		host === "arkoselabs.com" || host.endsWith(".arkoselabs.com")
+		host === "arkoselabs.com" || host.endsWith(".arkoselabs.com") ||
+		host === "whatsapp.com" || host.endsWith(".whatsapp.com") ||
+		host === "whatsapp.net" || host.endsWith(".whatsapp.net") ||
+		host === "facebook.com" || host.endsWith(".facebook.com") ||
+		host === "facebook.net" || host.endsWith(".facebook.net") ||
+		host === "fbcdn.net" || host.endsWith(".fbcdn.net") ||
+		host === "fbsbx.com" || host.endsWith(".fbsbx.com")
 	);
 }
 function operaJar(req, reply) {
@@ -530,24 +602,37 @@ function operaCookie(jar, url) {
 function operaBoot(browser) {
 	const name = browserName(browser);
 	const profile = BROWSER_PROFILES[name];
+	const navPlat = name === "mac" ? "MacIntel" : name === "ipad" ? "iPad" : name === "cros" ? "CrOS" : "Win32";
 	return `(function(){
   var ua = ${JSON.stringify(profile.ua)};
   var BROWSER = ${JSON.stringify(name)};
-  try { Object.defineProperty(navigator, "userAgent", { get: function(){ return ua; } }); } catch (e) {}
+  var navPlat = ${JSON.stringify(navPlat)};
+  try { Object.defineProperty(Navigator.prototype, "userAgent", { configurable: true, get: function(){ return ua; } }); } catch (e) {}
+  try { Object.defineProperty(navigator, "userAgent", { configurable: true, get: function(){ return ua; } }); } catch (e) {}
+  try { Object.defineProperty(navigator, "vendor", { configurable: true, get: function(){ return "Google Inc."; } }); } catch (e) {}
+  try { Object.defineProperty(navigator, "platform", { configurable: true, get: function(){ return navPlat; } }); } catch (e) {}
+  try { Object.defineProperty(navigator, "webdriver", { configurable: true, get: function(){ return false; } }); } catch (e) {}
+  try {
+    var brands = [{ brand: "Google Chrome", version: "131" }, { brand: "Chromium", version: "131" }, { brand: "Not_A Brand", version: "24" }];
+    var uad = { brands: brands, mobile: ${name === "ipad" ? "true" : "false"}, platform: ${JSON.stringify(name === "mac" ? "macOS" : name === "ipad" ? "iOS" : name === "cros" ? "Chrome OS" : "Windows")}, getHighEntropyValues: function(){ return Promise.resolve({ brands: brands, mobile: this.mobile, platform: this.platform, uaFullVersion: "131.0.0.0" }); } };
+    Object.defineProperty(navigator, "userAgentData", { configurable: true, get: function(){ return uad; } });
+  } catch (e) {}
+  try { if (!window.chrome) window.chrome = { runtime: {}, app: { isInstalled: false }, loadTimes: function(){ return {}; }, csi: function(){ return {}; } }; } catch (e) {}
   function abs(u){ try { return new URL(u, document.baseURI).href; } catch (e) { return ""; } }
   function ours(path){ return location.origin + path; }
   function googleHost(u){
     try {
       var h = new URL(u).hostname;
-      return /(^|\\.)((google|gstatic|googleapis|googleusercontent|youtube|roblox|rbxcdn)\\.com)$/i.test(h) || /(^|\\.)arkoselabs\\.com$/i.test(h);
+      return /(^|\\.)(google\\.com|gstatic\\.com|googleapis\\.com|googleusercontent\\.com|youtube\\.com|roblox\\.com|rbxcdn\\.com|whatsapp\\.com|whatsapp\\.net|facebook\\.com|facebook\\.net|fbcdn\\.net|fbsbx\\.com|arkoselabs\\.com)$/i.test(h);
     }
     catch (e) { return false; }
   }
   var armed = false;
   var hops = 0;
+  setInterval(function(){ hops = 0; }, 8000);
   function hop(u){
     if (navigator.onLine === false) return false;
-    if (hops > 2) return false;
+    if (hops > 48) return false;
     u = abs(u);
     if (!armed || !/^https?:/i.test(u) || u.indexOf("/api/opera?u=") !== -1) return false;
     var cur = "";
@@ -581,6 +666,28 @@ function operaBoot(browser) {
       });
     });
   }
+  function proxify(u){
+    u = abs(u);
+    if (!u || !googleHost(u) || u.indexOf("/api/opera") !== -1) return "";
+    return ours("/api/opera?u=" + encodeURIComponent(u) + "&b=" + encodeURIComponent(BROWSER));
+  }
+  try {
+    var setAttr = Element.prototype.setAttribute;
+    Element.prototype.setAttribute = function(n, v){
+      if (n && /^(src|href|poster)$/i.test(String(n))) { var p = proxify(v); if (p) v = p; }
+      return setAttr.call(this, n, v);
+    };
+    ["HTMLScriptElement","HTMLImageElement","HTMLIFrameElement","HTMLSourceElement","HTMLMediaElement","HTMLEmbedElement"].forEach(function(k){
+      var C = window[k]; if (!C || !C.prototype) return;
+      var d = Object.getOwnPropertyDescriptor(C.prototype, "src");
+      if (!d || !d.set || !d.get) return;
+      Object.defineProperty(C.prototype, "src", { configurable: true, get: function(){ return d.get.call(this); }, set: function(v){ var p = proxify(v); return d.set.call(this, p || v); } });
+    });
+    var linkHref = Object.getOwnPropertyDescriptor(HTMLLinkElement.prototype, "href");
+    if (linkHref && linkHref.set && linkHref.get) {
+      Object.defineProperty(HTMLLinkElement.prototype, "href", { configurable: true, get: function(){ return linkHref.get.call(this); }, set: function(v){ var p = proxify(v); return linkHref.set.call(this, p || v); } });
+    }
+  } catch (e) {}
   try {
     var origFetch = window.fetch;
     window.fetch = function(input, init){
@@ -627,33 +734,41 @@ function operaBoot(browser) {
       Object.defineProperty(Location.prototype, "href", {
         configurable: true,
         get: function(){ return desc.get.call(this); },
-        set: function(v){ if (!hop(v)) desc.set.call(this, v); }
+        set: function(v){ if (hop(v)) return; var absU = abs(v); if (googleHost(absU)) return; desc.set.call(this, v); }
       });
     }
   } catch (e) {}
   try {
+    var ps = history.pushState, rs = history.replaceState;
+    function via(u){
+      if (!u) return false;
+      var absU = abs(u);
+      if (!googleHost(absU)) return false;
+      hop(absU);
+      return true;
+    }
+    history.pushState = function(s, t, u){ if (via(u)) return; return ps.apply(this, arguments); };
+    history.replaceState = function(s, t, u){ if (via(u)) return; return rs.apply(this, arguments); };
+  } catch (e) {}
+  try {
     if (window.top && window.top !== window) {
-      var topWin = window.top;
-      var tLoc = topWin.location;
-      var tProto = topWin.Location && topWin.Location.prototype;
-      var td = tProto && Object.getOwnPropertyDescriptor(tProto, "href");
-      if (td && td.set && td.get) {
-        Object.defineProperty(tProto, "href", {
+      var topSet = Object.getOwnPropertyDescriptor(window.top.Location.prototype, "href");
+      if (topSet && topSet.set && !topSet.set.__driftKeep) {
+        var keep = function () { return; };
+        keep.__driftKeep = true;
+        Object.defineProperty(window.top.Location.prototype, "href", {
           configurable: true,
-          get: function(){ return td.get.call(this); },
-          set: function(v){
-            if (this === tLoc && document.documentElement && document.documentElement.isConnected) {
-              if (hops > 2) return;
-              armed = true; hop(v); return;
-            }
-            td.set.call(this, v);
-          }
+          get: function () { return topSet.get.call(this); },
+          set: keep
         });
       }
-      try {
-        topWin.location.assign = function(v){ if (hops > 2) return; if (document.documentElement && document.documentElement.isConnected) { armed = true; hop(v); return; } };
-        topWin.location.replace = function(v){ if (hops > 2) return; if (document.documentElement && document.documentElement.isConnected) { armed = true; hop(v); return; } };
-      } catch (e2) {}
+      ["assign", "replace"].forEach(function (k) {
+        var fn = window.top.Location.prototype[k];
+        if (!fn || fn.__driftKeep) return;
+        var wrap = function () { return; };
+        wrap.__driftKeep = true;
+        window.top.Location.prototype[k] = wrap;
+      });
     }
   } catch (e) {}
   try { window.open = function(u){ armed = true; hop(u || ""); return null; }; } catch (e) {}
@@ -661,10 +776,24 @@ function operaBoot(browser) {
     armed = true;
     var a = e.target && e.target.closest && e.target.closest("a[href]");
     if (!a) return;
-    var u = abs(a.getAttribute("href"));
-    if (/^https?:/i.test(u)) { e.preventDefault(); hop(u); }
+    var href = a.getAttribute("href") || "";
+    var u = abs(href);
+    if (href.indexOf("/api/opera?u=") !== -1 || u.indexOf("/api/opera?u=") !== -1) return;
+    if (/^https?:/i.test(u)) { if (hop(u) || googleHost(u)) e.preventDefault(); }
   }, true);
   document.addEventListener("keydown", function(){ armed = true; }, true);
+  setInterval(function(){
+    try {
+      var list = document.querySelectorAll("h1,h2,div");
+      for (var i = 0; i < list.length; i++) {
+        var el = list[i];
+        var tx = el.innerText || "";
+        if (tx.length > 30 && tx.length < 360 && /WhatsApp works with Google Chrome/i.test(tx)) {
+          (el.closest("div") || el).style.setProperty("display", "none", "important");
+        }
+      }
+    } catch (e) {}
+  }, 800);
   document.addEventListener("submit", function(e){
     armed = true;
     var f = e.target;
@@ -685,10 +814,26 @@ function operaBoot(browser) {
   }, true);
 })();`;
 }
-function operaInject(html, pageUrl, browser) {
+function operaRewriteHtml(html, pageUrl, browser, origin) {
+	const root = String(origin || "").replace(/\/$/, "");
+	return String(html).replace(/(<([a-z0-9:-]+)\b[^>]*?\s(?:src|href|poster)=)(["'])([^"']+)\3/gi, (m, pre, tag, q, raw) => {
+		if (/^base$/i.test(tag)) return m;
+		if (!raw || /^(data:|blob:|javascript:|#|mailto:)/i.test(raw) || raw.indexOf("/api/opera") !== -1) return m;
+		let abs;
+		try { abs = new URL(raw, pageUrl).toString(); } catch { return m; }
+		if (!abs.startsWith("https:")) return m;
+		let host = "";
+		try { host = new URL(abs).hostname; } catch { return m; }
+		if (!operaHostOk(host)) return m;
+		return pre + q + root + "/api/opera?u=" + encodeURIComponent(abs) + "&b=" + encodeURIComponent(browser) + q;
+	});
+}
+function operaInject(html, pageUrl, browser, origin) {
 	const boot = "<base href=\"" + String(pageUrl).replace(/"/g, "") + "\"><script>" + operaBoot(browser) + "<" + "/script>";
 	html = String(html).replace(/<meta[^>]+http-equiv=["']Content-Security-Policy["'][^>]*>/gi, "");
 	html = html.replace(/<meta[^>]+http-equiv=["']refresh["'][^>]*>/gi, "");
+	html = html.replace(/\s+integrity=(["'])[\s\S]*?\1/gi, "");
+	html = operaRewriteHtml(html, pageUrl, browser, origin);
 	if (/<head[^>]*>/i.test(html)) return html.replace(/<head[^>]*>/i, (m) => m + boot);
 	return boot + html;
 }
@@ -697,21 +842,31 @@ async function operaFetch(target, method, form, jar, contentType, extraHeaders, 
 	let current = target;
 	let verb = String(method || "GET").toUpperCase() === "POST" ? "POST" : "GET";
 	let body = form || "";
+	let referer = "";
 	for (let i = 0; i < 6; i++) {
 		let u;
 		try { u = new URL(current); } catch { return null; }
 		if (u.protocol !== "https:" || !operaHostOk(u.hostname)) return { blocked: true, final: current };
 		const headers = {
 			"user-agent": profile.ua,
-			accept: "text/html,application/xhtml+xml,application/json,application/xml;q=0.9,*/*;q=0.8",
+			accept: verb === "GET" && !form
+				? "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
+				: "text/html,application/xhtml+xml,application/json,application/xml;q=0.9,*/*;q=0.8",
 			"accept-language": "en-US,en;q=0.9",
-			origin: u.origin,
-			referer: current,
 		};
+		if (verb !== "GET") headers.origin = u.origin;
+		if (referer) headers.referer = referer;
+		if (verb === "GET" && i === 0) {
+			headers["sec-fetch-dest"] = "document";
+			headers["sec-fetch-mode"] = "navigate";
+			headers["sec-fetch-site"] = "none";
+			headers["sec-fetch-user"] = "?1";
+			headers["upgrade-insecure-requests"] = "1";
+		}
 		if (profile.ch) {
 			headers["sec-ch-ua"] = profile.ch;
-			headers["sec-ch-ua-mobile"] = "?0";
-			headers["sec-ch-ua-platform"] = "\"Windows\"";
+			headers["sec-ch-ua-mobile"] = profile.mobile || "?0";
+			headers["sec-ch-ua-platform"] = profile.plat || "\"Windows\"";
 		}
 		if (extraHeaders && typeof extraHeaders === "object") {
 			for (const [k, v] of Object.entries(extraHeaders)) {
@@ -733,6 +888,7 @@ async function operaFetch(target, method, form, jar, contentType, extraHeaders, 
 		operaStore(jar, current, r);
 		if (r.status >= 300 && r.status < 400) {
 			const loc = r.headers.get("location");
+			referer = current;
 			if (!loc) return { response: r, final: current };
 			let next = new URL(loc, current).toString();
 			if (/classroom\.google\.com/i.test(current) && /edu\.google\.com/i.test(next)) {
@@ -747,8 +903,15 @@ async function operaFetch(target, method, form, jar, contentType, extraHeaders, 
 	}
 	return null;
 }
+function publicOrigin(req) {
+	const host = String((req.headers && (req.headers["x-forwarded-host"] || req.headers.host)) || "127.0.0.1:8080").split(",")[0].trim();
+	let proto = String((req.headers && req.headers["x-forwarded-proto"]) || "").split(",")[0].trim();
+	if (!proto) proto = /^(localhost|127\.0\.0\.1)(:|$)/.test(host) ? "http" : "https";
+	return proto + "://" + host;
+}
 async function operaReply(req, reply, target, method, form, raw, contentType, extraHeaders) {
 	const browser = browserName((req.query && req.query.b) || (req.body && req.body.b) || "edge");
+	const origin = publicOrigin(req);
 	let u;
 	try { u = new URL(target); } catch { return reply.code(400).send("bad url"); }
 	if (u.protocol !== "https:" || !operaHostOk(u.hostname)) return reply.code(400).send("blocked");
@@ -758,11 +921,24 @@ async function operaReply(req, reply, target, method, form, raw, contentType, ex
 	if (got.blocked) return reply.code(400).send("blocked");
 	const ct = got.response.headers.get("content-type") || "application/octet-stream";
 	reply.header("cache-control", "no-store");
+	if (/text\/css/i.test(ct)) {
+		let css = await got.response.text();
+		css = css.replace(/url\(\s*(['"]?)(https:\/\/[^)'"]+)\1\s*\)/gi, (m, q, raw) => {
+			try {
+				const host = new URL(raw).hostname;
+				if (!operaHostOk(host)) return m;
+				const next = origin + "/api/opera?u=" + encodeURIComponent(raw) + "&b=" + encodeURIComponent(browser);
+				return "url(" + q + next + q + ")";
+			} catch { return m; }
+		});
+		reply.type("text/css; charset=utf-8");
+		return reply.send(css);
+	}
 	if (!raw && /text\/html|application\/xhtml/i.test(ct)) {
 		const html = await got.response.text();
 		reply.header("content-security-policy", "default-src * data: blob: 'unsafe-inline' 'unsafe-eval'; script-src * data: blob: 'unsafe-inline' 'unsafe-eval'; style-src * 'unsafe-inline' data: blob:; img-src * data: blob:; connect-src *; frame-src *; media-src *");
 		reply.type("text/html; charset=utf-8");
-		return reply.send(operaInject(html, got.final, browser));
+		return reply.send(operaInject(html, got.final, browser, origin));
 	}
 	const status = got.response.status >= 300 && got.response.status < 400 ? 200 : (got.response.status || 200);
 	reply.code(status);

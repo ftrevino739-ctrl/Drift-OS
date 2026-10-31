@@ -9,6 +9,14 @@ try {
     return fetch(event.request);
   }
   self.addEventListener("fetch", (event) => {
+    try {
+      var req = event.request;
+      var u = new URL(req.url);
+      if (req.mode === "navigate" && req.destination === "document" && /\/scramjet\//i.test(u.pathname)) {
+        event.respondWith(Response.redirect("/os", 302));
+        return;
+      }
+    } catch (e) {}
     event.respondWith(handleRequest(event));
   });
 } catch (err) {

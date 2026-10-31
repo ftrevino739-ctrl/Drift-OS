@@ -92,26 +92,48 @@
     IC.gimkit = svg(
       '<rect width="48" height="48" rx="11" fill="#6D28D9"/><text x="24" y="34" text-anchor="middle" font-size="32" font-weight="800" fill="#fff" font-family="Arial">G</text>'
     );
+    IC.cam = svg(
+      '<rect width="48" height="48" rx="12" fill="#0f172a"/>' +
+      '<path d="M16 16.5h3.2l1.6-2.5h6.4l1.6 2.5H32a3.5 3.5 0 013.5 3.5v11A3.5 3.5 0 0132 34.5H16a3.5 3.5 0 01-3.5-3.5v-11A3.5 3.5 0 0116 16.5z" fill="#1e293b" stroke="#e2e8f0" stroke-width="1.6"/>' +
+      '<circle cx="24" cy="26" r="6" fill="none" stroke="#7dd3fc" stroke-width="2.2"/>' +
+      '<circle cx="24" cy="26" r="2.5" fill="#38bdf8"/>' +
+      '<circle cx="32.2" cy="20.2" r="1.15" fill="#fbbf24"/>'
+    );
+    IC.mus = svg(
+      '<rect width="48" height="48" rx="12" fill="#7c3aed"/>' +
+      '<circle cx="17.5" cy="33" r="4.2" fill="#fff"/>' +
+      '<circle cx="32" cy="29" r="4.2" fill="#fff"/>' +
+      '<path d="M21.7 33V15.2L36.2 12v17" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>'
+    );
     IC.games = svg(
-      '<rect width="48" height="48" rx="11" fill="#111827"/><rect x="8" y="14" width="14" height="10" rx="2" fill="#34d399"/><rect x="26" y="14" width="14" height="10" rx="2" fill="#60a5fa"/><rect x="8" y="28" width="14" height="10" rx="2" fill="#f472b6"/><rect x="26" y="28" width="14" height="10" rx="2" fill="#fbbf24"/>'
+      '<rect width="48" height="48" rx="12" fill="#312e81"/>' +
+      '<path d="M11 20.5h26c2.6 0 5 2 5 5.4 0 4.6-3 7.8-6.6 7.8h-3.1l-2.4-3h-8.8l-2.4 3H13.6C10 33.7 7 30.5 7 25.9c0-3.4 2.4-5.4 4-5.4z" fill="#6366f1"/>' +
+      '<path d="M16 24.2v5.6M13.2 27h5.6" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>' +
+      '<circle cx="30" cy="25.4" r="1.45" fill="#f87171"/>' +
+      '<circle cx="33.6" cy="28.4" r="1.45" fill="#fbbf24"/>' +
+      '<circle cx="33.6" cy="22.6" r="1.45" fill="#4ade80"/>' +
+      '<circle cx="37.2" cy="25.4" r="1.45" fill="#60a5fa"/>'
     );
     IC.chat = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="48" rx="12" fill="#34C759"/><path fill="#fff" d="M24 11.2c-7.2 0-13 4.8-13 10.8 0 3.4 1.8 6.4 4.6 8.4-.2 1.4-.8 3-1.6 4.1 0 0 2.1-.4 4.1-1.5 1.8.8 3.8 1.3 6 1.3 7.2 0 13-4.8 13-10.8s-5.8-10.8-13-10.8z"/></svg>';
     IC.espn = '<img alt="ESPN" src="/espn-logo.png" style="width:100%;height:100%;object-fit:contain;background:#fff;border-radius:8px">';
     IC.aleks = '<img alt="ALEKS" src="/aleks-logo.png" style="width:100%;height:100%;object-fit:cover;border-radius:11px">';
-    IC.gbuild = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="48" rx="12" fill="#0f172a"/><path d="M13 21l11-6 11 6-11 6z" fill="#5eead4"/><path d="M13 21v8l11 6v-8z" fill="#14b8a6"/><path d="M35 21v8l-11 6v-8z" fill="#99f6e4"/><circle cx="35.5" cy="34.5" r="6" fill="#f472b6"/><path d="M35.5 31.6v5.8M32.6 34.5h5.8" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/></svg>';
+    IC.gbuild = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="48" rx="12" fill="#0f766e"/><rect x="8" y="22" width="13" height="13" rx="2.2" fill="#5eead4"/><rect x="17.5" y="12" width="13" height="13" rx="2.2" fill="#99f6e4"/><rect x="26" y="24" width="13" height="13" rx="2.2" fill="#ccfbf1"/><path d="M33.2 9.2l1.5 3.1 3.4.4-2.5 2.3.7 3.3-3.1-1.7-3.1 1.7.7-3.3-2.5-2.3 3.4-.4z" fill="#fde68a"/></svg>';
     IC.code = '<img alt="Visual Studio Code" src="/vscode-logo.svg" style="width:100%;height:100%;object-fit:contain;border-radius:11px;background:transparent">';
+    IC.winemu = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path fill="#00A4EF" d="M4 8.6 21.2 6.1v16.4H4z"/><path fill="#7FBA00" d="M23.2 5.7 44 2.9v19.6H23.2z"/><path fill="#FFB900" d="M4 24.7h17.2V41.6L4 39.2z"/><path fill="#F25022" d="M23.2 24.7H44V45l-20.8-2.5z"/></svg>';
   }
 
   function styleSettingsBtn() {
     var btn = document.getElementById('drift-settings-btn');
     if (!btn) return;
     btn.innerHTML =
-      '<svg width="36" height="36" viewBox="0 0 48 48" aria-hidden="true">' +
-      '<rect width="48" height="48" rx="12" fill="#C9C4D8"/>' +
-      '<path fill="#F4F1F8" d="M24 13.5c-1.2 0-2.3.3-3.3.8l-1-1.7-2.2 1.3 1 1.7c-1.1.8-2 1.9-2.5 3.1l-1.9-.5-.7 2.4 1.9.5c-.1 1.2 0 2.4.3 3.5l-1.8.9 1 2.3 1.8-.9c.7 1.1 1.6 2 2.7 2.6l-.7 1.9 2.3.9.7-1.9c1.1.2 2.2.2 3.3 0l.7 1.9 2.3-.9-.7-1.9c1.1-.6 2-1.5 2.7-2.6l1.8.9 1-2.3-1.8-.9c.3-1.1.4-2.3.3-3.5l1.9-.5-.7-2.4-1.9.5c-.5-1.2-1.4-2.3-2.5-3.1l1-1.7-2.2-1.3-1 1.7c-1-.5-2.1-.8-3.3-.8zm0 7c2.2 0 4 1.8 4 4s-1.8 4-4 4-4-1.8-4-4 1.8-4 4-4z"/>' +
+      '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' +
+      '<circle cx="12" cy="12" r="3"/>' +
+      '<path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9c.3.6.9 1 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>' +
       '</svg>';
     btn.style.cssText =
-      'display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;margin:0 0 14px 8px;padding:0;border:0;border-radius:12px;background:transparent;cursor:pointer';
+      'display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;margin:0;padding:0;border:0;border-radius:8px;background:transparent;cursor:pointer;align-self:center;color:inherit';
+    var lf = btn.closest && btn.closest('.lf');
+    if (lf) lf.style.alignItems = 'center';
   }
 
   function noahGamesApp(root) {
@@ -975,17 +997,120 @@ function driftSite(url) {
   }
   function windowsEmulator(root) {
     root.innerHTML = '';
-    root.style.cssText = 'height:100%;min-height:0;position:relative;background:#000';
-    if (typeof window.openProxied === 'function') {
-      window.openProxied('https://win11.blueedge.me/', root);
-      return;
+    root.style.cssText = 'height:100%;min-height:0;display:flex;flex-direction:column;background:#0b0b0d;color:#eee';
+    var bar = document.createElement('div');
+    bar.style.cssText = 'flex:none;display:flex;gap:6px;align-items:center;padding:6px 8px;background:#1a1a1f;overflow:auto;border-bottom:1px solid #2a2a32';
+    var add = document.createElement('button');
+    add.type = 'button';
+    add.textContent = '+ .js';
+    add.style.cssText = 'padding:6px 10px;border:0;border-radius:8px;background:#0078d4;color:#fff;cursor:pointer;font-weight:650';
+    var filesBox = document.createElement('div');
+    filesBox.style.cssText = 'display:flex;gap:6px;align-items:center;min-width:0';
+    bar.appendChild(add);
+    bar.appendChild(filesBox);
+    var stage = document.createElement('div');
+    stage.style.cssText = 'flex:1;min-height:0;display:flex;flex-direction:column';
+    var frameHost = document.createElement('div');
+    frameHost.style.cssText = 'flex:1;min-height:0;position:relative;background:#000';
+    var editor = document.createElement('div');
+    editor.style.cssText = 'display:none;flex:none;height:38%;min-height:120px;border-top:1px solid #2a2a32;background:#1e1e1e;flex-direction:column';
+    var edBar = document.createElement('div');
+    edBar.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 8px;font-size:12px;background:#252526';
+    var edName = document.createElement('b');
+    edName.style.flex = '1';
+    var closeEd = document.createElement('button');
+    closeEd.type = 'button';
+    closeEd.textContent = '×';
+    closeEd.style.cssText = 'border:0;background:transparent;color:#ccc;font-size:16px;cursor:pointer';
+    edBar.appendChild(edName);
+    edBar.appendChild(closeEd);
+    var ta = document.createElement('textarea');
+    ta.spellcheck = false;
+    ta.style.cssText = 'flex:1;width:100%;border:0;resize:none;background:#1e1e1e;color:#d4d4d4;padding:8px;font:13px/1.45 ui-monospace,monospace;outline:none;min-height:0';
+    editor.appendChild(edBar);
+    editor.appendChild(ta);
+    stage.appendChild(frameHost);
+    stage.appendChild(editor);
+    root.appendChild(bar);
+    root.appendChild(stage);
+    var KEY = 'wos:winjs';
+    function load() {
+      try {
+        var a = JSON.parse(localStorage.getItem(KEY) || '[]');
+        return Array.isArray(a) ? a.filter(function (f) { return f && /\.js$/i.test(String(f.name || '')); }) : [];
+      } catch (e) { return []; }
     }
-    var fr = document.createElement('iframe');
-    fr.setAttribute('credentialless', '');
-    fr.src = 'https://win11.blueedge.me/';
-    fr.setAttribute('allow', 'fullscreen; clipboard-read; clipboard-write');
-    fr.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#000';
-    root.appendChild(fr);
+    function persist(list) { try { localStorage.setItem(KEY, JSON.stringify(list)); } catch (e) {} }
+    var files = load();
+    var current = -1;
+    function paint() {
+      filesBox.innerHTML = '';
+      files.forEach(function (f, i) {
+        var wrap = document.createElement('span');
+        wrap.style.cssText = 'display:inline-flex;align-items:center;gap:2px';
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = f.name;
+        b.style.cssText = 'padding:4px 8px;border-radius:8px;border:1px solid #333;background:' + (i === current ? '#0078d4' : '#2a2a32') + ';color:#fff;cursor:pointer;font-size:12px';
+        b.onclick = function () { openFile(i); };
+        var x = document.createElement('button');
+        x.type = 'button';
+        x.textContent = '×';
+        x.title = 'Delete';
+        x.style.cssText = 'border:0;background:transparent;color:#bbb;cursor:pointer';
+        x.onclick = function (e) {
+          e.stopPropagation();
+          if (current === i && files[current]) files[current].text = ta.value;
+          files.splice(i, 1);
+          if (current === i) { current = -1; editor.style.display = 'none'; }
+          else if (current > i) current--;
+          persist(files);
+          paint();
+        };
+        wrap.appendChild(b);
+        wrap.appendChild(x);
+        filesBox.appendChild(wrap);
+      });
+    }
+    function openFile(i) {
+      if (current >= 0 && files[current]) files[current].text = ta.value;
+      current = i;
+      editor.style.display = 'flex';
+      edName.textContent = files[i].name;
+      ta.value = files[i].text || '';
+      persist(files);
+      paint();
+    }
+    ta.addEventListener('input', function () {
+      if (current >= 0 && files[current]) { files[current].text = ta.value; persist(files); }
+    });
+    closeEd.onclick = function () {
+      if (current >= 0 && files[current]) files[current].text = ta.value;
+      persist(files);
+      current = -1;
+      editor.style.display = 'none';
+      paint();
+    };
+    add.onclick = function () {
+      var name = prompt('File name (.js only)', 'script.js');
+      if (!name) return;
+      name = String(name).trim().replace(/[\\/]/g, '').replace(/\.js$/i, '') + '.js';
+      if (!/^[A-Za-z0-9._-]+\.js$/.test(name)) { alert('Only .js files'); return; }
+      if (files.some(function (f) { return String(f.name).toLowerCase() === name.toLowerCase(); })) { alert('That file already exists'); return; }
+      files.push({ name: name, text: '' });
+      persist(files);
+      openFile(files.length - 1);
+    };
+    paint();
+    if (typeof window.openProxied === 'function') window.openProxied('https://win11.blueedge.me/', frameHost);
+    else {
+      var fr = document.createElement('iframe');
+      fr.setAttribute('credentialless', '');
+      fr.src = 'https://win11.blueedge.me/';
+      fr.setAttribute('allow', 'fullscreen; clipboard-read; clipboard-write');
+      fr.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#000';
+      frameHost.appendChild(fr);
+    }
   }
   function wireAskedApps() {
     if (!window.XAPPS || !window.APPS) return;
@@ -1006,11 +1131,10 @@ function driftSite(url) {
       f: peakMoviesApp
     };
     window.XAPPS.whatsapp = { n: 'WhatsApp', f: function (root) {
-      root.innerHTML = '';
-      root.style.cssText = 'height:100%;min-height:0;position:relative;background:#111b21';
-      try { if (typeof sjInit === 'function') sjInit(); } catch (e) {}
-      if (typeof window.openProxied === 'function') window.openProxied('https://web.whatsapp.com/', root);
-      else root.textContent = 'WhatsApp needs the proxy.';
+      var browser = 'win';
+      try { browser = robloxOs(); } catch (e) {}
+      if (browser === 'ipad') browser = 'mac';
+      operaPage('https://web.whatsapp.com/', browser)(root);
     } };
     applyBrandLogos();
     try {
@@ -1141,9 +1265,7 @@ function driftSite(url) {
       });
       document.querySelectorAll('#tbs .tb').forEach(function (b) {
         if (!/Windows emulator/i.test(b.textContent || '')) return;
-        b.style.maxWidth = '220px';
-        b.style.overflow = 'visible';
-        b.style.whiteSpace = 'nowrap';
+        b.classList.add('drift-winemu');
       });
     }
     window.fitWindowsName = fitWindowsName;
@@ -1310,7 +1432,7 @@ function driftSite(url) {
         openTop('https://www.aleks.com/');
       } else if (docs && matchCombo(e, docs)) {
         e.preventDefault();
-        window.location.href = 'https://docs.google.com/';
+        openTop('https://docs.google.com/');
       }
     }, true);
     document.addEventListener('keyup', function (e) {
@@ -1320,16 +1442,19 @@ function driftSite(url) {
   }
 
   function openTop(url) {
+    url = String(url || '');
     try {
-      if (window.top && window.top !== window) { window.top.location.assign(url); return; }
+      if (/classroom\.google\.com/i.test(url) && typeof openApp === 'function') { openApp('classroom'); return; }
+      if (/aleks\.com/i.test(url) && typeof openApp === 'function') { openApp('aleks'); return; }
+      if (typeof openApp === 'function' && window.XAPPS && /^https?:/i.test(url)) {
+        var id = /docs\.google\.com/i.test(url) ? 'docs' : (/discoveryeducation/i.test(url) ? 'discovery' : 'inpage');
+        var label = id === 'docs' ? 'Docs' : (id === 'discovery' ? 'Discovery' : 'Page');
+        if (window.APPS) window.APPS[id] = window.APPS[id] || label;
+        window.XAPPS[id] = { n: label, f: operaPage(url, 'chrome') };
+        openApp(id);
+        return;
+      }
     } catch (e) {}
-    try { window.location.assign(url); return; } catch (e2) {}
-    var a = document.createElement('a');
-    a.href = url;
-    a.target = '_top';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
   }
   var SIZE_MAP = { xl: 3, lg: 2, sm: 1.7, xs: 1.5 };
   function readSize(key) {
@@ -1512,10 +1637,19 @@ function driftSite(url) {
       }, 1500);
     };
   }
+  function robloxOs() {
+    var ua = navigator.userAgent || '';
+    var plat = '';
+    try { plat = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || ''; } catch (e) {}
+    var touchMac = false;
+    try { touchMac = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1; } catch (e2) {}
+    if (/iPad|iPhone|iPod/i.test(ua) || /iPad|iPhone/i.test(plat) || touchMac) return 'ipad';
+    if (/CrOS/i.test(ua) || /Chrome OS|ChromeOS/i.test(plat)) return 'cros';
+    if (/Mac/i.test(plat) || /Macintosh|Mac OS X/i.test(ua)) return 'mac';
+    return 'win';
+  }
   function robloxShell(root) {
-    var cros = false;
-    try { cros = /CrOS|Chrome OS/i.test(navigator.userAgent) || (navigator.userAgentData && /Chrome OS|ChromeOS/i.test(navigator.userAgentData.platform || '')); } catch (e) {}
-    operaPage(cros ? 'https://www.roblox.com/login' : 'https://www.roblox.com/', cros ? 'chrome' : 'edge')(root);
+    operaPage('https://www.roblox.com/login', robloxOs())(root);
   }
   function inAppPage(url) {
     return function (root) {
@@ -1577,6 +1711,7 @@ function driftSite(url) {
         box.innerHTML = "";
         var frame = document.createElement("iframe");
         frame.setAttribute("referrerpolicy", "no-referrer");
+        frame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads allow-pointer-lock");
         frame.style.cssText = "position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff";
         frame.src = "/api/opera?u=" + encodeURIComponent(url) + "&b=" + encodeURIComponent(browser);
         box.appendChild(frame);
@@ -1703,16 +1838,9 @@ function driftSite(url) {
     try {
       if (!window.XAPPS) return;
       window.XAPPS.gmail = { n: 'Gmail', f: operaPage('https://accounts.google.com/ServiceLogin?service=mail&continue=https%3A%2F%2Fmail.google.com%2Fmail%2F&flowName=GlifWebSignIn&flowEntry=ServiceLogin', 'edge') };
-      window.XAPPS.classroom = { n: 'Classroom', f: function (root) {
-        root.innerHTML = '<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center"><b style="font-size:18px">Classroom</b><div style="max-width:460px;opacity:.8;font-size:13px">Opens classroom.google.com with the Google account already signed in on this browser. It does not use the proxy, so the session is yours.</div><button type="button" data-open style="padding:10px 16px;border:0;border-radius:10px;background:#0F9D58;color:#fff;font-weight:650;cursor:pointer">Open Classroom</button></div>';
-        function open() {
-          var w = window.open('https://classroom.google.com/', 'drift-classroom');
-          if (!w) root.querySelector('[data-open]').textContent = 'Allow pop-ups, then press Open Classroom';
-        }
-        root.querySelector('[data-open]').onclick = open;
-        open();
-      } };
-      window.XAPPS.canva = { n: 'Canva', f: sessionInside('https://www.canva.com/', 'https://www.canva.com/login', 'Canva') };
+      window.XAPPS.classroom = { n: 'Classroom', f: operaPage('https://classroom.google.com/', 'chrome') };
+      delete window.XAPPS.canva;
+      if (window.APPS) delete window.APPS.canva;
       window.__driftRoblox = robloxShell;
       window.__driftGmail = operaPage('https://accounts.google.com/ServiceLogin?service=mail&continue=https%3A%2F%2Fmail.google.com%2Fmail%2F&flowName=GlifWebSignIn&flowEntry=ServiceLogin', 'edge');
       window.XAPPS.roblox = { n: 'Roblox', f: robloxShell };
@@ -1854,7 +1982,7 @@ function driftSite(url) {
       'position:fixed;right:16px;bottom:108px;z-index:2147483001;width:min(380px,94vw);max-height:min(70vh,520px);overflow:auto;scrollbar-width:none;-ms-overflow-style:none;' +
       'background:#1c1c24;color:#eee;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px 16px;' +
       'box-shadow:0 12px 40px rgba(0,0,0,.45);font:13px/1.45 system-ui,sans-serif';
-    var liquidOn = false, eduOn = false, gk = 'lazy', kbHide = 'F9', kbClass = 'F10', appSize = 'lg', tbSize = 'lg', orbOn = true;
+    var liquidOn = false, eduOn = false, gk = 'lazy', kbHide = 'F9', kbClass = 'F10', appSize = 'lg', tbSize = 'lg', orbOn = true, xmasOn = false;
     try {
       liquidOn = localStorage.getItem('wos:liquid-glass') === '1';
       eduOn = localStorage.getItem('wos:edu-mode') === '1';
@@ -1864,6 +1992,7 @@ function driftSite(url) {
       appSize = localStorage.getItem('wos:size-apps') || 'lg';
       tbSize = localStorage.getItem('wos:size-tb') || 'lg';
       orbOn = localStorage.getItem('wos:ai-orb') === '1';
+      xmasOn = localStorage.getItem('wos:xmas') === '1';
     } catch (e) {}
     var opts = '';
     Object.keys(GIMKIT_INJECTORS).forEach(function (k) {
@@ -1876,6 +2005,10 @@ function driftSite(url) {
     panel.innerHTML =
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">' +
       '<b>Settings</b><button type="button" data-x style="border:0;background:transparent;color:#aaa;font-size:18px;cursor:pointer">×</button></div>' +
+      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px">' +
+      '<div style="flex:1"><b>Christmas mode</b>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Slow snow you can push with the mouse. It rests on your windows and fades so it never piles up.</div></div>' +
+      switchHTML('drift-xmas-sw', xmasOn) + '</div>' +
       '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px">' +
       '<div style="flex:1"><b>Enable Liquid Glass (experimental)</b>' +
       '<div style="opacity:.75;font-size:12px;margin-top:4px">Make Drift OS look like an iOS device with the new liquid glass UI applied on the task bar.</div></div>' +
@@ -1976,6 +2109,10 @@ function driftSite(url) {
         try { localStorage.setItem('wos:home-btn', r.value); } catch (e) {}
         applyHomeLogo(r.value);
       };
+    });
+    wireSwitch(panel.querySelector('#drift-xmas-sw'), function (on) {
+      try { localStorage.setItem('wos:xmas', on ? '1' : '0'); } catch (e) {}
+      if (typeof window.driftSnow === 'function') window.driftSnow(!!on);
     });
     wireSwitch(panel.querySelector('#drift-liquid-sw'), function (on) {
       try { localStorage.setItem('wos:liquid-glass', on ? '1' : '0'); } catch (e) {}
