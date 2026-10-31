@@ -19,6 +19,8 @@ html{scroll-padding-top:env(safe-area-inset-top,0px)}
 .ico:hover,.ico:focus-visible{background:rgba(255,255,255,.14);outline:none}
 .ico i{display:grid;place-items:center;width:46px;height:46px;margin:0 auto 4px;border-radius:12px;font-style:normal;font-size:24px}
 .win{position:absolute;background:var(--win);border-radius:10px;box-shadow:0 14px 40px rgba(0,0,0,.5);display:flex;flex-direction:column;overflow:hidden;min-width:260px;min-height:200px;border:1px solid rgba(255,255,255,.08)}
+.win,.win *{scrollbar-width:none!important;-ms-overflow-style:none!important}
+.win *::-webkit-scrollbar,.win::-webkit-scrollbar{width:0!important;height:0!important;display:none!important;background:transparent!important}
 .win.max{inset:0 0 48px 0!important;width:auto!important;height:auto!important;border-radius:0;top:env(safe-area-inset-top,0px)!important}
 .win.min{display:none}
 .title{display:flex;align-items:center;height:36px;background:var(--bar);padding-left:12px;gap:8px;cursor:grab;user-select:none;touch-action:none;flex:none;font-size:13px}
@@ -383,12 +385,12 @@ h1{font-weight:500;margin:0 0 8px}
 .vsapp .vsaddbar button:hover{background:#404040}
 .vsapp .vsbar{display:flex;align-items:center;gap:8px;padding:6px 10px;background:#252526;border-bottom:1px solid #333;flex:none;flex-wrap:wrap}
 #pins{min-width:0;overflow-x:auto}
-#tbs{flex:0 0 auto;min-width:0;align-items:center;overflow:visible}
-#tbs:has(.drift-winemu){margin-right:124px}
-#tbs .tb.drift-winemu{flex-direction:column;justify-content:center;align-items:center;width:auto!important;min-width:0;max-width:none!important;height:auto!important;max-height:calc(var(--tbh, 76px) - 6px)!important;white-space:nowrap!important;overflow:visible;text-align:center;font-size:16px;line-height:1;padding:2px 8px 3px!important;gap:1px;box-sizing:border-box;flex:0 0 auto}
-#tbs .tb.drift-winemu .mi{width:24px;height:24px;display:grid;place-items:center;flex:none}
-#tbs .tb.drift-winemu .mi svg{width:24px;height:24px}
-#tbs .tb.drift-winemu .wem-name{display:block;width:max-content;max-width:none;white-space:nowrap;font-size:16px;font-weight:800;line-height:1.05;text-align:center;transform:translateX(42px)}
+#tbs{flex:0 0 auto;min-width:0;align-items:center;overflow:hidden;scrollbar-width:none;-ms-overflow-style:none}
+#tbs::-webkit-scrollbar{width:0;height:0;display:none}
+#tbs .tb.drift-winemu{flex-direction:row;justify-content:center;align-items:center;width:auto!important;min-width:0;max-width:none!important;height:50px!important;white-space:nowrap!important;overflow:hidden;text-align:left;font-size:14px;font-weight:500;line-height:1.1;padding:0 10px!important;gap:6px;box-sizing:border-box;flex:0 0 auto}
+#tbs .tb.drift-winemu .mi{width:22px;height:22px;display:grid;place-items:center;flex:none}
+#tbs .tb.drift-winemu .mi svg{width:22px;height:22px}
+#tbs .tb.drift-winemu .wem-name{display:inline;width:auto;max-width:none;white-space:nowrap;font-size:14px;font-weight:500;line-height:1.1;text-align:left;transform:none}
 #menu .lf{align-items:center}
 #drift-settings-btn{margin:0!important;background:transparent!important;align-self:center;box-shadow:none!important}
 @keyframes drift-fall{to{background-position:0 220px,30px 340px,0 0}}
@@ -410,8 +412,9 @@ h1{font-weight:500;margin:0 0 8px}
 .vsapp #monaco-host{flex:1;min-height:0}
 .vsapp .vstabs{display:flex;gap:4px;flex:1;min-width:0;overflow-x:auto}
 .vsapp .vstab{display:flex;align-items:center;gap:6px;height:28px;padding:0 8px;border-radius:6px;background:#2d2d2d;color:#ccc;border:1px solid transparent;cursor:pointer;font:12px/1 system-ui,sans-serif}
-.vsapp .vstab .vdel{display:none;border:0;background:transparent;color:#f88;cursor:pointer;font:11px system-ui;padding:0 2px}
-.vsapp .vstab:hover .vdel,.vsapp .vsex-row:hover .vdel{display:inline}
+.vsapp .vstab .vdel{display:none!important}
+.vsapp .vsex-row .vdel{display:inline-flex;align-items:center;justify-content:center;border:0;background:transparent;color:#f48771;cursor:pointer;padding:2px 8px;flex:none}
+.vsapp .vsex-row .vdel svg{display:block}
 .vsapp .vsex-row{display:flex;align-items:center;gap:4px}
 .vsapp .vsex-row .vsex-file{flex:1;text-align:left}
 .vsapp .flogo{display:inline-grid;place-items:center;width:16px;height:16px;flex:none;font-size:8px;font-weight:800;color:#fff}
@@ -493,7 +496,8 @@ h1{font-weight:500;margin:0 0 8px}
 .think-panel summary::-webkit-details-marker{display:none}
 .think-panel summary .chev{display:inline-block;transition:transform .15s;font-size:12px}
 .think-panel[open] summary .chev{transform:rotate(180deg)}
-.think-panel .think-body{margin:0 12px 12px;padding:14px 16px;background:#fff;border:1px solid #ececec;border-radius:14px;color:#4b5563;line-height:1.55;white-space:pre-wrap;max-height:360px;overflow:auto;font-style:normal;font-size:13.5px}
+.think-panel .think-body{margin:0 12px 12px;padding:14px 16px;background:#fff;border:1px solid #ececec;border-radius:14px;color:#4b5563;line-height:1.55;white-space:normal;max-height:360px;overflow:auto;scrollbar-width:none;font-style:normal;font-size:13.5px}
+.think-panel .think-body::-webkit-scrollbar{display:none;width:0;height:0}
 .think{font-style:normal}
 .think-step{margin:0 0 8px;padding-left:8px;border-left:2px solid var(--acc)}
 .mo-wrap{position:relative}
@@ -656,7 +660,7 @@ h1{font-weight:500;margin:0 0 8px}
 </div>
 <div id="task">
   <button class="tb" id="start" aria-label="Aplicaciones (Tab)">⊞</button><div id="pins"></div>
-  <div id="tbs" style="display:flex;gap:6px;overflow-x:auto"></div>
+  <div id="tbs" style="display:flex;gap:6px;overflow:hidden"></div>
   <div id="clock"></div><button id="prof" aria-label="Perfil"></button>
 </div>
 
@@ -1427,19 +1431,46 @@ function ai(root){
     if(imgs.length){const g=document.createElement('div');g.className='thumbs';imgs.forEach(b=>{const i=new Image();i.src=URL.createObjectURL(b);g.appendChild(i)});ub.appendChild(g)}
     am.querySelectorAll('.think-panel').forEach(n=>{n.open=false;n.classList.remove('live')});
     const think=document.createElement('details');think.className='think-panel live';think.open=true;
-    think.innerHTML='<summary><span class="chev">\u25BE</span> Pensando <span data-sec>0s</span></summary><div class="think-body"></div>';
+    think.innerHTML='<summary><span class="chev">\u25BE</span> Pensó durante <span data-sec>0</span> segundos</summary><div class="think-body"></div>';
     am.appendChild(think);
     const thinkBody=think.querySelector('.think-body'), thinkSec=think.querySelector('[data-sec]');
     const started=Date.now();
-    const thinkTimer=setInterval(()=>{thinkSec.textContent=Math.round((Date.now()-started)/1000)+'s'},250);
+    const thinkTimer=setInterval(()=>{thinkSec.textContent=String(Math.max(1,Math.round((Date.now()-started)/1000)))},250);
     let sources='', sourceRows=[], thoughtNote='';
     const replyLang=/[áéíóúñ¿¡]|\b(dame|c[oó]digo|hola|qu[eé]|por favor)\b/i.test(q)?'Spanish':'English';
     const steps=['The user is telling us: "'+q.replace(/\s+/g,' ').slice(0,220)+'".','We need an answer clearly in '+replyLang+'.','We will not introduce ourselves. We only say Drift if they ask who we are.', customInstr?('Custom instructions are on, and the worker must follow them: '+customInstr.replace(/\s+/g,' ').slice(0,180)):'No custom instructions.'];
     function paintThink(){
-      const bits=steps.slice();
-      if(sources)bits.push(sources);
-      if(thoughtNote)bits.push(thoughtNote);
-      if(think.isConnected)thinkBody.textContent=bits.join('\n\n');
+      if(!think.isConnected)return;
+      thinkBody.innerHTML='';
+      steps.forEach(function(s){
+        const row=document.createElement('div');
+        row.style.cssText='margin:0 0 10px';
+        row.textContent='• '+s;
+        thinkBody.appendChild(row);
+      });
+      if(sourceRows.length){
+        const found=document.createElement('div');
+        found.style.cssText='margin:8px 0 8px;font-weight:650';
+        found.textContent='Encontrados '+sourceRows.length+' resultados web';
+        thinkBody.appendChild(found);
+        const read=document.createElement('div');
+        read.style.cssText='margin:4px 0 6px;font-weight:650';
+        read.textContent='Leer '+sourceRows.length+' páginas';
+        thinkBody.appendChild(read);
+        sourceRows.forEach(function(r){
+          const a=document.createElement('a');
+          a.href=r.url;a.target='_blank';a.rel='noreferrer';
+          a.textContent=(r.title||r.url)+' ↗';
+          a.style.cssText='display:block;margin:2px 0 2px 14px;color:#4b5563;text-decoration:underline;font-size:13px';
+          thinkBody.appendChild(a);
+        });
+      }
+      if(thoughtNote){
+        const note=document.createElement('div');
+        note.style.cssText='margin-top:10px;white-space:pre-wrap';
+        note.textContent='• '+thoughtNote;
+        thinkBody.appendChild(note);
+      }
     }
     paintThink();
     try{if(window.driftAct)window.driftAct(q,'')}catch(e){}
@@ -1477,7 +1508,7 @@ function ai(root){
       const secs=Math.max(1,Math.round((Date.now()-started)/1000));
       think.classList.remove('live');
       think.open=false;
-      think.querySelector('summary').innerHTML='<span class="chev">\u25BE</span> Pensado por <span>'+secs+'s</span>';
+      think.querySelector('summary').innerHTML='<span class="chev">\u25BE</span> Pensó durante <span>'+secs+'</span> segundos';
       paintThink();
       searchDone.then(function(){if(!think.isConnected)return;paintThink();if(thinkBody&&sourceRows.length)sourceRow(thinkBody,sourceRows);const host=(out.querySelector&&out.querySelector('.ans-bar'))||out;if(out.isConnected)sourceRow(host,sourceRows)}).catch(function(){});
       let txt=(r.text||'').replace(/Gemini said/gi,'Drift said');
@@ -1519,7 +1550,7 @@ function ai(root){
         try{S.d.chats=(S.d.chats||[]).slice(0,6);(S.d.chats||[]).forEach(ch=>{if(ch&&ch.msgs&&ch.msgs.length>16)ch.msgs=ch.msgs.slice(-16)});save()}catch(e2){}
       }
     }catch(e){
-      try{clearInterval(thinkTimer);think.classList.remove('live');think.open=false;const secs=Math.max(1,Math.round((Date.now()-started)/1000));think.querySelector('summary').innerHTML='<span class="chev">\u25BE</span> Pensado por <span>'+secs+'s</span>';paintThink()}catch(x){}
+      try{clearInterval(thinkTimer);think.classList.remove('live');think.open=false;const secs=Math.max(1,Math.round((Date.now()-started)/1000));think.querySelector('summary').innerHTML='<span class="chev">\u25BE</span> Pensó durante <span>'+secs+'</span> segundos';paintThink()}catch(x){}
       const kept=(out.textContent||'').trim();
       if(kept.length>80){answerTools(out, kept)}
       else{out.className='e';out.textContent=(e&&e.message)||'No se pudo obtener respuesta.';mine.pop()}
@@ -2328,7 +2359,6 @@ function vscode(root){
       <div class="vsaddbar">
         <button type="button" data-a="add" title="New file">+ Add file</button>
         <button type="button" data-a="run" title="Run this file">▶ Run</button>
-        <button type="button" data-a="del" title="Delete file">Delete</button>
       </div>
       <div class="vsbar">
         <div class="vstabs" data-tabs></div>
@@ -2403,8 +2433,9 @@ function vscode(root){
         const b=document.createElement('button');b.type='button';b.className='vsex-file'+(i===active&&files[i].open!==false?' on':'');
         b.append(fileBadge(files[i].name), document.createTextNode(' '+baseOf(files[i].name)));
         b.onclick=()=>{files[i].open=true;show(i)};
-        const del=document.createElement('button'); del.type='button'; del.className='vdel'; del.textContent='Delete';
-        del.onclick=e=>{e.stopPropagation();removeAt(i)};
+        const del=document.createElement('button'); del.type='button'; del.className='vdel'; del.title='Delete'; del.setAttribute('aria-label','Delete '+files[i].name);
+        del.innerHTML='<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg>';
+        del.onclick=e=>{e.stopPropagation();if(!confirm('are you sure you want to delete: '+files[i].name))return;removeAt(i)};
         row.append(b,del); ex.appendChild(row);
       });
     });
@@ -2419,9 +2450,7 @@ function vscode(root){
       const x=document.createElement('button');
       x.type='button';x.className='x';x.textContent='×';x.setAttribute('aria-label','Close '+f.name);
       x.onclick=e=>{e.stopPropagation();closeTab(i)};
-      const del=document.createElement('button'); del.type='button'; del.className='vdel'; del.textContent='Delete';
-      del.onclick=e=>{e.stopPropagation();removeAt(i)};
-      b.append(fileBadge(f.name),label,del,x);
+      b.append(fileBadge(f.name),label,x);
       b.onclick=()=>show(i);
       tabs.appendChild(b);
     });
@@ -2558,19 +2587,24 @@ function vscode(root){
   }
   function resultPopup(name, html){
     const title='result: '+name;
-    const id='result_'+String(name).replace(/[^a-z0-9]+/gi,'').slice(0,24)+'_'+Date.now().toString(36);
-    if(window.APPS) window.APPS[id]=title;
-    window.XAPPS=window.XAPPS||{};
-    window.XAPPS[id]={n:title,f:function(root){
-      root.innerHTML='';
-      root.style.cssText='height:100%;min-height:0;position:relative;background:#111';
-      const fr=document.createElement('iframe');
-      fr.setAttribute('sandbox','allow-scripts allow-modals allow-forms');
-      fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#111';
-      fr.srcdoc=html;
-      root.appendChild(fr);
-    }};
-    if(typeof openApp==='function') openApp(id);
+    const w=document.createElement('div');
+    w.className='win';
+    const sc=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--drift-app'))||2;
+    const tbh=parseInt(getComputedStyle(document.documentElement).getPropertyValue('--tbh'))||76;
+    const W=Math.max(360,Math.min(innerWidth-16,Math.round(520*Math.min(sc,2))));
+    const H=Math.max(240,Math.min(innerHeight-tbh-16,Math.round(360*Math.min(sc,2))));
+    w.style.cssText='width:'+W+'px;height:'+H+'px;left:'+Math.max(10,(innerWidth-W)/2)+'px;top:64px;z-index:'+(++z);
+    w.innerHTML='<div class="title"><b></b><button class="wb x" data-a="x" aria-label="Close">✕</button></div><div class="body" style="position:relative;min-height:0;background:#111"></div>';
+    w.querySelector('.title b').textContent=title;
+    const fr=document.createElement('iframe');
+    fr.setAttribute('sandbox','allow-scripts allow-modals allow-forms');
+    fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#111';
+    fr.srcdoc=html;
+    w.querySelector('.body').appendChild(fr);
+    desk.appendChild(w);
+    w.querySelector('[data-a="x"]').onclick=function(e){e.stopPropagation();w.remove()};
+    w.addEventListener('pointerdown',function(){w.style.zIndex=++z});
+    drag(w);
   }
   function runFile(){
     if(!editor||!files[active])return;
@@ -2602,19 +2636,42 @@ function vscode(root){
     box.value='';
     chatSay('u', q);
     const hold=chatSay('a','…');
-    const ep=(typeof EP==='function'?EP():(window.DDG0||'https://holy-firefly-982c.fert0480.workers.dev')).replace(/\/$/,'');
-    const sys='You are the coding assistant inside Drift VS Code. Reply fast. If they want code or a change, the first line is FILE: exact-name.ext. Use the filename they named when they ask to modify a file. Then one fenced block with the COMPLETE file. After the fence, one line ABOUT: a short sentence of what you did and what it is. Do not paste code outside the fence.';
-    try{
-      const r=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({max_tokens:1800,messages:[{role:'user',content:q}],system:sys})});
-      const j=await r.json();
-      let text=((j.content||[]).map(x=>x.text||'').join(''))||(j.error&&(j.error.message||String(j.error)))||'No answer.';
-      const about=((text.match(/ABOUT:\s*(.+)/i)||[])[1]||'').trim();
+    const follow=/^(yes|ok|si|sí|hazlo|do it|make it|make the file|can you make the file|crea(lo| el archivo)?)$/i.test(q);
+    const asked=follow&&askAI.last? (askAI.last+'\n\nThe user said: '+q+'. Create the file now.') : q;
+    askAI.last=q;
+    const wants=/\b(create|make|haz|crea|archivo|file|game|juego|build|minecraft)\b/i.test(asked);
+    const sys='You are the coding assistant inside Drift VS Code. Never ask which file. If they want a game, a file, or any code, create it immediately. The first line must be FILE: name.ext. Use index.html for a web or 3d game, script.js for javascript, or the extension they asked for. Then one fenced block with the COMPLETE file. After the fence, one line ABOUT: a short sentence of what you did. Do not ask questions. Do not paste code outside the fence.';
+    async function pull(prompt){
+      const r=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({max_tokens:2200,messages:[{role:'user',content:prompt}],system:sys})});
+      const raw=await r.text();
+      if(/^\s*</.test(raw)) throw new Error('No answer. Try again.');
+      let j; try{ j=JSON.parse(raw); }catch(e){ throw new Error('No answer. Try again.'); }
+      return ((j.content||[]).map(x=>x.text||'').join(''))||'';
+    }
+    function fences(text){
       const made=[];
       const re=/FILE:\s*([^\n]+)\n```[^\n]*\n([\s\S]*?)```/g; let m;
       while((m=re.exec(text))) made.push([m[1].trim(), m[2].replace(/\s+$/,'')]);
-      if(!made.length){const fence=text.match(/```([a-z0-9.+#-]*)\n([\s\S]*?)```/i); if(fence){const map={python:'py',py:'py',javascript:'js',js:'js',typescript:'ts',ts:'ts',html:'html',css:'css',lua:'lua',luau:'lua',json:'json',cpp:'cpp','c++':'cpp',c:'c',java:'java',cs:'cs',go:'go',rust:'rs',rs:'rs',php:'php',ruby:'rb',rb:'rb'}; made.push(['ai.'+(map[(fence[1]||'').toLowerCase()]||'txt'), fence[2].replace(/\s+$/,'')]);}}
-      const named=(q.match(/\b([A-Za-z0-9_.-]+\.[A-Za-z0-9]+)\b/)||[])[1]||'';
-      const edit=/\b(modifica|modify|edit|cambia|actualiza|update|arregla|fix)\b/i.test(q);
+      if(!made.length){
+        const fence=text.match(/```([a-z0-9.+#-]*)\n([\s\S]*?)```/i);
+        if(fence){
+          const map={python:'py',py:'py',javascript:'js',js:'js',typescript:'ts',ts:'ts',html:'html',css:'css',lua:'lua',luau:'lua',json:'json',cpp:'cpp','c++':'cpp',c:'c',java:'java',cs:'cs',go:'go',rust:'rs',rs:'rs',php:'php',ruby:'rb',rb:'rb'};
+          const ext=map[(fence[1]||'').toLowerCase()]||(/game|minecraft|3d|html/i.test(asked)?'html':'js');
+          made.push([(ext==='html'?'index.html':'script.'+ext), fence[2].replace(/\s+$/,'')]);
+        }
+      }
+      return made;
+    }
+    try{
+      let text=await pull(asked);
+      let made=fences(text);
+      if(!made.length&&wants){
+        text=await pull(asked+'\n\nReturn only FILE: index.html then one html fence with a complete playable file. No questions.');
+        made=fences(text);
+      }
+      const about=((text.match(/ABOUT:\s*(.+)/i)||[])[1]||'').trim();
+      const named=(asked.match(/\b([A-Za-z0-9_.-]+\.[A-Za-z0-9]+)\b/)||[])[1]||'';
+      const edit=/\b(modifica|modify|edit|cambia|actualiza|update|arregla|fix)\b/i.test(asked);
       if(made.length){
         const names=made.map(pair=>{
           const want=cleanName(named||pair[0]);
@@ -2628,10 +2685,13 @@ function vscode(root){
           }
           return addFile(edit&&named?named:pair[0], pair[1]);
         });
-        const verb=names.some(n=>files.some(f=>f.name===n&&edit))||edit?'Updated ':'Created ';
+        const verb=edit?'Updated ':'Created ';
         hold.textContent=verb+names.join(', ')+(about?'. '+about:'');
-      }else hold.textContent=about||text.replace(/```[\s\S]*?```/g,'').trim()||'No answer.';
-    }catch(e){ hold.textContent=String(e.message||e); }
+      }else hold.textContent=about||String(text||'').replace(/```[\s\S]*?```/g,'').trim()||'No answer.';
+    }catch(e){
+      const msg=String(e&&e.message||e);
+      hold.textContent=/JSON|DOCTYPE|token|Unexpected/i.test(msg)?'No answer. Try again.':msg;
+    }
   }
   window.DriftVS={
     addFile:function(name,text){if(!editor){pending.push([name,text]);return name}return addFile(name,text)},
@@ -2654,7 +2714,7 @@ function vscode(root){
     if(!files.length){showEmpty();return}
     host.innerHTML='';
     const f=files[active]||files[0];
-    editor=monaco.editor.create(host,{value:f.text||'',language:langOf(f.name),theme:'vs-dark',automaticLayout:true,fontSize:14,minimap:{enabled:true},scrollBeyondLastLine:false,tabSize:2});
+    editor=monaco.editor.create(host,{value:f.text||'',language:langOf(f.name),theme:'vs-dark',automaticLayout:true,fontSize:14,minimap:{enabled:true},scrollBeyondLastLine:false,tabSize:2,scrollbar:{vertical:'hidden',horizontal:'hidden',handleMouseWheel:true,alwaysConsumeMouseWheel:false}});
     editor.onDidChangeCursorPosition(e=>{const pos=e.position;$('#vspos',root).textContent='Ln '+pos.lineNumber+', Col '+pos.column});
     editor.onDidChangeModelContent(()=>{if(fileLock||!files[active])return;syncEditor(true);saveFiles();clearTimeout(editor.__lt);editor.__lt=setTimeout(lint,250)});
     paint(); lint();
@@ -2681,11 +2741,6 @@ function vscode(root){
     const name=prompt('File name with extension. A folder is allowed, for example starter/app.py','file.js');
     if(!name)return;
     addFile(name,'');
-  };
-  root.querySelector('[data-a="del"]').onclick=()=>{
-    if(!files[active])return;
-    if(!confirm('Delete '+files[active].name+'?'))return;
-    removeAt(active);
   };
   root.querySelector('[data-a="run"]').onclick=runFile;
   root.querySelector('[data-a="ask"]').onclick=askAI;

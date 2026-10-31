@@ -343,21 +343,37 @@
         return name;
       }
       try {
-        var sys = 'You are Drift inside JS Injector. Reply fast. First line is ABOUT: one short sentence of what you did and what it is. If they name a file to modify, the next line is FILE: that exact filename. Then one fenced javascript block with the COMPLETE file. Do not paste code outside the fence.';
+        var sys = 'You are Drift inside JS Injector. Never ask which file. Reply fast. First line is ABOUT: one short sentence. If they want a file or a change, the next line is FILE: name.ext (script.js if they did not name one). Then one fenced javascript block with the COMPLETE file. Do not paste code outside the fence.';
         var r = await fetch('/api/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ max_tokens: 1800, messages: [{ role: 'user', content: q }], system: sys }) });
-        var j = await r.json();
+        var raw = await r.text();
+        if (/^\s*</.test(raw)) throw new Error('No answer. Try again.');
+        var j; try { j = JSON.parse(raw); } catch (err) { throw new Error('No answer. Try again.'); }
         var text = ((j.content || []).map(function (x) { return x.text || ''; }).join('')) || '';
         if (!String(text).trim()) throw new Error((j.error && (j.error.message || String(j.error))) || 'No answer.');
         var about = ((text.match(/ABOUT:\s*(.+)/i) || [])[1] || '').trim();
         var named = (q.match(/\b([A-Za-z0-9_.-]+\.[A-Za-z0-9]+)\b/) || [])[1] || '';
         var fileLine = ((text.match(/FILE:\s*([^\n]+)/i) || [])[1] || '').trim();
         var edit = /\b(modifica|modify|edit|cambia|actualiza|update|arregla|fix)\b/i.test(q);
+        var wants = /\b(create|make|haz|crea|archivo|file|game|juego|build)\b/i.test(q);
         var fence = text.match(/```[^\n]*\n([\s\S]*?)```/);
         var codeText = fence ? fence[1].replace(/\s+$/, '') : '';
-        if (edit && (named || fileLine) && codeText) {
-          var target = named || fileLine;
+        if (!codeText && wants) {
+          var r2 = await fetch('/api/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ max_tokens: 1800, messages: [{ role: 'user', content: q + '\n\nCreate the file now. FILE: script.js then one javascript fence. No questions.' }], system: sys }) });
+          var raw2 = await r2.text();
+          if (!/^\s*</.test(raw2)) {
+            try { j = JSON.parse(raw2); text = ((j.content || []).map(function (x) { return x.text || ''; }).join('')) || text; } catch (e2) {}
+            about = ((text.match(/ABOUT:\s*(.+)/i) || [])[1] || about).trim();
+            fileLine = ((text.match(/FILE:\s*([^\n]+)/i) || [])[1] || fileLine).trim();
+            fence = text.match(/```[^\n]*\n([\s\S]*?)```/);
+            codeText = fence ? fence[1].replace(/\s+$/, '') : codeText;
+          }
+        }
+        if ((edit || wants) && codeText) {
+          var target = named || fileLine || 'script.js';
           writeNamed(target, codeText);
-          say('Updated ' + target + (about ? '. ' + about : '.'));
+          if (!edit) code.value = codeText;
+          check();
+          say((edit ? 'Updated ' : 'Created ') + target + (about ? '. ' + about : '.'));
           return;
         }
         if (codeText) {
@@ -368,7 +384,8 @@
         }
         say(about || text.replace(/```[\s\S]*?```/g, '').trim() || 'No answer.');
       } catch (e) {
-        say(String(e.message || e));
+        var msg = String(e.message || e);
+        say(/JSON|DOCTYPE|token|Unexpected/i.test(msg) ? 'No answer. Try again.' : msg);
       }
     };
   }

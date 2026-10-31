@@ -997,7 +997,7 @@ function driftSite(url) {
     root.innerHTML = '';
     root.style.cssText = 'height:100%;min-height:0;display:flex;flex-direction:column;background:#0b0b0d;color:#eee';
     var bar = document.createElement('div');
-    bar.style.cssText = 'flex:none;display:flex;gap:6px;align-items:center;padding:6px 8px;background:#1a1a1f;overflow:auto;border-bottom:1px solid #2a2a32';
+    bar.style.cssText = 'flex:none;display:flex;gap:6px;align-items:center;padding:6px 8px;background:#1a1a1f;overflow:hidden;scrollbar-width:none;border-bottom:1px solid #2a2a32';
     var filesBox = document.createElement('div');
     filesBox.style.cssText = 'display:flex;gap:6px;align-items:center;min-width:0';
     bar.appendChild(filesBox);
@@ -1114,7 +1114,14 @@ function driftSite(url) {
     window.XAPPS.gem = { n: 'Gemini', f: driftSite('https://gemini.google.com/app') };
     window.XAPPS.movies = {
       n: 'Movies',
-      f: peakMoviesApp
+      f: function moviesPick(root) {
+        var src = 'tmdb';
+        try { src = localStorage.getItem('wos:movies') || 'tmdb'; } catch (e) {}
+        if (src === 'serum') src = 'noah';
+        if (src === 'racial') return peakMoviesApp(root);
+        if (src === 'noah' && typeof movies === 'function') return movies(root);
+        return tmdbMovies(root);
+      }
     };
     window.XAPPS.whatsapp = { n: 'WhatsApp', f: function (root) {
       var browser = 'win';
@@ -1496,11 +1503,19 @@ function driftSite(url) {
     var knob = sw.querySelector('span');
     if (knob) knob.style.left = '2px';
   }
-  function setChromeOSAdapt(on) {
-    if (on && deviceKind() !== 'cros') {
-      on = false;
-      rejectAdapt('drift-cros-sw');
-    }
+  function dynamicOn() {
+    try { return localStorage.getItem('wos:dynamic-os') === '1'; } catch (e) { return false; }
+  }
+  function foreignBlocked(kind, swId, quiet) {
+    if (!kind) return false;
+    if (dynamicOn() || deviceKind() === kind) return false;
+    var names = { cros: 'ChromeOS', ipad: 'iPad', mac: 'macOS', win: 'Windows', linux: 'Linux' };
+    if (!quiet) alert('This adaptation is only for ' + (names[kind] || kind) + '. Turn on Dynamic OS in UI → Experimental to use it on this device.');
+    rejectAdapt(swId);
+    return true;
+  }
+  function setChromeOSAdapt(on, quiet) {
+    if (on && foreignBlocked('cros', 'drift-cros-sw', quiet)) on = false;
     try { localStorage.setItem('wos:cros-adapt', on ? '1' : '0'); } catch (e) {}
     document.body.classList.toggle('drift-cros', !!on);
     var task = document.getElementById('task');
@@ -1514,11 +1529,8 @@ function driftSite(url) {
     if (st) st.textContent = '';
     applySize();
   }
-  function setIpadAdapt(on) {
-    if (on && deviceKind() !== 'ipad') {
-      on = false;
-      rejectAdapt('drift-ipad-sw');
-    }
+  function setIpadAdapt(on, quiet) {
+    if (on && foreignBlocked('ipad', 'drift-ipad-sw', quiet)) on = false;
     try { localStorage.setItem('wos:ipad-adapt', on ? '1' : '0'); } catch (e) {}
     document.body.classList.toggle('drift-ipad', !!on);
     if (!document.getElementById('drift-ipad-style')) {
@@ -1528,6 +1540,54 @@ function driftSite(url) {
       document.head.appendChild(s);
     }
     applySize();
+  }
+  function osLook() {
+    if (document.getElementById('drift-osadapt-style')) return;
+    var s = document.createElement('style');
+    s.id = 'drift-osadapt-style';
+    s.textContent = 'body.drift-mac #task{border-radius:18px 18px 0 0}body.drift-mac .win{border-radius:14px}'
+      + 'body.drift-win .title{background:#1f1f1f;color:#fff}body.drift-win .wb{color:#fff}'
+      + 'body.drift-linux #task{border-radius:0}body.drift-linux .win{border-radius:6px}';
+    document.head.appendChild(s);
+  }
+  function setMacAdapt(on, quiet) {
+    if (on && foreignBlocked('mac', 'drift-mac-sw', quiet)) on = false;
+    try { localStorage.setItem('wos:mac-adapt', on ? '1' : '0'); } catch (e) {}
+    osLook();
+    document.body.classList.toggle('drift-mac', !!on);
+  }
+  function setWinAdapt(on, quiet) {
+    if (on && foreignBlocked('win', 'drift-win-sw', quiet)) on = false;
+    try { localStorage.setItem('wos:win-adapt', on ? '1' : '0'); } catch (e) {}
+    osLook();
+    document.body.classList.toggle('drift-win', !!on);
+  }
+  function setLinuxAdapt(on, quiet) {
+    if (on && foreignBlocked('linux', 'drift-linux-sw', quiet)) on = false;
+    try { localStorage.setItem('wos:linux-adapt', on ? '1' : '0'); } catch (e) {}
+    osLook();
+    document.body.classList.toggle('drift-linux', !!on);
+  }
+  function nativeAdaptKey() {
+    var k = deviceKind();
+    if (k === 'cros') return 'wos:cros-adapt';
+    if (k === 'ipad') return 'wos:ipad-adapt';
+    if (k === 'mac') return 'wos:mac-adapt';
+    if (k === 'win') return 'wos:win-adapt';
+    if (k === 'linux') return 'wos:linux-adapt';
+    return '';
+  }
+  function applySavedAdapts(quiet) {
+    var nk = nativeAdaptKey();
+    try {
+      if (nk && localStorage.getItem(nk) === null) localStorage.setItem(nk, '1');
+    } catch (e) {}
+    function on(key) { try { return localStorage.getItem(key) === '1'; } catch (e) { return false; } }
+    setChromeOSAdapt(on('wos:cros-adapt'), quiet);
+    setIpadAdapt(on('wos:ipad-adapt'), quiet);
+    setMacAdapt(on('wos:mac-adapt'), quiet);
+    setWinAdapt(on('wos:win-adapt'), quiet);
+    setLinuxAdapt(on('wos:linux-adapt'), quiet);
   }
   function setNoDev(on) {
     try { localStorage.setItem('wos:no-dev', on ? '1' : '0'); } catch (e) {}
@@ -2051,16 +2111,33 @@ function driftSite(url) {
       return '<label style="display:flex;gap:8px;align-items:flex-start;margin:4px 0;cursor:pointer"><input type="radio" name="' + name + '" value="' + it[0] + '"' + (current === it[0] ? ' checked' : '') + ' style="margin-top:3px"/> <span>' + it[1] + '</span></label>';
     }).join('');
   }
+  function reloadOpenLibrary(label) {
+    var fn = null;
+    try {
+      if (label === 'Movies' && window.XAPPS && window.XAPPS.movies) fn = window.XAPPS.movies.f;
+      if (label === 'Games' && window.XAPPS && window.XAPPS.games) fn = window.XAPPS.games.f;
+    } catch (e) {}
+    if (typeof fn !== 'function') return;
+    document.querySelectorAll('#desk > .win').forEach(function (w) {
+      var b = w.querySelector(':scope > .title b');
+      if (!b || (b.textContent || '').indexOf(label) < 0) return;
+      var body = w.querySelector(':scope > .body');
+      if (!body) return;
+      body.innerHTML = '';
+      try { fn(body, w); } catch (err) {}
+    });
+  }
   function openSettingsPanel() {
-    var old = document.getElementById('drift-settings-panel');
+    var old = document.getElementById('drift-settings-win') || document.getElementById('drift-settings-panel');
     if (old) { old.remove(); return; }
     var panel = document.createElement('div');
-    panel.id = 'drift-settings-panel';
-    panel.style.cssText =
-      'position:fixed;right:16px;bottom:108px;z-index:2147483001;width:min(380px,94vw);max-height:min(70vh,520px);overflow:auto;scrollbar-width:none;-ms-overflow-style:none;' +
-      'background:#1c1c24;color:#eee;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px 16px;' +
-      'box-shadow:0 12px 40px rgba(0,0,0,.45);font:13px/1.45 system-ui,sans-serif';
+    panel.id = 'drift-settings-win';
+    panel.className = 'win';
+    var W = Math.min(860, window.innerWidth - 24);
+    var H = Math.min(640, window.innerHeight - 110);
+    panel.style.cssText = 'width:' + W + 'px;height:' + H + 'px;left:' + Math.max(8, (window.innerWidth - W) / 2) + 'px;top:40px;z-index:2147483001';
     var liquidOn = false, eduOn = false, gk = 'lazy', kbHide = 'F9', kbClass = 'F10', appSize = 'lg', tbSize = 'lg', orbOn = true, xmasOn = false;
+    var dynOn = false, macOn = false, winOn = false, linOn = false, lensOn = false;
     try {
       liquidOn = localStorage.getItem('wos:liquid-glass') === '1';
       eduOn = localStorage.getItem('wos:edu-mode') === '1';
@@ -2071,6 +2148,11 @@ function driftSite(url) {
       tbSize = localStorage.getItem('wos:size-tb') || 'lg';
       orbOn = localStorage.getItem('wos:ai-orb') === '1';
       xmasOn = localStorage.getItem('wos:xmas') === '1';
+      dynOn = localStorage.getItem('wos:dynamic-os') === '1';
+      macOn = localStorage.getItem('wos:mac-adapt') === '1';
+      winOn = localStorage.getItem('wos:win-adapt') === '1';
+      linOn = localStorage.getItem('wos:linux-adapt') === '1';
+      lensOn = localStorage.getItem('wos:lens-bypass') === '1';
     } catch (e) {}
     var opts = '';
     Object.keys(GIMKIT_INJECTORS).forEach(function (k) {
@@ -2081,20 +2163,16 @@ function driftSite(url) {
         ' style="margin-top:3px"/><span><b>' + it.name + '</b></span></label>';
     });
     panel.innerHTML =
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">' +
-      '<b>Settings</b><button type="button" data-x style="border:0;background:transparent;color:#aaa;font-size:18px;cursor:pointer">×</button></div>' +
-      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px">' +
-      '<div style="flex:1"><b>Christmas mode</b>' +
-      '<div style="opacity:.75;font-size:12px;margin-top:4px">Sand-like snow that keeps falling. It rests on open windows. Move or shake a window and the snow comes off.</div></div>' +
-      switchHTML('drift-xmas-sw', xmasOn) + '</div>' +
-      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px">' +
-      '<div style="flex:1"><b>Enable Liquid Glass (experimental)</b>' +
-      '<div style="opacity:.75;font-size:12px;margin-top:4px">Make Drift OS look like an iOS device with the new liquid glass UI applied on the task bar.</div></div>' +
-      switchHTML('drift-liquid-sw', liquidOn) + '</div>' +
-      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px">' +
-      '<div style="flex:1"><b>Apply Liquid Glass to apps</b>' +
-      '<div style="opacity:.75;font-size:12px;margin-top:4px">Makes the app windows transparent so the desktop shows through. Pages inside a site stay readable.</div></div>' +
-      switchHTML('drift-app-glass-sw', localStorage.getItem('wos:liquid-apps') === '1') + '</div>' +
+      '<div class="title"><b>Settings</b><button class="wb x" type="button" data-x data-a="x" aria-label="Close">✕</button></div>' +
+      '<div class="body" style="flex-direction:row;min-height:0;background:#1c1c24;color:#eee;font:13px/1.45 system-ui,sans-serif">' +
+      '<nav style="width:176px;flex:none;display:flex;flex-direction:column;gap:4px;padding:10px;border-right:1px solid rgba(255,255,255,.1)">' +
+      '<button type="button" data-nav="ui" style="text-align:left;border:0;border-radius:8px;background:rgba(255,255,255,.12);color:#fff;padding:8px 10px;cursor:pointer">UI</button>' +
+      '<button type="button" data-nav="os" style="text-align:left;border:0;border-radius:8px;background:transparent;color:#fff;padding:8px 10px;cursor:pointer">OS Adapts</button>' +
+      '<button type="button" data-nav="apps" style="text-align:left;border:0;border-radius:8px;background:transparent;color:#fff;padding:8px 10px;cursor:pointer">Apps Settings</button>' +
+      '<button type="button" data-nav="tools" style="text-align:left;border:0;border-radius:8px;background:transparent;color:#fff;padding:8px 10px;cursor:pointer">Tools</button>' +
+      '<button type="button" data-nav="bypass" style="text-align:left;border:0;border-radius:8px;background:transparent;color:#fff;padding:8px 10px;cursor:pointer">Bypass & protectors</button>' +
+      '</nav><div id="drift-set-main" style="flex:1;min-width:0;overflow:auto;padding:14px 16px;scrollbar-width:none">' +
+      '<section data-sec="ui">' +
       '<div style="margin-bottom:14px"><b>Home button</b>' +
       '<div style="opacity:.75;font-size:12px;margin:4px 0 8px">MacOS logo, Windows logo, or Drift logo (default).</div>' +
       '<div id="drift-home-opts" style="display:flex;gap:8px;flex-wrap:wrap">' +
@@ -2102,29 +2180,62 @@ function driftSite(url) {
       '<label style="display:flex;gap:6px;align-items:center"><input type="radio" name="home-logo" value="win"/> Windows</label>' +
       '<label style="display:flex;gap:6px;align-items:center"><input type="radio" name="home-logo" value="drift"/> Drift logo</label>' +
       '</div></div>' +
+      '<div style="margin-bottom:14px"><b>Customize Task Bar and Apps Size</b>' +
+      '<div style="opacity:.75;font-size:12px;margin:4px 0 8px">Apps and the task bar are separate. Large is the normal Drift size.</div>' +
+      '<div style="font-size:12px;font-weight:650;margin:6px 0">Apps</div>' + sizeRadios('size-apps', appSize) +
+      '<div style="font-size:12px;font-weight:650;margin:8px 0 4px">Task bar</div>' + sizeRadios('size-tb', tbSize) + '</div>' +
+      '<div style="margin:8px 0 10px;font-weight:700">Experimental</div>' +
+      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px">' +
+      '<div style="flex:1"><b>Enable Liquid Glass</b>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Make Drift OS look like an iOS device with the new liquid glass UI applied on the task bar.</div></div>' +
+      switchHTML('drift-liquid-sw', liquidOn) + '</div>' +
+      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px">' +
+      '<div style="flex:1"><b>Enable liquid glass to apps</b>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Makes the app windows transparent so the desktop shows through. Pages inside a site stay readable.</div></div>' +
+      switchHTML('drift-app-glass-sw', localStorage.getItem('wos:liquid-apps') === '1') + '</div>' +
+      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px">' +
+      '<div style="flex:1"><b>Christmas mode</b>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Snow keeps falling until you turn this off. It fades once it covers part of the screen. It rests on open windows. Move or shake a window and the snow comes off.</div></div>' +
+      switchHTML('drift-xmas-sw', xmasOn) + '</div>' +
+      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px">' +
+      '<div style="flex:1"><b>Dynamic OS</b>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Lets you adapt the screen as if this were another operating system. This is the only way past the OS Adapts restriction.</div></div>' +
+      switchHTML('drift-dynamic-sw', dynOn) + '</div></section>' +
+      '<section data-sec="os" style="display:none">' +
       '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px">' +
-      '<div style="flex:1"><b>Adapt Drift OS for ChromeOS</b>' +
-      '<div style="opacity:.75;font-size:12px;margin-top:4px">On ChromeOS the apps and the task bar are a little smaller. The task bar stays on screen. Windows keeps the size you picked.</div></div>' +
+      '<div style="flex:1"><b>Adapt Drift for ChromeOS</b>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">On ChromeOS the apps and the task bar are a little smaller. The task bar stays on screen.</div></div>' +
       switchHTML('drift-cros-sw', localStorage.getItem('wos:cros-adapt') === '1') + '</div>' +
       '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px">' +
       '<div style="flex:1"><b>Adapt Drift for iPad</b>' +
-      '<div style="opacity:.75;font-size:12px;margin-top:4px">Fits Drift on iPad 10 and iPad 11. Apps and the task bar stay on screen, with a little more room for touch. Windows size is unchanged.</div></div>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Fits Drift on iPad 10 and iPad 11. Apps and the task bar stay on screen.</div></div>' +
       switchHTML('drift-ipad-sw', localStorage.getItem('wos:ipad-adapt') === '1') + '</div>' +
-      '<div style="margin-bottom:14px;border-top:1px solid rgba(255,255,255,.08);padding-top:12px"><b>Choose your Movies</b>' +
-      '<div style="opacity:.75;font-size:12px;margin-top:4px">TMDB shows posters, the description and the episodes. Noah is the catalog already in Drift. Racial opens racialequityleadership.com/movies.html.</div>' +
+      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px">' +
+      '<div style="flex:1"><b>Adapt Drift for macOS</b>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Rounds the task bar and windows the way macOS does.</div></div>' +
+      switchHTML('drift-mac-sw', macOn) + '</div>' +
+      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px">' +
+      '<div style="flex:1"><b>Adapt Drift for Windows</b>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Uses a darker window title, closer to Windows.</div></div>' +
+      switchHTML('drift-win-sw', winOn) + '</div>' +
+      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px">' +
+      '<div style="flex:1"><b>Adapt Drift for Linux</b>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Flatter task bar and windows.</div></div>' +
+      switchHTML('drift-linux-sw', linOn) + '</div></section>' +
+      '<section data-sec="apps" style="display:none">' +
+      '<div style="margin-bottom:14px"><b>Choose your Movies</b>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">TMDB shows posters, the description and the episodes. Noah is the catalog already in Drift. Racial opens racialequityleadership.com/movies.html. If Movies is open, it reloads with this library.</div>' +
       '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="movies-src" value="tmdb"/> TMDB</label>' +
       '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="movies-src" value="noah"/> Noah</label>' +
       '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="movies-src" value="racial"/> Racial</label></div>' +
-      '<div style="margin-bottom:14px;border-top:1px solid rgba(255,255,255,.08);padding-top:12px"><b>Choose your Games</b>' +
-      '<div style="opacity:.75;font-size:12px;margin-top:4px">Noah is the in-app catalog. Tesana, Poki and CrazyGames open in the app. Tesana has a Back button to leave a game.</div>' +
+      '<div style="margin-bottom:14px"><b>Choose your Games</b>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Noah is the in-app catalog. Tesana, Poki and CrazyGames open in the app. If Games is open, it reloads with this library.</div>' +
       '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="games-lib" value="noah"/> Noah (recommended)</label>' +
       '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="games-lib" value="tesana"/> Tesana</label>' +
       '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="games-lib" value="poki"/> Poki</label>' +
       '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="games-lib" value="crazygames"/> CrazyGames</label></div>' +
-      '<div style="margin-bottom:14px;border-top:1px solid rgba(255,255,255,.08);padding-top:12px"><b>Customize Task Bar and Apps Size</b>' +
-      '<div style="opacity:.75;font-size:12px;margin:4px 0 8px">Apps and the task bar are separate. Large is the normal Drift size.</div>' +
-      '<div style="font-size:12px;font-weight:650;margin:6px 0">Apps</div>' + sizeRadios('size-apps', appSize) +
-      '<div style="font-size:12px;font-weight:650;margin:8px 0 4px">Task bar</div>' + sizeRadios('size-tb', tbSize) + '</div>' +
+      '<div style="margin-bottom:12px"><b style="display:block;margin-bottom:8px">Gimkit injection default</b>' + opts + '</div></section>' +
+      '<section data-sec="tools" style="display:none">' +
       '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px">' +
       '<div style="flex:1"><b>AI assistant</b>' +
       '<div style="opacity:.75;font-size:12px;margin-top:4px">Off until you turn this on. Then the Drift ball appears. Drag it anywhere. Each reply has an X to dismiss it.</div></div>' +
@@ -2136,10 +2247,9 @@ function driftSite(url) {
       '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px">' +
       '<div style="flex:1"><b>Delete all created apps</b>' +
       '<div style="opacity:.75;font-size:12px;margin-top:4px">Deletes every app that is not a Drift default. If two apps have the exact same name, only the Drift default is kept.</div></div>' +
-      switchHTML('drift-delapps-sw', false) + '</div>' +
-      '<div style="border-top:1px solid rgba(255,255,255,.08);padding-top:12px;margin-bottom:12px">' +
-      '<b style="display:block;margin-bottom:8px">Gimkit injection default</b>' + opts + '</div>' +
-      '<div style="border-top:1px solid rgba(255,255,255,.08);padding-top:12px">' +
+      switchHTML('drift-delapps-sw', false) + '</div></section>' +
+      '<section data-sec="bypass" style="display:none">' +
+      '<div style="padding-top:4px;margin-bottom:12px">' +
       '<b style="display:block;margin-bottom:8px">Custom Keybinds</b>' +
       '<div style="opacity:.8;font-size:12px;margin-bottom:10px">Hide all non-educational apps (includes AI and VS Code). Instant full-page Classroom leaves Drift (changes to classroom.google.com).</div>' +
       '<label style="display:block;margin:8px 0">Hide non-edu apps key' +
@@ -2179,8 +2289,42 @@ function driftSite(url) {
       '<div style="margin:-6px 0 14px;padding-left:2px"><div style="font-size:12px;font-weight:650;margin-bottom:6px">When a class connects</div>' +
       '<label style="display:flex;gap:8px;align-items:center;margin-top:6px;cursor:pointer"><input type="radio" name="prot-class" value="alert"/> Only alert</label>' +
       '<label style="display:flex;gap:8px;align-items:center;margin-top:6px;cursor:pointer"><input type="radio" name="prot-class" value="classroom"/> Alert and open Classroom</label></div>' +
-      '<button type="button" id="drift-docs-btn" style="margin-top:12px;width:100%;padding:10px;border:1px solid rgba(255,255,255,.14);border-radius:10px;background:transparent;color:#fff;font-weight:600;cursor:pointer">Drift docs</button>';
-    panel.querySelector('[data-x]').onclick = function () { panel.remove(); };
+      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:16px;border-top:1px solid rgba(255,255,255,.08);padding-top:14px">' +
+      '<div style="flex:1"><b>Google Lens bypass</b>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Adds the Google Lens logo to the main menu. Click it to use Google Lens as a guest.</div></div>' +
+      switchHTML('drift-lens-sw', lensOn) + '</div>' +
+      '<div style="margin-top:16px;border-top:1px solid rgba(255,255,255,.08);padding-top:14px">' +
+      '<b>Classroom</b>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Drag this bookmarklet to the bookmarks bar of your real browser. On a Google search it opens that search through drift.hostless.app/scramjet/ in the real browser, not in a Drift app or tab.</div>' +
+      '<a id="drift-bm-class" style="display:inline-block;margin-top:8px;padding:8px 12px;border-radius:10px;background:#1a73e8;color:#fff;text-decoration:none;font-weight:650">Classroom</a></div>' +
+      '<div style="margin-top:16px">' +
+      '<b>Google guest</b>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Same kind of bookmarklet. It opens the page through drift.hostless.app/scramjet/ as a Google guest in the real browser.</div>' +
+      '<a id="drift-bm-guest" style="display:inline-block;margin-top:8px;padding:8px 12px;border-radius:10px;background:#1a73e8;color:#fff;text-decoration:none;font-weight:650">Google guest</a></div>' +
+      '<button type="button" id="drift-docs-btn" style="margin-top:12px;width:100%;padding:10px;border:1px solid rgba(255,255,255,.14);border-radius:10px;background:transparent;color:#fff;font-weight:600;cursor:pointer">Drift docs</button></section></div></div>';
+    panel.querySelector('[data-x]').onclick = function (e) { e.stopPropagation(); panel.remove(); };
+    function showSec(id) {
+      panel.querySelectorAll('[data-sec]').forEach(function (s) {
+        s.style.display = s.getAttribute('data-sec') === id ? 'block' : 'none';
+      });
+      panel.querySelectorAll('[data-nav]').forEach(function (b) {
+        b.style.background = b.getAttribute('data-nav') === id ? 'rgba(255,255,255,.12)' : 'transparent';
+      });
+    }
+    panel.querySelectorAll('[data-nav]').forEach(function (b) {
+      b.onclick = function () { showSec(b.getAttribute('data-nav')); };
+    });
+    showSec('ui');
+    var bmClass = panel.querySelector('#drift-bm-class');
+    var bmGuest = panel.querySelector('#drift-bm-guest');
+    if (bmClass) {
+      bmClass.href = 'javascript:' + "(function(){var q='';try{q=new URL(location.href).searchParams.get('q')||'';}catch(e){}var target=q?('https://www.google.com/search?q='+encodeURIComponent(q)):location.href;location.replace('https://drift.hostless.app/scramjet/'+encodeURIComponent(target));})();";
+      bmClass.onclick = function (e) { e.preventDefault(); };
+    }
+    if (bmGuest) {
+      bmGuest.href = 'javascript:' + "(function(){var guest=location.href;try{var u=new URL(location.href);if(/google\\./i.test(u.hostname)){u.searchParams.set('igu','1');guest=u.toString();}else guest='https://www.google.com/search?igu=1&q='+encodeURIComponent(document.title||location.href);}catch(e){}location.replace('https://drift.hostless.app/scramjet/'+encodeURIComponent(guest));})();";
+      bmGuest.onclick = function (e) { e.preventDefault(); };
+    }
     var homeNow = 'drift';
     try { homeNow = localStorage.getItem('wos:home-btn') || 'drift'; } catch (e) {}
     panel.querySelectorAll('input[name="home-logo"]').forEach(function (r) {
@@ -2203,9 +2347,20 @@ function driftSite(url) {
       try { localStorage.setItem('wos:liquid-apps', on ? '1' : '0'); } catch (e) {}
       installAppGlass();
     });
+    wireSwitch(panel.querySelector('#drift-dynamic-sw'), function (on) {
+      try { localStorage.setItem('wos:dynamic-os', on ? '1' : '0'); } catch (e) {}
+      if (!on) applySavedAdapts(true);
+    });
     wireSwitch(panel.querySelector('#drift-edu-sw'), function (on) { setEducationMode(on); });
-    wireSwitch(panel.querySelector('#drift-cros-sw'), function (on) { setChromeOSAdapt(on); });
-    wireSwitch(panel.querySelector('#drift-ipad-sw'), function (on) { setIpadAdapt(on); });
+    wireSwitch(panel.querySelector('#drift-cros-sw'), function (on) { setChromeOSAdapt(on, false); });
+    wireSwitch(panel.querySelector('#drift-ipad-sw'), function (on) { setIpadAdapt(on, false); });
+    wireSwitch(panel.querySelector('#drift-mac-sw'), function (on) { setMacAdapt(on, false); });
+    wireSwitch(panel.querySelector('#drift-win-sw'), function (on) { setWinAdapt(on, false); });
+    wireSwitch(panel.querySelector('#drift-linux-sw'), function (on) { setLinuxAdapt(on, false); });
+    wireSwitch(panel.querySelector('#drift-lens-sw'), function (on) {
+      try { localStorage.setItem('wos:lens-bypass', on ? '1' : '0'); } catch (e) {}
+      try { if (typeof tiles === 'function') tiles(); } catch (e2) {}
+    });
     panel.querySelectorAll('input[name="size-apps"],input[name="size-tb"]').forEach(function (r) {
       r.onchange = function () {
         if (!r.checked) return;
@@ -2258,6 +2413,7 @@ function driftSite(url) {
       r.onchange = function () {
         if (!r.checked) return;
         try { localStorage.setItem('wos:movies', r.value); } catch (e) {}
+        reloadOpenLibrary('Movies');
       };
     });
     panel.querySelectorAll('input[name="games-lib"]').forEach(function (r) {
@@ -2266,6 +2422,7 @@ function driftSite(url) {
         if (!r.checked) return;
         try { localStorage.setItem('wos:games-lib', r.value); } catch (e) {}
         if (r.value === 'poki') loadPokiSdk(document);
+        reloadOpenLibrary('Games');
       };
     });
     var cleanSites = {
@@ -2329,7 +2486,11 @@ function driftSite(url) {
         } catch (e) {}
       };
     });
-    document.body.appendChild(panel);
+    var desk = document.getElementById('desk');
+    if (desk) desk.appendChild(panel);
+    else document.body.appendChild(panel);
+    if (typeof drag === 'function') drag(panel);
+    panel.addEventListener('pointerdown', function () { panel.style.zIndex = '2147483001'; });
   }
 
   function installSettingsButton() {
@@ -2880,7 +3041,15 @@ function driftSite(url) {
       var frame = body.querySelector('iframe');
       if (frame && !frame.__driftLoadWatch) {
         frame.__driftLoadWatch = 1;
-        frame.addEventListener('load', function () { setTimeout(hide, 180); });
+        frame.addEventListener('load', function () {
+          var bad = false;
+          try {
+            var title = frame.contentDocument && frame.contentDocument.getElementById('errorTitle');
+            bad = !!(title && /uh oh/i.test(title.textContent || ''));
+          } catch (err) {}
+          if (bad) return;
+          setTimeout(hide, 180);
+        });
       }
       var note = body.querySelector('.ym');
       var waiting = note && /loading|cargando|opening|starting|proxy/i.test(note.textContent || '');
@@ -2906,6 +3075,52 @@ function driftSite(url) {
     wrapped.__driftUse = true;
     window.openApp = wrapped;
   }
+  function hookLens() {
+    if (window.__driftLens) return;
+    window.__driftLens = true;
+    document.addEventListener('click', function (e) {
+      var b = e.target.closest && e.target.closest('[data-lens]');
+      if (!b) return;
+      e.preventDefault();
+      e.stopPropagation();
+      var menu = document.getElementById('menu');
+      if (menu) menu.classList.remove('show');
+      var desk = document.getElementById('desk');
+      if (!desk) return;
+      var w = document.createElement('div');
+      w.className = 'win';
+      w.style.cssText = 'width:min(980px,96vw);height:min(680px,84vh);left:36px;top:28px;z-index:90000';
+      w.innerHTML = '<div class="title"><b>Google Lens</b><button class="wb x" type="button" data-a="x" aria-label="Close">✕</button></div><div class="body" style="position:relative;min-height:0"></div>';
+      desk.appendChild(w);
+      if (typeof drag === 'function') drag(w);
+      w.querySelector('[data-a="x"]').onclick = function (ev) { ev.stopPropagation(); w.remove(); };
+      var body = w.querySelector('.body');
+      if (typeof window.openProxied === 'function') window.openProxied('https://lens.google.com/', body);
+    }, true);
+    if (typeof tiles === 'function' && !tiles.__lens) {
+      var t0 = tiles;
+      function wrappedTiles() {
+        var out = t0.apply(this, arguments);
+        try {
+          var apps = document.getElementById('apps');
+          if (!apps) return out;
+          var old = apps.querySelector('[data-lens-tile]');
+          var on = false;
+          try { on = localStorage.getItem('wos:lens-bypass') === '1'; } catch (err) {}
+          if (!on) { if (old) old.remove(); return out; }
+          if (old) return out;
+          var d = document.createElement('div');
+          d.className = 'tl';
+          d.setAttribute('data-lens-tile', '1');
+          d.innerHTML = '<button type="button" data-lens="1"><span class="mi" style="background:#fff;display:grid;place-items:center"><svg viewBox="0 0 48 48" width="36" height="36"><circle cx="20" cy="20" r="10" fill="none" stroke="#4285F4" stroke-width="4"/><path d="M28 28l9 9" stroke="#EA4335" stroke-width="4" stroke-linecap="round"/><circle cx="16" cy="17" r="2.4" fill="#FBBC05"/><circle cx="24" cy="17" r="2.4" fill="#34A853"/></svg></span>Google Lens</button>';
+          apps.appendChild(d);
+        } catch (err2) {}
+        return out;
+      }
+      wrappedTiles.__lens = true;
+      try { window.tiles = wrappedTiles; tiles = wrappedTiles; } catch (err) {}
+    }
+  }
   function boot() {
     window.driftPaint = driftPaint;
     applyBrandLogos();
@@ -2922,14 +3137,14 @@ function driftSite(url) {
     try { applySize(); } catch (e) {}
     try {
       if (localStorage.getItem('wos:edu-mode') === '1') setEducationMode(true);
-      if (localStorage.getItem('wos:cros-adapt') === '1') setChromeOSAdapt(true);
-      if (localStorage.getItem('wos:ipad-adapt') === '1') setIpadAdapt(true);
+      applySavedAdapts(true);
       if (localStorage.getItem('wos:no-dev') === '1') setNoDev(true);
     } catch (e) {}
     try { installOrb(); } catch (e) {}
     try { installSettingsButton(); } catch (e) {}
     try { installProtector(); } catch (e) {}
     try { hookOpenApp(); } catch (e) {}
+    try { hookLens(); } catch (e) {}
     if (typeof installChromeUI === 'function') try { installChromeUI(); } catch (e) {}
     setTimeout(function () {
       applyBrandLogos();
@@ -2943,17 +3158,17 @@ function driftSite(url) {
       installAppGlass();
       styleCavemanAsSwitch();
       try { applySize(); } catch (e) {}
-      try { if (localStorage.getItem('wos:cros-adapt') === '1') setChromeOSAdapt(true); if (localStorage.getItem('wos:ipad-adapt') === '1') setIpadAdapt(true); } catch (e) {}
+      try { applySavedAdapts(true); } catch (e) {}
       try { hookOpenApp(); } catch (e) {}
     }, 500);
     setTimeout(function () {
       wireGames(); wireLoginApps(); installSettingsButton(); injectXkiroModels();
       try { applySize(); } catch (e) {}
-      try { if (localStorage.getItem('wos:cros-adapt') === '1') setChromeOSAdapt(true); if (localStorage.getItem('wos:ipad-adapt') === '1') setIpadAdapt(true); } catch (e) {}
+      try { applySavedAdapts(true); } catch (e) {}
     }, 1500);
     setTimeout(function () {
       try { applySize(); } catch (e) {}
-      try { if (localStorage.getItem('wos:cros-adapt') === '1') setChromeOSAdapt(true); if (localStorage.getItem('wos:ipad-adapt') === '1') setIpadAdapt(true); } catch (e) {}
+      try { applySavedAdapts(true); } catch (e) {}
     }, 3000);
   }
 

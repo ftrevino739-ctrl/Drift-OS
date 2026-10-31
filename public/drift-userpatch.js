@@ -52,7 +52,11 @@
         headers: { 'content-type': 'application/json' }
       });
     }
+    function looksHtml(raw) {
+      return /^\s*</.test(String(raw || ''));
+    }
     function looksBad(statusOk, raw) {
+      if (looksHtml(raw)) return true;
       if (/Missing Authentication|no-key|invalid api key|Unauthorized/i.test(raw)) return true;
       try {
         var j = JSON.parse(raw);
@@ -100,8 +104,18 @@
       var url = typeof input === 'string' ? input : (input && input.url) || '';
       var method = (init && init.method) || (input && input.method) || 'GET';
       var pending = origFetch.apply(this, arguments);
-      if (!aiTarget(url) || String(method).toUpperCase() !== 'POST') return pending;
+      var post = String(method).toUpperCase() === 'POST';
+      var same = /\/api\/ai(\?|$)/.test(url);
+      if ((!aiTarget(url) && !same) || !post) return pending;
       var body = init && init.body;
+      if (same) {
+        return pending.then(function (res) {
+          return res.clone().text().then(function (raw) {
+            if (!looksHtml(raw) && !looksBad(res.ok, raw)) return res;
+            return pollinate(body);
+          });
+        }).catch(function () { return pollinate(body); });
+      }
       return pending.then(function (res) {
         return res.clone().text().then(function (raw) {
           if (!looksBad(res.ok, raw)) return res;
@@ -428,21 +442,43 @@
           bag.push({ ox: Math.max(4, Math.min(caught.w - 4, f.x - caught.x)), r: f.r, a: 0.85 });
           continue;
         }
-        f.vy = 0.55;
-        f.vx += (f.x < caught.x + caught.w / 2 ? -1.1 : 1.1);
+        var oldest = bag[0];
+        if (oldest) oldest.a = (oldest.a || 0.85) - 0.08;
+        bag = bag.filter(function (g) { return (g.a || 0) >= 0.1; });
+        shelf[caught.id] = bag;
+        if (bag.length < cap) {
+          bag.push({ ox: Math.max(4, Math.min(caught.w - 4, f.x - caught.x)), r: f.r, a: 0.7 });
+          continue;
+        }
+        f.a = (f.a || 0.8) - 0.06;
+        if (f.a < 0.1) continue;
+        f.vy = 0.45;
+        next.push(f);
+        continue;
       }
       if (f.y >= ground) {
         var crowded = false;
         for (var g = 0; g < rest.length; g++) {
-          if (Math.abs(rest[g].x - f.x) < 5) { crowded = true; break; }
+          if (Math.abs(rest[g].x - f.x) < 4 && rest[g].a > 0.4) { crowded = true; break; }
         }
-        if (!crowded && rest.length < Math.floor(w / 9)) rest.push({ x: f.x, r: f.r, a: 0.8 });
+        if (!crowded) rest.push({ x: f.x, r: f.r, a: 0.82 });
+        else {
+          f.a = (f.a || 0.8) - 0.05;
+          f.vx += Math.random() < 0.5 ? -0.35 : 0.35;
+          if (f.a >= 0.12) { f.y = ground - 2; next.push(f); }
+        }
         continue;
       }
       if (f.y > h + 30) continue;
       next.push(f);
     }
     flakes = next;
+    var cover = Math.max(18, Math.floor(w / 14));
+    if (rest.length > cover) {
+      var nFade = Math.min(rest.length, 6 + Math.floor((rest.length - cover) / 4));
+      for (var fadeI = 0; fadeI < nFade; fadeI++) rest[fadeI].a = (rest[fadeI].a || 0.8) - 0.04;
+    }
+    rest = rest.filter(function (g) { return g.a >= 0.08; });
     snowCtx.fillStyle = color;
     for (var z = 0; z < rest.length; z++) {
       var grain = rest[z];

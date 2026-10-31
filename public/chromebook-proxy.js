@@ -58,14 +58,71 @@
       .replace(/"/g, '"');
   }
 
-  function failBox(box, url, msg) {
-    box.innerHTML =
-      '<div class="ym" style="padding:16px;line-height:1.5">' +
-      '<b>Proxy failed</b><br>' + esc(msg) +
-      (isChromeOS()
-        ? '<br><br><small>ChromeOS: wait 30s if Render is waking up, then retry. Keep this tab open.</small>'
-        : '') +
-      '</div>';
+  var swWarm = null;
+  function warmSW() {
+    if (swWarm) return swWarm;
+    swWarm = (async function () {
+      if (!navigator.serviceWorker) return;
+      try {
+        var swr = await fetch('/sw.js', { method: 'HEAD', cache: 'no-store' });
+        if (!swr.ok) return;
+        await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
+        await Promise.race([
+          navigator.serviceWorker.ready,
+          new Promise(function (r) { setTimeout(r, 2500); })
+        ]);
+      } catch (e) {}
+    })();
+    return swWarm;
+  }
+  try { warmSW(); } catch (e) {}
+
+  function hideFrameBars(frame) {
+    try {
+      var doc = frame && frame.contentDocument;
+      if (!doc || !doc.documentElement || doc.getElementById('drift-hidebar')) return;
+      var s = doc.createElement('style');
+      s.id = 'drift-hidebar';
+      s.textContent = 'html,body{overflow:auto;scrollbar-width:none;-ms-overflow-style:none}*{scrollbar-width:none!important}::-webkit-scrollbar{width:0!important;height:0!important;display:none!important}';
+      (doc.head || doc.documentElement).appendChild(s);
+    } catch (err) {}
+  }
+  function frameUhOh(frame) {
+    try {
+      var doc = frame && frame.contentDocument;
+      var title = doc && doc.getElementById && doc.getElementById('errorTitle');
+      return !!(title && /uh oh/i.test(title.textContent || ''));
+    } catch (e) { return false; }
+  }
+  function goUntilOk(f, target) {
+    var n = 0;
+    function kick() {
+      try { f.go(target); } catch (e) {}
+      var ticks = 0;
+      var timer = setInterval(function () {
+        ticks++;
+        hideFrameBars(f.frame);
+        if (frameUhOh(f.frame) && n < 8) {
+          clearInterval(timer);
+          n++;
+          try { f.frame.style.visibility = 'hidden'; } catch (e2) {}
+          setTimeout(kick, 320);
+          return;
+        }
+        if (!frameUhOh(f.frame) && ticks > 2) {
+          try { f.frame.style.visibility = ''; } catch (e3) {}
+          clearInterval(timer);
+        }
+        if (ticks > 24) {
+          try { f.frame.style.visibility = ''; } catch (e4) {}
+          clearInterval(timer);
+        }
+      }, 250);
+    }
+    setTimeout(kick, 0);
+  }
+  function showWait(box) {
+    box.innerHTML = '<div class="ym" data-drift-wait>Loading…</div>';
   }
 
   window.SJ = function SJ() { return true; };
@@ -113,11 +170,7 @@
       SJC.init();
 
       try {
-        var swr = await fetch('/sw.js', { method: 'HEAD', cache: 'no-store' });
-        if (swr.ok) {
-          await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
-          await withTimeout(navigator.serviceWorker.ready, chromeos ? 18000 : 10000, 'SW ready');
-        }
+        await warmSW();
       } catch (e) {
         console.warn('SW', e);
       }
@@ -130,11 +183,11 @@
       for (var attempt = 1; attempt <= 4; attempt++) {
         try {
           var c = new BareMux.BareMuxConnection('/baremux/worker.js');
-          var transport = await withTimeout(c.getTransport(), chromeos ? 12000 : 6000, 'BareMux getTransport');
+          var transport = await withTimeout(c.getTransport(), chromeos ? 8000 : 4000, 'BareMux getTransport');
           if (transport !== '/libcurl/index.mjs') {
             await withTimeout(
               c.setTransport('/libcurl/index.mjs', [{ websocket: wisp }]),
-              chromeos ? 16000 : 8000,
+              chromeos ? 10000 : 5000,
               'BareMux setTransport'
             );
           }
@@ -176,19 +229,26 @@
   };
 
   window.sjLoad = async function (box, url) {
-    box.innerHTML = '<div class="ym">Starting proxy…</div>';
-    try {
-      await window.sjInit();
-      var f = window.SJC.createFrame();
-      f.frame.style.cssText = 'width:100%;height:100%;min-height:70vh;border:0;border-radius:12px;background:#fff';
-      box.innerHTML = '';
-      box.appendChild(f.frame);
-      setTimeout(function () { try { f.go(url); } catch (err) {} }, 0);
-      return f;
-    } catch (e) {
-      failBox(box, url, e && e.message || e);
-      return null;
+    showWait(box);
+    var tries = 0;
+    while (tries < 6) {
+      try {
+        await window.sjInit();
+        var f = window.SJC.createFrame();
+        f.frame.style.cssText = 'width:100%;height:100%;min-height:70vh;border:0;border-radius:12px;background:#0e1016;visibility:hidden';
+        box.innerHTML = '';
+        box.appendChild(f.frame);
+        goUntilOk(f, url);
+        return f;
+      } catch (e) {
+        tries++;
+        cache = null;
+        showWait(box);
+        await new Promise(function (r) { setTimeout(r, 400); });
+      }
     }
+    showWait(box);
+    return null;
   };
 
   function normalizeProxyUrl(url) {
@@ -212,23 +272,26 @@
 
   window.openProxied = async function openProxiedFast(url, box) {
     var target = normalizeProxyUrl(url);
-    box.innerHTML = '<div class="ym">Loading…</div>';
-    try {
-      await window.sjInit();
-      var f = window.SJC.createFrame();
-      f.frame.style.cssText = 'width:100%;height:100%;border:0;background:#fff';
-      box.innerHTML = '';
-      box.appendChild(f.frame);
-      setTimeout(function () {
-        try { f.go(target); } catch (e) {
-          failBox(box, target, 'Could not navigate: ' + (e && e.message || e));
-        }
-      }, 0);
-      return f;
-    } catch (e) {
-      failBox(box, target, e && e.message || e);
-      return null;
+    showWait(box);
+    var tries = 0;
+    while (tries < 6) {
+      try {
+        await window.sjInit();
+        var f = window.SJC.createFrame();
+        f.frame.style.cssText = 'width:100%;height:100%;border:0;background:#0e1016;visibility:hidden';
+        box.innerHTML = '';
+        box.appendChild(f.frame);
+        goUntilOk(f, target);
+        return f;
+      } catch (e) {
+        tries++;
+        cache = null;
+        showWait(box);
+        await new Promise(function (r) { setTimeout(r, 400); });
+      }
     }
+    showWait(box);
+    return null;
   };
 
   window.proxySite = function proxySiteFast(root, url, label) {
@@ -363,7 +426,7 @@
         st.textContent = 'Gimkit page loading…';
       } catch (e) {
         st.textContent = String(e.message || e);
-        failBox(box, url, e && e.message || e);
+        showWait(box);
       }
     }
     root.querySelector('#gk-go').onclick = function () {
