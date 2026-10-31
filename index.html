@@ -381,10 +381,13 @@ h1{font-weight:500;margin:0 0 8px}
 .vsapp .vsaddbar button{height:30px;border-radius:6px;border:1px solid #444;background:#333;color:#ddd;padding:0 10px;font-size:12px;cursor:pointer}
 .vsapp .vsaddbar button:hover{background:#404040}
 .vsapp .vsbar{display:flex;align-items:center;gap:8px;padding:6px 10px;background:#252526;border-bottom:1px solid #333;flex:none;flex-wrap:wrap}
-#tbs .tb.drift-winemu{flex-direction:column;justify-content:center;align-items:center;width:84px;max-width:92px!important;height:50px!important;white-space:normal!important;overflow:hidden;text-align:center;font-size:9px;line-height:1.05;padding:1px 3px!important;gap:0}
-#tbs .tb.drift-winemu .mi{width:16px;height:16px;display:grid;place-items:center;flex:none}
-#tbs .tb.drift-winemu .mi svg{width:16px;height:16px}
-#tbs .tb.drift-winemu .wem-name{display:block;width:78px;max-width:78px;white-space:normal;font-size:9px;line-height:1.05;text-align:center}
+#pins{min-width:0;overflow-x:auto}
+#tbs{flex:0 0 auto;min-width:0;align-items:center;overflow:visible}
+#tbs:has(.drift-winemu){margin-right:124px}
+#tbs .tb.drift-winemu{flex-direction:column;justify-content:center;align-items:center;width:auto!important;min-width:0;max-width:none!important;height:auto!important;max-height:calc(var(--tbh, 76px) - 6px)!important;white-space:nowrap!important;overflow:visible;text-align:center;font-size:16px;line-height:1;padding:2px 8px 3px!important;gap:1px;box-sizing:border-box;flex:0 0 auto}
+#tbs .tb.drift-winemu .mi{width:24px;height:24px;display:grid;place-items:center;flex:none}
+#tbs .tb.drift-winemu .mi svg{width:24px;height:24px}
+#tbs .tb.drift-winemu .wem-name{display:block;width:max-content;max-width:none;white-space:nowrap;font-size:16px;font-weight:800;line-height:1.05;text-align:center}
 #menu .lf{align-items:center}
 #drift-settings-btn{margin:0!important;background:transparent!important;align-self:center;box-shadow:none!important}
 @keyframes drift-fall{to{background-position:0 220px,30px 340px,0 0}}
@@ -406,6 +409,11 @@ h1{font-weight:500;margin:0 0 8px}
 .vsapp #monaco-host{flex:1;min-height:0}
 .vsapp .vstabs{display:flex;gap:4px;flex:1;min-width:0;overflow-x:auto}
 .vsapp .vstab{display:flex;align-items:center;gap:6px;height:28px;padding:0 8px;border-radius:6px;background:#2d2d2d;color:#ccc;border:1px solid transparent;cursor:pointer;font:12px/1 system-ui,sans-serif}
+.vsapp .vstab .vdel{display:none;border:0;background:transparent;color:#f88;cursor:pointer;font:11px system-ui;padding:0 2px}
+.vsapp .vstab:hover .vdel,.vsapp .vsex-row:hover .vdel{display:inline}
+.vsapp .vsex-row{display:flex;align-items:center;gap:4px}
+.vsapp .vsex-row .vsex-file{flex:1;text-align:left}
+.vsapp .flogo{display:inline-grid;place-items:center;min-width:18px;height:16px;padding:0 3px;border-radius:3px;font:700 8px/1 ui-sans-serif,system-ui;flex:none}
 .vsapp .vstab.on{background:#1e1e1e;color:#fff;border-color:#007acc}
 .vsapp .vstab .dot{width:8px;height:8px;border-radius:50%;flex:none;display:block}
 .vsapp .vstab .x{border:0;background:transparent;color:#aaa;cursor:pointer;font-size:14px;line-height:1;padding:0 2px}
@@ -1122,13 +1130,13 @@ async function go(){
 
 const MODELS=[
 ['qwen/qwen3.7-flash:free','Drift Fast','Default · faster than Gemini','quick','Qwen3.7 Flash, free on xKiro. Default because it answers faster than Gemini 3.8.',{code:1,vision:1,files:0,think:1,fast:1}],
-['google/gemini-3.8-flash','Drift 2.1','Gemini · not the default','default','Gemini itself. Kept in the list. It is slower, so new chats start on Drift Fast.',{code:1,vision:1,files:1,think:1,fast:0}],
+['google/gemini-3.8-flash','Drift 2.1','Gemini','default','Gemini itself.',{code:1,vision:1,files:1,think:1,fast:0}],
 ['qwen/qwen3-coder-plus:free','Drift Code','Best free code model','default','Qwen3 Coder Plus. VS Code and JS Injector use this.',{code:1,vision:1,files:0,think:1,fast:1}],
-['qwen/qwen3.8-max:free','Drift 1.0','xKiro free · replaced the old Groq model','default','Was a small Groq model. Now Qwen3.8 Max.',{code:1,vision:1,files:0,think:1,fast:0}],
-['qwen/qwen3.6-plus:free','Drift 1.1','xKiro free · replaced the old model','default','Was an old OpenRouter route. Now Qwen3.6 Plus.',{code:1,vision:1,files:0,think:1,fast:1}],
-['mistralai/mistral-medium-3.5','Drift 1.2','xKiro free · replaced the old model','default','Was a weak free route. Now Mistral Medium 3.5.',{code:1,vision:1,files:0,think:1,fast:1}],
-['cohere/command-a-plus','Drift 1.3','xKiro free · replaced the old model','default','Was a weak free route. Now Command A+.',{code:1,vision:1,files:0,think:1,fast:0}],
-['cohere/north-mini-code','Drift 1.4','xKiro free · code','default','Was a general Llama route. Now North Mini Code.',{code:1,vision:0,files:0,think:1,fast:1}],
+['qwen/qwen3.8-max:free','Drift 1.0','xKiro free','default','Qwen3.8 Max, free on xKiro.',{code:1,vision:1,files:0,think:1,fast:0}],
+['qwen/qwen3.6-plus:free','Drift 1.1','xKiro free','default','Qwen3.6 Plus, free on xKiro.',{code:1,vision:1,files:0,think:1,fast:1}],
+['mistralai/mistral-medium-3.5','Drift 1.2','xKiro free','default','Mistral Medium 3.5, free on xKiro.',{code:1,vision:1,files:0,think:1,fast:1}],
+['cohere/command-a-plus','Drift 1.3','xKiro free','default','Command A+, free on xKiro.',{code:1,vision:1,files:0,think:1,fast:0}],
+['cohere/north-mini-code','Drift 1.4','xKiro free · code','default','North Mini Code, free on xKiro.',{code:1,vision:0,files:0,think:1,fast:1}],
 ['groq-llama-8b','Llama 3.1 8B','Groq · instant','quick','Ultra fast short replies and drafts.',{code:1,vision:0,files:0,think:0,fast:1}],
 ['groq-gemma','Gemma 2 9B','Groq','default','Light and quick for short questions.',{code:0,vision:0,files:0,think:0,fast:1}],
 ['or-mistral','Mistral Small','OpenRouter · free','default','Everyday chat and light assistance.',{code:1,vision:0,files:0,think:0,fast:1}],
@@ -1450,7 +1458,7 @@ function ai(root){
       'If the user asks for code, in any language, put the complete code in one fenced block with the language tag, for example ```luau. The app adds Copy, Download and Preview. Write every line. Do not emit OPEN_APP just because they asked for code.',
       'A greeting is not a request for code. If they only say hi, hello, hola, or hey, answer in one or two sentences. Do not write code, HTML, or a file.',
       'If they say edita or edit and a file name, return the full updated file in one fenced block so VS Code can save it.',
-      'Only when the user clearly asks to open an app, hide or show the taskbar, or change a setting, put each action on its own line and then the answer. Commands: OPEN_APP:<id>  TASKBAR:hide  TASKBAR:show  SIZE:apps=xl|lg|sm|xs  SIZE:tb=xl|lg|sm|xs  SET:cros=0|1  SET:edu=0|1  SET:glass=0|1  SET:orb=0|1  SET:protector=0|1  SET:nodev=0|1  SET:home=drift|mac|win. ids: browser yt cam mus discord gmail ig tt classroom canva roblox movies code calc ai games chat github whatsapp wayground injector gimkit gem classdojo. Do not emit those lines for code, homework, or ordinary questions.',
+      'Only when the user clearly asks to open an app, hide or show the taskbar, or change a setting, put each action on its own line and then a short answer. Use real lowercase ids, one per line, never the placeholder and never the same id twice. If they ask for several or random apps, pick that many different ids. Example for two apps:\nOPEN_APP:gmail\nOPEN_APP:games\nValid ids only: browser yt cam mus discord gmail ig tt classroom roblox movies code calc ai games chat github whatsapp wayground injector gimkit gem classdojo aleks espn winemu gbuild. Never write OPEN_APP:<id> or OPEN_APP:BROWSER. Do not emit those lines for code, homework, or ordinary questions.',
       EFI[eff]||''
     ].filter(Boolean).join(' ');
     const input=mine.map((m,i)=>i===0?{role:m.role,content:pre+'\n\n'+m.content}:m);
@@ -1565,7 +1573,7 @@ function ai(root){
       const text=((j.candidates||[])[0]&&(j.candidates[0].content||{}).parts||[]).map(x=>x.text||'').join('')||'';
       return {text};
     }
-    const r=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:o.model,max_tokens:32768,messages:msgs,system:'Eres el asistente de Drift. Haz lo que el usuario te pida. Responde completo, no cortes la respuesta.'}),signal:o.signal});
+    const r=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:o.model,max_tokens:(/\b(c[oó]digo|code|html|css|javascript|python|script|lua|luau|function)\b/i.test(String((msgs[msgs.length-1]||{}).content||''))?4096:700),messages:msgs,system:'Eres el asistente de Drift. Responde enseguida, en el idioma del usuario, sin plan ni preámbulo. Si piden abrir apps, usa una línea OPEN_APP:id en minúsculas por app, ids distintos. Si piden código, un solo bloque completo.',}),signal:o.signal});
     const j=await r.json();if(!r.ok||j.error)throw {message:(j.error&&j.error.message)||j.error||'Error del servidor'};
     return {text:(j.content||[]).map(x=>x.text||'').join('')};
   };
@@ -2190,7 +2198,7 @@ function music(root){
 Object.assign(IC,{
 cam:'<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="48" rx="12" fill="#0f172a"/><path d="M16 16.5h3.2l1.6-2.5h6.4l1.6 2.5H32a3.5 3.5 0 013.5 3.5v11A3.5 3.5 0 0132 34.5H16a3.5 3.5 0 01-3.5-3.5v-11A3.5 3.5 0 0116 16.5z" fill="#1e293b" stroke="#e2e8f0" stroke-width="1.6"/><circle cx="24" cy="26" r="6" fill="none" stroke="#7dd3fc" stroke-width="2.2"/><circle cx="24" cy="26" r="2.5" fill="#38bdf8"/><circle cx="32.2" cy="20.2" r="1.15" fill="#fbbf24"/></svg>',
 mus:'<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="48" rx="12" fill="#7c3aed"/><circle cx="17.5" cy="33" r="4.2" fill="#fff"/><circle cx="32" cy="29" r="4.2" fill="#fff"/><path d="M21.7 33V15.2L36.2 12v17" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>'});
-Object.assign(APPS,{cam:'Cámara',mus:'Música'});
+Object.assign(APPS,{cam:'Cámara',mus:'Music'});
 
 
 function movies(root){
@@ -2280,6 +2288,7 @@ function vscode(root){
   let files=[];
   try{const saved=JSON.parse(localStorage.getItem('wos:vscode-files')||'[]');if(Array.isArray(saved)&&saved.length)files=saved.filter(f=>f&&f.name)}catch(e){}
   files=files.filter(f=>f&&f.name&&!(f.name==='main.js'&&f.text==='// Drift VS Code\nconsole.log("hello");\n')&&!(f.name==='untitled.js'&&!String(f.text||'').trim()));
+  files.forEach(f=>{ if(typeof f.open!=='boolean') f.open=true; });
   let active=0,editor=null,pending=[],chatHist=[];
   const saveFiles=()=>{try{if(editor&&files[active])files[active].text=editor.getValue();localStorage.setItem('wos:vscode-files',JSON.stringify(files))}catch(e){}};
   root.innerHTML=`<div class="vsapp">
@@ -2307,6 +2316,20 @@ function vscode(root){
   host.innerHTML='<div class="ym" style="color:#888;padding:20px">Cargando Monaco (VS Code)…</div>';
   function folderOf(name){const i=String(name).lastIndexOf('/');return i>0?name.slice(0,i):''}
   function baseOf(name){const i=String(name).lastIndexOf('/');return i>=0?name.slice(i+1):name}
+  function fileBadge(name){
+    const ext=(String(name).split('.').pop()||'').toLowerCase();
+    const spec=({js:['#f7df1e','JS','#111'],mjs:['#f7df1e','JS','#111'],cjs:['#f7df1e','JS','#111'],ts:['#3178c6','TS','#fff'],tsx:['#3178c6','TS','#fff'],jsx:['#61dafb','JSX','#111'],html:['#e44d26','HTML','#fff'],htm:['#e44d26','HTML','#fff'],css:['#2965f1','CSS','#fff'],py:['#3776ab','PY','#fff'],json:['#cbcb41','{}','#111'],lua:['#000080','Lua','#fff'],luau:['#00a2ff','Lua','#111'],md:['#083fa1','MD','#fff'],sql:['#e38c00','SQL','#111'],sh:['#4eaa25','SH','#fff'],xml:['#f16529','XML','#fff'],yml:['#cb171e','YML','#fff'],yaml:['#cb171e','YML','#fff']})[ext]||['#555',(ext||'FILE').slice(0,4).toUpperCase(),'#fff'];
+    const s=document.createElement('i'); s.className='flogo'; s.textContent=spec[1];
+    s.style.background=spec[0]; s.style.color=spec[2];
+    return s;
+  }
+  function paintLang(){
+    const langEl=root.querySelector('[data-lang]');
+    if(!langEl)return;
+    langEl.innerHTML='';
+    if(!files[active]||files[active].open===false)return;
+    langEl.append(fileBadge(files[active].name), document.createTextNode(' '+files[active].name));
+  }
   function paintExplorer(){
     ex.innerHTML='<div class="vsex-h">Explorer</div>';
     const groups={};
@@ -2314,33 +2337,41 @@ function vscode(root){
     Object.keys(groups).forEach(g=>{
       const h=document.createElement('div');h.className='vsex-dir';h.textContent=g;ex.appendChild(h);
       groups[g].forEach(i=>{
-        const b=document.createElement('button');b.type='button';b.className='vsex-file'+(i===active?' on':'');b.textContent=baseOf(files[i].name);
-        b.onclick=()=>show(i);ex.appendChild(b);
+        const row=document.createElement('div'); row.className='vsex-row';
+        const b=document.createElement('button');b.type='button';b.className='vsex-file'+(i===active&&files[i].open!==false?' on':'');
+        b.append(fileBadge(files[i].name), document.createTextNode(' '+baseOf(files[i].name)));
+        b.onclick=()=>{files[i].open=true;show(i)};
+        const del=document.createElement('button'); del.type='button'; del.className='vdel'; del.textContent='Delete';
+        del.onclick=e=>{e.stopPropagation();removeAt(i)};
+        row.append(b,del); ex.appendChild(row);
       });
     });
   }
   function paint(){
     tabs.innerHTML='';
     files.forEach((f,i)=>{
+      if(f.open===false)return;
       const b=document.createElement('button');
       b.type='button';b.className='vstab'+(i===active?' on':'');
-      const dot=document.createElement('i');dot.className='dot';dot.style.background=dotOf(f.name);
       const label=document.createElement('span');label.textContent=baseOf(f.name);
       const x=document.createElement('button');
       x.type='button';x.className='x';x.textContent='×';x.setAttribute('aria-label','Close '+f.name);
-      x.onclick=e=>{e.stopPropagation();removeAt(i)};
-      b.append(dot,label,x);
+      x.onclick=e=>{e.stopPropagation();closeTab(i)};
+      const del=document.createElement('button'); del.type='button'; del.className='vdel'; del.textContent='Delete';
+      del.onclick=e=>{e.stopPropagation();removeAt(i)};
+      b.append(fileBadge(f.name),label,del,x);
       b.onclick=()=>show(i);
       tabs.appendChild(b);
     });
-    const langEl=root.querySelector('[data-lang]');
-    if(langEl&&files[active])langEl.textContent=files[active].name;
+    paintLang();
     paintExplorer();
   }
   function show(i){
     if(!files.length){showEmpty();return}
-    if(editor&&files[active])files[active].text=editor.getValue();
-    active=Math.max(0,Math.min(i,files.length-1));
+    const next=Math.max(0,Math.min(i,files.length-1));
+    if(editor&&files[active]&&active!==next)files[active].text=editor.getValue();
+    active=next;
+    if(files[active])files[active].open=true;
     paint();
     if(!editor||!window.monaco)return;
     const f=files[active];
@@ -2360,18 +2391,31 @@ function vscode(root){
     name=cleanName(name);
     let n=name,k=2;
     while(files.some(f=>f.name===n)){const slash=name.lastIndexOf('/');const file=slash>=0?name.slice(slash+1):name;const pre=slash>=0?name.slice(0,slash+1):'';const dot=file.lastIndexOf('.');const base=dot>0?file.slice(0,dot):file;const ext=dot>0?file.slice(dot):'';n=pre+base+'-'+k+ext;k++}
-    files.push({name:n,text:text||''});
-    saveFiles();
-    active=files.length-1;
-    if(editor)show(active);else bootMonaco();
+    files.push({name:n,text:text||'',open:true});
+    const idx=files.length-1;
+    if(editor)show(idx);else{active=idx;saveFiles();bootMonaco();}
     return n;
   }
   function showEmpty(){
     paint();
     host.innerHTML='<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#888"><img src="/vscode-logo.svg" alt="" width="84" height="84" style="opacity:.4"><div>No files open</div></div>';
-    const langEl=root.querySelector('[data-lang]');
-    if(langEl)langEl.textContent='';
+    paintLang();
+    host.innerHTML='<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#888"><img src="/vscode-logo.svg" alt="" width="84" height="84" style="opacity:.4"><div>No files open</div></div>';
     const pos=$('#vspos',root);if(pos)pos.textContent='';
+  }
+  function closeTab(i){
+    if(!files[i])return;
+    if(editor&&files[active])files[active].text=editor.getValue();
+    files[i].open=false;
+    const next=files.findIndex(f=>f&&f.open!==false);
+    saveFiles();
+    if(next<0){
+      active=0;
+      if(editor){try{const m=editor.getModel();editor.setModel(null);if(m)m.dispose();editor.dispose()}catch(e){}editor=null}
+      showEmpty();
+      return;
+    }
+    if(editor)show(next);else{active=next;paint()}
   }
   function removeAt(i){
     if(editor&&files[active])files[active].text=editor.getValue();
@@ -2423,10 +2467,21 @@ function vscode(root){
     });
     editor.__lens=editor.deltaDecorations(editor.__lens||[],decos);
   }
-  function resultPopup(name, html, w, h){
-    const win=window.open('', 'drift-result', 'width='+(w||760)+',height='+(h||520)+',noopener');
-    if(!win){ alert('Allow pop-ups to see Result: '+name); return; }
-    try{ win.document.title='Result: '+name; win.document.open(); win.document.write(html); win.document.close(); }catch(e){}
+  function resultPopup(name, html){
+    const title='result: '+name;
+    const id='result_'+String(name).replace(/[^a-z0-9]+/gi,'').slice(0,24)+'_'+Date.now().toString(36);
+    if(window.APPS) window.APPS[id]=title;
+    window.XAPPS=window.XAPPS||{};
+    window.XAPPS[id]={n:title,f:function(root){
+      root.innerHTML='';
+      root.style.cssText='height:100%;min-height:0;position:relative;background:#111';
+      const fr=document.createElement('iframe');
+      fr.setAttribute('sandbox','allow-scripts allow-modals allow-forms');
+      fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#111';
+      fr.srcdoc=html;
+      root.appendChild(fr);
+    }};
+    if(typeof openApp==='function') openApp(id);
   }
   function runFile(){
     if(!editor||!files[active])return;
@@ -2447,7 +2502,7 @@ function vscode(root){
       resultPopup(name, page, 780, 560);
       return;
     }
-    resultPopup(name, '<!DOCTYPE html><pre style="font:14px ui-monospace,monospace;padding:16px">'+code.replace(/[&<>]/g,function(c){return {'&':'&','<':'<','>':'>'}[c]})+'</pre>', 640, 420);
+    resultPopup(name, '<!DOCTYPE html><pre style="font:14px ui-monospace,monospace;padding:16px">'+code.replace(/[&<>]/g,function(c){return c==='&'?String.fromCharCode(38)+'amp;':c==='<'?String.fromCharCode(38)+'lt;':String.fromCharCode(38)+'gt;'})+'</pre>', 640, 420);
   }
   function chatSay(who, text){
     const d=document.createElement('div');d.className='vschat-m '+(who==='u'?'u':'a');d.textContent=text;log.appendChild(d);log.scrollTop=log.scrollHeight;return d;
@@ -2461,15 +2516,17 @@ function vscode(root){
     const ep=(typeof EP==='function'?EP():(window.DDG0||'https://holy-firefly-982c.fert0480.workers.dev')).replace(/\/$/,'');
     const sys='You are the coding assistant inside Drift VS Code. Do not introduce yourself. If they ask for code, reply with FILE: name.ext and then one fenced block containing the COMPLETE file. Never stop halfway.';
     try{
-      const r=await fetch(ep+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'qwen/qwen3-coder-plus:free',max_tokens:32768,messages:[{role:'user',content:q}],system:sys,instructions:(typeof LS!=='undefined'?LS.get('wos:cinst',''):'')})});
+      const r=await fetch(ep+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'qwen/qwen3-coder-plus:free',max_tokens:4096,messages:[{role:'user',content:q}],system:sys,instructions:(typeof LS!=='undefined'?LS.get('wos:cinst',''):'')})});
       const j=await r.json();
       let text=((j.content||[]).map(x=>x.text||'').join(''))||(j.error&&(j.error.message||String(j.error)))||'No answer.';
-      hold.textContent=text;
       const made=[];
       const re=/FILE:\s*([^\n]+)\n```[^\n]*\n([\s\S]*?)```/g; let m;
       while((m=re.exec(text))) made.push([m[1].trim(), m[2].replace(/\s+$/,'')]);
       if(!made.length){const fence=text.match(/```([a-z0-9.+#-]*)\n([\s\S]*?)```/i); if(fence){const map={python:'py',py:'py',javascript:'js',js:'js',html:'html',css:'css',lua:'lua',luau:'lua',json:'json'}; made.push(['ai.'+(map[(fence[1]||'').toLowerCase()]||'txt'), fence[2].replace(/\s+$/,'')]);}}
-      made.forEach(pair=>addFile(pair[0], pair[1]));
+      if(made.length){
+        const names=made.map(pair=>addFile(pair[0], pair[1]));
+        hold.textContent='Created '+names.join(', ');
+      }else hold.textContent=text;
     }catch(e){ hold.textContent=String(e.message||e); }
   }
   window.DriftVS={
@@ -2479,6 +2536,7 @@ function vscode(root){
       const i=files.findIndex(f=>f&&String(f.name).toLowerCase()===name.toLowerCase());
       if(i<0)return addFile(name,text==null?'':String(text));
       files[i].text=text==null?'':String(text);
+      files[i].open=true;
       saveFiles();
       if(editor)show(i);else{active=i;paint()}
       return files[i].name;
@@ -2526,7 +2584,7 @@ function vscode(root){
   root.querySelector('[data-a="ask"]').onclick=askAI;
   root.querySelector('[data-ai]').onkeydown=function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();askAI()}};
   paint();
-  if(files.length)bootMonaco();else showEmpty();
+  if(files.some(f=>f.open!==false)){if(!files[active]||files[active].open===false)active=Math.max(0,files.findIndex(f=>f.open!==false));bootMonaco();}else showEmpty();
 }
 function noahChat(root){
   root.innerHTML='<div class="nchat" id="dc"></div>';

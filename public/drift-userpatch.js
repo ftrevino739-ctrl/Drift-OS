@@ -175,19 +175,17 @@
       '<circle cx="32.2" cy="20.2" r="1.15" fill="#fbbf24"/>'
     );
     IC.mus = svg(
-      '<rect width="48" height="48" rx="12" fill="#7c3aed"/>' +
-      '<circle cx="17.5" cy="33" r="4.2" fill="#fff"/>' +
-      '<circle cx="32" cy="29" r="4.2" fill="#fff"/>' +
-      '<path d="M21.7 33V15.2L36.2 12v17" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>'
+      '<rect width="48" height="48" rx="11" fill="#fa243c"/>' +
+      '<path d="M19 32V15l15-3v17" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '<circle cx="16" cy="32" r="4" fill="#fff"/>' +
+      '<circle cx="31" cy="29" r="4" fill="#fff"/>'
     );
     IC.games = svg(
-      '<rect width="48" height="48" rx="12" fill="#312e81"/>' +
-      '<path d="M11 20.5h26c2.6 0 5 2 5 5.4 0 4.6-3 7.8-6.6 7.8h-3.1l-2.4-3h-8.8l-2.4 3H13.6C10 33.7 7 30.5 7 25.9c0-3.4 2.4-5.4 4-5.4z" fill="#6366f1"/>' +
-      '<path d="M16 24.2v5.6M13.2 27h5.6" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>' +
-      '<circle cx="30" cy="25.4" r="1.45" fill="#f87171"/>' +
-      '<circle cx="33.6" cy="28.4" r="1.45" fill="#fbbf24"/>' +
-      '<circle cx="33.6" cy="22.6" r="1.45" fill="#4ade80"/>' +
-      '<circle cx="37.2" cy="25.4" r="1.45" fill="#60a5fa"/>'
+      '<rect width="48" height="48" rx="11" fill="#111827"/>' +
+      '<rect x="8" y="14" width="14" height="10" rx="2" fill="#34d399"/>' +
+      '<rect x="26" y="14" width="14" height="10" rx="2" fill="#60a5fa"/>' +
+      '<rect x="8" y="28" width="14" height="10" rx="2" fill="#f472b6"/>' +
+      '<rect x="26" y="28" width="14" height="10" rx="2" fill="#fbbf24"/>'
     );
     IC.gbuild = svg(
       '<rect width="48" height="48" rx="12" fill="#0f766e"/>' +
@@ -197,21 +195,21 @@
       '<path d="M33.2 9.2l1.5 3.1 3.4.4-2.5 2.3.7 3.3-3.1-1.7-3.1 1.7.7-3.3-2.5-2.3 3.4-.4z" fill="#fde68a"/>'
     );
     IC.winemu = svg(
-      '<path fill="#00A4EF" d="M4 8.6 21.2 6.1v16.4H4z"/>' +
-      '<path fill="#7FBA00" d="M23.2 5.7 44 2.9v19.6H23.2z"/>' +
-      '<path fill="#FFB900" d="M4 24.7h17.2V41.6L4 39.2z"/>' +
-      '<path fill="#F25022" d="M23.2 24.7H44V45l-20.8-2.5z"/>'
+      '<rect x="5" y="5" width="16.5" height="16.5" rx="2" fill="#0078D4"/>' +
+      '<rect x="26.5" y="5" width="16.5" height="16.5" rx="2" fill="#0078D4"/>' +
+      '<rect x="5" y="26.5" width="16.5" height="16.5" rx="2" fill="#0078D4"/>' +
+      '<rect x="26.5" y="26.5" width="16.5" height="16.5" rx="2" fill="#0078D4"/>'
     );
   }
 
   function stripDesk() {
     if (window.APPS) {
       delete window.APPS.canva;
-      window.APPS.mus = 'Música';
+      window.APPS.mus = 'Music';
     }
     if (window.XAPPS) {
       delete window.XAPPS.canva;
-      if (window.XAPPS.mus) window.XAPPS.mus.n = 'Música';
+      if (window.XAPPS.mus) window.XAPPS.mus.n = 'Music';
     }
     if (window.IC) delete window.IC.canva;
     paintLogos();
@@ -236,9 +234,7 @@
       if (mi) b.appendChild(mi);
       var s = document.createElement('span');
       s.className = 'wem-name';
-      s.appendChild(document.createTextNode('Windows'));
-      s.appendChild(document.createElement('br'));
-      s.appendChild(document.createTextNode('emulator'));
+      s.textContent = 'Windows emulator';
       b.appendChild(s);
     });
     var gear = document.getElementById('drift-settings-btn');
@@ -274,6 +270,14 @@
   var snowTimer = 0;
   var mx = -9999;
   var my = -9999;
+  var cm35 = 132;
+  function measureCm() {
+    var p = document.createElement('div');
+    p.style.cssText = 'position:absolute;left:-999px;height:3.5cm';
+    document.body.appendChild(p);
+    cm35 = p.getBoundingClientRect().height || 132;
+    p.remove();
+  }
   function snowFrame() {
     if (!snowOn || !snowCtx || !snowCanvas) return;
     var w = snowCanvas.width;
@@ -284,22 +288,23 @@
       if (!el.isConnected || el.classList.contains('min')) return;
       var r = el.getBoundingClientRect();
       if (r.width < 40 || r.height < 30) return;
-      lips.push({ id: el.id, x: r.left, y: r.top, w: r.width });
+      lips.push({ id: el.id, x: r.left, y: r.top, w: r.width, right: r.right, bottom: r.bottom });
     });
     var ground = h - 6;
     var task = document.getElementById('task');
     if (task) ground = task.getBoundingClientRect().top;
-    if (flakes.length < 70 && Math.random() < 0.45) {
+    if (flakes.length < 220 && Math.random() < 0.92) {
       flakes.push({
         x: Math.random() * w,
-        y: -4,
-        vx: (Math.random() - 0.5) * 0.25,
-        vy: 0.28 + Math.random() * 0.38,
-        r: 1.1 + Math.random() * 1.5,
-        a: 0.55 + Math.random() * 0.4,
+        y: -8,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: 0.35 + Math.random() * 0.45,
+        r: 2.8 + Math.random() * 3.2,
+        a: 0.72 + Math.random() * 0.28,
         stuck: 0,
         win: '',
-        ox: 0
+        ox: 0,
+        lift: 0
       });
     }
     var next = [];
@@ -309,24 +314,25 @@
         var sdx = f.x - mx;
         var sdy = f.y - my;
         var sd = Math.sqrt(sdx * sdx + sdy * sdy) || 1;
-        if (sd < 26) {
+        if (sd < 34) {
           f.stuck = 0;
           f.win = '';
-          f.vx = (sdx / sd) * 1.6;
-          f.vy = (sdy / sd) * 0.45;
+          f.lift = 0;
+          f.vx = (sdx / sd) * 1.8;
+          f.vy = (sdy / sd) * 0.5;
         }
       }
       if (!f.stuck) {
         var dx = f.x - mx;
         var dy = f.y - my;
         var dist = Math.sqrt(dx * dx + dy * dy) || 1;
-        if (dist < 28) {
-          var push = (28 - dist) / 28;
-          f.vx += (dx / dist) * push * 1.15;
-          f.vy += (dy / dist) * push * 0.55;
+        if (dist < 36) {
+          var push = (36 - dist) / 36;
+          f.vx += (dx / dist) * push * 1.2;
+          f.vy += (dy / dist) * push * 0.5;
         }
         f.vx *= 0.98;
-        f.vy = Math.min(0.85, f.vy + 0.004);
+        f.vy = Math.min(1.05, f.vy + 0.004);
         f.x += f.vx;
         f.y += f.vy;
         if (f.x < -8) f.x = w + 4;
@@ -334,55 +340,84 @@
         var landed = null;
         for (var k = 0; k < lips.length; k++) {
           var lip = lips[k];
-          if (f.x >= lip.x + 2 && f.x <= lip.x + lip.w - 2 && f.y >= lip.y - 1 && f.y <= lip.y + 5 && f.vy > 0) {
+          if (f.x >= lip.x + 2 && f.x <= lip.x + lip.w - 2 && f.y >= lip.y - f.r && f.y <= lip.y + 8 && f.vy > 0) {
             landed = lip;
             break;
           }
         }
         if (landed) {
+          var lift = 0;
+          for (var n = 0; n < flakes.length; n++) {
+            var o = flakes[n];
+            if (o === f || !o.stuck || o.win !== landed.id) continue;
+            if (Math.abs(o.x - f.x) < o.r + f.r) lift = Math.max(lift, (o.lift || 0) + o.r + f.r);
+          }
           f.stuck = 1;
           f.win = landed.id;
           f.ox = f.x - landed.x;
-          f.y = landed.y + 1;
+          f.lift = lift;
+          f.y = landed.y + 1 - lift;
           f.vx = 0;
           f.vy = 0;
         } else if (f.y >= ground) {
+          var glift = 0;
+          for (var g = 0; g < flakes.length; g++) {
+            var q = flakes[g];
+            if (q === f || !q.stuck || q.win) continue;
+            if (Math.abs(q.x - f.x) < q.r + f.r) glift = Math.max(glift, (q.lift || 0) + q.r + f.r);
+          }
           f.stuck = 1;
           f.win = '';
-          f.y = ground;
+          f.lift = glift;
+          f.y = ground - glift;
           f.vx = 0;
           f.vy = 0;
         }
       } else if (f.win) {
         var host = document.getElementById(f.win);
-        if (!host || host.classList.contains('min')) {
+        if (!host || !host.isConnected || host.classList.contains('min')) {
           f.stuck = 0;
           f.win = '';
-          f.vy = 0.4;
+          f.lift = 0;
+          f.vy = 0.7;
         } else {
           var hr = host.getBoundingClientRect();
-          if (f.ox < -2 || f.ox > hr.width + 2) {
+          var nx = hr.left + f.ox;
+          var ny = hr.top + 1 - (f.lift || 0);
+          if (Math.abs(nx - f.x) > 2 || Math.abs((hr.top + 1) - (f.y + (f.lift || 0))) > 2 || f.ox < 0 || f.ox > hr.width) {
             f.stuck = 0;
             f.win = '';
-            f.vx = f.ox < 0 ? -0.45 : 0.45;
-            f.vy = 0.35;
+            f.lift = 0;
+            f.vx += (nx - f.x) * 0.08;
+            f.vy = 0.65;
           } else {
-            f.x = hr.left + f.ox;
-            f.y = hr.top + 1.2;
+            f.x = nx;
+            f.y = ny;
           }
         }
       }
-      if (f.stuck) f.a -= 0.0016;
-      if (f.a <= 0.04 || f.y > h + 12) continue;
       next.push(f);
-      snowCtx.globalAlpha = Math.max(0, Math.min(1, f.a));
+    }
+    var piles = {};
+    next.forEach(function (f) {
+      if (!f.stuck) return;
+      var key = f.win || 'ground';
+      piles[key] = Math.max(piles[key] || 0, f.lift || 0);
+    });
+    var kept = [];
+    for (var z = 0; z < next.length; z++) {
+      var flake = next[z];
+      if (flake.stuck && (piles[flake.win || 'ground'] || 0) >= cm35) flake.a -= 0.004;
+      if (flake.a <= 0.04 || flake.y > h + 20) continue;
+      kept.push(flake);
+      snowCtx.globalAlpha = Math.max(0, Math.min(1, flake.a));
       snowCtx.fillStyle = '#fff';
       snowCtx.beginPath();
-      snowCtx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+      snowCtx.arc(flake.x, flake.y, flake.r, 0, Math.PI * 2);
       snowCtx.fill();
     }
     snowCtx.globalAlpha = 1;
-    flakes = next;
+    flakes = kept;
     snowTimer = requestAnimationFrame(snowFrame);
   }
   window.driftSnow = function (on) {
@@ -397,6 +432,7 @@
       snowCtx = null;
       return;
     }
+    try { measureCm(); } catch (e) {}
     if (!snowCanvas) {
       snowCanvas = document.createElement('canvas');
       snowCanvas.id = 'drift-snow';
@@ -405,6 +441,7 @@
       snowCtx = snowCanvas.getContext('2d');
       function fit() {
         if (!snowCanvas) return;
+        try { measureCm(); } catch (e) {}
         snowCanvas.width = window.innerWidth;
         snowCanvas.height = window.innerHeight;
       }

@@ -100,26 +100,24 @@
       '<circle cx="32.2" cy="20.2" r="1.15" fill="#fbbf24"/>'
     );
     IC.mus = svg(
-      '<rect width="48" height="48" rx="12" fill="#7c3aed"/>' +
-      '<circle cx="17.5" cy="33" r="4.2" fill="#fff"/>' +
-      '<circle cx="32" cy="29" r="4.2" fill="#fff"/>' +
-      '<path d="M21.7 33V15.2L36.2 12v17" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>'
+      '<rect width="48" height="48" rx="11" fill="#fa243c"/>' +
+      '<path d="M19 32V15l15-3v17" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '<circle cx="16" cy="32" r="4" fill="#fff"/>' +
+      '<circle cx="31" cy="29" r="4" fill="#fff"/>'
     );
     IC.games = svg(
-      '<rect width="48" height="48" rx="12" fill="#312e81"/>' +
-      '<path d="M11 20.5h26c2.6 0 5 2 5 5.4 0 4.6-3 7.8-6.6 7.8h-3.1l-2.4-3h-8.8l-2.4 3H13.6C10 33.7 7 30.5 7 25.9c0-3.4 2.4-5.4 4-5.4z" fill="#6366f1"/>' +
-      '<path d="M16 24.2v5.6M13.2 27h5.6" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>' +
-      '<circle cx="30" cy="25.4" r="1.45" fill="#f87171"/>' +
-      '<circle cx="33.6" cy="28.4" r="1.45" fill="#fbbf24"/>' +
-      '<circle cx="33.6" cy="22.6" r="1.45" fill="#4ade80"/>' +
-      '<circle cx="37.2" cy="25.4" r="1.45" fill="#60a5fa"/>'
+      '<rect width="48" height="48" rx="11" fill="#111827"/>' +
+      '<rect x="8" y="14" width="14" height="10" rx="2" fill="#34d399"/>' +
+      '<rect x="26" y="14" width="14" height="10" rx="2" fill="#60a5fa"/>' +
+      '<rect x="8" y="28" width="14" height="10" rx="2" fill="#f472b6"/>' +
+      '<rect x="26" y="28" width="14" height="10" rx="2" fill="#fbbf24"/>'
     );
     IC.chat = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="48" rx="12" fill="#34C759"/><path fill="#fff" d="M24 11.2c-7.2 0-13 4.8-13 10.8 0 3.4 1.8 6.4 4.6 8.4-.2 1.4-.8 3-1.6 4.1 0 0 2.1-.4 4.1-1.5 1.8.8 3.8 1.3 6 1.3 7.2 0 13-4.8 13-10.8s-5.8-10.8-13-10.8z"/></svg>';
     IC.espn = '<img alt="ESPN" src="/espn-logo.png" style="width:100%;height:100%;object-fit:contain;background:#fff;border-radius:8px">';
     IC.aleks = '<img alt="ALEKS" src="/aleks-logo.png" style="width:100%;height:100%;object-fit:cover;border-radius:11px">';
     IC.gbuild = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="48" rx="12" fill="#0f766e"/><rect x="8" y="22" width="13" height="13" rx="2.2" fill="#5eead4"/><rect x="17.5" y="12" width="13" height="13" rx="2.2" fill="#99f6e4"/><rect x="26" y="24" width="13" height="13" rx="2.2" fill="#ccfbf1"/><path d="M33.2 9.2l1.5 3.1 3.4.4-2.5 2.3.7 3.3-3.1-1.7-3.1 1.7.7-3.3-2.5-2.3 3.4-.4z" fill="#fde68a"/></svg>';
     IC.code = '<img alt="Visual Studio Code" src="/vscode-logo.svg" style="width:100%;height:100%;object-fit:contain;border-radius:11px;background:transparent">';
-    IC.winemu = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path fill="#00A4EF" d="M4 8.6 21.2 6.1v16.4H4z"/><path fill="#7FBA00" d="M23.2 5.7 44 2.9v19.6H23.2z"/><path fill="#FFB900" d="M4 24.7h17.2V41.6L4 39.2z"/><path fill="#F25022" d="M23.2 24.7H44V45l-20.8-2.5z"/></svg>';
+    IC.winemu = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="5" width="16.5" height="16.5" rx="2" fill="#0078D4"/><rect x="26.5" y="5" width="16.5" height="16.5" rx="2" fill="#0078D4"/><rect x="5" y="26.5" width="16.5" height="16.5" rx="2" fill="#0078D4"/><rect x="26.5" y="26.5" width="16.5" height="16.5" rx="2" fill="#0078D4"/></svg>';
   }
 
   function styleSettingsBtn() {
@@ -1837,12 +1835,12 @@ function driftSite(url) {
   function wireLoginApps() {
     try {
       if (!window.XAPPS) return;
-      window.XAPPS.gmail = { n: 'Gmail', f: operaPage('https://accounts.google.com/ServiceLogin?service=mail&continue=https%3A%2F%2Fmail.google.com%2Fmail%2F&flowName=GlifWebSignIn&flowEntry=ServiceLogin', 'edge') };
+      window.XAPPS.gmail = { n: 'Gmail', f: operaPage('https://mail.google.com/mail/u/0/', 'edge') };
       window.XAPPS.classroom = { n: 'Classroom', f: operaPage('https://classroom.google.com/', 'chrome') };
       delete window.XAPPS.canva;
       if (window.APPS) delete window.APPS.canva;
       window.__driftRoblox = robloxShell;
-      window.__driftGmail = operaPage('https://accounts.google.com/ServiceLogin?service=mail&continue=https%3A%2F%2Fmail.google.com%2Fmail%2F&flowName=GlifWebSignIn&flowEntry=ServiceLogin', 'edge');
+      window.__driftGmail = operaPage('https://mail.google.com/mail/u/0/', 'edge');
       window.XAPPS.roblox = { n: 'Roblox', f: robloxShell };
     } catch (e) {}
   }
@@ -2640,13 +2638,33 @@ function driftSite(url) {
       } else if (n > 40) clearInterval(timer);
     }, 250);
   }
+  var skipCmd = false;
   window.driftAct = function (userText, answerText) {
-    if (userText) { driftOpened = {}; lastAsk = String(userText); }
+    if (userText) {
+      driftOpened = {};
+      lastAsk = String(userText);
+      skipCmd = false;
+      var rnd = String(userText).match(/\b(\d+)\s+(?:apps?|aplicaciones)\b/i);
+      if (rnd && /\b(aleatori\w*|random|al azar)\b/i.test(userText) && /\b(open|abre|abrir|ábreme|abreme|abrime|launch|lanz\w*)\b/i.test(userText)) {
+        var count = Math.min(8, Math.max(1, parseInt(rnd[1], 10) || 1));
+        var pool = [];
+        if (window.APPS) Object.keys(window.APPS).forEach(function (id) {
+          if (id !== 'canva' && window.XAPPS && window.XAPPS[id]) pool.push(id);
+        });
+        for (var s = pool.length - 1; s > 0; s--) {
+          var j = Math.floor(Math.random() * (s + 1));
+          var tmp = pool[s]; pool[s] = pool[j]; pool[j] = tmp;
+        }
+        pool.slice(0, count).forEach(function (id) { driftOpen(id); });
+        skipCmd = true;
+      }
+    }
     var answer = String(answerText || '');
     var did = false;
+    if (!skipCmd) {
     answer.replace(/OPEN_APP:\s*([a-z0-9_]+)/gi, function (_, id) {
       id = id.toLowerCase();
-      var qNow = String(userText || '');
+      var qNow = String(userText || lastAsk || '');
       var asked = /\b(open|abre|abrir|ábreme|abreme|abrime|launch|lanz\w*|go to|ve a|pull up|bring up|switch to|cambia a|ponme)\b/i.test(qNow);
       if (!asked) return '';
       if (id === 'code' && !/\b(vs\s*code|vscode|code app|el code|the code)\b/i.test(qNow)) return '';
@@ -2662,7 +2680,8 @@ function driftSite(url) {
       did = true;
       return '';
     });
-    answer = answer.replace(/^\s*(OPEN_APP:\s*[a-z0-9_]+|TASKBAR:\s*(?:hide|show)|SIZE:\s*(?:apps|tb)\s*=\s*(?:xl|lg|sm|xs)|SET:\s*[a-z]+\s*=\s*[a-z0-9._-]+)\s*$/gim, '').replace(/\n{3,}/g, '\n\n').trim();
+    }
+    answer = answer.replace(/^\s*(OPEN_APP:\s*[a-z0-9_<>]+|TASKBAR:\s*(?:hide|show)|SIZE:\s*(?:apps|tb)\s*=\s*(?:xl|lg|sm|xs)|SET:\s*[a-z]+\s*=\s*[a-z0-9._-]+)\s*$/gim, '').replace(/OPEN_APP:\s*[A-Za-z0-9_<>]+/gi, '').replace(/\n{3,}/g, '\n\n').trim();
     answer = answer.replace(/Gemini said/gi, 'Drift said');
     var q = String(userText || '');
     if (q) {
@@ -2719,6 +2738,7 @@ function driftSite(url) {
         if (next) { driftEditFile(em[1], next); did = true; }
       }
     }
+    if (skipCmd && !answer) return 'Done.';
     if (!answer && did) return 'Done.';
     return answer;
   };

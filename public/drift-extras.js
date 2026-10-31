@@ -550,7 +550,7 @@
     x.wayground = { n: 'Wayground', f: waygroundApp };
     x.injector = { n: 'JS Injector', f: injectorApp };
     x.classdojo = { n: 'ClassDojo', f: classdojoApp };
-    x.mus = { n: 'Música', f: musicApp };
+    x.mus = { n: 'Music', f: musicApp };
     if (typeof discordApp === 'function') x.discord = { n: 'Discord', f: discordApp };
     loadCustomApps();
     wrapVscode();
