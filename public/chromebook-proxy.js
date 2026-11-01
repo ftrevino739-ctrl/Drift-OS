@@ -58,6 +58,33 @@
       .replace(/"/g, '"');
   }
 
+  var SCRAMJET_STORES = ["config", "cookies", "redirectTrackers", "referrerPolicies", "publicSuffixList"];
+  function openScramjetDB() {
+    return new Promise(function (res, rej) {
+      var req = indexedDB.open("$scramjet", 1);
+      req.onupgradeneeded = function () {
+        var db = req.result;
+        SCRAMJET_STORES.forEach(function (name) {
+          if (!db.objectStoreNames.contains(name)) db.createObjectStore(name);
+        });
+      };
+      req.onsuccess = function () { res(req.result); };
+      req.onerror = function () { rej(req.error); };
+    });
+  }
+  function ensureScramjetStores() {
+    return openScramjetDB().then(function (db) {
+      var missing = SCRAMJET_STORES.some(function (name) { return !db.objectStoreNames.contains(name); });
+      db.close();
+      if (!missing) return;
+      return new Promise(function (res, rej) {
+        var del = indexedDB.deleteDatabase("$scramjet");
+        del.onsuccess = function () { res(); };
+        del.onerror = function () { rej(del.error); };
+      }).then(openScramjetDB).then(function (fresh) { fresh.close(); });
+    });
+  }
+
   var swWarm = null;
   function warmSW() {
     if (swWarm) return swWarm;
@@ -75,7 +102,6 @@
     })();
     return swWarm;
   }
-  try { warmSW(); } catch (e) {}
 
   function hideFrameBars(frame) {
     try {
@@ -160,6 +186,7 @@
       }
 
       var Ctrl = $scramjetLoadController().ScramjetController;
+      await ensureScramjetStores();
       var SJC = new Ctrl({
         files: {
           wasm: '/scram/scramjet.wasm.wasm',
@@ -167,7 +194,7 @@
           sync: '/scram/scramjet.sync.js'
         }
       });
-      SJC.init();
+      await SJC.init();
 
       try {
         await warmSW();

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Search</title>
+<style>html,body{margin:0;height:100%;background:#fff;color:#111;font:15px system-ui}iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#fff}</style>
+</head>
+<body>
+<script>
+(async function () {
+  var params = new URLSearchParams(location.search);
+  var target = params.get('u') || 'https://www.google.com/search?hl=en&gl=us';
+  try {
+    var u = new URL(target);
+    if (params.get('guest') === '1' && /google\./i.test(u.hostname)) u.searchParams.set('igu', '1');
+    target = u.toString();
+  } catch (e) {}
+  function load(src) {
+    return new Promise(function (res, rej) {
+      var s = document.createElement('script');
+      s.src = src;
+      s.onload = function () { res(); };
+      s.onerror = function () { rej(new Error(src)); };
+      document.head.appendChild(s);
+    });
+  }
+  try {
+    await load('/scram/scramjet.all.js');
+    await load('/baremux/index.js');
+    var C = $scramjetLoadController().ScramjetController;
+    var stores = ['config', 'cookies', 'redirectTrackers', 'referrerPolicies', 'publicSuffixList'];
+    function openScramjetDB() {
+      return new Promise(function (res, rej) {
+        var req = indexedDB.open('$scramjet', 1);
+        req.onupgradeneeded = function () {
+          var db = req.result;
+          stores.forEach(function (name) {
+            if (!db.objectStoreNames.contains(name)) db.createObjectStore(name);
+          });
+        };
+        req.onsuccess = function () { res(req.result); };
+        req.onerror = function () { rej(req.error); };
+      });
+    }
+    var existing = await openScramjetDB();
+    var missing = stores.some(function (name) { return !existing.objectStoreNames.contains(name); });
+    existing.close();
+    if (missing) {
+      await new Promise(function (res, rej) {
+        var del = indexedDB.deleteDatabase('$scramjet');
+        del.onsuccess = function () { res(); };
+        del.onerror = function () { rej(del.error); };
+      });
+      (await openScramjetDB()).close();
+    }
+    var SJC = new C({ files: { wasm: '/scram/scramjet.wasm.wasm', all: '/scram/scramjet.all.js', sync: '/scram/scramjet.sync.js' } });
+    await SJC.init();
+    if (navigator.serviceWorker) {
+      await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
+      await navigator.serviceWorker.ready;
+    }
+    var conn = new BareMux.BareMuxConnection('/baremux/worker.js');
+    var wisp = (location.protocol === 'https:' ? 'wss' : 'ws') + '://' + location.host + '/wisp/';
+    if ((await conn.getTransport()) !== '/libcurl/index.mjs') await conn.setTransport('/libcurl/index.mjs', [{ websocket: wisp }]);
+    var frame = SJC.createFrame();
+    frame.frame.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;border:0;background:#fff';
+    document.body.appendChild(frame.frame);
+    frame.go(target);
+  } catch (err) {
+    document.body.textContent = 'The search could not start. ' + ((err && err.message) || err);
+  }
+})();
+</script>
+</body>
+</html>

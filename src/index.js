@@ -75,8 +75,8 @@ function loadAndPatchIndex() {
 
 	const xapps =
 		"const XAPPS={cam:{n:'Camera',f:camera},mus:{n:'Music',f:music},movies:{n:'Movies',f:movies},code:{n:'VS Code',f:vscode},discord:{n:'Discord',f:discordApp},gmail:{n:'Gmail',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#fff';var fr=document.createElement('iframe');fr.setAttribute('credentialless','');fr.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';fr.src='/api/opera?u='+encodeURIComponent('https://mail.google.com/mail/u/0/h/')+'&b=firefox';r.appendChild(fr)}},ig:{n:'Instagram',f:igApp},tt:{n:'TikTok',f:ttApp}," +
-		"classroom:{n:'Classroom',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#fff';var fr=document.createElement('iframe');fr.setAttribute('referrerpolicy','no-referrer');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';fr.src='/api/opera?u='+encodeURIComponent('https://classroom.google.com/')+'&b=chrome';r.appendChild(fr)}}," +
-		"roblox:{n:'Roblox',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#0e1014';var fr=document.createElement('iframe');fr.setAttribute('allow','fullscreen; autoplay; gamepad; keyboard-map; pointer-lock; clipboard-read; clipboard-write');fr.setAttribute('allowfullscreen','true');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#0e1014';fr.src='https://now.gg/apps/roblox-corporation/5349/roblox';r.appendChild(fr)}}," +
+		"classroom:{n:'Classroom',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#fff';var fr=document.createElement('iframe');fr.setAttribute('referrerpolicy','no-referrer');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';fr.src='/api/opera?u='+encodeURIComponent('https://classroom.google.com/')+'&b=firefox';r.appendChild(fr)}}," +
+		"roblox:{n:'Roblox',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#fff';var fr=document.createElement('iframe');fr.setAttribute('referrerpolicy','no-referrer');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';fr.src='/api/opera?u='+encodeURIComponent('https://www.roblox.com/login')+'&b=bing';r.appendChild(fr)}}," +
 		"gimkit:{n:'Gimkit',f:gimkitApp},games:{n:'Games',f:function(r){return (window.noahGamesApp||gamesHub)(r)}},chat:{n:'Chat',f:noahChat}};" +
 		"window.XAPPS=XAPPS;window.APPS=APPS;try{window.IC=IC}catch(e){}try{window.proxySite=proxySite}catch(e){}try{window.vscode=vscode}catch(e){}try{window.S=S}catch(e){}try{window.discordApp=discordApp}catch(e){};";
 	html = html.replace(
@@ -111,11 +111,11 @@ function loadAndPatchIndex() {
 	);
 
 	const tag =
-		'<script src="/drift-extras.js?v=20261031-user13" defer></script>' +
-		'<script src="/chromebook-proxy.js?v=20261031-user13" defer></script>' +
-		'<script src="/wayground-ai.js?v=20261031-user13" defer></script>' +
-		'<script src="/drift-fixup.js?v=20261031-user13" defer></script>' +
-		'<script src="/drift-userpatch.js?v=20261031-user13" defer></script>' +
+		'<script src="/drift-extras.js?v=20261031-user14" defer></script>' +
+		'<script src="/chromebook-proxy.js?v=20261031-user15" defer></script>' +
+		'<script src="/wayground-ai.js?v=20261031-user14" defer></script>' +
+		'<script src="/drift-fixup.js?v=20261031-user14" defer></script>' +
+		'<script src="/drift-userpatch.js?v=20261031-user14" defer></script>' +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +
@@ -184,6 +184,10 @@ fastify.get("/", async (_req, reply) => {
 });
 fastify.get("/os", sendIndex);
 fastify.get("/index.html", sendIndex);
+fastify.get("/go", async (_req, reply) => {
+	reply.header("Cache-Control", "no-store");
+	return reply.type("text/html; charset=utf-8").send(fs.readFileSync(path.join(publicPath, "go.html"), "utf8"));
+});
 function openDesk(req, reply, pathname) {
 	const raw = req.raw;
 	raw._json = req.body && typeof req.body === "object" && !Buffer.isBuffer(req.body) ? req.body : {};
@@ -255,6 +259,60 @@ fastify.post("/api/ai", { bodyLimit: 6 * 1024 * 1024 }, async (req, reply) => {
 	if (!text) return reply.code(502).send({ error: { message: "The model did not answer." } });
 	reply.header("cache-control", "no-store");
 	return reply.send({ content: [{ type: "text", text: String(text) }] });
+});
+
+fastify.post("/api/duck", { bodyLimit: 1024 * 1024 }, async (req, reply) => {
+	const body = req.body && typeof req.body === "object" ? req.body : {};
+	const aliases = {
+		"claude-haiku": "claude-3-haiku-20240307",
+		"gpt-mini": "gpt-4o-mini",
+		llama: "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+		mistral: "mistralai/Mistral-Small-24B-Instruct-2501",
+		gemma: "gemma-4-31b",
+		oss: "gpt-oss-120b",
+	};
+	const asked = String(body.model || "gpt-4o-mini").slice(0, 80);
+	const model = aliases[asked] || asked;
+	const messages = (Array.isArray(body.messages) ? body.messages : []).slice(-12).map((m) => ({
+		role: m && m.role === "assistant" ? "assistant" : "user",
+		content: String(m && (typeof m.content === "string" ? m.content : "") || "").slice(0, 8000),
+	})).filter((m) => m.content);
+	if (!messages.length) messages.push({ role: "user", content: "Hello" });
+	try {
+		const status = await fetch("https://duckduckgo.com/duckchat/v1/status", {
+			headers: { "x-vqd-accept": "1", "user-agent": "Mozilla/5.0" },
+			signal: AbortSignal.timeout(12000),
+		});
+		const vqd = status.headers.get("x-vqd-4") || "";
+		if (!vqd) return reply.code(502).send({ error: { message: "DuckDuckGo did not offer a session." } });
+		const r = await fetch("https://duckduckgo.com/duckchat/v1/chat", {
+			method: "POST",
+			headers: {
+				"content-type": "application/json",
+				accept: "text/event-stream",
+				"x-vqd-4": vqd,
+				"user-agent": "Mozilla/5.0",
+			},
+			body: JSON.stringify({ model, messages }),
+			signal: AbortSignal.timeout(25000),
+		});
+		const raw = await r.text();
+		let text = "";
+		for (const line of raw.split("\n")) {
+			if (!line.startsWith("data:")) continue;
+			const data = line.slice(5).trim();
+			if (!data || data === "[DONE]") continue;
+			try {
+				const j = JSON.parse(data);
+				if (j && j.message) text += j.message;
+			} catch {}
+		}
+		if (!text.trim()) return reply.code(502).send({ error: { message: "DuckDuckGo did not answer." } });
+		reply.header("cache-control", "no-store");
+		return { content: [{ type: "text", text }] };
+	} catch {
+		return reply.code(502).send({ error: { message: "DuckDuckGo did not answer." } });
+	}
 });
 
 fastify.post("/api/gemini", { bodyLimit: 6 * 1024 * 1024 }, async (req, reply) => {
@@ -489,6 +547,11 @@ const BROWSER_PROFILES = {
 	edge: {
 		ua: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0",
 		ch: "\"Microsoft Edge\";v=\"131\", \"Chromium\";v=\"131\", \"Not_A Brand\";v=\"24\"",
+	},
+	bing: {
+		ua: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0",
+		ch: "\"Microsoft Edge\";v=\"131\", \"Chromium\";v=\"131\", \"Not_A Brand\";v=\"24\"",
+		plat: "\"Windows\"",
 	},
 	firefox: {
 		ua: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0",
@@ -926,6 +989,11 @@ async function operaFetch(target, method, form, jar, contentType, extraHeaders, 
 			let next = new URL(loc, current).toString();
 			if (/classroom\.google\.com/i.test(current) && /edu\.google\.com/i.test(next)) {
 				next = "https://accounts.google.com/ServiceLogin?service=classroom&continue=" + encodeURIComponent("https://classroom.google.com/");
+			}
+			if (/support\.google\.com|signin_privatebrowsing|EmbeddedBrowser|signin\/rejected/i.test(next)) {
+				next = /classroom\.google\.com/i.test(current)
+					? "https://accounts.google.com/ServiceLogin?service=classroom&continue=" + encodeURIComponent("https://classroom.google.com/") + "&hl=en"
+					: "https://accounts.google.com/ServiceLogin?service=mail&continue=" + encodeURIComponent("https://mail.google.com/mail/u/0/h/") + "&hl=en";
 			}
 			current = next;
 			verb = "GET";
