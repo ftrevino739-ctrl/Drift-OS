@@ -1128,10 +1128,7 @@ function driftSite(url) {
       operaPage('https://web.whatsapp.com/', 'edge')(root);
     } };
     window.__driftGithub = 1;
-    window.XAPPS.github = { n: 'GitHub', f: function (root) {
-      if (typeof window.openProxied === 'function') window.openProxied('https://github.com/', root);
-      else operaPage('https://github.com/', 'chrome')(root);
-    } };
+    window.XAPPS.github = { n: 'GitHub', f: operaPage('https://github.com/', 'chrome') };
     applyBrandLogos();
     try {
       var changed = false;
