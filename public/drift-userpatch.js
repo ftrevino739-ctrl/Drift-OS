@@ -589,7 +589,7 @@
     if (!document.getElementById('drift-snow-under')) {
       var under = document.createElement('style');
       under.id = 'drift-snow-under';
-      under.textContent = '.win{z-index:12}#drift-settings-win{z-index:2147483001}canvas.snow{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3}body.drift-snow #task{background:rgba(20,22,30,.28)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}';
+      under.textContent = '.win{z-index:100010}#drift-settings-win{z-index:2147483001}canvas.snow{position:fixed!important;inset:0!important;width:100%!important;height:100%!important;pointer-events:none!important;z-index:100000!important}#task{z-index:99999}';
       document.head.appendChild(under);
     }
     function tagWindows() {
@@ -603,12 +603,12 @@
       if (!desk) return;
       desk.setAttribute('data-scene', 'day');
       if (getComputedStyle(desk).position === 'static') desk.style.position = 'relative';
-      if (!desk.querySelector('canvas.snow')) {
+      if (!document.getElementById('drift-snow')) {
         var canvas = document.createElement('canvas');
         canvas.className = 'snow';
         canvas.id = 'drift-snow';
         canvas.setAttribute('aria-hidden', 'true');
-        desk.appendChild(canvas);
+        document.body.appendChild(canvas);
       }
       tagWindows();
     }
@@ -627,7 +627,7 @@
     }
     if (!window.Snowhush) {
       var script = document.createElement('script');
-      script.src = '/snowhush.js?v=20261101-user19';
+      script.src = '/snowhush.js?v=20261101-user20';
       script.onload = function () { if (window.Snowhush) apply(window.Snowhush); };
       document.head.appendChild(script);
     } else apply(window.Snowhush);

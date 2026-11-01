@@ -111,11 +111,11 @@ function loadAndPatchIndex() {
 	);
 
 	const tag =
-		'<script src="/drift-extras.js?v=20261101-user19" defer></script>' +
-		'<script src="/chromebook-proxy.js?v=20261101-user19" defer></script>' +
-		'<script src="/wayground-ai.js?v=20261101-user19" defer></script>' +
-		'<script src="/drift-fixup.js?v=20261101-user19" defer></script>' +
-		'<script src="/drift-userpatch.js?v=20261101-user19" defer></script>' +
+		'<script src="/drift-extras.js?v=20261101-user20" defer></script>' +
+		'<script src="/chromebook-proxy.js?v=20261101-user20" defer></script>' +
+		'<script src="/wayground-ai.js?v=20261101-user20" defer></script>' +
+		'<script src="/drift-fixup.js?v=20261101-user20" defer></script>' +
+		'<script src="/drift-userpatch.js?v=20261101-user20" defer></script>' +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +
@@ -618,6 +618,8 @@ function operaHostOk(host) {
 		host === "whatsapp.com" || host.endsWith(".whatsapp.com") ||
 		host === "whatsapp.net" || host.endsWith(".whatsapp.net") ||
 		host === "wa.me" || host.endsWith(".wa.me") ||
+		host === "now.gg" || host.endsWith(".now.gg") ||
+		host === "easyfun.gg" || host.endsWith(".easyfun.gg") ||
 		host === "whatsapp.biz" || host.endsWith(".whatsapp.biz") ||
 		host === "cdninstagram.com" || host.endsWith(".cdninstagram.com") ||
 		host === "instagram.com" || host.endsWith(".instagram.com") ||
@@ -737,7 +739,7 @@ function operaBoot(browser) {
   function googleHost(u){
     try {
       var h = new URL(u).hostname;
-      return /(^|\\.)(google\\.com|gstatic\\.com|googleapis\\.com|googleusercontent\\.com|youtube\\.com|roblox\\.com|rbxcdn\\.com|espn\\.com|espncdn\\.com|espn\\.net|github\\.com|githubusercontent\\.com|githubassets\\.com|whatsapp\\.com|whatsapp\\.net|wa\\.me|whatsapp\\.biz|instagram\\.com|cdninstagram\\.com|giphy\\.com|tenor\\.com|tenor\\.co|facebook\\.com|facebook\\.net|fbcdn\\.net|fbsbx\\.com|arkoselabs\\.com)$/i.test(h);
+      return /(^|\\.)(google\\.com|gstatic\\.com|googleapis\\.com|googleusercontent\\.com|youtube\\.com|roblox\\.com|rbxcdn\\.com|espn\\.com|espncdn\\.com|espn\\.net|github\\.com|githubusercontent\\.com|githubassets\\.com|whatsapp\\.com|whatsapp\\.net|wa\\.me|whatsapp\\.biz|now\\.gg|easyfun\\.gg|instagram\\.com|cdninstagram\\.com|giphy\\.com|tenor\\.com|tenor\\.co|facebook\\.com|facebook\\.net|fbcdn\\.net|fbsbx\\.com|arkoselabs\\.com)$/i.test(h);
     }
     catch (e) { return false; }
   }
@@ -992,11 +994,12 @@ function operaRewriteHtml(html, pageUrl, browser, origin) {
 	});
 }
 function operaInject(html, pageUrl, browser, origin) {
-	const boot = "<base href=\"" + String(pageUrl).replace(/"/g, "") + "\"><script>" + operaBoot(browser) + "<" + "/script>";
+	let boot = "<base href=\"" + String(pageUrl).replace(/"/g, "") + "\"><script>" + operaBoot(browser) + "<" + "/script>";
 	html = String(html).replace(/<meta[^>]+http-equiv=["']Content-Security-Policy["'][^>]*>/gi, "");
 	html = html.replace(/<meta[^>]+http-equiv=["']refresh["'][^>]*>/gi, "");
 	html = html.replace(/\s+integrity=(["'])[\s\S]*?\1/gi, "");
 	html = operaRewriteHtml(html, pageUrl, browser, origin);
+	if (/github\.com/i.test(pageUrl)) boot += '<style>html,body{background:#fff!important;color:#24292f!important}main,section,h1,h2,h3,p,li,a,span{color:#24292f!important}</style>';
 	if (/<head[^>]*>/i.test(html)) return html.replace(/<head[^>]*>/i, (m) => m + boot);
 	return boot + html;
 }

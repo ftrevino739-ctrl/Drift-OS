@@ -524,7 +524,7 @@ h1{font-weight:500;margin:0 0 8px}
 .ai-tools button.on{background:var(--acc);color:#fff;border-color:transparent}
 .md-table{width:100%;border-collapse:collapse;margin:8px 0;font-size:13px}
 .md-table th,.md-table td{border:1px solid var(--line);padding:6px 8px;text-align:left}
-.md-table th{background:var(--omni)}
+.md-table th{background:var(--omni)}.md-ul{margin:6px 0 10px 20px;padding:0}.md-ul li{margin:4px 0}mark{background:#fff3a3;color:#111;padding:0 2px;border-radius:3px}
 .md-p{margin:0 0 8px;white-space:pre-wrap}
 .md-h{font-weight:600;margin:10px 0 6px}
 /* Discord-like chat */
@@ -1212,7 +1212,7 @@ function ai(root){
     h=h.replace(/!\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)/g,'<img alt="$1" src="$2" style="max-width:100%;border-radius:10px;display:block;margin:8px 0">');
     h=h.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,'<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
     h=h.replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g,function(_,a,u){return a+'<a href="'+u+'" target="_blank" rel="noopener noreferrer">'+u+'</a>'});
-    h=h.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/\*([^*]+)\*/g,'<em>$1</em>').replace(/`([^`]+)`/g,'<code>$1</code>');
+    h=h.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/==([^=]+)==/g,'<mark>$1</mark>').replace(/\*([^*]+)\*/g,'<em>$1</em>').replace(/`([^`]+)`/g,'<code>$1</code>');
     return h;
   };
   const renderBlocks=(el,t)=>{
@@ -1242,6 +1242,16 @@ function ai(root){
       }
       if(/^#{1,3}\s+/.test(lines[i])){
         flush();const h=document.createElement('div');h.className='md-h';h.innerHTML=formatInline(lines[i].replace(/^#+\s+/,''));el.appendChild(h);i++;continue;
+      }
+      if(/^\s*[-*]\s+/.test(lines[i]) || /^\s*\d+\.\s+/.test(lines[i])){
+        flush();
+        const ul=document.createElement('ul');ul.className='md-ul';
+        while(i<lines.length && (/^\s*[-*]\s+/.test(lines[i]) || /^\s*\d+\.\s+/.test(lines[i]))){
+          const li=document.createElement('li');
+          li.innerHTML=formatInline(lines[i].replace(/^\s*(?:[-*]|\d+\.)\s+/,''));
+          ul.appendChild(li);i++;
+        }
+        el.appendChild(ul);continue;
       }
       buf.push(lines[i]);i++;
     }
@@ -1356,7 +1366,7 @@ function ai(root){
       else if(part.text&&part.text.trim())renderBlocks(el,part.text);
     });
   };
-  const add=(c,t,sources)=>{const d=document.createElement('div');d.className=c;const hasFence=c==='a'&&t&&(t.includes('```')||t.includes('|')||t.includes('**')||t.includes('##'));if(hasFence)renderMD(d,t);else d.textContent=t||'';if(c==='a'&&t){sourceRow(d,sources);answerTools(d,t)}am.appendChild(d);am.scrollTop=am.scrollHeight;return d};
+  const add=(c,t,sources)=>{const d=document.createElement('div');d.className=c;if(c==='a'&&t)renderMD(d,t);else d.textContent=t||'';if(c==='a'&&t){sourceRow(d,sources);answerTools(d,t)}am.appendChild(d);am.scrollTop=am.scrollHeight;return d};
   function paintThread(list, all){
     am.innerHTML='';
     const start=(!all&&list.length>28)?list.length-20:0;
@@ -1570,7 +1580,7 @@ function ai(root){
       }
       if(!String(txt||'').trim()){out.className='e';out.textContent='No llegó la respuesta. Vuelve a preguntar.';}
       else if(txt.includes('```')||txt.includes('|')||txt.includes('**')||txt.includes('##')||/https?:\/\//.test(txt)||/\[[^\]]+\]\(https?:/.test(txt)||/!\[[^\]]*\]\(/.test(txt)||/data:image\//.test(txt)){out.className='a';out.style.animation='drift-fade .35s ease';renderMD(out,txt);}
-      else {out.className='a';driftSmooth(out,txt);}
+      else {out.className='a';renderMD(out,txt);}
       const bar=answerTools(out, txt);
       sourceRow(bar||out, sourceRows);
       if(thinkBody && sourceRows.length && !thinkBody.querySelector('.src-row'))sourceRow(thinkBody, sourceRows);
@@ -1594,7 +1604,8 @@ function ai(root){
     const msgs=input.map(m=>({role:m.role,content:m.content}));
     if(o.images&&o.images.length){const last=msgs[msgs.length-1];const text=typeof last.content==='string'?last.content:'';last.content=[...await Promise.all(o.images.map(async b=>({type:'image',source:{type:'base64',media_type:b.type||'image/jpeg',data:await b64(b)}}))),{type:'text',text}]}
     if(o.model==='google/gemini-3.8-flash'){
-      const r=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'groq-llama',max_tokens:8192,messages:msgs,system:'You are Drift 2.1. Never say you are Gemini and never write "Gemini said". If you refer to yourself, say Drift. Reply in the user language with the full answer, right away. If they ask for code, put every line in one fenced block.',instructions:LS.get('wos:cinst','')}),signal:o.signal});
+      const ask=String((msgs[msgs.length-1]&&msgs[msgs.length-1].content)||'');
+      const r=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'groq-llama',max_tokens:(/\b(c[oó]digo|code|html|lua|script)\b/i.test(ask)?8192:1800),messages:msgs,system:'You are Drift 2.1. Never say you are Gemini. Answer immediately and completely in the user language. Use markdown: **bold**, - bullets, tables, and ==highlight==. If they ask for code, put every line in one fenced block.',instructions:LS.get('wos:cinst','')}),signal:o.signal});
       const j=await r.json().catch(()=>({}));
       const text=((j.content||[]).map(x=>x.text||'').join(''))||'';
       if(text.trim())return {text};
@@ -1618,7 +1629,7 @@ function ai(root){
       const text=((j.candidates||[])[0]&&(j.candidates[0].content||{}).parts||[]).map(x=>x.text||'').join('')||'';
       return {text};
     }
-    const r=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:o.model,max_tokens:(/\b(c[oó]digo|code|html|css|javascript|python|script|lua|luau|function)\b/i.test(String((msgs[msgs.length-1]||{}).content||''))?4096:700),messages:msgs,system:'Eres el asistente de Drift. Responde enseguida, en el idioma del usuario, sin plan ni preámbulo. Si piden abrir apps, usa una línea OPEN_APP:id en minúsculas por app, ids distintos. Si piden código, un solo bloque completo.',}),signal:o.signal});
+    const r=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:o.model,max_tokens:(/\b(c[oó]digo|code|html|css|javascript|python|script|lua|luau|function)\b/i.test(String((msgs[msgs.length-1]||{}).content||''))?4096:1800),messages:msgs,system:'Eres el asistente de Drift. Responde enseguida, en el idioma del usuario, sin plan ni preámbulo. Si piden abrir apps, usa una línea OPEN_APP:id en minúsculas por app, ids distintos. Si piden código, un solo bloque completo.',}),signal:o.signal});
     const j=await r.json();if(!r.ok||j.error)throw {message:(j.error&&j.error.message)||j.error||'Error del servidor'};
     return {text:(j.content||[]).map(x=>x.text||'').join('')};
   };
