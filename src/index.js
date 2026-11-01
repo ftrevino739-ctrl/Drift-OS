@@ -74,9 +74,9 @@ function loadAndPatchIndex() {
 	);
 
 	const xapps =
-		"const XAPPS={cam:{n:'Camera',f:camera},mus:{n:'Music',f:music},movies:{n:'Movies',f:movies},code:{n:'VS Code',f:vscode},discord:{n:'Discord',f:discordApp},gmail:{n:'Gmail',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#fff';var fr=document.createElement('iframe');fr.setAttribute('credentialless','');fr.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';fr.src='/api/opera?u='+encodeURIComponent('https://mail.google.com/mail/u/0/h/')+'&b=firefox';r.appendChild(fr)}},ig:{n:'Instagram',f:igApp},tt:{n:'TikTok',f:ttApp}," +
-		"classroom:{n:'Classroom',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#fff';var fr=document.createElement('iframe');fr.setAttribute('referrerpolicy','no-referrer');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';fr.src='/api/opera?u='+encodeURIComponent('https://classroom.google.com/')+'&b=firefox';r.appendChild(fr)}}," +
-		"roblox:{n:'Roblox',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#fff';var fr=document.createElement('iframe');fr.setAttribute('referrerpolicy','no-referrer');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';fr.src='/api/opera?u='+encodeURIComponent('https://www.roblox.com/login')+'&b=bing';r.appendChild(fr)}}," +
+		"const XAPPS={cam:{n:'Camera',f:camera},mus:{n:'Music',f:music},movies:{n:'Movies',f:movies},code:{n:'VS Code',f:vscode},discord:{n:'Discord',f:discordApp},gmail:{n:'Gmail',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#fff';var fr=document.createElement('iframe');fr.setAttribute('credentialless','');fr.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-modals allow-downloads');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';fr.src='/api/opera?u='+encodeURIComponent('https://mail.google.com/mail/u/0/')+'&b=edge';r.appendChild(fr)}},ig:{n:'Instagram',f:igApp},tt:{n:'TikTok',f:ttApp}," +
+		"classroom:{n:'Classroom',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#fff';var fr=document.createElement('iframe');fr.setAttribute('referrerpolicy','no-referrer');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';fr.src='/api/opera?u='+encodeURIComponent('https://classroom.google.com/')+'&b=edge';r.appendChild(fr)}}," +
+		"roblox:{n:'Roblox',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#fff';var fr=document.createElement('iframe');fr.setAttribute('referrerpolicy','no-referrer');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';fr.src='/api/opera?u='+encodeURIComponent('https://www.roblox.com/login')+'&b=chrome';r.appendChild(fr)}}," +
 		"gimkit:{n:'Gimkit',f:gimkitApp},games:{n:'Games',f:function(r){return (window.noahGamesApp||gamesHub)(r)}},chat:{n:'Chat',f:noahChat}};" +
 		"window.XAPPS=XAPPS;window.APPS=APPS;try{window.IC=IC}catch(e){}try{window.proxySite=proxySite}catch(e){}try{window.vscode=vscode}catch(e){}try{window.S=S}catch(e){}try{window.discordApp=discordApp}catch(e){};";
 	html = html.replace(
@@ -111,11 +111,11 @@ function loadAndPatchIndex() {
 	);
 
 	const tag =
-		'<script src="/drift-extras.js?v=20261101-user18" defer></script>' +
-		'<script src="/chromebook-proxy.js?v=20261101-user18" defer></script>' +
-		'<script src="/wayground-ai.js?v=20261101-user18" defer></script>' +
-		'<script src="/drift-fixup.js?v=20261101-user18" defer></script>' +
-		'<script src="/drift-userpatch.js?v=20261101-user18" defer></script>' +
+		'<script src="/drift-extras.js?v=20261101-user19" defer></script>' +
+		'<script src="/chromebook-proxy.js?v=20261101-user19" defer></script>' +
+		'<script src="/wayground-ai.js?v=20261101-user19" defer></script>' +
+		'<script src="/drift-fixup.js?v=20261101-user19" defer></script>' +
+		'<script src="/drift-userpatch.js?v=20261101-user19" defer></script>' +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +
@@ -617,6 +617,13 @@ function operaHostOk(host) {
 		host === "arkoselabs.com" || host.endsWith(".arkoselabs.com") ||
 		host === "whatsapp.com" || host.endsWith(".whatsapp.com") ||
 		host === "whatsapp.net" || host.endsWith(".whatsapp.net") ||
+		host === "wa.me" || host.endsWith(".wa.me") ||
+		host === "whatsapp.biz" || host.endsWith(".whatsapp.biz") ||
+		host === "cdninstagram.com" || host.endsWith(".cdninstagram.com") ||
+		host === "instagram.com" || host.endsWith(".instagram.com") ||
+		host === "giphy.com" || host.endsWith(".giphy.com") ||
+		host === "tenor.com" || host.endsWith(".tenor.com") ||
+		host === "tenor.co" || host.endsWith(".tenor.co") ||
 		host === "facebook.com" || host.endsWith(".facebook.com") ||
 		host === "facebook.net" || host.endsWith(".facebook.net") ||
 		host === "fbcdn.net" || host.endsWith(".fbcdn.net") ||
@@ -698,12 +705,39 @@ function operaBoot(browser) {
   } else {
   try { Object.defineProperty(navigator, "vendor", { configurable: true, get: function(){ return ""; } }); } catch (e) {}
   }
+  try { Object.defineProperty(navigator, "cookieEnabled", { configurable: true, get: function(){ return true; } }); } catch (e) {}
+  var memCookie = "";
+  try {
+    var cookieDesc = Object.getOwnPropertyDescriptor(Document.prototype, "cookie");
+    if (cookieDesc && cookieDesc.configurable) {
+      Object.defineProperty(Document.prototype, "cookie", {
+        configurable: true,
+        get: function(){ return memCookie; },
+        set: function(v){
+          var raw = String(v == null ? "" : v);
+          var part = raw.split(";")[0];
+          var eq = part.indexOf("=");
+          if (eq < 1) return;
+          var name = part.slice(0, eq).trim();
+          var value = part.slice(eq + 1).trim();
+          var dead = raw.indexOf("max-age=0") !== -1 || (raw.indexOf("expires=") !== -1 && (raw.indexOf("1970") !== -1 || raw.indexOf("1969") !== -1));
+          var bits = memCookie ? memCookie.split("; ") : [];
+          var next = [];
+          for (var i = 0; i < bits.length; i++) { if (bits[i].split("=")[0] !== name) next.push(bits[i]); }
+          if (!dead) next.push(name + "=" + value);
+          memCookie = next.join("; ");
+        }
+      });
+    }
+  } catch (e) {}
   function abs(u){ try { return new URL(u, document.baseURI).href; } catch (e) { return ""; } }
+  function waHere(){ try { return /(^|\\.)whatsapp\\.com$/i.test(new URL(document.baseURI).hostname); } catch (e) { return false; } }
+  function sameWa(u){ try { return /(^|\\.)whatsapp\\.com$/i.test(new URL(abs(u)).hostname); } catch (e) { return false; } }
   function ours(path){ return location.origin + path; }
   function googleHost(u){
     try {
       var h = new URL(u).hostname;
-      return /(^|\\.)(google\\.com|gstatic\\.com|googleapis\\.com|googleusercontent\\.com|youtube\\.com|roblox\\.com|rbxcdn\\.com|espn\\.com|espncdn\\.com|espn\\.net|github\\.com|githubusercontent\\.com|githubassets\\.com|whatsapp\\.com|whatsapp\\.net|facebook\\.com|facebook\\.net|fbcdn\\.net|fbsbx\\.com|arkoselabs\\.com)$/i.test(h);
+      return /(^|\\.)(google\\.com|gstatic\\.com|googleapis\\.com|googleusercontent\\.com|youtube\\.com|roblox\\.com|rbxcdn\\.com|espn\\.com|espncdn\\.com|espn\\.net|github\\.com|githubusercontent\\.com|githubassets\\.com|whatsapp\\.com|whatsapp\\.net|wa\\.me|whatsapp\\.biz|instagram\\.com|cdninstagram\\.com|giphy\\.com|tenor\\.com|tenor\\.co|facebook\\.com|facebook\\.net|fbcdn\\.net|fbsbx\\.com|arkoselabs\\.com)$/i.test(h);
     }
     catch (e) { return false; }
   }
@@ -714,7 +748,10 @@ function operaBoot(browser) {
     if (navigator.onLine === false) return false;
     if (hops > 48) return false;
     u = abs(u);
+    if (u.indexOf("&amp;") !== -1) u = u.split("&amp;").join("&");
     if (!armed || !/^https?:/i.test(u) || u.indexOf("/api/opera?u=") !== -1) return false;
+    if (!googleHost(u)) return false;
+    if (waHere() && sameWa(u)) return false;
     var cur = "";
     try { cur = new URL(document.baseURI).href.replace(/\\/$/, ""); } catch (e) {}
     if (u.replace(/\\/$/, "") === cur) return false;
@@ -784,13 +821,34 @@ function operaBoot(browser) {
     var XO = XMLHttpRequest.prototype.open;
     var XS = XMLHttpRequest.prototype.send;
     var XH = XMLHttpRequest.prototype.setRequestHeader;
-    XMLHttpRequest.prototype.open = function(m, u){ this.__m = m; this.__u = abs(u); this.__h = {}; return XO.apply(this, arguments); };
+    var XG = XMLHttpRequest.prototype.getResponseHeader;
+    var XA = XMLHttpRequest.prototype.getAllResponseHeaders;
+    XMLHttpRequest.prototype.open = function(m, u){ this.__m = m; this.__u = abs(u); this.__h = {}; this.__proxied = false; this.__resHeaders = null; return XO.apply(this, arguments); };
+    XMLHttpRequest.prototype.getResponseHeader = function(name){
+      if (this.__proxied && this.__resHeaders) {
+        var v = this.__resHeaders[String(name || "").toLowerCase()];
+        return v == null ? null : String(v);
+      }
+      try { return XG.apply(this, arguments); } catch (e) { return null; }
+    };
+    XMLHttpRequest.prototype.getAllResponseHeaders = function(){
+      if (this.__proxied && this.__resHeaders) {
+        var h = this.__resHeaders, lines = [], ks = Object.keys(h);
+        for (var i = 0; i < ks.length; i++) lines.push(ks[i] + ": " + h[ks[i]]);
+        return lines.join(String.fromCharCode(13, 10));
+      }
+      try { return XA.apply(this, arguments); } catch (e) { return ""; }
+    };
     XMLHttpRequest.prototype.setRequestHeader = function(k, v){ try { this.__h[k] = v; } catch (e) {} return XH.apply(this, arguments); };
     XMLHttpRequest.prototype.send = function(body){
       var u = this.__u || "";
       if (!googleHost(u)) return XS.apply(this, arguments);
       var self = this;
+      self.__proxied = true;
       proxy(u, String(self.__m || "GET").toUpperCase(), body, self.__h || {}).then(function(r){
+        var headers = {};
+        try { r.headers.forEach(function(v, k){ headers[String(k).toLowerCase()] = v; }); } catch (e) {}
+        self.__resHeaders = headers;
         return r.text().then(function(t){
           var status = r.status || 200;
           try {
@@ -823,6 +881,7 @@ function operaBoot(browser) {
             return;
           }
           if (hop(v)) return;
+          if (waHere()) return;
           if (googleHost(absU)) return;
           desc.set.call(this, v);
         }
@@ -840,8 +899,8 @@ function operaBoot(browser) {
     }
     function mailHere(){ try { return /mail\\.google\\.com|accounts\\.google\\.com/i.test(document.baseURI); } catch (e) { return false; } }
     function mailDest(u){ try { return /mail\\.google\\.com|accounts\\.google\\.com/i.test(new URL(abs(u)).hostname); } catch (e) { return false; } }
-    history.pushState = function(s, t, u){ if (mailHere() && (!u || mailDest(u))) return ps.apply(this, arguments); if (via(u)) return; return ps.apply(this, arguments); };
-    history.replaceState = function(s, t, u){ if (mailHere() && (!u || mailDest(u))) return rs.apply(this, arguments); if (via(u)) return; return rs.apply(this, arguments); };
+    history.pushState = function(s, t, u){ if (waHere()) return ps.apply(this, arguments); if (mailHere() && (!u || mailDest(u))) return ps.apply(this, arguments); if (via(u)) return; return ps.apply(this, arguments); };
+    history.replaceState = function(s, t, u){ if (waHere()) return rs.apply(this, arguments); if (mailHere() && (!u || mailDest(u))) return rs.apply(this, arguments); if (via(u)) return; return rs.apply(this, arguments); };
   } catch (e) {}
   try {
     if (window.top && window.top !== window) {
@@ -873,14 +932,16 @@ function operaBoot(browser) {
     var u = abs(href);
     if (href.indexOf("/api/opera?u=") !== -1 || u.indexOf("/api/opera?u=") !== -1) return;
     if (/^https?:/i.test(u)) {
+      if (waHere() && sameWa(u)) return;
       var mail = "";
       try { mail = document.baseURI || ""; } catch (e) {}
-      if (/mail\\.google\\.com|accounts\\.google\\.com/i.test(mail)) {
+      if (/mail\\.google\\.com|accounts\\.google\\.com|classroom\\.google\\.com/i.test(mail)) {
         e.preventDefault();
-        if (u.indexOf("/api/opera?u=") === -1) location.href = ours("/api/opera?u=" + encodeURIComponent(u) + "&b=" + encodeURIComponent(BROWSER));
+        if (googleHost(u) && u.indexOf("/api/opera?u=") === -1) location.href = ours("/api/opera?u=" + encodeURIComponent(u) + "&b=" + encodeURIComponent(BROWSER));
         return;
       }
-      if (hop(u) || googleHost(u)) e.preventDefault();
+      if (!googleHost(u)) { e.preventDefault(); return; }
+      if (hop(u)) e.preventDefault();
     }
   }, true);
   document.addEventListener("keydown", function(){ armed = true; }, true);
@@ -958,6 +1019,7 @@ async function operaFetch(target, method, form, jar, contentType, extraHeaders, 
 		};
 		if (verb !== "GET") headers.origin = u.origin;
 		if (referer) headers.referer = referer;
+		else if (/(^|\.)roblox\.com$/i.test(u.hostname)) headers.referer = "https://www.roblox.com/";
 		if (verb === "GET" && i === 0) {
 			headers["sec-fetch-dest"] = "document";
 			headers["sec-fetch-mode"] = "navigate";
@@ -992,11 +1054,11 @@ async function operaFetch(target, method, form, jar, contentType, extraHeaders, 
 			const loc = r.headers.get("location");
 			referer = current;
 			if (!loc) return { response: r, final: current };
-			let next = new URL(loc, current).toString();
+			let next = new URL(loc, current).toString().split("&amp;").join("&");
 			if (/classroom\.google\.com/i.test(current) && /edu\.google\.com/i.test(next)) {
 				next = "https://accounts.google.com/ServiceLogin?service=classroom&continue=" + encodeURIComponent("https://classroom.google.com/");
 			}
-			if (/support\.google\.com|signin_privatebrowsing|EmbeddedBrowser|signin\/rejected/i.test(next)) {
+			if (/support\.google\.com|signin_privatebrowsing|EmbeddedBrowser|signin\/rejected/i.test(next) || /support\.google\.com|signin_privatebrowsing|EmbeddedBrowser|signin\/rejected/i.test(current)) {
 				next = /classroom\.google\.com/i.test(current)
 					? "https://accounts.google.com/ServiceLogin?service=classroom&continue=" + encodeURIComponent("https://classroom.google.com/") + "&hl=en"
 					: "https://accounts.google.com/ServiceLogin?service=mail&continue=" + encodeURIComponent("https://mail.google.com/mail/u/0/h/") + "&hl=en";
@@ -1005,6 +1067,18 @@ async function operaFetch(target, method, form, jar, contentType, extraHeaders, 
 			verb = "GET";
 			body = "";
 			continue;
+		}
+		if (/support\.google\.com|signin_privatebrowsing|EmbeddedBrowser|signin\/rejected/i.test(current) && i < 5) {
+			const back = /classroom\.google\.com|service=classroom/i.test(String(referer || "") + current)
+				? "https://accounts.google.com/ServiceLogin?service=classroom&continue=" + encodeURIComponent("https://classroom.google.com/") + "&hl=en"
+				: "https://accounts.google.com/ServiceLogin?service=mail&continue=" + encodeURIComponent("https://mail.google.com/mail/u/0/h/") + "&hl=en";
+			if (back !== current) {
+				referer = current;
+				current = back;
+				verb = "GET";
+				body = "";
+				continue;
+			}
 		}
 		return { response: r, final: current };
 	}
@@ -1050,6 +1124,9 @@ async function operaReply(req, reply, target, method, form, raw, contentType, ex
 	const status = got.response.status >= 300 && got.response.status < 400 ? 200 : (got.response.status || 200);
 	reply.code(status);
 	reply.header("content-type", ct.split(";")[0] || ct);
+	for (const [key, value] of got.response.headers) {
+		if (/^(x-csrf-token|x-roblox-csrf|csrf-token|rblx-|x-roblox-)/i.test(key) && value) reply.header(key, value);
+	}
 	return reply.send(Buffer.from(await got.response.arrayBuffer()));
 }
 fastify.get("/api/opera", async (req, reply) => {

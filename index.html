@@ -269,7 +269,7 @@ h1{font-weight:500;margin:0 0 8px}
 .codeblock .cb-bar button:hover{background:#30363d}
 .codeblock pre{margin:0;padding:12px;overflow:auto;max-height:min(70vh,2400px);font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre}
 .am>.u,.am>.a{overflow:visible}
-.think-panel.live{position:sticky;bottom:8px;z-index:4;box-shadow:0 8px 24px rgba(0,0,0,.12)}
+.think-panel.live{box-shadow:0 8px 24px rgba(0,0,0,.12)}
 #drift-thanks{position:fixed;left:50%;bottom:92px;transform:translateX(-50%);background:#111;color:#fff;padding:10px 14px;border-radius:999px;z-index:2147483646;font:13px system-ui;display:none}
 .ans-bar{display:flex;align-items:center;gap:2px;margin-top:10px;flex-wrap:wrap}
 .ans-bar button{width:34px;height:34px;border:0;background:transparent;border-radius:10px;color:#6b7280;cursor:pointer;display:grid;place-items:center;padding:0}
@@ -3410,7 +3410,7 @@ function sjBrowser(root){
     return ENGS[ENG()]+encodeURIComponent(v)};
   const home=t=>{
     t.box.innerHTML='<div class="center"><div class="logo"><span>W</span><span>e</span><span>b</span><span>O</span><span>S</span></div><input class="sb" placeholder="Search or type an address" aria-label="Search"><div class="tiles">'+
-      [['Google','https://www.google.com/?hl=en&gl=us','/sites/google.svg'],['Bing','https://www.bing.com/?setlang=en-US&cc=US','/sites/bing.svg'],['DuckDuckGo','https://duckduckgo.com/?kl=us-en','/sites/duckduckgo.svg'],['YouTube','https://www.youtube.com/?hl=es-419&gl=MX&persist_hl=1&persist_gl=1','/sites/youtube.svg'],['Discord','https://discord.com/app','/sites/discord.png'],['Instagram','https://www.instagram.com','/sites/instagram.svg'],['TikTok','https://www.tiktok.com','/sites/tiktok.png'],['Reddit','https://www.reddit.com','/sites/reddit.svg'],['Wikipedia','https://en.wikipedia.org','/sites/wikipedia.svg']]
+      [['Google','https://www.google.com/?hl=en&gl=us','/sites/google.svg'],['Bing','https://www.bing.com/?setlang=en-US&cc=US','/sites/bing.svg'],['DuckDuckGo','https://duckduckgo.com/?kl=us-en','/sites/duckduckgo.svg'],['YouTube','https://www.youtube.com/?hl=es-419&gl=MX&persist_hl=1&persist_gl=1','/sites/youtube.svg'],['Discord','https://discord.com/app','/sites/discord.png'],['Instagram','https://www.instagram.com','/sites/instagram.svg'],['TikTok','https://www.tiktok.com','/sites/tiktok.png'],['Reddit','https://www.reddit.com','/sites/reddit.svg'],['Wikipedia','https://en.wikipedia.org','/sites/wikipedia.png']]
       .map(x=>`<button class="tile" data-u="${x[1]}"><i><img src="${x[2]}" alt=""></i>${x[0]}</button>`).join('')+'</div></div>';
     const sb=$('.sb',t.box);sb.onkeydown=e=>{if(e.key==='Enter')go(sb.value)};
     t.box.querySelectorAll('.tile').forEach(b=>b.onclick=()=>go(b.dataset.u))};
@@ -3424,7 +3424,10 @@ function sjBrowser(root){
     const t=T();
     if(!t.fr){t.box.innerHTML='<div class="ld">Loading…</div>';await sjInit();
       const f=SJC.createFrame();lockFrame(f.frame);f.frame.style.cssText=sjStyle;t.box.innerHTML='';t.box.appendChild(f.frame);t.fr=f}
-    t.url=u;t.title=u.replace(/^https?:\/\//,'').slice(0,30);t.fr.go(u);bar();
+    t.url=u;t.title=u.replace(/^https?:\/\//,'').slice(0,30);
+    if (typeof window.goUntilOk === 'function') window.goUntilOk(t.fr, u);
+    else t.fr.go(u);
+    bar();
   }
   async function showResults(q){
     const t=T(); t.fr=null; t.url=''; t.title=q.slice(0,30);

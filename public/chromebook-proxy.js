@@ -120,6 +120,24 @@
       return !!(title && /uh oh/i.test(title.textContent || ''));
     } catch (e) { return false; }
   }
+  function failOverlay(frame) {
+    var box = frame && frame.parentNode;
+    if (!box || box.querySelector('[data-drift-fail]')) return;
+    if (getComputedStyle(box).position === 'static') box.style.position = 'relative';
+    var overlay = document.createElement('div');
+    overlay.setAttribute('data-drift-fail', '1');
+    overlay.style.cssText = 'position:absolute;inset:0;z-index:6;background:#0e1016;color:#fff;font:15px system-ui,sans-serif';
+    overlay.innerHTML = '<div style="position:absolute;left:16px;top:16px;z-index:2"><b>Loading…</b><div style="opacity:.75;margin-top:4px">Retrying until the page opens.</div></div><canvas data-game style="position:absolute;inset:0;width:100%;height:100%"></canvas>';
+    box.appendChild(overlay);
+    var cv = overlay.querySelector('canvas');
+    try { if (typeof window.driftCubeGame === 'function') window.driftCubeGame(cv); } catch (e) {}
+  }
+  function clearFail(frame) {
+    var box = frame && frame.parentNode;
+    if (!box) return;
+    var overlay = box.querySelector('[data-drift-fail]');
+    if (overlay) overlay.remove();
+  }
   function goUntilOk(f, target) {
     var n = 0;
     function kick() {
@@ -128,25 +146,26 @@
       var timer = setInterval(function () {
         ticks++;
         hideFrameBars(f.frame);
-        if (frameUhOh(f.frame) && n < 8) {
-          clearInterval(timer);
-          n++;
+        if (frameUhOh(f.frame)) {
           try { f.frame.style.visibility = 'hidden'; } catch (e2) {}
-          setTimeout(kick, 320);
+          failOverlay(f.frame);
+          if (n < 40) {
+            clearInterval(timer);
+            n++;
+            setTimeout(kick, 450);
+          } else clearInterval(timer);
           return;
         }
-        if (!frameUhOh(f.frame) && ticks > 2) {
+        if (ticks > 8) {
           try { f.frame.style.visibility = ''; } catch (e3) {}
-          clearInterval(timer);
-        }
-        if (ticks > 24) {
-          try { f.frame.style.visibility = ''; } catch (e4) {}
+          clearFail(f.frame);
           clearInterval(timer);
         }
       }, 250);
     }
     setTimeout(kick, 0);
   }
+  window.goUntilOk = goUntilOk;
   function showWait(box) {
     box.innerHTML = '<div class="ym" data-drift-wait>Loading…</div>';
   }
@@ -363,7 +382,7 @@
     root.innerHTML =
       '<div style="display:flex;flex-direction:column;height:100%;min-height:0">' +
       '<div style="padding:8px 10px;border-bottom:1px solid var(--line);font-size:12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between">' +
-      '<span>Gimkit</span><span style="display:flex;gap:6px;align-items:center">' +
+      '<span>Gimkit</span><button type="button" id="gk-swap" style="margin-left:auto;padding:6px 12px;border:0;border-radius:8px;background:#1a73e8;color:#fff;cursor:pointer;font-weight:700">Go to Gimkit main page</button><span style="display:flex;gap:6px;align-items:center">' +
       '<input id="gk-code" placeholder="Join code" style="width:110px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--omni);color:var(--ink)"/>' +
       '<button type="button" id="gk-go" style="padding:6px 12px;border:0;border-radius:8px;background:var(--acc);color:#fff;cursor:pointer">Join</button>' +
       '<button type="button" id="gk-inj" style="padding:6px 12px;border:1px solid var(--line);border-radius:8px;background:var(--omni);color:inherit;cursor:pointer">Re-inject</button>' +
@@ -456,6 +475,12 @@
         showWait(box);
       }
     }
+    var gkMode = 'join';
+    root.querySelector('#gk-swap').onclick = function () {
+      gkMode = gkMode === 'join' ? 'home' : 'join';
+      root.querySelector('#gk-swap').textContent = gkMode === 'join' ? 'Go to Gimkit main page' : 'Go to Join Game';
+      openUrl(gkMode === 'join' ? 'https://www.gimkit.com/join' : 'https://www.gimkit.com/');
+    };
     root.querySelector('#gk-go').onclick = function () {
       var code = (root.querySelector('#gk-code').value || '').trim();
       openUrl(code ? 'https://www.gimkit.com/join/' + encodeURIComponent(code) : 'https://www.gimkit.com/join');

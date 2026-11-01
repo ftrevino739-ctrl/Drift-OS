@@ -4,16 +4,47 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Search</title>
-<style>html,body{margin:0;height:100%;background:#fff;color:#111;font:15px system-ui}iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#fff}</style>
+<style>
+html,body{margin:0;height:100%;background:#fff;color:#111;font:15px system-ui}
+iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#fff}
+#drift-fail{display:none;position:fixed;inset:0;z-index:6;background:#0e1016;color:#fff;font:15px system-ui,sans-serif}
+#drift-fail.on{display:block}
+#drift-fail canvas{position:absolute;inset:0;width:100%;height:100%}
+#drift-fail .note{position:absolute;left:16px;top:16px;z-index:2}
+</style>
 </head>
 <body>
+<div id="drift-fail"><div class="note"><b>Loading…</b><div style="opacity:.75;margin-top:4px">Retrying until the page opens.</div></div><canvas id="cube"></canvas></div>
 <script>
 (async function () {
+  function unwrap(raw) {
+    var href = String(raw || '');
+    for (var n = 0; n < 5; n++) {
+      var next = href;
+      try {
+        var u = new URL(href, location.href);
+        var path = u.pathname + u.search;
+        var at = path.indexOf('/scramjet/');
+        if (at !== -1) {
+          var rest = path.slice(at + 10);
+          try { rest = decodeURIComponent(rest); } catch (e) {}
+          if (/^https?:/i.test(rest)) next = rest;
+        } else if (/\/go$/i.test(u.pathname) && u.searchParams.get('u')) {
+          next = u.searchParams.get('u');
+        }
+      } catch (e) {}
+      if (next === href) break;
+      href = next;
+    }
+    return href;
+  }
   var params = new URLSearchParams(location.search);
-  var target = params.get('u') || 'https://www.google.com/search?hl=en&gl=us';
+  var target = unwrap(params.get('u') || 'https://www.google.com/search?hl=en&gl=us');
+  var guest = params.get('guest') === '1';
   try {
     var u = new URL(target);
-    if (params.get('guest') === '1' && /google\./i.test(u.hostname)) u.searchParams.set('igu', '1');
+    if ((guest || u.searchParams.get('guest') === '1') && /google\./i.test(u.hostname)) u.searchParams.set('igu', '1');
+    u.searchParams.delete('guest');
     target = u.toString();
   } catch (e) {}
   function load(src) {
@@ -24,6 +55,83 @@
       s.onerror = function () { rej(new Error(src)); };
       document.head.appendChild(s);
     });
+  }
+  var fail = document.getElementById('drift-fail');
+  var playing = false;
+  var stopGame = function () {};
+  function cube() {
+    if (playing) return;
+    playing = true;
+    var cv = document.getElementById('cube');
+    var ctx = cv.getContext('2d');
+    var y = 0, vy = 0, dead = false, score = 0, best = 0, raf = 0, started = false;
+    var obs = [];
+    try { best = Number(sessionStorage.getItem('wos:cube-best') || 0) || 0; } catch (e) {}
+    function size() {
+      var w0 = Math.max(320, cv.clientWidth || innerWidth), h0 = Math.max(220, cv.clientHeight || innerHeight);
+      if (cv.width !== w0) cv.width = w0;
+      if (cv.height !== h0) cv.height = h0;
+      return { w: cv.width, h: cv.height };
+    }
+    function reset() {
+      var box = size();
+      y = box.h - 118; vy = 0; dead = false; started = false; score = 0; obs = [];
+    }
+    function jump() {
+      if (dead) { reset(); return; }
+      started = true;
+      var box = size();
+      if (y >= box.h - 122) vy = -10.4;
+    }
+    function onKey(e) {
+      if (e.code !== 'Space' && e.key !== ' ' && e.key !== 'ArrowUp') return;
+      e.preventDefault();
+      jump();
+    }
+    cv.addEventListener('pointerdown', jump);
+    window.addEventListener('keydown', onKey);
+    reset();
+    function frame() {
+      if (!fail.classList.contains('on')) { cancelAnimationFrame(raf); return; }
+      var box = size();
+      var ground = box.h - 86;
+      ctx.fillStyle = '#10141c';
+      ctx.fillRect(0, 0, box.w, box.h);
+      ctx.fillStyle = '#1c2430';
+      ctx.fillRect(0, ground, box.w, box.h - ground);
+      if (started && !dead) {
+        score += 1;
+        if (score % 90 === 0) obs.push({ x: box.w + 20, w: 26 + (score % 3) * 10, h: 36 + (score % 4) * 8 });
+      }
+      vy += 0.48; y += vy;
+      if (y > ground - 28) { y = ground - 28; vy = 0; }
+      ctx.fillStyle = '#7ec8ff';
+      ctx.fillRect(78, y, 28, 28);
+      for (var i = obs.length - 1; i >= 0; i--) {
+        var o = obs[i];
+        if (started && !dead) o.x -= 5.2;
+        ctx.fillStyle = '#e8f4ff';
+        ctx.fillRect(o.x, ground - o.h, o.w, o.h);
+        if (78 + 28 > o.x + 6 && 78 < o.x + o.w - 6 && y + 28 > ground - o.h + 4) dead = true;
+        if (o.x < -80) obs.splice(i, 1);
+      }
+      if (dead && score > best) { best = score; try { sessionStorage.setItem('wos:cube-best', String(best)); } catch (e) {} }
+      ctx.fillStyle = '#fff';
+      ctx.font = '16px system-ui';
+      ctx.fillText(dead ? 'Tap to retry  ' + Math.floor(score / 8) : String(Math.floor(score / 8)), 16, box.h - 24);
+      ctx.fillText('best ' + Math.floor(best / 8), box.w - 110, box.h - 24);
+      raf = requestAnimationFrame(frame);
+    }
+    raf = requestAnimationFrame(frame);
+    stopGame = function () { cancelAnimationFrame(raf); window.removeEventListener('keydown', onKey); playing = false; };
+  }
+  function showFail() {
+    fail.classList.add('on');
+    cube();
+  }
+  function hideFail() {
+    fail.classList.remove('on');
+    stopGame();
   }
   try {
     await load('/scram/scramjet.all.js');
@@ -66,9 +174,38 @@
     var frame = SJC.createFrame();
     frame.frame.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;border:0;background:#fff';
     document.body.appendChild(frame.frame);
-    frame.go(target);
+    var n = 0;
+    function bad() {
+      try {
+        var doc = frame.frame.contentDocument;
+        var title = doc && doc.getElementById && doc.getElementById('errorTitle');
+        return !!(title && /uh oh/i.test(title.textContent || ''));
+      } catch (e) { return false; }
+    }
+    function kick() {
+      try { frame.go(target); } catch (e) {}
+      var ticks = 0;
+      var timer = setInterval(function () {
+        ticks++;
+        if (bad()) {
+          try { frame.frame.style.visibility = 'hidden'; } catch (e2) {}
+          showFail();
+          clearInterval(timer);
+          if (n < 40) { n++; setTimeout(kick, 450); }
+          return;
+        }
+        if (ticks > 8) {
+          try { frame.frame.style.visibility = ''; } catch (e3) {}
+          hideFail();
+          clearInterval(timer);
+        }
+      }, 250);
+    }
+    kick();
   } catch (err) {
-    document.body.textContent = 'The search could not start. ' + ((err && err.message) || err);
+    showFail();
+    var note = fail.querySelector('.note');
+    if (note) note.lastChild.textContent = 'The search could not start.';
   }
 })();
 </script>

@@ -585,10 +585,11 @@
     snowCanvas = null;
     snowCtx = null;
     try { localStorage.setItem('wos:xmas', on ? '1' : '0'); } catch (e) {}
+    document.body.classList.toggle('drift-snow', !!on);
     if (!document.getElementById('drift-snow-under')) {
       var under = document.createElement('style');
       under.id = 'drift-snow-under';
-      under.textContent = '.win{z-index:12}#drift-settings-win{z-index:2147483001}canvas.snow{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3}';
+      under.textContent = '.win{z-index:12}#drift-settings-win{z-index:2147483001}canvas.snow{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3}body.drift-snow #task{background:rgba(20,22,30,.28)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}';
       document.head.appendChild(under);
     }
     function tagWindows() {
@@ -626,7 +627,7 @@
     }
     if (!window.Snowhush) {
       var script = document.createElement('script');
-      script.src = '/snowhush.js?v=20261101-user18';
+      script.src = '/snowhush.js?v=20261101-user19';
       script.onload = function () { if (window.Snowhush) apply(window.Snowhush); };
       document.head.appendChild(script);
     } else apply(window.Snowhush);

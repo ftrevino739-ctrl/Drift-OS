@@ -261,168 +261,14 @@
   }
 
   function peakMoviesApp(root) {
-    // Load Peak's real Movies & Shows page through Drift's existing Scramjet proxy.
-    var homeUrl = 'https://racialequityleadership.com/movies.html';
-    var home = new URL(homeUrl);
-
     root.innerHTML = '';
-    root.style.cssText = 'height:100%;min-height:0;position:relative;background:#000';
-
-    if (typeof window.openProxied !== 'function') {
-      root.textContent = 'Scramjet no está listo. Recarga Drift.';
-      return;
-    }
-
-    function attachPeakCleaners(opened) {
-      // openProxied owns iframe creation; do not append/create a second frame.
-      var frame = (opened && opened.frame) || root.querySelector('iframe');
-      if (!frame) return;
-
-      function cleanPeak() {
-        var win, doc;
-        try {
-          win = frame.contentWindow;
-          doc = frame.contentDocument || (win && win.document);
-          if (!win || !doc || !doc.documentElement) return;
-        } catch (e) {
-          return;
-        }
-
-        // Keep the real Peak catalogue and player; hide only sidebar and known ad slots.
-        if (!doc.getElementById('drift-peak-clean-style')) {
-          var style = doc.createElement('style');
-          style.id = 'drift-peak-clean-style';
-          style.textContent = [
-            '#sidebar, #side-bar, .sidebar, .side-bar, [data-sidebar],',
-            '[role="complementary"], [aria-label*="sidebar" i],',
-            '[class*="sidebar" i], [id*="sidebar" i],',
-            '[class*="side-bar" i], [id*="side-bar" i] {',
-            '  display:none !important; visibility:hidden !important;',
-            '  pointer-events:none !important;',
-            '}',
-            'main, [role="main"], [class*="main-content" i], [id*="main-content" i] {',
-            '  max-width:none !important; width:100% !important;',
-            '  margin-left:0 !important;',
-            '}',
-            '[id*="ad-container" i], [class*="ad-container" i],',
-            '[id*="ad-slot" i], [class*="ad-slot" i],',
-            '[id*="ad-banner" i], [class*="ad-banner" i],',
-            '[id*="advert" i], [class*="advert" i],',
-            '[id*="sponsor" i], [class*="sponsor" i],',
-            '[id*="popunder" i], [class*="popunder" i],',
-            '[data-ad], [data-ad-slot], [data-ad-client], ins.adsbygoogle,',
-            'iframe[src*="doubleclick.net" i],',
-            'iframe[src*="googlesyndication.com" i],',
-            'iframe[src*="googleadservices.com" i],',
-            'iframe[src*="popads.net" i], iframe[src*="popcash.net" i],',
-            'iframe[src*="propellerads.com" i], iframe[src*="adsterra.com" i],',
-            'iframe[src*="exoclick.com" i], iframe[src*="taboola.com" i],',
-            'iframe[src*="outbrain.com" i], iframe[src*="mgid.com" i] {',
-            '  display:none !important; visibility:hidden !important;',
-            '  pointer-events:none !important;',
-            '}'
-          ].join('\n');
-          (doc.head || doc.documentElement).appendChild(style);
-        }
-
-        // Attach once. Do not intercept fetch, delete DOM nodes, or block window.open:
-        // those behaviors can break Peak's dynamic listings and movie/episode players.
-        if (doc.documentElement.hasAttribute('data-drift-peak-nav')) return;
-        doc.documentElement.setAttribute('data-drift-peak-nav', '1');
-
-        function sendToMoviesHome() {
-          try {
-            win.location.href = homeUrl;
-          } catch (e) {
-            try { frame.src = homeUrl; } catch (_) {}
-          }
-        }
-
-        function redirectIfPeakRoot() {
-          try {
-            var current = new win.URL(win.location.href);
-            if (current.origin === home.origin &&
-                (current.pathname === '/' || current.pathname === '/index.html')) {
-              win.location.replace(homeUrl);
-            }
-          } catch (e) {}
-        }
-
-        doc.addEventListener('click', function (event) {
-          var element = event.target && event.target.closest
-            ? event.target.closest('button, [role="button"], a[href], [aria-label], [title]')
-            : null;
-
-          if (element) {
-            var labels = [
-              element.getAttribute('aria-label') || '',
-              element.getAttribute('title') || '',
-              element.textContent || ''
-            ].map(function (value) {
-              return String(value).replace(/\s+/g, ' ').trim();
-            });
-
-            var marker = [
-              element.id || '',
-              typeof element.className === 'string' ? element.className : ''
-            ].join(' ');
-
-            // Match an actual Back/Return control without touching play or episode controls.
-            var isBackControl = labels.some(function (label) {
-              return /^(?:←\s*)?(?:back|go back|return|back to movies|back to home|back to catalogue|back to catalog|movies home|volver|regresar|atrás|atras)(?:\s*→)?$/i.test(label);
-            }) || /(?:^|[\s_-])(?:back|go-back|back-button|back-btn|return-button|back-home)(?:$|[\s_-])/i.test(marker);
-
-            if (isBackControl) {
-              event.preventDefault();
-              event.stopImmediatePropagation();
-              sendToMoviesHome();
-              return;
-            }
-          }
-
-          // If Peak's logo/home link goes to its landing page, keep the user in Movies.
-          // Do not block movie-detail routes, episode routes, player iframes, or other media links.
-          var link = event.target && event.target.closest
-            ? event.target.closest('a[href]')
-            : null;
-          if (link) {
-            try {
-              var destination = new win.URL(link.href, win.location.href);
-              if (destination.origin === home.origin &&
-                  (destination.pathname === '/' || destination.pathname === '/index.html')) {
-                event.preventDefault();
-                event.stopImmediatePropagation();
-                sendToMoviesHome();
-              }
-            } catch (e) {}
-          }
-        }, true);
-
-        win.addEventListener('popstate', redirectIfPeakRoot);
-        redirectIfPeakRoot();
-      }
-
-      frame.addEventListener('load', function () {
-        setTimeout(cleanPeak, 100);
-        setTimeout(cleanPeak, 500);
-      });
-
-      // Apply once after open, plus a short retry in case Peak's document is still parsing.
-      setTimeout(cleanPeak, 150);
-      setTimeout(cleanPeak, 700);
-    }
-
-    // Use the same existing Scramjet loader as Drift's other proxied apps.
-    // This directly starts at movies.html each time Movies is opened.
-    try {
-      Promise.resolve(window.openProxied(homeUrl, root))
-        .then(attachPeakCleaners)
-        .catch(function (error) {
-          console.error('Peak Movies:', error);
-        });
-    } catch (error) {
-      console.error('Peak Movies:', error);
-    }
+    root.style.cssText = 'height:100%;min-height:0;position:relative;overflow:hidden;background:#000';
+    var frame = document.createElement('iframe');
+    frame.src = 'https://racialequityleadership.com/movies.html';
+    frame.setAttribute('allow', 'autoplay; fullscreen; encrypted-media; picture-in-picture');
+    frame.setAttribute('allowfullscreen', '');
+    frame.style.cssText = 'position:absolute;top:0;bottom:0;left:-56px;width:calc(100% + 56px);height:100%;border:0;background:#000';
+    root.appendChild(frame);
   }
 
 function driftSite(url) {
@@ -559,38 +405,10 @@ function driftSite(url) {
     load(leagues[0][1]);
   }
   function espnApp(root) {
-    root.innerHTML = '<div class="sjt" style="height:100%;min-height:0;position:relative;background:#0e0e0e"></div>';
-    var box = root.querySelector('.sjt');
-    var done = false;
-    function board() {
-      if (done || !root.isConnected) return;
-      done = true;
-      espnBoard(box);
-    }
-    if (typeof window.openProxied !== 'function') { board(); return; }
-    var probe = document.createElement('div');
-    probe.style.cssText = 'position:absolute;inset:0;visibility:hidden;pointer-events:none';
-    box.appendChild(probe);
-    Promise.resolve(window.openProxied('https://www.espn.com/', probe)).then(function () {
-      var n = 0;
-      var timer = setInterval(function () {
-        if (!root.isConnected) { clearInterval(timer); return; }
-        var frame = probe.querySelector('iframe');
-        n++;
-        if (frame && espnReal(frame)) {
-          clearInterval(timer);
-          done = true;
-          box.innerHTML = '';
-          probe.style.cssText = 'position:absolute;inset:0';
-          box.appendChild(probe);
-          return;
-        }
-        if ((frame && espnBlocked(frame) && n > 2) || n > 8) {
-          clearInterval(timer);
-          board();
-        }
-      }, 700);
-    }).catch(function () { board(); });
+    root.innerHTML = '';
+    root.style.cssText = 'height:100%;min-height:0;position:relative;background:#fff';
+    if (typeof window.openProxied === 'function') window.openProxied('https://www.espn.com/', root);
+    else root.textContent = 'ESPN is still starting.';
   }
   function directSite(url) {
     return function (root) {
@@ -1270,53 +1088,21 @@ function driftSite(url) {
     window.XAPPS.espn = { n: 'ESPN', f: espnApp };
     window.XAPPS.yt = { n: 'YouTube', f: youtubeApp };
     window.XAPPS.tt = { n: 'TikTok', f: typeof window.__driftTtFeed === 'function' ? window.__driftTtFeed : driftSite('https://www.tiktok.com/foryou') };
-    window.XAPPS.gem = { n: 'Gemini', f: gemChat };
-    function gemChat(root) {
-      root.innerHTML = '<div style="height:100%;display:flex;flex-direction:column;min-height:0;background:#0e1014;color:#eee;font:15px system-ui"><div style="padding:12px 14px;font-weight:750">Gemini</div><div data-log style="flex:1;min-height:0;overflow:auto;padding:12px 14px"></div><form data-f style="display:flex;gap:8px;padding:10px;border-top:1px solid rgba(255,255,255,.1)"><input data-q placeholder="Ask Gemini" style="flex:1;padding:10px 12px;border-radius:12px;border:1px solid #333;background:#14141c;color:#eee"/><button style="padding:10px 14px;border:0;border-radius:12px;background:#1a73e8;color:#fff;font-weight:700">Ask</button></form></div>';
-      var log = root.querySelector('[data-log]');
-      var input = root.querySelector('[data-q]');
-      root.querySelector('[data-f]').onsubmit = function (ev) {
-        ev.preventDefault();
-        var text = (input.value || '').trim();
-        if (!text) return;
-        input.value = '';
-        var mine = document.createElement('div');
-        mine.textContent = text;
-        mine.style.cssText = 'margin:0 0 8px;text-align:right;opacity:.9';
-        log.appendChild(mine);
-        var ans = document.createElement('div');
-        ans.textContent = '…';
-        ans.style.cssText = 'margin:0 0 16px;white-space:pre-wrap';
-        log.appendChild(ans);
-        var ask = window.driftAsk;
-        Promise.resolve(typeof ask === 'function' ? ask(text) : Promise.reject(new Error('Gemini is not ready'))).then(function (t) {
-          ans.textContent = t || '';
-        }).catch(function (err) {
-          ans.textContent = (err && err.message) || 'Gemini did not answer.';
-        });
-      };
-    }
-    gemChat.__driftChat = true;
-    window.XAPPS.movies = {
-      n: 'Movies',
-      f: function moviesPick(root) {
-        var src = 'racial';
-        try { src = localStorage.getItem('wos:movies') || 'racial'; } catch (e) {}
-        if (src === 'serum') src = 'noah';
-        if (src === 'racial') return peakMoviesApp(root);
-        if (src === 'noah' && typeof movies === 'function') return movies(root);
-        return tmdbMovies(root);
-      }
-    };
+    window.XAPPS.gem = { n: 'Gemini', f: driftSite('https://gemini.google.com/app') };
+    window.XAPPS.movies = { n: 'Movies', f: function () { return peakMoviesApp.apply(null, arguments); } };
+    window.__driftInstagram = 1;
+    window.XAPPS.ig = { n: 'Instagram', f: function (root) {
+      root.innerHTML = '';
+      root.style.cssText = 'height:100%;min-height:0;position:relative;background:#fff';
+      if (typeof window.openProxied === 'function') window.openProxied('https://www.instagram.com/login/', root);
+      else root.textContent = 'Instagram is still starting.';
+    } };
     window.__driftWhatsApp = 1;
     window.XAPPS.whatsapp = { n: 'WhatsApp', f: function (root) {
-      var browser = 'win';
-      try { browser = robloxOs(); } catch (e) {}
-      if (browser === 'ipad' || browser === 'chrome') browser = 'bing';
-      operaPage('https://web.whatsapp.com/', browser)(root);
+      operaPage('https://web.whatsapp.com/', 'edge')(root);
     } };
     window.__driftGithub = 1;
-    window.XAPPS.github = { n: 'GitHub', f: operaPage('https://github.com/', 'bing') };
+    window.XAPPS.github = { n: 'GitHub', f: operaPage('https://github.com/', 'chrome') };
     applyBrandLogos();
     try {
       var changed = false;
@@ -1624,18 +1410,8 @@ function driftSite(url) {
 
   function openTop(url) {
     url = String(url || '');
-    try {
-      if (/classroom\.google\.com/i.test(url) && typeof openApp === 'function') { openApp('classroom'); return; }
-      if (/aleks\.com/i.test(url) && typeof openApp === 'function') { openApp('aleks'); return; }
-      if (typeof openApp === 'function' && window.XAPPS && /^https?:/i.test(url)) {
-        var id = /docs\.google\.com/i.test(url) ? 'docs' : (/discoveryeducation/i.test(url) ? 'discovery' : 'inpage');
-        var label = id === 'docs' ? 'Docs' : (id === 'discovery' ? 'Discovery' : 'Page');
-        if (window.APPS) window.APPS[id] = window.APPS[id] || label;
-        window.XAPPS[id] = { n: label, f: operaPage(url, 'chrome') };
-        openApp(id);
-        return;
-      }
-    } catch (e) {}
+    if (!/^https?:/i.test(url)) return;
+    try { location.replace(url); } catch (e) { location.href = url; }
   }
   var SIZE_MAP = { xl: 3, lg: 2, sm: 1.7, xs: 1.5 };
   function readSize(key) {
@@ -1913,7 +1689,7 @@ function driftSite(url) {
     return 'win';
   }
   function robloxShell(root) {
-    operaPage('https://www.roblox.com/login', 'bing')(root);
+    operaPage('https://www.roblox.com/login', 'chrome')(root);
   }
   function inAppPage(url) {
     return function (root) {
@@ -1975,7 +1751,7 @@ function driftSite(url) {
         box.innerHTML = "";
         var frame = document.createElement("iframe");
         frame.setAttribute("referrerpolicy", "no-referrer");
-        frame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads allow-pointer-lock");
+        frame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms allow-modals allow-downloads allow-pointer-lock");
         frame.style.cssText = "position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff";
         frame.src = "/api/opera?u=" + encodeURIComponent(url) + "&b=" + encodeURIComponent(browser);
         box.appendChild(frame);
@@ -2101,17 +1877,17 @@ function driftSite(url) {
   function wireLoginApps() {
     try {
       if (!window.XAPPS) return;
-      window.XAPPS.gmail = { n: 'Gmail', f: operaPage('https://mail.google.com/mail/u/0/h/', 'firefox') };
+      window.XAPPS.gmail = { n: 'Gmail', f: operaPage('https://mail.google.com/mail/u/0/', 'edge') };
       if (window.APPS) window.APPS.classroom = 'Classroom';
       window.XAPPS.classroom = { n: 'Classroom', f: function (root) {
-        root.innerHTML = '<div style="height:100%;display:flex;flex-direction:column;min-height:0"><div style="flex:none;display:flex;gap:8px;align-items:center;padding:8px 10px;font:12px system-ui"><span style="flex:1">Classroom uses the login saved in this app. If it asks you to sign in, press Log in.</span><button type="button" data-login style="padding:8px 12px;border:0;border-radius:8px;background:#1a73e8;color:#fff;font-weight:650">Log in</button></div><div class="sjt" style="flex:1;min-height:0;position:relative;background:#fff"></div></div>';
+        root.innerHTML = '<div style="height:100%;display:flex;flex-direction:column;min-height:0"><div style="flex:none;display:flex;gap:8px;align-items:center;padding:8px 10px;font:12px system-ui"><span style="flex:1">Classroom stays in this window. If it asks you to sign in, press Log in. It does not open another tab.</span><button type="button" data-login style="padding:8px 12px;border:0;border-radius:8px;background:#1a73e8;color:#fff;font-weight:650">Log in</button></div><div class="sjt" style="flex:1;min-height:0;position:relative;background:#fff"></div></div>';
         var box = root.querySelector('.sjt');
         function show(url) {
           box.innerHTML = '';
           var frame = document.createElement('iframe');
           frame.setAttribute('referrerpolicy', 'no-referrer');
           frame.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';
-          frame.src = '/api/opera?u=' + encodeURIComponent(url) + '&b=firefox';
+          frame.src = '/api/opera?u=' + encodeURIComponent(url) + '&b=edge';
           box.appendChild(frame);
         }
         show('https://classroom.google.com/');
@@ -2122,7 +1898,7 @@ function driftSite(url) {
       delete window.XAPPS.canva;
       if (window.APPS) delete window.APPS.canva;
       window.__driftRoblox = robloxShell;
-      window.__driftGmail = operaPage('https://mail.google.com/mail/u/0/h/', 'firefox');
+      window.__driftGmail = operaPage('https://mail.google.com/mail/u/0/', 'edge');
       window.XAPPS.roblox = { n: 'Roblox', f: robloxShell };
     } catch (e) {}
   }
@@ -2430,11 +2206,6 @@ function driftSite(url) {
       '<div style="opacity:.75;font-size:12px;margin-top:4px">Flatter task bar and windows.</div></div>' +
       switchHTML('drift-linux-sw', linOn) + '</div></section>' +
       '<section data-sec="apps" style="display:none">' +
-      '<div style="margin-bottom:14px"><b>Choose your Movies</b>' +
-      '<div style="opacity:.75;font-size:12px;margin-top:4px">TMDB shows posters, the description and the episodes. Noah is the catalog already in Drift. Racial opens racialequityleadership.com/movies.html. If Movies is open, it reloads with this library.</div>' +
-      '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="movies-src" value="tmdb"/> TMDB</label>' +
-      '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="movies-src" value="noah"/> Noah</label>' +
-      '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="movies-src" value="racial"/> Racial</label></div>' +
       '<div style="margin-bottom:14px"><b>Choose your Games</b>' +
       '<div style="opacity:.75;font-size:12px;margin-top:4px">Noah is the in-app catalog. Tesana, Poki and CrazyGames open in the app. If Games is open, it reloads with this library.</div>' +
       '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="games-lib" value="noah"/> Noah (recommended)</label>' +
@@ -2532,8 +2303,8 @@ function driftSite(url) {
     showSec('ui');
     var bmClass = panel.querySelector('#drift-bm-class');
     var bmGuest = panel.querySelector('#drift-bm-guest');
-    var classJs = 'javascript:' + "(function(){var q='';try{var u=new URL(location.href);q=u.searchParams.get('q')||u.searchParams.get('query')||'';}catch(e){}var target=q?('https://duckduckgo.com/?kl=us-en&q='+encodeURIComponent(q)):location.href;location.href='https://drift.hostless.app/go?u='+encodeURIComponent(target);})();";
-    var guestJs = 'javascript:' + "(function(){var q='',target=location.href;try{var u=new URL(location.href);q=u.searchParams.get('q')||u.searchParams.get('query')||'';if(q){target='https://www.google.com/search?igu=1&hl=en&gl=us&q='+encodeURIComponent(q);}else if(/google\\./i.test(u.hostname)){u.searchParams.set('igu','1');if(!u.searchParams.get('hl'))u.searchParams.set('hl','en');target=u.toString();}}catch(e){}location.href='https://drift.hostless.app/go?u='+encodeURIComponent(target)+'&guest=1';})();";
+    var classJs = 'javascript:' + "(function(){function real(){var href='';try{href=location.href;}catch(e){}var q='';try{var u=new URL(href);q=u.searchParams.get('q')||u.searchParams.get('query')||'';var m=href.indexOf('/scramjet/');if(m!==-1){var rest=decodeURIComponent(href.slice(m+10).split('#')[0]);if(/^https?:/i.test(rest)){var ru=new URL(rest);q=ru.searchParams.get('q')||ru.searchParams.get('query')||q;href=rest;}}}catch(e){}if(/drift\\.hostless\\.app\\/go/i.test(href)){try{var g=new URL(href);if(g.searchParams.get('u'))href=g.searchParams.get('u');}catch(e){}}return q?('https://duckduckgo.com/?kl=us-en&q='+encodeURIComponent(q)):href;}var dest='https://drift.hostless.app/go?u='+encodeURIComponent(real());try{if(window.parent&&window.parent!==window){window.parent.location.href=dest;return;}}catch(e){}try{window.top.location.href=dest;}catch(e){location.href=dest;}})();";
+    var guestJs = 'javascript:' + "(function(){function real(){var href='';try{href=location.href;}catch(e){}var q='',target=href;try{var u=new URL(href);q=u.searchParams.get('q')||u.searchParams.get('query')||'';var m=href.indexOf('/scramjet/');if(m!==-1){var rest=decodeURIComponent(href.slice(m+10).split('#')[0]);if(/^https?:/i.test(rest)){href=rest;u=new URL(rest);q=u.searchParams.get('q')||u.searchParams.get('query')||q;}}if(/drift\\.hostless\\.app\\/go/i.test(href)){var g=new URL(href);if(g.searchParams.get('u')){href=g.searchParams.get('u');u=new URL(href);q=u.searchParams.get('q')||q;}}if(q)target='https://www.google.com/search?igu=1&hl=en&gl=us&q='+encodeURIComponent(q);else if(/google\\./i.test(u.hostname)){u.searchParams.set('igu','1');if(!u.searchParams.get('hl'))u.searchParams.set('hl','en');target=u.toString();}}catch(e){}return target;}var dest='https://drift.hostless.app/go?u='+encodeURIComponent(real())+'&guest=1';try{if(window.parent&&window.parent!==window){window.parent.location.href=dest;return;}}catch(e){}try{window.top.location.href=dest;}catch(e){location.href=dest;}})();";
     function copyBm(text, title, how) {
       function done() {
         var old = document.getElementById('drift-copied');
@@ -2954,17 +2725,8 @@ function driftSite(url) {
     btn.onclick = function (e) {
       e.preventDefault();
       e.stopPropagation();
-      var desk = document.getElementById('desk');
-      if (!desk) return;
-      var w = document.createElement('div');
-      w.className = 'win';
-      w.style.cssText = 'width:min(980px,96vw);height:min(680px,84vh);left:36px;top:28px;z-index:90000';
-      w.innerHTML = '<div class="title"><b>Google Lens</b><button class="wb x" type="button" data-a="x" aria-label="Close">✕</button></div><div class="body" style="position:relative;min-height:0"></div>';
-      desk.appendChild(w);
-      if (typeof drag === 'function') drag(w);
-      w.querySelector('[data-a="x"]').onclick = function (ev) { ev.stopPropagation(); w.remove(); };
-      var body = w.querySelector('.body');
-      if (typeof window.openProxied === 'function') window.openProxied('https://lens.google.com/', body);
+      var dest = 'https://drift.hostless.app/go?u=' + encodeURIComponent('https://lens.google.com/') + '&guest=1';
+      try { location.href = dest; } catch (err) {}
     };
     document.body.appendChild(btn);
   }
@@ -3386,6 +3148,7 @@ function driftSite(url) {
       stopGame = playCube(cv);
     };
     function playCube(cv) {
+      window.driftCubeGame = playCube;
       var ctx = cv.getContext('2d');
       var y = 0, vy = 0, dead = false, score = 0, best = 0, coins = 0, tickN = 0, raf = 0, started = false, shake = 0, runT = 0;
       var obs = [], flakes = [], far = [], coinsA = [], dust = [];
@@ -3677,43 +3440,9 @@ function driftSite(url) {
       if (!b) return;
       e.preventDefault();
       e.stopPropagation();
-      var menu = document.getElementById('menu');
-      if (menu) menu.classList.remove('show');
-      var desk = document.getElementById('desk');
-      if (!desk) return;
-      var w = document.createElement('div');
-      w.className = 'win';
-      w.style.cssText = 'width:min(980px,96vw);height:min(680px,84vh);left:36px;top:28px;z-index:90000';
-      w.innerHTML = '<div class="title"><b>Google Lens</b><button class="wb x" type="button" data-a="x" aria-label="Close">✕</button></div><div class="body" style="position:relative;min-height:0"></div>';
-      desk.appendChild(w);
-      if (typeof drag === 'function') drag(w);
-      w.querySelector('[data-a="x"]').onclick = function (ev) { ev.stopPropagation(); w.remove(); };
-      var body = w.querySelector('.body');
-      if (typeof window.openProxied === 'function') window.openProxied('https://lens.google.com/', body);
+      var dest = 'https://drift.hostless.app/go?u=' + encodeURIComponent('https://lens.google.com/') + '&guest=1';
+      try { location.href = dest; } catch (err) {}
     }, true);
-    if (typeof tiles === 'function' && !tiles.__lens) {
-      var t0 = tiles;
-      function wrappedTiles() {
-        var out = t0.apply(this, arguments);
-        try {
-          var apps = document.getElementById('apps');
-          if (!apps) return out;
-          var old = apps.querySelector('[data-lens-tile]');
-          var on = false;
-          try { on = localStorage.getItem('wos:lens-bypass') === '1'; } catch (err) {}
-          if (!on) { if (old) old.remove(); return out; }
-          if (old) return out;
-          var d = document.createElement('div');
-          d.className = 'tl';
-          d.setAttribute('data-lens-tile', '1');
-          d.innerHTML = '<button type="button" data-lens="1"><span class="mi" style="background:#fff;display:grid;place-items:center"><svg viewBox="0 0 48 48" width="36" height="36"><circle cx="20" cy="20" r="10" fill="none" stroke="#4285F4" stroke-width="4"/><path d="M28 28l9 9" stroke="#EA4335" stroke-width="4" stroke-linecap="round"/><circle cx="16" cy="17" r="2.4" fill="#FBBC05"/><circle cx="24" cy="17" r="2.4" fill="#34A853"/></svg></span>Google Lens</button>';
-          apps.appendChild(d);
-        } catch (err2) {}
-        return out;
-      }
-      wrappedTiles.__lens = true;
-      try { window.tiles = wrappedTiles; tiles = wrappedTiles; } catch (err) {}
-    }
   }
   function boot() {
     window.driftPaint = driftPaint;
