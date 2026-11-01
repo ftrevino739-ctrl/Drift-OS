@@ -1108,10 +1108,36 @@ function driftSite(url) {
     window.XAPPS.aleks = { n: 'ALEKS', f: driftSite('https://www.aleks.com/') };
     window.XAPPS.winemu = { n: 'Windows emulator', f: windowsEmulator };
     window.XAPPS.gbuild = { n: 'Game Builder', f: driftSite('https://tesana.com/create') };
-    window.XAPPS.espn = { n: 'ESPN', f: driftSite('https://www.espn.com/') };
-    window.XAPPS.yt = { n: 'YouTube', f: driftSite('https://www.youtube.com/?hl=en&gl=US&persist_hl=1') };
+    window.XAPPS.espn = { n: 'ESPN', f: operaPage('https://www.espn.com/', 'firefox') };
+    window.XAPPS.yt = { n: 'YouTube', f: driftSite('https://www.youtube.com/?hl=es-419&gl=MX&persist_hl=1&persist_gl=1') };
     window.XAPPS.tt = { n: 'TikTok', f: typeof window.__driftTtFeed === 'function' ? window.__driftTtFeed : driftSite('https://www.tiktok.com/foryou') };
-    window.XAPPS.gem = { n: 'Gemini', f: driftSite('https://gemini.google.com/app') };
+    window.XAPPS.gem = { n: 'Gemini', f: gemChat };
+    function gemChat(root) {
+      root.innerHTML = '<div style="height:100%;display:flex;flex-direction:column;min-height:0;background:#0e1014;color:#eee;font:15px system-ui"><div style="padding:12px 14px;font-weight:750">Gemini</div><div data-log style="flex:1;min-height:0;overflow:auto;padding:12px 14px"></div><form data-f style="display:flex;gap:8px;padding:10px;border-top:1px solid rgba(255,255,255,.1)"><input data-q placeholder="Ask Gemini" style="flex:1;padding:10px 12px;border-radius:12px;border:1px solid #333;background:#14141c;color:#eee"/><button style="padding:10px 14px;border:0;border-radius:12px;background:#1a73e8;color:#fff;font-weight:700">Ask</button></form></div>';
+      var log = root.querySelector('[data-log]');
+      var input = root.querySelector('[data-q]');
+      root.querySelector('[data-f]').onsubmit = function (ev) {
+        ev.preventDefault();
+        var text = (input.value || '').trim();
+        if (!text) return;
+        input.value = '';
+        var mine = document.createElement('div');
+        mine.textContent = text;
+        mine.style.cssText = 'margin:0 0 8px;text-align:right;opacity:.9';
+        log.appendChild(mine);
+        var ans = document.createElement('div');
+        ans.textContent = '…';
+        ans.style.cssText = 'margin:0 0 16px;white-space:pre-wrap';
+        log.appendChild(ans);
+        var ask = window.driftAsk;
+        Promise.resolve(typeof ask === 'function' ? ask(text) : Promise.reject(new Error('Gemini is not ready'))).then(function (t) {
+          ans.textContent = t || '';
+        }).catch(function (err) {
+          ans.textContent = (err && err.message) || 'Gemini did not answer.';
+        });
+      };
+    }
+    gemChat.__driftChat = true;
     window.XAPPS.movies = {
       n: 'Movies',
       f: function moviesPick(root) {
@@ -1123,11 +1149,30 @@ function driftSite(url) {
         return tmdbMovies(root);
       }
     };
+    window.__driftWhatsApp = 1;
     window.XAPPS.whatsapp = { n: 'WhatsApp', f: function (root) {
-      var browser = 'win';
-      try { browser = robloxOs(); } catch (e) {}
-      if (browser === 'ipad') browser = 'mac';
-      operaPage('https://web.whatsapp.com/', browser)(root);
+      root.innerHTML = '<div class="sjt" style="height:100%;min-height:0;position:relative;background:#111b21"></div>';
+      var box = root.querySelector('.sjt');
+      function go() {
+        box.innerHTML = '<div class="ym" style="color:#e9edef">Loading WhatsApp…</div>';
+        var ready = (typeof sjInit === 'function') ? Promise.resolve(sjInit()) : Promise.resolve();
+        ready.then(function () {
+          if (!window.SJC || typeof window.SJC.createFrame !== 'function') throw new Error('not ready');
+          var f = window.SJC.createFrame();
+          if (!f || !f.frame) throw new Error('no frame');
+          f.frame.removeAttribute('sandbox');
+          f.frame.setAttribute('allow', 'camera; microphone; clipboard-read; clipboard-write; fullscreen; autoplay');
+          f.frame.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#111b21';
+          box.innerHTML = '';
+          box.appendChild(f.frame);
+          f.go('https://web.whatsapp.com/');
+        }).catch(function () {
+          box.innerHTML = '<div class="ym" style="color:#e9edef">WhatsApp could not open the QR yet.<br><button type="button" data-r style="margin-top:8px;padding:8px 12px;border:0;border-radius:8px;background:#25D366;color:#111;font-weight:700">Retry</button></div>';
+          var b = box.querySelector('[data-r]');
+          if (b) b.onclick = go;
+        });
+      }
+      go();
     } };
     applyBrandLogos();
     try {
@@ -1193,7 +1238,7 @@ function driftSite(url) {
         ['mistralai/mistral-medium-3.5', 'Mistral Medium 3.5', 'xKiro free', 'default', 'Mistral Medium 3.5, free on xKiro. Below Drift 2.1.', { code: 1, vision: 1, files: 0, think: 1, fast: 1 }],
         ['mistralai/mistral-small-2603', 'Mistral Small', 'xKiro free', 'default', 'Mistral Small, free on xKiro. Below Drift 2.1.', { code: 1, vision: 1, files: 0, think: 1, fast: 1 }],
         ['mistralai/codestral-2508', 'Codestral', 'xKiro free · code', 'default', 'Codestral, free on xKiro. Below Drift 2.1.', { code: 1, vision: 0, files: 0, think: 0, fast: 1 }],
-        ['qwen/qwen3-coder-plus:free', 'Drift Code', 'xKiro free · best code', 'default', 'Qwen3 Coder Plus, free on xKiro. Best free coding model. JS Injector uses this. Below Drift 2.1 for normal chat.', { code: 1, vision: 1, files: 0, think: 1, fast: 1 }],
+        ['qwen/qwen3-coder-plus:free', 'Qwen Coder', 'Slow · not used for replies', 'default', 'Kept in the list only. Drift 2.1 writes the code, because this one is slow.', { code: 1, vision: 1, files: 0, think: 1, fast: 0 }],
         ['qwen/qwen3.7-max:free', 'Qwen3.7 Max', 'xKiro free', 'default', 'Free Qwen3.7 Max. 1M context. Below Drift 2.1.', { code: 1, vision: 0, files: 0, think: 1, fast: 0 }],
         ['qwen/qwen3.7-plus:free', 'Qwen3.7 Plus', 'xKiro free · vision', 'default', 'Free Qwen3.7 Plus. Sees images. Below Drift 2.1.', { code: 1, vision: 1, files: 0, think: 1, fast: 1 }],
         ['qwen/qwen3.5-397b-a17b:free', 'Qwen3.5 397B', 'xKiro free', 'default', 'Free Qwen3.5 397B. Below Drift 2.1.', { code: 1, vision: 1, files: 0, think: 1, fast: 0 }],
@@ -1211,7 +1256,7 @@ function driftSite(url) {
 
   function installAppGlass() {
     var on = false;
-    try { on = localStorage.getItem('wos:liquid-apps') === '1'; } catch (e) {}
+    try { on = /^(1|true)$/.test(String(localStorage.getItem('wos:liquid-apps') || '').replace(/"/g, '')); } catch (e) {}
     var st = document.getElementById('drift-app-glass-style');
     if (!st) { st = document.createElement('style'); st.id = 'drift-app-glass-style'; document.head.appendChild(st); }
     if (on) {
@@ -1289,7 +1334,7 @@ function driftSite(url) {
   }
   function installLiquidGlass() {
     var on = false;
-    try { on = localStorage.getItem('wos:liquid-glass') === '1'; } catch (e) {}
+    try { on = /^(1|true)$/.test(String(localStorage.getItem('wos:liquid-glass') || '').replace(/"/g, '')); } catch (e) {}
     var st = document.getElementById('drift-liquid-style');
     if (!st) { st = document.createElement('style'); st.id = 'drift-liquid-style'; document.head.appendChild(st); }
     if (on) {
@@ -1725,16 +1770,7 @@ function driftSite(url) {
     return 'win';
   }
   function robloxShell(root) {
-    var url = 'https://now.gg/apps/roblox-corporation/5349/roblox';
-    root.innerHTML = '<div class="sjt" style="height:100%;min-height:0;position:relative;background:#0e1014"></div>';
-    var box = root.querySelector('.sjt');
-    var frame = document.createElement('iframe');
-    frame.setAttribute('allow', 'fullscreen; autoplay; gamepad; keyboard-map; pointer-lock; clipboard-read; clipboard-write; accelerometer; gyroscope');
-    frame.setAttribute('allowfullscreen', 'true');
-    frame.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
-    frame.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#0e1014';
-    frame.src = url;
-    box.appendChild(frame);
+    operaPage('https://www.roblox.com/login', 'bing')(root);
   }
   function inAppPage(url) {
     return function (root) {
@@ -1923,7 +1959,23 @@ function driftSite(url) {
     try {
       if (!window.XAPPS) return;
       window.XAPPS.gmail = { n: 'Gmail', f: operaPage('https://mail.google.com/mail/u/0/h/', 'firefox') };
-      window.XAPPS.classroom = { n: 'Classroom', f: operaPage('https://classroom.google.com/', 'chrome') };
+      if (window.APPS) window.APPS.classroom = 'Full bypass (drift)';
+      window.XAPPS.classroom = { n: 'Full bypass (drift)', f: function (root) {
+        root.innerHTML = '<div style="height:100%;display:flex;flex-direction:column;min-height:0"><div style="flex:none;display:flex;gap:8px;align-items:center;padding:8px 10px;font:12px system-ui"><span style="flex:1">Full bypass (drift) opens Classroom in Firefox inside the app. If this computer has no saved login yet, press Log in.</span><button type="button" data-login style="padding:8px 12px;border:0;border-radius:8px;background:#1a73e8;color:#fff;font-weight:650">Log in</button></div><div class="sjt" style="flex:1;min-height:0;position:relative;background:#fff"></div></div>';
+        var box = root.querySelector('.sjt');
+        function show(url) {
+          box.innerHTML = '';
+          var frame = document.createElement('iframe');
+          frame.setAttribute('referrerpolicy', 'no-referrer');
+          frame.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';
+          frame.src = '/api/opera?u=' + encodeURIComponent(url) + '&b=firefox';
+          box.appendChild(frame);
+        }
+        show('https://classroom.google.com/');
+        root.querySelector('[data-login]').onclick = function () {
+          show('https://accounts.google.com/ServiceLogin?service=classroom&continue=' + encodeURIComponent('https://classroom.google.com/') + '&hl=en');
+        };
+      } };
       delete window.XAPPS.canva;
       if (window.APPS) delete window.APPS.canva;
       window.__driftRoblox = robloxShell;
@@ -2148,20 +2200,23 @@ function driftSite(url) {
     var liquidOn = false, eduOn = false, gk = 'lazy', kbHide = 'F9', kbClass = 'F10', appSize = 'lg', tbSize = 'lg', orbOn = true, xmasOn = false;
     var dynOn = false, macOn = false, winOn = false, linOn = false, lensOn = false;
     try {
-      liquidOn = localStorage.getItem('wos:liquid-glass') === '1';
-      eduOn = localStorage.getItem('wos:edu-mode') === '1';
-      gk = localStorage.getItem('wos:gimkit-injector') || 'lazy';
+      function onFlag(key) {
+        try { var v = String(localStorage.getItem(key) || '').replace(/"/g, ''); return v === '1' || v === 'true'; } catch (e) { return false; }
+      }
+      liquidOn = onFlag('wos:liquid-glass');
+      eduOn = onFlag('wos:edu-mode');
+      gk = (localStorage.getItem('wos:gimkit-injector') || 'lazy').replace(/"/g, '');
       kbHide = localStorage.getItem('wos:kb-hide') || 'F9';
       kbClass = localStorage.getItem('wos:kb-class') || 'F10';
-      appSize = localStorage.getItem('wos:size-apps') || 'lg';
-      tbSize = localStorage.getItem('wos:size-tb') || 'lg';
-      orbOn = localStorage.getItem('wos:ai-orb') === '1';
-      xmasOn = localStorage.getItem('wos:xmas') === '1';
-      dynOn = localStorage.getItem('wos:dynamic-os') === '1';
-      macOn = localStorage.getItem('wos:mac-adapt') === '1';
-      winOn = localStorage.getItem('wos:win-adapt') === '1';
-      linOn = localStorage.getItem('wos:linux-adapt') === '1';
-      lensOn = localStorage.getItem('wos:lens-bypass') === '1';
+      appSize = (localStorage.getItem('wos:size-apps') || 'lg').replace(/"/g, '');
+      tbSize = (localStorage.getItem('wos:size-tb') || 'lg').replace(/"/g, '');
+      orbOn = onFlag('wos:ai-orb');
+      xmasOn = onFlag('wos:xmas');
+      dynOn = onFlag('wos:dynamic-os');
+      macOn = onFlag('wos:mac-adapt');
+      winOn = onFlag('wos:win-adapt');
+      linOn = onFlag('wos:linux-adapt');
+      lensOn = onFlag('wos:lens-bypass');
     } catch (e) {}
     var opts = '';
     Object.keys(GIMKIT_INJECTORS).forEach(function (k) {
@@ -2201,7 +2256,7 @@ function driftSite(url) {
       '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px">' +
       '<div style="flex:1"><b>Enable liquid glass to apps</b>' +
       '<div style="opacity:.75;font-size:12px;margin-top:4px">Makes the app windows transparent so the desktop shows through. Pages inside a site stay readable.</div></div>' +
-      switchHTML('drift-app-glass-sw', localStorage.getItem('wos:liquid-apps') === '1') + '</div>' +
+      switchHTML('drift-app-glass-sw', onFlag('wos:liquid-apps') || document.body.classList.contains('drift-app-glass')) + '</div>' +
       '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px">' +
       '<div style="flex:1"><b>Christmas mode</b>' +
       '<div style="opacity:.75;font-size:12px;margin-top:4px">Snow keeps falling until you turn this off. It fades once it covers part of the screen. It rests on open windows. Move or shake a window and the snow comes off.</div></div>' +
@@ -2256,7 +2311,15 @@ function driftSite(url) {
       '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px">' +
       '<div style="flex:1"><b>Delete all created apps</b>' +
       '<div style="opacity:.75;font-size:12px;margin-top:4px">Deletes every app that is not a Drift default. If two apps have the exact same name, only the Drift default is kept.</div></div>' +
-      switchHTML('drift-delapps-sw', false) + '</div></section>' +
+      switchHTML('drift-delapps-sw', false) + '</div>' +
+      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px">' +
+      '<div style="flex:1"><b>Low-detail mode</b>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Uses fewer resources. Apps stay. Blur, extra animation and the snow drawing pause until you turn this off.</div></div>' +
+      switchHTML('drift-low-sw', onFlag('wos:low-detail') || document.body.classList.contains('drift-low')) + '</div>' +
+      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px">' +
+      '<div style="flex:1"><b>Auto-block meanwhile setup</b>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Apps wait until Scramjet has finished starting, so a page does not open into a load error.</div></div>' +
+      switchHTML('drift-autoblock-sw', onFlag('wos:autoblock')) + '</div></section>' +
       '<section data-sec="bypass" style="display:none">' +
       '<div style="padding-top:4px;margin-bottom:12px">' +
       '<b style="display:block;margin-bottom:8px">Custom Keybinds</b>' +
@@ -2300,16 +2363,16 @@ function driftSite(url) {
       '<label style="display:flex;gap:8px;align-items:center;margin-top:6px;cursor:pointer"><input type="radio" name="prot-class" value="classroom"/> Alert and open Classroom</label></div>' +
       '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:16px;border-top:1px solid rgba(255,255,255,.08);padding-top:14px">' +
       '<div style="flex:1"><b>Google Lens bypass</b>' +
-      '<div style="opacity:.75;font-size:12px;margin-top:4px">Adds the Google Lens logo to the main menu. Click it to use Google Lens as a guest.</div></div>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Shows a Google Lens button, like the assistant. Press it to use Lens.</div></div>' +
       switchHTML('drift-lens-sw', lensOn) + '</div>' +
       '<div style="margin-top:16px;border-top:1px solid rgba(255,255,255,.08);padding-top:14px">' +
-      '<b>Classroom</b>' +
-      '<div style="opacity:.75;font-size:12px;margin-top:4px">Click the button to copy the bookmarklet and open the setup tutorial. On a Google search in your real browser it opens that search through drift.hostless.app/scramjet/, not in a Drift app or tab.</div>' +
-      '<a id="drift-bm-class" href="#" style="display:inline-block;margin-top:8px;padding:8px 12px;border-radius:10px;background:#1a73e8;color:#fff;text-decoration:none;font-weight:650">Full bypasser (DRIFT)</a></div>' +
+      '<b>Full bypass (drift)</b>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Copies a bookmarklet. In your real browser it opens only that Google search through Scramjet. It does not open the Drift desktop.</div>' +
+      '<a id="drift-bm-class" href="#" style="display:inline-block;margin-top:8px;padding:8px 12px;border-radius:10px;background:#1a73e8;color:#fff;text-decoration:none;font-weight:650">Full bypass (drift)</a></div>' +
       '<div style="margin-top:16px">' +
-      '<b>Full bypasser</b>' +
-      '<div style="opacity:.75;font-size:12px;margin-top:4px">Click the button to copy this bookmarklet and open the same kind of tutorial. It opens the page through drift.hostless.app/scramjet/ as a Google guest in the real browser.</div>' +
-      '<a id="drift-bm-guest" href="#" style="display:inline-block;margin-top:8px;padding:8px 12px;border-radius:10px;background:#1a73e8;color:#fff;text-decoration:none;font-weight:650">Full bypasser</a></div>' +
+      '<b>Full bypass</b>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Copies a bookmarklet that opens the page as a Google guest. It does not use about:blank.</div>' +
+      '<a id="drift-bm-guest" href="#" style="display:inline-block;margin-top:8px;padding:8px 12px;border-radius:10px;background:#1a73e8;color:#fff;text-decoration:none;font-weight:650">Full bypass</a></div>' +
       '<button type="button" id="drift-docs-btn" style="margin-top:12px;width:100%;padding:10px;border:1px solid rgba(255,255,255,.14);border-radius:10px;background:transparent;color:#fff;font-weight:600;cursor:pointer">Drift docs</button></section></div></div>';
     panel.querySelector('[data-x]').onclick = function (e) { e.stopPropagation(); panel.remove(); };
     function showSec(id) {
@@ -2326,8 +2389,8 @@ function driftSite(url) {
     showSec('ui');
     var bmClass = panel.querySelector('#drift-bm-class');
     var bmGuest = panel.querySelector('#drift-bm-guest');
-    var classJs = 'javascript:' + "(function(){var q='';try{q=new URL(location.href).searchParams.get('q')||'';}catch(e){}var target=q?('https://www.google.com/search?q='+encodeURIComponent(q)):location.href;location.replace('https://drift.hostless.app/scramjet/'+encodeURIComponent(target));})();";
-    var guestJs = 'javascript:' + "(function(){var guest=location.href;try{var u=new URL(location.href);if(/google\\./i.test(u.hostname)){u.searchParams.set('igu','1');guest=u.toString();}else guest='https://www.google.com/search?igu=1&q='+encodeURIComponent(document.title||location.href);}catch(e){}location.replace('https://drift.hostless.app/scramjet/'+encodeURIComponent(guest));})();";
+    var classJs = 'javascript:' + "(function(){var q='';try{q=new URL(location.href).searchParams.get('q')||'';}catch(e){}var target=q?('https://www.google.com/search?hl=en&gl=us&q='+encodeURIComponent(q)):location.href;location.href='https://drift.hostless.app/go?u='+encodeURIComponent(target);})();";
+    var guestJs = 'javascript:' + "(function(){var guest=location.href;try{var u=new URL(location.href);if(/google\\./i.test(u.hostname)){u.searchParams.set('igu','1');if(!u.searchParams.get('hl'))u.searchParams.set('hl','en');guest=u.toString();}else guest='https://www.google.com/search?igu=1&hl=en&gl=us&q='+encodeURIComponent(document.title||'');}catch(e){}location.href='https://drift.hostless.app/go?u='+encodeURIComponent(guest)+'&guest=1';})();";
     function copyBm(text, title, how) {
       function done() {
         var old = document.getElementById('drift-copied');
@@ -2371,7 +2434,7 @@ function driftSite(url) {
       bmClass.onclick = function (e) {
         e.preventDefault();
         e.stopPropagation();
-        copyBm(classJs, 'Full bypasser (DRIFT)', 'Full bypasser (DRIFT) opens that Google search through drift.hostless.app/scramjet/ in the real browser.');
+        copyBm(classJs, 'Full bypass (drift)', 'Full bypass (drift) opens only that Google search through Scramjet. It does not open the Drift desktop.');
       };
     }
     if (bmGuest) {
@@ -2379,7 +2442,7 @@ function driftSite(url) {
       bmGuest.onclick = function (e) {
         e.preventDefault();
         e.stopPropagation();
-        copyBm(guestJs, 'Full bypasser', 'Full bypasser opens the page through drift.hostless.app/scramjet/ as a Google guest in the real browser.');
+        copyBm(guestJs, 'Full bypass', 'Full bypass opens that page as a Google guest. It stays on the page. It does not use about:blank.');
       };
     }
     var homeNow = 'drift';
@@ -2416,8 +2479,53 @@ function driftSite(url) {
     wireSwitch(panel.querySelector('#drift-linux-sw'), function (on) { setLinuxAdapt(on, false); });
     wireSwitch(panel.querySelector('#drift-lens-sw'), function (on) {
       try { localStorage.setItem('wos:lens-bypass', on ? '1' : '0'); } catch (e) {}
+      try { installLensOrb(); } catch (e3) {}
       try { if (typeof tiles === 'function') tiles(); } catch (e2) {}
     });
+    wireSwitch(panel.querySelector('#drift-low-sw'), function (on) {
+      try { localStorage.setItem('wos:low-detail', on ? '1' : '0'); } catch (e) {}
+      installLowDetail();
+    });
+    wireSwitch(panel.querySelector('#drift-autoblock-sw'), function (on) {
+      try { localStorage.setItem('wos:autoblock', on ? '1' : '0'); } catch (e) {}
+    });
+    (function syncSwitches() {
+      function savedOn(key) {
+        try {
+          var v = localStorage.getItem(key);
+          if (v == null) return false;
+          v = String(v).replace(/"/g, '');
+          return v === '1' || v === 'true';
+        } catch (e) { return false; }
+      }
+      function paintSaved(id, key, live) {
+        var on = savedOn(key) || !!live;
+        if (on && !savedOn(key)) { try { localStorage.setItem(key, '1'); } catch (e) {} }
+        var b = panel.querySelector('#' + id);
+        if (!b) return;
+        b.setAttribute('data-on', on ? '1' : '0');
+        b.setAttribute('aria-checked', on ? 'true' : 'false');
+        b.style.background = on ? '#34c759' : 'rgba(120,120,128,.32)';
+        var knob = b.querySelector('span');
+        if (knob) knob.style.left = on ? '20px' : '2px';
+      }
+      paintSaved('drift-liquid-sw', 'wos:liquid-glass', document.body.classList.contains('drift-liquid'));
+      paintSaved('drift-app-glass-sw', 'wos:liquid-apps', document.body.classList.contains('drift-app-glass'));
+      paintSaved('drift-xmas-sw', 'wos:xmas', !!document.getElementById('drift-snow'));
+      paintSaved('drift-dynamic-sw', 'wos:dynamic-os', false);
+      paintSaved('drift-cros-sw', 'wos:cros-adapt', document.body.classList.contains('drift-cros'));
+      paintSaved('drift-ipad-sw', 'wos:ipad-adapt', document.body.classList.contains('drift-ipad'));
+      paintSaved('drift-mac-sw', 'wos:mac-adapt', document.body.classList.contains('drift-mac'));
+      paintSaved('drift-win-sw', 'wos:win-adapt', document.body.classList.contains('drift-win'));
+      paintSaved('drift-linux-sw', 'wos:linux-adapt', document.body.classList.contains('drift-linux'));
+      paintSaved('drift-orb-sw', 'wos:ai-orb', !!document.getElementById('drift-orb'));
+      paintSaved('drift-nodev-sw', 'wos:no-dev', false);
+      paintSaved('drift-edu-sw', 'wos:edu-mode', false);
+      paintSaved('drift-prot-sw', 'wos:protector', false);
+      paintSaved('drift-lens-sw', 'wos:lens-bypass', !!document.getElementById('drift-lens-orb'));
+      paintSaved('drift-low-sw', 'wos:low-detail', document.body.classList.contains('drift-low'));
+      paintSaved('drift-autoblock-sw', 'wos:autoblock', false);
+    })();
     panel.querySelectorAll('input[name="size-apps"],input[name="size-tb"]').forEach(function (r) {
       r.onchange = function () {
         if (!r.checked) return;
@@ -2668,6 +2776,47 @@ function driftSite(url) {
       el.appendChild(pre);
     }
     blocks(text.slice(last));
+  }
+  function installLowDetail() {
+    var on = false;
+    try { on = /^(1|true)$/.test(String(localStorage.getItem('wos:low-detail') || '').replace(/"/g, '')); } catch (e) {}
+    document.body.classList.toggle('drift-low', !!on);
+    window.__driftLow = !!on;
+    var st = document.getElementById('drift-low-style');
+    if (!st) { st = document.createElement('style'); st.id = 'drift-low-style'; document.head.appendChild(st); }
+    st.textContent = on
+      ? 'body.drift-low *{animation:none!important;transition:none!important}body.drift-low #task,body.drift-low .win,body.drift-low #menu{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}body.drift-low #drift-snow{display:none!important}'
+      : '';
+  }
+  function installLensOrb() {
+    var on = false;
+    try { on = localStorage.getItem('wos:lens-bypass') === '1'; } catch (e) {}
+    var btn = document.getElementById('drift-lens-orb');
+    if (!on) { if (btn) btn.remove(); return; }
+    if (btn) return;
+    btn = document.createElement('button');
+    btn.id = 'drift-lens-orb';
+    btn.type = 'button';
+    btn.title = 'Google Lens';
+    btn.setAttribute('aria-label', 'Google Lens');
+    btn.style.cssText = 'position:fixed;z-index:2147483000;left:18px;bottom:calc(var(--tbh, 76px) + 18px);width:68px;height:68px;padding:0;border-radius:50%;border:2px solid rgba(255,255,255,.45);background:#fff;box-shadow:0 8px 24px rgba(0,0,0,.4);cursor:pointer';
+    btn.innerHTML = '<svg viewBox="0 0 48 48" width="40" height="40" aria-hidden="true"><circle cx="20" cy="20" r="10" fill="none" stroke="#4285F4" stroke-width="4"/><path d="M28 28l9 9" stroke="#EA4335" stroke-width="4" stroke-linecap="round"/><circle cx="16" cy="17" r="2.4" fill="#FBBC05"/><circle cx="24" cy="17" r="2.4" fill="#34A853"/></svg>';
+    btn.onclick = function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var desk = document.getElementById('desk');
+      if (!desk) return;
+      var w = document.createElement('div');
+      w.className = 'win';
+      w.style.cssText = 'width:min(980px,96vw);height:min(680px,84vh);left:36px;top:28px;z-index:90000';
+      w.innerHTML = '<div class="title"><b>Google Lens</b><button class="wb x" type="button" data-a="x" aria-label="Close">✕</button></div><div class="body" style="position:relative;min-height:0"></div>';
+      desk.appendChild(w);
+      if (typeof drag === 'function') drag(w);
+      w.querySelector('[data-a="x"]').onclick = function (ev) { ev.stopPropagation(); w.remove(); };
+      var body = w.querySelector('.body');
+      if (typeof window.openProxied === 'function') window.openProxied('https://lens.google.com/', body);
+    };
+    document.body.appendChild(btn);
   }
   function installOrb() {
     var on = false;
@@ -3143,7 +3292,15 @@ function driftSite(url) {
         ctx.fillStyle = '#243044';
         ctx.fillRect(0, ground, box.w, box.h - ground);
         ctx.fillStyle = '#d7e6f5';
-        for (var j = 0; j < obs.length; j++) ctx.fillRect(obs[j].x, ground - obs[j].hgt, 22, obs[j].hgt);
+        for (var j = 0; j < obs.length; j++) {
+          var sx = obs[j].x, sh = obs[j].hgt;
+          ctx.beginPath();
+          ctx.moveTo(sx, ground);
+          ctx.lineTo(sx + 11, ground - sh);
+          ctx.lineTo(sx + 22, ground);
+          ctx.closePath();
+          ctx.fill();
+        }
         ctx.fillStyle = '#7ec8ff';
         ctx.fillRect(78, y, 22, 22);
         ctx.fillStyle = '#fff';
@@ -3214,9 +3371,28 @@ function driftSite(url) {
         var name = (window.APPS && window.APPS[app]) || app;
         fetch('/api/use', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ app: String(name).slice(0, 48) }) }).catch(function () {});
       } catch (e) {}
-      var out = orig(app);
-      try { armAppLoader(app); } catch (e2) {}
-      return out;
+      function launch() {
+        var opened = orig(app);
+        try { armAppLoader(app); } catch (e2) {}
+        return opened;
+      }
+      var block = false;
+      try { block = localStorage.getItem('wos:autoblock') === '1'; } catch (e3) {}
+      if (!block || window.__driftScramReady) return launch();
+      var note = document.createElement('div');
+      note.textContent = 'Scramjet is still starting. The app will open when it is ready.';
+      note.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:2147483000;background:#1a73e8;color:#fff;padding:12px 14px;border-radius:12px;font:600 14px system-ui';
+      document.body.appendChild(note);
+      var ready = (typeof sjInit === 'function') ? sjInit() : Promise.resolve();
+      Promise.resolve(ready).then(function () {
+        window.__driftScramReady = true;
+        if (note.parentNode) note.remove();
+        launch();
+      }).catch(function () {
+        if (note.parentNode) note.textContent = 'Scramjet did not start, so this app stayed closed.';
+        setTimeout(function () { if (note.parentNode) note.remove(); }, 2600);
+      });
+      return null;
     }
     wrapped.__driftUse = true;
     window.openApp = wrapped;
@@ -3276,6 +3452,8 @@ function driftSite(url) {
     wireLoginApps();
     installLiquidGlass();
     installAppGlass();
+    try { installLowDetail(); } catch (e) {}
+    try { installLensOrb(); } catch (e) {}
     speedDesk();
     styleCavemanAsSwitch();
     bindCustomKeybinds();
@@ -3302,7 +3480,8 @@ function driftSite(url) {
       installSettingsButton();
       installLiquidGlass();
       installAppGlass();
-      styleCavemanAsSwitch();
+      try { installLowDetail(); } catch (e) {}
+      try { installLensOrb(); } catch (e) {}
       try { applySize(); } catch (e) {}
       try { applySavedAdapts(true); } catch (e) {}
       try { hookOpenApp(); } catch (e) {}

@@ -80,7 +80,7 @@ try {
     try {
       var req = event.request;
       var u = new URL(req.url);
-      if (req.mode === "navigate" && req.destination === "document" && /\/scramjet\//i.test(u.pathname)) {
+      if (req.mode === "navigate" && req.destination === "document" && req.headers.get("sec-fetch-site") === "none" && /\/scramjet\//i.test(u.pathname)) {
         event.respondWith(new Response('<!doctype html><meta charset="utf-8"><title> </title><script>location.replace("about:blank")</script>', {
           status: 200,
           headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" }

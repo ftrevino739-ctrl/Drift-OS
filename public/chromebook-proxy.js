@@ -475,9 +475,9 @@
       var X = window.XAPPS;
       if (!X) return;
       X.tt = { n: 'TikTok', f: window.ttApp };
-      X.gem = { n: 'Gemini', f: window.gemApp };
       X.gimkit = { n: 'Gimkit', f: window.gimkitApp };
-      if (X.whatsapp) X.whatsapp.f = function (r) { window.proxySite(r, 'https://web.whatsapp.com/', 'WhatsApp'); };
+      if (X.gem && !(X.gem.f && X.gem.f.__driftChat)) X.gem = { n: 'Gemini', f: window.gemApp };
+      if (X.whatsapp && !window.__driftWhatsApp) X.whatsapp.f = function (r) { window.proxySite(r, 'https://web.whatsapp.com/', 'WhatsApp'); };
       if (X.github) X.github.f = function (r) { window.proxySite(r, 'https://github.com', 'GitHub'); };
       if (window.APPS && !window.APPS.gem) window.APPS.gem = 'Gemini';
     } catch (e) { console.warn('wireApps', e); }

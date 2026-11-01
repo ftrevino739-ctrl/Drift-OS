@@ -324,8 +324,14 @@
     cm35 = p.getBoundingClientRect().height || 132;
     p.remove();
   }
-  function snowFrame() {
+  var snowClock = 0;
+  var snowLast = 0;
+  var snowStep = 16;
+  function snowFrame(ts) {
     if (!snowOn || !snowCtx || !snowCanvas) return;
+    var now = typeof ts === 'number' ? ts : Date.now();
+    snowStep = snowLast ? Math.min(100, now - snowLast) : 16;
+    snowLast = now;
     try { snowDraw(); } catch (err) {}
     if (!snowOn) return;
     snowTimer = requestAnimationFrame(snowFrame);
@@ -391,18 +397,21 @@
       delete shelf[id];
       delete prevBox[id];
     });
-    var falling = 0;
-    for (var c = 0; c < flakes.length; c++) if (!flakes[c].rest) falling++;
-    var burst = Math.min(8, 420 - falling);
-    for (var sp = 0; sp < burst; sp++) {
-      flakes.push({
-        x: Math.random() * w,
-        y: -4 - sp * 6,
-        vx: (Math.random() - 0.5) * 0.22,
-        vy: 0.32 + Math.random() * 0.55,
-        r: 0.55 + Math.random() * 1.15,
-        a: 0.55 + Math.random() * 0.4
-      });
+    if (!window.__driftLow) {
+      snowClock += snowStep;
+      while (snowClock >= 140) {
+        snowClock -= 140;
+        for (var sp = 0; sp < 4; sp++) {
+          flakes.push({
+            x: Math.random() * w,
+            y: -4 - sp * 10,
+            vx: (Math.random() - 0.5) * 0.22,
+            vy: 0.28 + Math.random() * 0.45,
+            r: 0.55 + Math.random() * 1.15,
+            a: 0.55 + Math.random() * 0.4
+          });
+        }
+      }
     }
     var color = '#f4f7fb';
     var next = [];
@@ -585,9 +594,15 @@
     }
     try { measureCm(); } catch (e) {}
     if (!snowCanvas) {
+      if (!document.getElementById('drift-snow-under')) {
+        var under = document.createElement('style');
+        under.id = 'drift-snow-under';
+        under.textContent = '.win{z-index:12}#drift-settings-win{z-index:2147483001}';
+        document.head.appendChild(under);
+      }
       snowCanvas = document.createElement('canvas');
       snowCanvas.id = 'drift-snow';
-      snowCanvas.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:99990';
+      snowCanvas.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:3';
       document.body.appendChild(snowCanvas);
       snowCtx = snowCanvas.getContext('2d');
       function fit() {
