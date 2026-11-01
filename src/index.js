@@ -66,7 +66,7 @@ function loadAndPatchIndex() {
 
 	html = html.replace(
 		"const APPS={calc:'Calculator',browser:'Browser',ai:'AI',yt:'YouTube'};",
-		"const APPS={calc:'Calculator',browser:'Browser',ai:'AI',yt:'YouTube',cam:'Camera',mus:'Music',movies:'Movies',code:'VS Code',discord:'Discord',gmail:'Gmail',ig:'Instagram',tt:'TikTok',classroom:'Full bypass (drift)',roblox:'Roblox',gimkit:'Gimkit',games:'Games',chat:'Chat',github:'GitHub',whatsapp:'WhatsApp',wayground:'Wayground',injector:'JS Injector'};"
+		"const APPS={calc:'Calculator',browser:'Browser',ai:'AI',yt:'YouTube',cam:'Camera',mus:'Music',movies:'Movies',code:'VS Code',discord:'Discord',gmail:'Gmail',ig:'Instagram',tt:'TikTok',classroom:'Classroom',roblox:'Roblox',gimkit:'Gimkit',games:'Games',chat:'Chat',github:'GitHub',whatsapp:'WhatsApp',wayground:'Wayground',injector:'JS Injector'};"
 	);
 	html = html.replace(
 		"const defD=()=>({pins:['calc','browser','ai','yt'],desk:['calc','browser','ai','yt'],chats:[]});",
@@ -75,7 +75,7 @@ function loadAndPatchIndex() {
 
 	const xapps =
 		"const XAPPS={cam:{n:'Camera',f:camera},mus:{n:'Music',f:music},movies:{n:'Movies',f:movies},code:{n:'VS Code',f:vscode},discord:{n:'Discord',f:discordApp},gmail:{n:'Gmail',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#fff';var fr=document.createElement('iframe');fr.setAttribute('credentialless','');fr.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';fr.src='/api/opera?u='+encodeURIComponent('https://mail.google.com/mail/u/0/h/')+'&b=firefox';r.appendChild(fr)}},ig:{n:'Instagram',f:igApp},tt:{n:'TikTok',f:ttApp}," +
-		"classroom:{n:'Full bypass (drift)',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#fff';var fr=document.createElement('iframe');fr.setAttribute('referrerpolicy','no-referrer');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';fr.src='/api/opera?u='+encodeURIComponent('https://classroom.google.com/')+'&b=firefox';r.appendChild(fr)}}," +
+		"classroom:{n:'Classroom',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#fff';var fr=document.createElement('iframe');fr.setAttribute('referrerpolicy','no-referrer');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';fr.src='/api/opera?u='+encodeURIComponent('https://classroom.google.com/')+'&b=firefox';r.appendChild(fr)}}," +
 		"roblox:{n:'Roblox',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#fff';var fr=document.createElement('iframe');fr.setAttribute('referrerpolicy','no-referrer');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';fr.src='/api/opera?u='+encodeURIComponent('https://www.roblox.com/login')+'&b=bing';r.appendChild(fr)}}," +
 		"gimkit:{n:'Gimkit',f:gimkitApp},games:{n:'Games',f:function(r){return (window.noahGamesApp||gamesHub)(r)}},chat:{n:'Chat',f:noahChat}};" +
 		"window.XAPPS=XAPPS;window.APPS=APPS;try{window.IC=IC}catch(e){}try{window.proxySite=proxySite}catch(e){}try{window.vscode=vscode}catch(e){}try{window.S=S}catch(e){}try{window.discordApp=discordApp}catch(e){};";
@@ -111,11 +111,11 @@ function loadAndPatchIndex() {
 	);
 
 	const tag =
-		'<script src="/drift-extras.js?v=20261031-user14" defer></script>' +
-		'<script src="/chromebook-proxy.js?v=20261101-user16" defer></script>' +
-		'<script src="/wayground-ai.js?v=20261031-user14" defer></script>' +
-		'<script src="/drift-fixup.js?v=20261101-user16" defer></script>' +
-		'<script src="/drift-userpatch.js?v=20261101-user16" defer></script>' +
+		'<script src="/drift-extras.js?v=20261101-user18" defer></script>' +
+		'<script src="/chromebook-proxy.js?v=20261101-user18" defer></script>' +
+		'<script src="/wayground-ai.js?v=20261101-user18" defer></script>' +
+		'<script src="/drift-fixup.js?v=20261101-user18" defer></script>' +
+		'<script src="/drift-userpatch.js?v=20261101-user18" defer></script>' +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +
@@ -611,6 +611,9 @@ function operaHostOk(host) {
 		host === "espn.com" || host.endsWith(".espn.com") ||
 		host === "espncdn.com" || host.endsWith(".espncdn.com") ||
 		host === "espn.net" || host.endsWith(".espn.net") ||
+		host === "github.com" || host.endsWith(".github.com") ||
+		host === "githubusercontent.com" || host.endsWith(".githubusercontent.com") ||
+		host === "githubassets.com" || host.endsWith(".githubassets.com") ||
 		host === "arkoselabs.com" || host.endsWith(".arkoselabs.com") ||
 		host === "whatsapp.com" || host.endsWith(".whatsapp.com") ||
 		host === "whatsapp.net" || host.endsWith(".whatsapp.net") ||
@@ -700,7 +703,7 @@ function operaBoot(browser) {
   function googleHost(u){
     try {
       var h = new URL(u).hostname;
-      return /(^|\\.)(google\\.com|gstatic\\.com|googleapis\\.com|googleusercontent\\.com|youtube\\.com|roblox\\.com|rbxcdn\\.com|espn\\.com|espncdn\\.com|espn\\.net|whatsapp\\.com|whatsapp\\.net|facebook\\.com|facebook\\.net|fbcdn\\.net|fbsbx\\.com|arkoselabs\\.com)$/i.test(h);
+      return /(^|\\.)(google\\.com|gstatic\\.com|googleapis\\.com|googleusercontent\\.com|youtube\\.com|roblox\\.com|rbxcdn\\.com|espn\\.com|espncdn\\.com|espn\\.net|github\\.com|githubusercontent\\.com|githubassets\\.com|whatsapp\\.com|whatsapp\\.net|facebook\\.com|facebook\\.net|fbcdn\\.net|fbsbx\\.com|arkoselabs\\.com)$/i.test(h);
     }
     catch (e) { return false; }
   }

@@ -1587,7 +1587,7 @@ function ai(root){
     }
     if(mine===hist){busy=false;sd.disabled=false}
   }
-  if(root.isConnected){if(S.d.chats.length)load(S.d.chats[0].id);else newChat();}
+  if(root.isConnected){if(S.d.chats.length)load(S.d.chats[0].id);else newChat();model='google/gemini-3.8-flash';const opened=cur();if(opened)opened.model=model;setPill();try{save()}catch(e){}}
   const b64=b=>new Promise(r=>{const f=new FileReader();f.onload=()=>r(f.result.split(',')[1]);f.readAsDataURL(b)});
   let real=null;
   sample=async(input,o)=>{

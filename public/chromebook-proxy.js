@@ -478,7 +478,7 @@
       X.gimkit = { n: 'Gimkit', f: window.gimkitApp };
       if (X.gem && !(X.gem.f && X.gem.f.__driftChat)) X.gem = { n: 'Gemini', f: window.gemApp };
       if (X.whatsapp && !window.__driftWhatsApp) X.whatsapp.f = function (r) { window.proxySite(r, 'https://web.whatsapp.com/', 'WhatsApp'); };
-      if (X.github) X.github.f = function (r) { window.proxySite(r, 'https://github.com', 'GitHub'); };
+      if (X.github && !window.__driftGithub) X.github.f = function (r) { window.proxySite(r, 'https://github.com', 'GitHub'); };
       if (window.APPS && !window.APPS.gem) window.APPS.gem = 'Gemini';
     } catch (e) { console.warn('wireApps', e); }
   }

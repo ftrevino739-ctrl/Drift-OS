@@ -578,43 +578,68 @@
     }
   }, 1000);
   window.driftSnow = function (on) {
-    snowOn = !!on;
-    try { localStorage.setItem('wos:xmas', snowOn ? '1' : '0'); } catch (e) {}
-    if (!snowOn) {
-      if (snowTimer) cancelAnimationFrame(snowTimer);
-      snowTimer = 0;
-      flakes = [];
-      shelf = {};
-      rest = [];
-      prevBox = {};
-      if (snowCanvas && snowCanvas.parentNode) snowCanvas.parentNode.removeChild(snowCanvas);
-      snowCanvas = null;
-      snowCtx = null;
-      return;
+    snowOn = false;
+    if (snowTimer) cancelAnimationFrame(snowTimer);
+    snowTimer = 0;
+    if (snowCanvas && snowCanvas.parentNode) snowCanvas.parentNode.removeChild(snowCanvas);
+    snowCanvas = null;
+    snowCtx = null;
+    try { localStorage.setItem('wos:xmas', on ? '1' : '0'); } catch (e) {}
+    if (!document.getElementById('drift-snow-under')) {
+      var under = document.createElement('style');
+      under.id = 'drift-snow-under';
+      under.textContent = '.win{z-index:12}#drift-settings-win{z-index:2147483001}canvas.snow{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3}';
+      document.head.appendChild(under);
     }
-    try { measureCm(); } catch (e) {}
-    if (!snowCanvas) {
-      if (!document.getElementById('drift-snow-under')) {
-        var under = document.createElement('style');
-        under.id = 'drift-snow-under';
-        under.textContent = '.win{z-index:12}#drift-settings-win{z-index:2147483001}';
-        document.head.appendChild(under);
-      }
-      snowCanvas = document.createElement('canvas');
-      snowCanvas.id = 'drift-snow';
-      snowCanvas.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:3';
-      document.body.appendChild(snowCanvas);
-      snowCtx = snowCanvas.getContext('2d');
-      function fit() {
-        if (!snowCanvas) return;
-        try { measureCm(); } catch (e) {}
-        snowCanvas.width = window.innerWidth;
-        snowCanvas.height = window.innerHeight;
-      }
-      fit();
-      window.addEventListener('resize', fit);
+    function tagWindows() {
+      document.querySelectorAll('#desk > .win').forEach(function (w) {
+        if (w.id === 'drift-settings-win') return;
+        w.setAttribute('data-ledge', '14');
+      });
     }
-    if (!snowTimer) snowTimer = requestAnimationFrame(snowFrame);
+    function scene() {
+      var desk = document.getElementById('desk');
+      if (!desk) return;
+      desk.setAttribute('data-scene', 'day');
+      if (getComputedStyle(desk).position === 'static') desk.style.position = 'relative';
+      if (!desk.querySelector('canvas.snow')) {
+        var canvas = document.createElement('canvas');
+        canvas.className = 'snow';
+        canvas.id = 'drift-snow';
+        canvas.setAttribute('aria-hidden', 'true');
+        desk.appendChild(canvas);
+      }
+      tagWindows();
+    }
+    function apply(api) {
+      if (!on || window.__driftLow) {
+        api.set({ quit: true, snowfall: 'off' });
+        var hidden = document.getElementById('drift-snow');
+        if (hidden) hidden.style.display = 'none';
+        return;
+      }
+      scene();
+      var shown = document.getElementById('drift-snow');
+      if (shown) shown.style.display = '';
+      api.set({ quit: false, snowfall: 'steady', accumulate: true, melt: true, windows: true, behind: false });
+      api.mount();
+    }
+    if (!window.Snowhush) {
+      var script = document.createElement('script');
+      script.src = '/snowhush.js?v=20261101-user18';
+      script.onload = function () { if (window.Snowhush) apply(window.Snowhush); };
+      document.head.appendChild(script);
+    } else apply(window.Snowhush);
+    if (!window.__driftSnowLedges) {
+      window.__driftSnowLedges = true;
+      var host = document.getElementById('desk');
+      if (host && window.MutationObserver) {
+        new MutationObserver(function () {
+          tagWindows();
+          if (window.Snowhush) window.Snowhush.rescan();
+        }).observe(host, { childList: true });
+      }
+    }
   };
   document.addEventListener('pointermove', function (e) {
     mx = e.clientX;
