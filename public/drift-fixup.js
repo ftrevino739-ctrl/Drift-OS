@@ -1717,9 +1717,9 @@ function driftSite(url) {
   function robloxShell(root) {
     root.innerHTML = '';
     root.style.cssText = 'height:100%;min-height:0;position:relative;background:#0e0e0e';
-    var bing = 'https://www.bing.com/search?q=play+roblox+now.gg';
-    if (typeof window.openProxied === 'function') window.openProxied(bing, root);
-    else operaPage(bing, 'chrome')(root);
+    var url = 'https://now.gg/apps/roblox-corporation/5349/roblox.html?hl=es-419&gl=MX';
+    if (typeof window.openProxied === 'function') window.openProxied(url, root);
+    else operaPage(url, 'chrome')(root);
   }
   function inAppPage(url) {
     return function (root) {
@@ -2398,8 +2398,8 @@ function driftSite(url) {
     showSec('ui');
     var bmClass = panel.querySelector('#drift-bm-class');
     var bmGuest = panel.querySelector('#drift-bm-guest');
-    var classJs = 'javascript:' + "(function(){function real(){var href='';try{href=location.href;}catch(e){}var q='';try{var u=new URL(href);q=u.searchParams.get('q')||u.searchParams.get('query')||'';var m=href.indexOf('/scramjet/');if(m!==-1){var rest=decodeURIComponent(href.slice(m+10).split('#')[0]);if(/^https?:/i.test(rest)){var ru=new URL(rest);q=ru.searchParams.get('q')||ru.searchParams.get('query')||q;href=rest;}}}catch(e){}if(/drift\\.hostless\\.app\\/go/i.test(href)){try{var g=new URL(href);if(g.searchParams.get('u'))href=g.searchParams.get('u');}catch(e){}}return q?('https://duckduckgo.com/?kl=us-en&q='+encodeURIComponent(q)):href;}var dest='https://drift.hostless.app/go?u='+encodeURIComponent(real());try{if(window.parent&&window.parent!==window){window.parent.location.href=dest;return;}}catch(e){}try{window.top.location.href=dest;}catch(e){location.href=dest;}})();";
-    var guestJs = 'javascript:' + "(function(){function real(){var href='';try{href=location.href;}catch(e){}var q='',target=href;try{var u=new URL(href);q=u.searchParams.get('q')||u.searchParams.get('query')||'';var m=href.indexOf('/scramjet/');if(m!==-1){var rest=decodeURIComponent(href.slice(m+10).split('#')[0]);if(/^https?:/i.test(rest)){href=rest;u=new URL(rest);q=u.searchParams.get('q')||u.searchParams.get('query')||q;}}if(/drift\\.hostless\\.app\\/go/i.test(href)){var g=new URL(href);if(g.searchParams.get('u')){href=g.searchParams.get('u');u=new URL(href);q=u.searchParams.get('q')||q;}}if(q)target='https://www.google.com/search?igu=1&hl=en&gl=us&q='+encodeURIComponent(q);else if(/google\\./i.test(u.hostname)){u.searchParams.set('igu','1');if(!u.searchParams.get('hl'))u.searchParams.set('hl','en');target=u.toString();}}catch(e){}return target;}var dest='https://drift.hostless.app/go?u='+encodeURIComponent(real());try{if(window.parent&&window.parent!==window){window.parent.location.href=dest;return;}}catch(e){}try{window.top.location.href=dest;}catch(e){location.href=dest;}})();";
+    var classJs = 'javascript:' + "(function(){function real(){var href='';try{href=location.href;}catch(e){}var q='';try{var u=new URL(href);q=u.searchParams.get('q')||u.searchParams.get('query')||'';var m=href.indexOf('/scramjet/');if(m!==-1){var rest=decodeURIComponent(href.slice(m+10).split('#')[0]);if(/^https?:/i.test(rest)){var ru=new URL(rest);q=ru.searchParams.get('q')||ru.searchParams.get('query')||q;href=rest;}}}catch(e){}if(/drift\\.hostless\\.app\\/go/i.test(href)){try{var g=new URL(href);if(g.searchParams.get('u'))href=g.searchParams.get('u');}catch(e){}}return q?('https://duckduckgo.com/?kl=us-en&q='+encodeURIComponent(q)):href;}var dest='https://drift.hostless.app/go?u='+encodeURIComponent(real());location.href=dest;})();";
+    var guestJs = 'javascript:' + "(function(){function real(){var href='';try{href=location.href;}catch(e){}var q='',target=href;try{var u=new URL(href);q=u.searchParams.get('q')||u.searchParams.get('query')||'';var m=href.indexOf('/scramjet/');if(m!==-1){var rest=decodeURIComponent(href.slice(m+10).split('#')[0]);if(/^https?:/i.test(rest)){href=rest;u=new URL(rest);q=u.searchParams.get('q')||u.searchParams.get('query')||q;}}if(/drift\\.hostless\\.app\\/go/i.test(href)){var g=new URL(href);if(g.searchParams.get('u')){href=g.searchParams.get('u');u=new URL(href);q=u.searchParams.get('q')||q;}}if(q)target='https://www.google.com/search?igu=1&hl=en&gl=us&q='+encodeURIComponent(q);else if(/google\\./i.test(u.hostname)){u.searchParams.set('igu','1');if(!u.searchParams.get('hl'))u.searchParams.set('hl','en');target=u.toString();}}catch(e){}return target;}var dest='https://drift.hostless.app/go?u='+encodeURIComponent(real());location.href=dest;})();";
     function copyBm(text, title, how) {
       function done() {
         var old = document.getElementById('drift-copied');
@@ -3737,6 +3737,16 @@ function driftSite(url) {
       if (jiggling && !e.target.closest('.ico')) setJiggle(false);
     });
   }
+
+  function installVersionBadge() {
+    if (document.getElementById('drift-version')) return;
+    var v = document.createElement('div');
+    v.id = 'drift-version';
+    v.textContent = 'Drift 2.1 · ' + (localStorage.getItem('wos:build') || '2c944b4+');
+    v.style.cssText = 'position:fixed;right:10px;bottom:6px;z-index:5;font:11px system-ui;color:rgba(255,255,255,.55);pointer-events:none;user-select:none';
+    document.body.appendChild(v);
+    try { localStorage.setItem('wos:build', '2c944b4-snowhush-nowgg'); } catch (e) {}
+  }
   function installThinkStyles() {
     if (document.getElementById('drift-think-styles')) return;
     var st = document.createElement('style');
@@ -3745,6 +3755,7 @@ function driftSite(url) {
       body.drift-hub .icons { display:flex !important; flex-direction:column !important; left:12px !important; top:calc(env(safe-area-inset-top,0px)+14px) !important; width:220px !important; height:auto !important; gap:6px !important; align-items:flex-start !important; }
       body.drift-hub .icons .ico { position:static !important; width:auto !important; margin:0 !important; }
       body.drift-round-tb #task { border-radius: 22px 22px 0 0 !important; overflow: hidden; backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); }
+      body.drift-macos-desk #task { border-radius: 24px 24px 0 0 !important; overflow: hidden; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
       .icons.jiggle .ico { animation: drift-jiggle .28s infinite alternate; }
       @keyframes drift-jiggle { from { transform: rotate(-2.5deg); } to { transform: rotate(2.5deg); } }
       #drift-bg-clock { animation: drift-clock-fade .4s ease; }
@@ -3771,6 +3782,6 @@ function driftSite(url) {
 
   }
 
-  onReady(function () { boot(); setTimeout(installThinkStyles, 400); });
+  onReady(function () { boot(); setTimeout(installThinkStyles, 400); setTimeout(installVersionBadge, 500); });
   console.log('[Drift] fixup loaded');
 })();
