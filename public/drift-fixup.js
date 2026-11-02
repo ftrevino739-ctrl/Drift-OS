@@ -1116,24 +1116,25 @@ function driftSite(url) {
     window.XAPPS.movies = { n: 'Movies', f: function (root) {
       var prov = 'racial';
       try { prov = localStorage.getItem('wos:movies') || 'racial'; } catch (e) {}
-      if (prov === 'onlyflix') {
+      if (prov === 'onlyflix' || true) {
         root.innerHTML = '';
         root.style.cssText = 'height:100%;position:relative;overflow:hidden;background:#000';
         if (typeof operaPage === 'function') operaPage('https://onlyflix.to/', 'chrome')(root);
         var n = 0;
         var t = setInterval(function () {
-          if (!root.isConnected || ++n > 12) { clearInterval(t); return; }
+          if (!root.isConnected || ++n > 20) { clearInterval(t); return; }
           var fr = root.querySelector('iframe');
           if (!fr || !fr.contentDocument) return;
           try {
             var doc = fr.contentDocument;
-            if (doc.getElementById('drift-of-hide')) return;
-            var st = doc.createElement('style');
-            st.id = 'drift-of-hide';
-            st.textContent = '.intro,.splash,.loader,.loading,video.intro,#intro,.welcome{display:none!important}body{overflow:auto!important}';
-            (doc.head || doc.documentElement).appendChild(st);
+            if (!doc.getElementById('drift-of-hide')) {
+              var st = doc.createElement('style');
+              st.id = 'drift-of-hide';
+              st.textContent = '.intro,.splash,.loader,.loading,video.intro,#intro,.welcome,.ad,.ads,.popup,.modal,.overlay,[class*=ad-],[id*=ad-],[class*=pop],[class*=banner]{display:none!important}body{overflow:auto!important;background:#000!important}';
+              (doc.head || doc.documentElement).appendChild(st);
+            }
           } catch (e) {}
-        }, 500);
+        }, 400);
         return;
       }
       return peakMoviesApp.apply(null, arguments);
@@ -3903,9 +3904,7 @@ function driftSite(url) {
       }, 200);
     });
     side.querySelector('.hub-settings').onclick = function () {
-      var sw = document.querySelector('#drift-settings-win');
-      if (sw) sw.style.display = '';
-      if (typeof openSettings === 'function') openSettings();
+      if (typeof openSettingsPanel === 'function') openSettingsPanel();
     };
     side.querySelector('.hub-toggle').onclick = function () {
       side.classList.toggle('collapsed');
