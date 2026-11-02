@@ -1113,7 +1113,31 @@ function driftSite(url) {
     window.XAPPS.yt = { n: 'YouTube', f: youtubeApp };
     window.XAPPS.tt = { n: 'TikTok', f: typeof window.__driftTtFeed === 'function' ? window.__driftTtFeed : driftSite('https://www.tiktok.com/foryou') };
     window.XAPPS.gem = { n: 'Gemini', f: driftSite('https://gemini.google.com/app') };
-    window.XAPPS.movies = { n: 'Movies', f: function () { return peakMoviesApp.apply(null, arguments); } };
+    window.XAPPS.movies = { n: 'Movies', f: function (root) {
+      var prov = 'racial';
+      try { prov = localStorage.getItem('wos:movies') || 'racial'; } catch (e) {}
+      if (prov === 'onlyflix') {
+        root.innerHTML = '';
+        root.style.cssText = 'height:100%;position:relative;overflow:hidden;background:#000';
+        if (typeof operaPage === 'function') operaPage('https://onlyflix.to/', 'chrome')(root);
+        var n = 0;
+        var t = setInterval(function () {
+          if (!root.isConnected || ++n > 12) { clearInterval(t); return; }
+          var fr = root.querySelector('iframe');
+          if (!fr || !fr.contentDocument) return;
+          try {
+            var doc = fr.contentDocument;
+            if (doc.getElementById('drift-of-hide')) return;
+            var st = doc.createElement('style');
+            st.id = 'drift-of-hide';
+            st.textContent = '.intro,.splash,.loader,.loading,video.intro,#intro,.welcome{display:none!important}body{overflow:auto!important}';
+            (doc.head || doc.documentElement).appendChild(st);
+          } catch (e) {}
+        }, 500);
+        return;
+      }
+      return peakMoviesApp.apply(null, arguments);
+    } };
     window.__driftInstagram = 1;
     window.XAPPS.ig = { n: 'Instagram', f: function (root) {
       root.innerHTML = '';
@@ -2394,8 +2418,8 @@ function driftSite(url) {
     showSec('ui');
     var bmClass = panel.querySelector('#drift-bm-class');
     var bmGuest = panel.querySelector('#drift-bm-guest');
-    var classJs = 'javascript:' + "(function(){function real(){var href='';try{href=location.href;}catch(e){}try{var lu=new URL(href);if(/linewize\.net/i.test(lu.hostname)||/blocked\.url/i.test(href)){var orig=lu.searchParams.get('url')||lu.searchParams.get('u')||lu.searchParams.get('site')||lu.searchParams.get('target')||'';if(orig){try{orig=decodeURIComponent(orig);}catch(e2){}href=orig;}} }catch(e){}var q='';try{var u=new URL(href);q=u.searchParams.get('q')||u.searchParams.get('query')||'';var m=href.indexOf('/scramjet/');if(m!==-1){var rest=decodeURIComponent(href.slice(m+10).split('#')[0]);if(/^https?:/i.test(rest)){var ru=new URL(rest);q=ru.searchParams.get('q')||ru.searchParams.get('query')||q;href=rest;}}}catch(e){}if(/drift\\.hostless\\.app\\/go/i.test(href)){try{var g=new URL(href);if(g.searchParams.get('u'))href=g.searchParams.get('u');}catch(e){}}return q?('https://duckduckgo.com/?kl=us-en&q='+encodeURIComponent(q)):href;}var dest='https://drift.hostless.app/go?u='+encodeURIComponent(real());location.href=dest;})();";
-    var guestJs = 'javascript:' + "(function(){function real(){var href='';try{href=location.href;}catch(e){}try{var lu=new URL(href);if(/linewize\.net/i.test(lu.hostname)||/blocked\.url/i.test(href)){var orig=lu.searchParams.get('url')||lu.searchParams.get('u')||lu.searchParams.get('site')||lu.searchParams.get('target')||'';if(orig){try{orig=decodeURIComponent(orig);}catch(e2){}href=orig;}} }catch(e){}var q='',target=href;try{var u=new URL(href);q=u.searchParams.get('q')||u.searchParams.get('query')||'';var m=href.indexOf('/scramjet/');if(m!==-1){var rest=decodeURIComponent(href.slice(m+10).split('#')[0]);if(/^https?:/i.test(rest)){href=rest;u=new URL(rest);q=u.searchParams.get('q')||u.searchParams.get('query')||q;}}if(/drift\\.hostless\\.app\\/go/i.test(href)){var g=new URL(href);if(g.searchParams.get('u')){href=g.searchParams.get('u');u=new URL(href);q=u.searchParams.get('q')||q;}}if(q)target='https://www.google.com/search?igu=1&hl=en&gl=us&q='+encodeURIComponent(q);else if(/google\\./i.test(u.hostname)){u.searchParams.set('igu','1');if(!u.searchParams.get('hl'))u.searchParams.set('hl','en');target=u.toString();}}catch(e){}return target;}var dest='https://drift.hostless.app/go?u='+encodeURIComponent(real());location.href=dest;})();";
+    var classJs = 'javascript:' + "(function(){function real(){var href='';try{href=location.href;}catch(e){}try{var lu=new URL(href);if(/linewize|classwize|blocked\.url|goguardian|securly/i.test(href)){var orig=lu.searchParams.get('url')||lu.searchParams.get('u')||lu.searchParams.get('site')||lu.searchParams.get('target')||lu.searchParams.get('q')||'';if(orig){try{orig=decodeURIComponent(orig);}catch(e2){}if(/^https?:/i.test(orig))href=orig;else href='https://duckduckgo.com/?q='+encodeURIComponent(orig);}}}catch(e){}var q='';try{var u=new URL(href);q=u.searchParams.get('q')||u.searchParams.get('query')||'';var m=href.indexOf('/scramjet/');if(m!==-1){var rest=decodeURIComponent(href.slice(m+10).split('#')[0]);if(/^https?:/i.test(rest)){var ru=new URL(rest);q=ru.searchParams.get('q')||ru.searchParams.get('query')||q;href=rest;}}}catch(e){}if(/drift\\.hostless\\.app\\/go/i.test(href)){try{var g=new URL(href);if(g.searchParams.get('u'))href=g.searchParams.get('u');}catch(e){}}return q?('https://duckduckgo.com/?kl=us-en&q='+encodeURIComponent(q)):href;}var dest='https://drift.hostless.app/go?u='+encodeURIComponent(real());location.href=dest;})();";
+    var guestJs = 'javascript:' + "(function(){function real(){var href='';try{href=location.href;}catch(e){}try{var lu=new URL(href);if(/linewize|classwize|blocked\.url|goguardian|securly/i.test(href)){var orig=lu.searchParams.get('url')||lu.searchParams.get('u')||lu.searchParams.get('site')||lu.searchParams.get('target')||lu.searchParams.get('q')||'';if(orig){try{orig=decodeURIComponent(orig);}catch(e2){}if(/^https?:/i.test(orig))href=orig;else href='https://www.google.com/search?q='+encodeURIComponent(orig);}}}catch(e){}var q='',target=href;try{var u=new URL(href);q=u.searchParams.get('q')||u.searchParams.get('query')||'';var m=href.indexOf('/scramjet/');if(m!==-1){var rest=decodeURIComponent(href.slice(m+10).split('#')[0]);if(/^https?:/i.test(rest)){href=rest;u=new URL(rest);q=u.searchParams.get('q')||u.searchParams.get('query')||q;}}if(/drift\\.hostless\\.app\\/go/i.test(href)){var g=new URL(href);if(g.searchParams.get('u')){href=g.searchParams.get('u');u=new URL(href);q=u.searchParams.get('q')||q;}}if(q)target='https://www.google.com/search?igu=1&hl=en&gl=us&q='+encodeURIComponent(q);else if(/google\\./i.test(u.hostname)){u.searchParams.set('igu','1');if(!u.searchParams.get('hl'))u.searchParams.set('hl','en');target=u.toString();}}catch(e){}return target;}var dest='https://drift.hostless.app/go?u='+encodeURIComponent(real());location.href=dest;})();";
     function copyBm(text, title, how) {
       function done() {
         var old = document.getElementById('drift-copied');
@@ -3822,3 +3846,85 @@ function driftSite(url) {
   onReady(function () { boot(); setTimeout(installThinkStyles, 400); setTimeout(installVersionBadge, 500); });
   console.log('[Drift] fixup loaded');
 })();
+
+  var hubStyle = document.createElement('style');
+  hubStyle.id = 'drift-hub-css';
+  hubStyle.textContent = '#drift-hub-side{position:fixed;left:0;top:0;bottom:0;width:220px;background:var(--omni,#1c1c1e);display:none;flex-direction:column;z-index:20;padding:16px 10px;gap:8px;overflow:hidden}#drift-hub-side.collapsed{width:48px}#drift-hub-side .hub-brand{font:700 28px system-ui;color:#fff;text-align:center;background:url(/drift-mark.png) center/60% no-repeat;padding:24px 0}#drift-hub-side .hub-welcome{text-align:center;opacity:.8;font-size:13px;margin-bottom:6px}#drift-hub-side .hub-search{width:100%;height:36px;border-radius:18px;border:none;padding:0 12px;background:rgba(255,255,255,.12);color:#fff}body.drift-liquid #drift-hub-side .hub-search{background:rgba(255,255,255,.18);backdrop-filter:blur(12px)}#drift-hub-side .hub-sections{flex:1;overflow:auto;display:flex;flex-direction:column;gap:4px}#drift-hub-side .hub-sec{display:flex;align-items:center;gap:8px;background:transparent;border:none;color:#eee;padding:8px;border-radius:8px;text-align:left;cursor:pointer}#drift-hub-side .hub-sec i{width:22px;height:22px;display:inline-flex}#drift-hub-side .hub-settings,#drift-hub-side .hub-toggle{background:rgba(255,255,255,.1);border:none;color:#fff;padding:8px;border-radius:8px;cursor:pointer}#drift-hub-stage{position:fixed;left:220px;top:0;right:0;bottom:0;background:#000;z-index:15;display:none}body.drift-hub #task,.drift-hub .icons{display:none!important}body.drift-hub [data-desk-only]{display:none!important}';
+  if (!document.getElementById('drift-hub-css')) document.head.appendChild(hubStyle);
+
+
+  function installHubMode() {
+    if (window.__driftHubInstalled) return;
+    window.__driftHubInstalled = true;
+    var desk = document.getElementById('desk');
+    if (!desk) return;
+    var side = document.createElement('div');
+    side.id = 'drift-hub-side';
+    side.innerHTML = '<div class="hub-brand"><span>Drift</span></div><div class="hub-welcome">Welcome To drift</div><input class="hub-search" placeholder="Search…" /><div class="hub-sections"></div><button type="button" class="hub-settings">Settings</button><button type="button" class="hub-toggle">☰</button>';
+    desk.appendChild(side);
+    var stage = document.createElement('div');
+    stage.id = 'drift-hub-stage';
+    desk.appendChild(stage);
+    var sections = side.querySelector('.hub-sections');
+    var search = side.querySelector('.hub-search');
+    function listApps() {
+      sections.innerHTML = '';
+      var apps = (window.DRIFT_APPS || Object.keys(window.XAPPS || {}));
+      if (!apps.length) apps = ['browser','ai','yt','movies','discord','github','roblox'];
+      apps.forEach(function (id) {
+        var name = (window.APPS && window.APPS[id]) || id;
+        var ico = (window.IC && window.IC[id]) || '';
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'hub-sec';
+        b.innerHTML = '<i>' + ico + '</i><span>' + name + '</span>';
+        b.onclick = function () { openSection(id); };
+        sections.appendChild(b);
+      });
+    }
+    function openSection(id) {
+      stage.innerHTML = '';
+      stage.style.display = 'block';
+      var root = document.createElement('div');
+      root.style.cssText = 'height:100%;width:100%;position:relative;overflow:hidden';
+      stage.appendChild(root);
+      var fn = (window.XAPPS && window.XAPPS[id] && window.XAPPS[id].f) || null;
+      if (typeof fn === 'function') fn(root);
+      else if (id === 'browser' && typeof window.openProxied === 'function') window.openProxied('https://duckduckgo.com/', root);
+    }
+    search.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter') return;
+      var q = search.value.trim();
+      if (!q) return;
+      openSection('browser');
+      setTimeout(function () {
+        var fr = stage.querySelector('iframe');
+        if (fr) fr.src = 'https://drift.hostless.app/go?u=' + encodeURIComponent('https://duckduckgo.com/?q=' + encodeURIComponent(q));
+      }, 200);
+    });
+    side.querySelector('.hub-settings').onclick = function () {
+      var sw = document.querySelector('#drift-settings-win');
+      if (sw) sw.style.display = '';
+      if (typeof openSettings === 'function') openSettings();
+    };
+    side.querySelector('.hub-toggle').onclick = function () {
+      side.classList.toggle('collapsed');
+      stage.style.left = side.classList.contains('collapsed') ? '0' : '220px';
+    };
+    function apply() {
+      var on = document.body.classList.contains('drift-hub');
+      side.style.display = on ? 'flex' : 'none';
+      stage.style.display = on ? 'block' : 'none';
+      var task = document.getElementById('task');
+      if (task) task.style.display = on ? 'none' : '';
+      var icons = desk.querySelector('.icons');
+      if (icons) icons.style.display = on ? 'none' : '';
+      document.querySelectorAll('[data-desk-only]').forEach(function (el) { el.style.display = on ? 'none' : ''; });
+      if (on) listApps();
+    }
+    new MutationObserver(apply).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    apply();
+  }
+  try { if (localStorage.getItem('wos:hub') === '1') document.body.classList.add('drift-hub'); } catch (e) {}
+  setTimeout(installHubMode, 800);
+

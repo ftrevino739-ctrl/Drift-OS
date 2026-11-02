@@ -578,7 +578,7 @@
     }
   }, 1000);
   window.driftSnow = function (on) {
-    snowOn = false;
+    snowOn = !!on;
     if (snowTimer) cancelAnimationFrame(snowTimer);
     snowTimer = 0;
     if (snowCanvas && snowCanvas.parentNode) snowCanvas.parentNode.removeChild(snowCanvas);
