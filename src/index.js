@@ -76,7 +76,7 @@ function loadAndPatchIndex() {
 	const xapps =
 		"const XAPPS={cam:{n:'Camera',f:camera},mus:{n:'Music',f:music},movies:{n:'Movies',f:movies},code:{n:'VS Code',f:vscode},discord:{n:'Discord',f:discordApp},gmail:{n:'Gmail',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#fff';var fr=document.createElement('iframe');fr.setAttribute('credentialless','');fr.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-modals allow-downloads');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';fr.src='/api/opera?u='+encodeURIComponent('https://mail.google.com/mail/u/0/')+'&b=edge';r.appendChild(fr)}},ig:{n:'Instagram',f:igApp},tt:{n:'TikTok',f:ttApp}," +
 		"classroom:{n:'Classroom',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#fff';var fr=document.createElement('iframe');fr.setAttribute('referrerpolicy','no-referrer');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';fr.src='/api/opera?u='+encodeURIComponent('https://classroom.google.com/')+'&b=edge';r.appendChild(fr)}}," +
-		"roblox:{n:'Roblox',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#fff';var fr=document.createElement('iframe');fr.setAttribute('referrerpolicy','no-referrer');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';fr.src='/api/opera?u='+encodeURIComponent('https://www.roblox.com/login')+'&b=chrome';r.appendChild(fr)}}," +
+		"roblox:{n:'Roblox',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#111';var fr=document.createElement('iframe');fr.setAttribute('allow','fullscreen; autoplay; gamepad; encrypted-media');fr.setAttribute('allowfullscreen','');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#111';fr.src='https://now.gg/apps/roblox-corporation/5349/roblox.html?hl=es-419&gl=MX';r.appendChild(fr)}}," +
 		"gimkit:{n:'Gimkit',f:gimkitApp},games:{n:'Games',f:function(r){return (window.noahGamesApp||gamesHub)(r)}},chat:{n:'Chat',f:noahChat}};" +
 		"window.XAPPS=XAPPS;window.APPS=APPS;try{window.IC=IC}catch(e){}try{window.proxySite=proxySite}catch(e){}try{window.vscode=vscode}catch(e){}try{window.S=S}catch(e){}try{window.discordApp=discordApp}catch(e){};";
 	html = html.replace(
@@ -111,11 +111,11 @@ function loadAndPatchIndex() {
 	);
 
 	const tag =
-		'<script src="/drift-extras.js?v=20261101-user20" defer></script>' +
-		'<script src="/chromebook-proxy.js?v=20261101-user20" defer></script>' +
-		'<script src="/wayground-ai.js?v=20261101-user20" defer></script>' +
-		'<script src="/drift-fixup.js?v=20261101-user20" defer></script>' +
-		'<script src="/drift-userpatch.js?v=20261101-user20" defer></script>' +
+		'<script src="/drift-extras.js?v=20261102-snowhub" defer></script>' +
+		'<script src="/chromebook-proxy.js?v=20261102-snowhub" defer></script>' +
+		'<script src="/wayground-ai.js?v=20261102-snowhub" defer></script>' +
+		'<script src="/drift-fixup.js?v=20261102-snowhub" defer></script>' +
+		'<script src="/drift-userpatch.js?v=20261102-snowhub" defer></script>' +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +

@@ -626,6 +626,7 @@
     }
 
     setUpGL() {
+      if (!this.canvas) { this.gl = null; return; }
       const gl = this.canvas.getContext('webgl2', { premultipliedAlpha: true, antialias: false });
       if (!gl) {
         this.canvas.hidden = true;
@@ -688,16 +689,17 @@
       const rect = this.section.getBoundingClientRect();
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const first = this.width === 0;
-      this.width = rect.width;
-      this.height = rect.height;
+      const view = this.section === document.body || this.section === document.documentElement;
+      this.width = view ? window.innerWidth : rect.width;
+      this.height = view ? window.innerHeight : rect.height;
       this.dpr = dpr;
       for (const canvas of [this.canvas, this.lightCanvas]) {
         if (!canvas) continue;
-        canvas.width = Math.round(rect.width * dpr);
-        canvas.height = Math.round(rect.height * dpr);
+        canvas.width = Math.round(this.width * dpr);
+        canvas.height = Math.round(this.height * dpr);
       }
       // Sunk a little below the edge so no sliver of background shows under the drift after rounding.
-      this.ground.place(0, rect.height + 2, rect.width);
+      this.ground.place(0, this.height + 2, this.width);
       for (const { element, layer } of this.ledges) {
         const box = element.getBoundingClientRect();
         layer.place(box.left - rect.left, box.top - rect.top, box.width, Number(element.dataset.ledge), 2.5);
@@ -1626,7 +1628,7 @@
       scene.draw();
       active = true;
     }
-    if (active && !document.hidden && !reduceMotion.matches) {
+    if (active && !document.hidden && (!reduceMotion.matches || window.__driftForceSnow)) {
       requestAnimationFrame(frame);
     } else {
       running = false;
@@ -1635,7 +1637,8 @@
   }
 
   function wake() {
-    if (running || reduceMotion.matches || document.hidden) return;
+    if (running || document.hidden) return;
+    if (reduceMotion.matches && !window.__driftForceSnow) return;
     running = true;
     last = 0;
     requestAnimationFrame(frame);
@@ -1792,15 +1795,23 @@
         resizeObserver.observe(section);
         visibility.observe(section);
       });
+      scenes.forEach(scene => { scene.visible = !settings.quit; });
       measureAll();
       wake();
     },
     set(next) {
       if (next) Object.assign(settings, next);
+      if (settings.quit) scenes.forEach(scene => { try { scene.clear(); } catch (e) {} });
+      scenes.forEach(scene => { scene.visible = !settings.quit; });
+      measureAll();
       wake();
     },
     rescan() {
-      measureAll();
+      scenes.forEach(scene => {
+        if (typeof scene.rescanLedges === 'function') scene.rescanLedges();
+        scene.measure();
+        scene.visible = !settings.quit;
+      });
       wake();
     }
   };

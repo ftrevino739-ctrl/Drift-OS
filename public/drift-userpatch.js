@@ -584,61 +584,79 @@
     if (snowCanvas && snowCanvas.parentNode) snowCanvas.parentNode.removeChild(snowCanvas);
     snowCanvas = null;
     snowCtx = null;
+    window.__driftForceSnow = !!on && !window.__driftLow;
     try { localStorage.setItem('wos:xmas', on ? '1' : '0'); } catch (e) {}
     document.body.classList.toggle('drift-snow', !!on);
     if (!document.getElementById('drift-snow-under')) {
       var under = document.createElement('style');
       under.id = 'drift-snow-under';
-      under.textContent = '.win{z-index:100010}#drift-settings-win{z-index:2147483001}canvas.snow{position:fixed!important;inset:0!important;width:100%!important;height:100%!important;pointer-events:none!important;z-index:100000!important}#task{z-index:99999}';
+      under.textContent = 'canvas#drift-snow{position:fixed!important;left:0!important;top:0!important;width:100vw!important;height:100vh!important;pointer-events:none!important;z-index:2147483000!important}#drift-settings-win{z-index:2147483640!important}';
       document.head.appendChild(under);
     }
-    function tagWindows() {
-      document.querySelectorAll('#desk > .win').forEach(function (w) {
-        if (w.id === 'drift-settings-win') return;
-        w.setAttribute('data-ledge', '14');
-      });
+    function tagLedges() {
+      var nodes = document.querySelectorAll('#desk .win, body > .win, #task');
+      for (var i = 0; i < nodes.length; i++) {
+        if (!nodes[i].getAttribute('data-ledge')) nodes[i].setAttribute('data-ledge', '14');
+      }
     }
     function scene() {
-      var desk = document.getElementById('desk');
-      if (!desk) return;
-      desk.setAttribute('data-scene', 'day');
-      if (getComputedStyle(desk).position === 'static') desk.style.position = 'relative';
-      if (!document.getElementById('drift-snow')) {
-        var canvas = document.createElement('canvas');
+      var host = document.body;
+      if (!host) return;
+      host.setAttribute('data-scene', 'day');
+      var canvas = document.getElementById('drift-snow');
+      if (!canvas) {
+        canvas = document.createElement('canvas');
         canvas.className = 'snow';
         canvas.id = 'drift-snow';
         canvas.setAttribute('aria-hidden', 'true');
-        document.body.appendChild(canvas);
-      }
-      tagWindows();
+        host.appendChild(canvas);
+      } else if (canvas.parentNode !== host) host.appendChild(canvas);
+      tagLedges();
     }
     function apply(api) {
+      if (!api) return;
       if (!on || window.__driftLow) {
-        api.set({ quit: true, snowfall: 'off' });
+        try { api.set({ quit: true, snowfall: 'off' }); } catch (e) {}
         var hidden = document.getElementById('drift-snow');
         if (hidden) hidden.style.display = 'none';
         return;
       }
       scene();
       var shown = document.getElementById('drift-snow');
-      if (shown) shown.style.display = '';
-      api.set({ quit: false, snowfall: 'steady', accumulate: true, melt: true, windows: true, behind: false });
-      api.mount();
+      if (shown) shown.style.display = 'block';
+      try {
+        api.set({ quit: false, snowfall: 'steady', accumulate: true, melt: true, windows: true, behind: false });
+        if (api.mount) api.mount();
+        if (api.rescan) api.rescan();
+      } catch (e) {}
     }
+    scene();
     if (!window.Snowhush) {
-      var script = document.createElement('script');
-      script.src = 'https://snowhush.pages.dev/snow.js';
-      script.onload = function () { if (window.Snowhush) apply(window.Snowhush); };
-      document.head.appendChild(script);
+      if (!window.__driftSnowLoading) {
+        window.__driftSnowLoading = true;
+        var script = document.createElement('script');
+        script.src = '/snowhush.js?v=20261102';
+        script.onload = function () {
+          window.__driftSnowLoading = false;
+          if (window.Snowhush) apply(window.Snowhush);
+        };
+        script.onerror = function () { window.__driftSnowLoading = false; };
+        document.head.appendChild(script);
+      }
     } else apply(window.Snowhush);
     if (!window.__driftSnowLedges) {
       window.__driftSnowLedges = true;
-      var host = document.getElementById('desk');
-      if (host && window.MutationObserver) {
+      if (window.MutationObserver) {
+        var pending = 0;
         new MutationObserver(function () {
-          tagWindows();
-          if (window.Snowhush) window.Snowhush.rescan();
-        }).observe(host, { childList: true });
+          if (!document.body.classList.contains('drift-snow')) return;
+          if (pending) return;
+          pending = requestAnimationFrame(function () {
+            pending = 0;
+            tagLedges();
+            if (window.Snowhush && window.Snowhush.rescan) window.Snowhush.rescan();
+          });
+        }).observe(document.body, { childList: true, subtree: true });
       }
     }
   };

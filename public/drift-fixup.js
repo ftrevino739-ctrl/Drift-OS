@@ -115,6 +115,7 @@
     IC.chat = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="48" rx="12" fill="#34C759"/><path fill="#fff" d="M24 11.2c-7.2 0-13 4.8-13 10.8 0 3.4 1.8 6.4 4.6 8.4-.2 1.4-.8 3-1.6 4.1 0 0 2.1-.4 4.1-1.5 1.8.8 3.8 1.3 6 1.3 7.2 0 13-4.8 13-10.8s-5.8-10.8-13-10.8z"/></svg>';
     IC.espn = '<img alt="ESPN" src="/espn-logo.png" style="width:100%;height:100%;object-fit:contain;background:#fff;border-radius:8px">';
     IC.aleks = '<img alt="ALEKS" src="/aleks-logo.png" style="width:100%;height:100%;object-fit:cover;border-radius:11px">';
+    IC.minecraft = '<img alt="Minecraft" src="/minecraft.png" style="width:100%;height:100%;object-fit:cover;border-radius:11px;image-rendering:pixelated">';
     IC.gbuild = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="48" rx="12" fill="#0f766e"/><rect x="8" y="22" width="13" height="13" rx="2.2" fill="#5eead4"/><rect x="17.5" y="12" width="13" height="13" rx="2.2" fill="#99f6e4"/><rect x="26" y="24" width="13" height="13" rx="2.2" fill="#ccfbf1"/><path d="M33.2 9.2l1.5 3.1 3.4.4-2.5 2.3.7 3.3-3.1-1.7-3.1 1.7.7-3.3-2.5-2.3 3.4-.4z" fill="#fde68a"/></svg>';
     IC.code = '<img alt="Visual Studio Code" src="/vscode-logo.svg" style="width:100%;height:100%;object-fit:contain;border-radius:11px;background:transparent">';
     IC.winemu = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="5" width="16.5" height="16.5" rx="2" fill="#0078D4"/><rect x="26.5" y="5" width="16.5" height="16.5" rx="2" fill="#0078D4"/><rect x="5" y="26.5" width="16.5" height="16.5" rx="2" fill="#0078D4"/><rect x="26.5" y="26.5" width="16.5" height="16.5" rx="2" fill="#0078D4"/></svg>';
@@ -736,14 +737,44 @@ function driftSite(url) {
       view.querySelector('b').textContent = (item.title || item.name || '') + (episode ? ' · S' + season + 'E' + episode : '');
       view.querySelector('[data-back]').onclick = function () { view.remove(); paintRecent(); };
       host.appendChild(view);
-      var path = type === 'tv' ? '/tv/' + item.id + (episode ? '/season/' + season + '/episode/' + episode : '') + '/videos' : '/movie/' + item.id + '/videos';
-      tmdbGet(path).then(function (j) {
-        var vids = (j && j.results) || [];
-        var yt = vids.filter(function (v) { return v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser' || v.type === 'Clip'); })[0] || vids.filter(function (v) { return v.site === 'YouTube'; })[0];
-        var slot = view.querySelector('[data-slot]');
-        if (yt) slot.outerHTML = '<iframe credentialless allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen src="https://www.youtube-nocookie.com/embed/' + encodeURIComponent(yt.key) + '?autoplay=1&rel=0"></iframe>';
-        else slot.textContent = 'TMDB no tiene trailer de este título.';
-      }).catch(function () { var slot = view.querySelector('[data-slot]'); if (slot) slot.textContent = 'No se pudo abrir el trailer.'; });
+      var sources = type === 'tv'
+        ? [
+            ['VidSrc', 'https://vidsrc.xyz/embed/tv/' + item.id + '/' + (season || 1) + '/' + (episode || 1)],
+            ['VidSrc 2', 'https://vidsrc.cc/v2/embed/tv/' + item.id + '/' + (season || 1) + '/' + (episode || 1)],
+            ['Videasy', 'https://player.videasy.net/tv/' + item.id + '/' + (season || 1) + '/' + (episode || 1)]
+          ]
+        : [
+            ['VidSrc', 'https://vidsrc.xyz/embed/movie/' + item.id],
+            ['VidSrc 2', 'https://vidsrc.cc/v2/embed/movie/' + item.id],
+            ['Videasy', 'https://player.videasy.net/movie/' + item.id]
+          ];
+      var slot = view.querySelector('[data-slot]');
+      function useSrc(i) {
+        var src = sources[i];
+        if (!src) return;
+        var frame = document.createElement('iframe');
+        frame.setAttribute('credentialless', '');
+        frame.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen');
+        frame.setAttribute('allowfullscreen', '');
+        frame.setAttribute('data-slot', '');
+        frame.src = src[1];
+        var old = view.querySelector('[data-slot]');
+        if (old) old.replaceWith(frame);
+        else view.appendChild(frame);
+      }
+      var pick = document.createElement('div');
+      pick.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;padding:8px 12px;background:#111';
+      sources.forEach(function (s, i) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = s[0];
+        b.style.cssText = 'border:0;border-radius:999px;padding:6px 10px;background:#222;color:#fff;cursor:pointer';
+        b.onclick = function () { useSrc(i); };
+        pick.appendChild(b);
+      });
+      if (slot) view.insertBefore(pick, slot);
+      else view.appendChild(pick);
+      useSrc(0);
       var watchPath = (type === 'tv' ? '/tv/' : '/movie/') + item.id + '/watch/providers';
       tmdbGet(watchPath).then(function (w) {
         var region = (w && w.results && (w.results.MX || w.results.US)) || {};
@@ -1106,9 +1137,17 @@ function driftSite(url) {
     window.APPS.espn = 'ESPN';
     window.APPS.winemu = 'Windows emulator';
     window.APPS.gbuild = 'Game Builder';
+    window.APPS.minecraft = 'Minecraft';
     window.XAPPS.aleks = { n: 'ALEKS', f: driftSite('https://www.aleks.com/') };
     window.XAPPS.winemu = { n: 'Windows emulator', f: windowsEmulator };
     window.XAPPS.gbuild = { n: 'Game Builder', f: driftSite('https://tesana.com/create') };
+    window.XAPPS.minecraft = { n: 'Minecraft', f: function (root) {
+      root.innerHTML = '';
+      root.style.cssText = 'height:100%;min-height:0;position:relative;background:#000';
+      var url = 'https://eaglercraft.com/play?version=1.8.8&launch=1';
+      if (typeof window.openProxied === 'function') window.openProxied(url, root);
+      else root.textContent = 'Minecraft is still starting.';
+    } };
     window.XAPPS.espn = { n: 'ESPN', f: espnApp };
     window.XAPPS.yt = { n: 'YouTube', f: youtubeApp };
     window.XAPPS.tt = { n: 'TikTok', f: typeof window.__driftTtFeed === 'function' ? window.__driftTtFeed : driftSite('https://www.tiktok.com/foryou') };
@@ -1116,28 +1155,43 @@ function driftSite(url) {
     window.XAPPS.movies = { n: 'Movies', f: function (root) {
       var prov = 'racial';
       try { prov = localStorage.getItem('wos:movies') || 'racial'; } catch (e) {}
-      if (prov === 'onlyflix' || true) {
-        root.innerHTML = '';
-        root.style.cssText = 'height:100%;position:relative;overflow:hidden;background:#000';
-        if (typeof operaPage === 'function') operaPage('https://onlyflix.to/', 'chrome')(root);
-        var n = 0;
-        var t = setInterval(function () {
-          if (!root.isConnected || ++n > 20) { clearInterval(t); return; }
-          var fr = root.querySelector('iframe');
-          if (!fr || !fr.contentDocument) return;
-          try {
-            var doc = fr.contentDocument;
-            if (!doc.getElementById('drift-of-hide')) {
-              var st = doc.createElement('style');
-              st.id = 'drift-of-hide';
-              st.textContent = '.intro,.splash,.loader,.loading,video.intro,#intro,.welcome,.ad,.ads,.popup,.modal,.overlay,[class*=ad-],[id*=ad-],[class*=pop],[class*=banner]{display:none!important}body{overflow:auto!important;background:#000!important}';
-              (doc.head || doc.documentElement).appendChild(st);
-            }
-          } catch (e) {}
-        }, 400);
-        return;
+      if (prov !== 'onlyflix' && prov !== 'noah') return moviesApp(root);
+      var url = prov === 'noah' ? 'https://noahstutoring.academy/' : 'https://onlyflix.to/';
+      root.innerHTML = '';
+      root.style.cssText = 'height:100%;min-height:0;position:relative;overflow:hidden;background:#000';
+      if (typeof window.openProxied !== 'function') return moviesApp(root);
+      var gaveUp = false;
+      function fallback() {
+        if (gaveUp || !root.isConnected) return;
+        gaveUp = true;
+        moviesApp(root);
       }
-      return peakMoviesApp.apply(null, arguments);
+      Promise.resolve(window.openProxied(url, root)).then(function (f) {
+        var n = 0;
+        var timer = setInterval(function () {
+          if (!root.isConnected || gaveUp || ++n > 18) { clearInterval(timer); return; }
+          var fr = (f && f.frame) || root.querySelector('iframe');
+          if (!fr) return;
+          var text = '';
+          try { text = fr.contentDocument && fr.contentDocument.body ? String(fr.contentDocument.body.innerText || '').slice(0, 900) : ''; } catch (e) { text = ''; }
+          if (/Request blocked|403 ERROR|Generated by cloudfront|refused to connect|Access Denied|Uh oh/i.test(text)) {
+            clearInterval(timer);
+            fallback();
+            return;
+          }
+          if (prov === 'onlyflix') {
+            try {
+              var doc = fr.contentDocument;
+              if (doc && !doc.getElementById('drift-of-hide')) {
+                var st = doc.createElement('style');
+                st.id = 'drift-of-hide';
+                st.textContent = '.intro,.splash,.loader,.loading,video.intro,#intro,.welcome,.ad,.ads,.popup,.modal,.overlay,[class*=ad-],[id*=ad-],[class*=pop],[class*=banner],.jw-ad,.ima-ad-container{display:none!important}body{overflow:auto!important;background:#000!important}';
+                (doc.head || doc.documentElement).appendChild(st);
+              }
+            } catch (e2) {}
+          }
+        }, 400);
+      }).catch(fallback);
     } };
     window.__driftInstagram = 1;
     window.XAPPS.ig = { n: 'Instagram', f: function (root) {
@@ -1177,6 +1231,11 @@ function driftSite(url) {
         window.S.d.desk = (window.S.d.desk || []).filter(function (id) { return id !== 'peak'; });
         if (window.S.d.pins) window.S.d.pins = window.S.d.pins.filter(function (id) { return id !== 'peak'; });
         try { localStorage.setItem('wos:games-lib', 'noah'); } catch (e) {}
+      }
+      if (window.S && window.S.d && !window.S.d.v19) {
+        window.S.d.v19 = 1;
+        changed = true;
+        if (window.S.d.desk.indexOf('minecraft') < 0) window.S.d.desk.push('minecraft');
       }
       if (changed) {
         if (typeof save === 'function') save();
@@ -1459,7 +1518,13 @@ function driftSite(url) {
   function openTop(url) {
     url = String(url || '');
     if (!/^https?:/i.test(url)) return;
-    try { location.replace(url); } catch (e) { location.href = url; }
+    var w = null;
+    try { w = window.open(url, '_blank', 'noopener'); } catch (e) { w = null; }
+    if (w) return;
+    try {
+      if (window.top && window.top !== window) { window.top.location.href = url; return; }
+    } catch (e2) {}
+    try { location.replace(url); } catch (e3) { location.href = url; }
   }
   var SIZE_MAP = { xl: 3, lg: 2, sm: 1.7, xs: 1.5 };
   function readSize(key) {
@@ -1740,7 +1805,12 @@ function driftSite(url) {
     root.innerHTML = '';
     root.style.cssText = 'height:100%;min-height:0;position:relative;background:#0e0e0e';
     var url = 'https://now.gg/apps/roblox-corporation/5349/roblox.html?hl=es-419&gl=MX';
-    operaPage(url, 'chrome')(root);
+    var frame = document.createElement('iframe');
+    frame.setAttribute('allow', 'fullscreen; autoplay; gamepad; encrypted-media; picture-in-picture');
+    frame.setAttribute('allowfullscreen', '');
+    frame.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#111';
+    frame.src = url;
+    root.appendChild(frame);
   }
   function inAppPage(url) {
     return function (root) {
@@ -1840,12 +1910,9 @@ function driftSite(url) {
     root.innerHTML = '<div class="sjt" style="height:100%;min-height:0;position:relative;background:#fff"></div>';
     var box = root.querySelector(".sjt");
     function direct() {
-      box.innerHTML = "";
-      var frame = document.createElement("iframe");
-      frame.setAttribute("referrerpolicy", "no-referrer");
-      frame.style.cssText = "position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff";
-      frame.src = "https://classroom.google.com/";
-      box.appendChild(frame);
+      box.innerHTML = '<div style="height:100%;display:grid;place-items:center;text-align:center;padding:24px;color:#111;font:14px system-ui"><div><b>Classroom</b><p>Open it in a new tab. It is not embedded here, so it will not say classroom.google.com refused to connect.</p><button type="button" data-go style="margin-top:8px;padding:8px 14px;border:0;border-radius:8px;background:#1a73e8;color:#fff;cursor:pointer">Open Classroom</button></div></div>';
+      var b = box.querySelector('[data-go]');
+      if (b) b.onclick = function () { openTop('https://classroom.google.com/'); };
     }
     function attempt() {
       if (i >= tries.length) { direct(); return; }
@@ -2322,6 +2389,11 @@ function driftSite(url) {
       '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="games-lib" value="tesana"/> Tesana</label>' +
       '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="games-lib" value="poki"/> Poki</label>' +
       '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="games-lib" value="crazygames"/> CrazyGames</label></div>' +
+      '<div style="margin:16px 0 14px"><b>Choose your Movies</b>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Racial is the in-app catalog (Racial styles) and plays here. Onlyflix and Noah open that library. If a site says blocked, Drift uses the in-app player.</div>' +
+      '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="movies-src" value="racial"/> Racial</label>' +
+      '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="movies-src" value="onlyflix"/> Onlyflix</label>' +
+      '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="movies-src" value="noah"/> Noah</label></div>' +
       '<div style="margin-bottom:12px"><b style="display:block;margin-bottom:8px">Gimkit injection default</b>' + opts + '</div></section>' +
       '<section data-sec="tools" style="display:none">' +
       '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px">' +
@@ -2353,7 +2425,7 @@ function driftSite(url) {
       '<section data-sec="bypass" style="display:none">' +
       '<div style="padding-top:4px;margin-bottom:12px">' +
       '<b style="display:block;margin-bottom:8px">Custom Keybinds</b>' +
-      '<div style="opacity:.8;font-size:12px;margin-bottom:10px">Hide all non-educational apps (includes AI and VS Code). Instant full-page Classroom leaves Drift (changes to classroom.google.com).</div>' +
+      '<div style="opacity:.8;font-size:12px;margin-bottom:10px">Hide all non-educational apps (includes AI and VS Code). Classroom opens in a new tab, not inside this panel.</div>' +
       '<label style="display:block;margin:8px 0">Hide non-edu apps key' +
       '<input id="kb-hide" value="' + kbHide.replace(/"/g, '') + '" style="display:block;width:100%;margin-top:4px;padding:8px;border-radius:8px;border:1px solid #333;background:#14141c;color:#eee;box-sizing:border-box"/></label>' +
       '<label style="display:block;margin:8px 0">Open Classroom (full site) key' +
@@ -2368,7 +2440,7 @@ function driftSite(url) {
       '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:10px">' +
       '<div style="flex:1"><b>Education mode now</b><div style="opacity:.7;font-size:11px">Hides non-edu icons immediately</div></div>' +
       switchHTML('drift-edu-sw', eduOn) + '</div>' +
-      '<button type="button" id="kb-class-go" style="margin-top:12px;width:100%;padding:10px;border:0;border-radius:10px;background:#1a73e8;color:#fff;font-weight:600;cursor:pointer">Open Classroom full page now</button></div>' +
+      '<button type="button" id="kb-class-go" style="margin-top:12px;width:100%;padding:10px;border:0;border-radius:10px;background:#1a73e8;color:#fff;font-weight:600;cursor:pointer">Open Classroom in a new tab</button></div>' +
       '<div style="margin-top:16px;border-top:1px solid rgba(255,255,255,.08);padding-top:14px">' +
       '<b>Clean search history Bypass</b>' +
       '<div style="opacity:.75;font-size:12px;margin-top:4px">Choose the tabs and the website you want open. They open as pop-up tabs in the browser on this computer, not in the Drift Browser.</div>' +
@@ -2401,7 +2473,7 @@ function driftSite(url) {
       '<a id="drift-bm-class" href="#" style="display:inline-block;margin-top:8px;padding:8px 12px;border-radius:10px;background:#1a73e8;color:#fff;text-decoration:none;font-weight:650">Full bypass (drift)</a></div>' +
       '<div style="margin-top:16px">' +
       '<b>Full bypass</b>' +
-      '<div style="opacity:.75;font-size:12px;margin-top:4px">Same thing, but the search opens in Google guest mode through Scramjet. It does not use about:blank.</div>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Same bookmarklet: the search opens on DuckDuckGo through Scramjet, in this tab.</div>' +
       '<a id="drift-bm-guest" href="#" style="display:inline-block;margin-top:8px;padding:8px 12px;border-radius:10px;background:#1a73e8;color:#fff;text-decoration:none;font-weight:650">Full bypass</a></div>' +
       '<button type="button" id="drift-docs-btn" style="margin-top:12px;width:100%;padding:10px;border:1px solid rgba(255,255,255,.14);border-radius:10px;background:transparent;color:#fff;font-weight:600;cursor:pointer">Drift docs</button></section></div></div>';
     panel.querySelector('[data-x]').onclick = function (e) { e.stopPropagation(); panel.remove(); };
@@ -2419,8 +2491,48 @@ function driftSite(url) {
     showSec('ui');
     var bmClass = panel.querySelector('#drift-bm-class');
     var bmGuest = panel.querySelector('#drift-bm-guest');
-    var classJs = 'javascript:' + "(function(){function real(){var href='';try{href=location.href;}catch(e){}try{var lu=new URL(href);if(/linewize|classwize|blocked\.url|goguardian|securly/i.test(href)){var orig=lu.searchParams.get('url')||lu.searchParams.get('u')||lu.searchParams.get('site')||lu.searchParams.get('target')||lu.searchParams.get('q')||'';if(orig){try{orig=decodeURIComponent(orig);}catch(e2){}if(/^https?:/i.test(orig))href=orig;else href='https://duckduckgo.com/?q='+encodeURIComponent(orig);}}}catch(e){}var q='';try{var u=new URL(href);q=u.searchParams.get('q')||u.searchParams.get('query')||'';var m=href.indexOf('/scramjet/');if(m!==-1){var rest=decodeURIComponent(href.slice(m+10).split('#')[0]);if(/^https?:/i.test(rest)){var ru=new URL(rest);q=ru.searchParams.get('q')||ru.searchParams.get('query')||q;href=rest;}}}catch(e){}if(/drift\\.hostless\\.app\\/go/i.test(href)){try{var g=new URL(href);if(g.searchParams.get('u'))href=g.searchParams.get('u');}catch(e){}}return q?('https://duckduckgo.com/?kl=us-en&q='+encodeURIComponent(q)):href;}var dest='https://drift.hostless.app/go?u='+encodeURIComponent(real());location.href=dest;})();";
-    var guestJs = 'javascript:' + "(function(){function real(){var href='';try{href=location.href;}catch(e){}try{var lu=new URL(href);if(/linewize|classwize|blocked\.url|goguardian|securly/i.test(href)){var orig=lu.searchParams.get('url')||lu.searchParams.get('u')||lu.searchParams.get('site')||lu.searchParams.get('target')||lu.searchParams.get('q')||'';if(orig){try{orig=decodeURIComponent(orig);}catch(e2){}if(/^https?:/i.test(orig))href=orig;else href='https://www.google.com/search?q='+encodeURIComponent(orig);}}}catch(e){}var q='',target=href;try{var u=new URL(href);q=u.searchParams.get('q')||u.searchParams.get('query')||'';var m=href.indexOf('/scramjet/');if(m!==-1){var rest=decodeURIComponent(href.slice(m+10).split('#')[0]);if(/^https?:/i.test(rest)){href=rest;u=new URL(rest);q=u.searchParams.get('q')||u.searchParams.get('query')||q;}}if(/drift\\.hostless\\.app\\/go/i.test(href)){var g=new URL(href);if(g.searchParams.get('u')){href=g.searchParams.get('u');u=new URL(href);q=u.searchParams.get('q')||q;}}if(q)target='https://www.google.com/search?igu=1&hl=en&gl=us&q='+encodeURIComponent(q);else if(/google\\./i.test(u.hostname)){u.searchParams.set('igu','1');if(!u.searchParams.get('hl'))u.searchParams.set('hl','en');target=u.toString();}}catch(e){}return target;}var dest='https://drift.hostless.app/go?u='+encodeURIComponent(real());location.href=dest;})();";
+    function driftBypassBody() {
+      function dec(s){try{return decodeURIComponent(String(s||'').replace(/\+/g,' '));}catch(e){return s;}}
+      function junk(s){return String(s||'').replace(/[?#&](?:user|userid|user_id|device|deviceid|device_id|hardware|hardwareid|hwid|hw_id|token|session|sid|school|org|policy|reason|category)=[^&#]*/gi,'');}
+      function real(){
+        var href='';
+        try{href=location.href;}catch(e){}
+        var blob=href;
+        try{blob+='\n'+decodeURIComponent(href);}catch(e){}
+        try{blob+='\n'+decodeURIComponent(decodeURIComponent(href));}catch(e){}
+        var found='',bits=String(blob).split(/https?:\/\//i),bi;
+        for(bi=1;bi<bits.length;bi++){
+          var u=('https://'+bits[bi].split(/[\s"'<>]/)[0]).replace(/[),.;]+$/,'');
+          var host='';
+          try{host=new URL(u).hostname;}catch(e){host=u;}
+          if(/linewize|classwize|goguardian|securly/i.test(host)) continue;
+          found=u; break;
+        }
+        href=junk(found||href);
+        var q='';
+        try{
+          var uu=new URL(href);
+          q=uu.searchParams.get('q')||uu.searchParams.get('query')||uu.searchParams.get('search_query')||uu.searchParams.get('search')||uu.searchParams.get('keyword')||uu.searchParams.get('p')||'';
+        }catch(e){}
+        if(!q){
+          var qm=String(blob).match(/[?&](?:q|query|search_query|keyword)=([^&#]+)/i);
+          if(qm) q=dec(qm[1]);
+        }
+        if(!q){
+          try{
+            var t=document.title||'';
+            if(/linewize|blocked|restricted/i.test(location.href) && t && !/linewize|blocked|access denied|restricted/i.test(t) && t.length<140) q=t;
+          }catch(e){}
+        }
+        q=String(q||'').replace(/\s+/g,' ').trim();
+        if(q) return 'https://duckduckgo.com/?kl=us-en&q='+encodeURIComponent(q);
+        if(/^https?:/i.test(href) && !/linewize|classwize|goguardian|securly/i.test(href)) return href;
+        return 'https://duckduckgo.com/';
+      }
+      location.href='https://drift.hostless.app/go?u='+encodeURIComponent(real());
+    }
+    var classJs = 'javascript:(' + driftBypassBody.toString() + ')();';
+    var guestJs = classJs;
     function copyBm(text, title, how) {
       function done() {
         var old = document.getElementById('drift-copied');
@@ -2472,7 +2584,7 @@ function driftSite(url) {
       bmGuest.onclick = function (e) {
         e.preventDefault();
         e.stopPropagation();
-        copyBm(guestJs, 'Full bypass', 'Full bypass loads that search in Google guest mode through Scramjet. It stays on the page. It does not use about:blank.');
+        copyBm(guestJs, 'Full bypass', 'Full bypass loads that search on DuckDuckGo through Scramjet. It stays in this tab. It does not open the Drift desktop.');
       };
     }
     var homeNow = 'drift';
@@ -3681,7 +3793,7 @@ function driftSite(url) {
     if (!el) {
       el = document.createElement('div');
       el.id = 'drift-bg-clock';
-      el.style.cssText = 'position:fixed;left:50%;top:32%;transform:translate(-50%,-50%);z-index:1;pointer-events:none;font:700 64px system-ui;color:rgba(255,255,255,.9);letter-spacing:-1px;user-select:none;padding:18px 28px;border-radius:28px;background:rgba(255,255,255,.12);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.18);box-shadow:0 8px 32px rgba(0,0,0,.25)';
+      el.style.cssText = 'position:fixed;left:50%;top:22%;transform:translate(-50%,-50%);z-index:2;pointer-events:none;user-select:none;margin:0;padding:0;border:0;background:linear-gradient(180deg,rgba(255,255,255,.96) 0%,rgba(255,255,255,.7) 42%,rgba(255,255,255,.34) 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;font:700 108px/0.9 system-ui,-apple-system,BlinkMacSystemFont,sans-serif;letter-spacing:-4px;filter:drop-shadow(0 1px 0 rgba(255,255,255,.55)) drop-shadow(0 12px 24px rgba(0,0,0,.28))';
       document.body.appendChild(el);
     }
     function tick() {
@@ -3779,7 +3891,7 @@ function driftSite(url) {
     v.textContent = 'Drift 2.1 · ' + (localStorage.getItem('wos:build') || '2c944b4+');
     v.style.cssText = 'position:fixed;right:10px;bottom:6px;z-index:5;font:11px system-ui;color:rgba(255,255,255,.55);pointer-events:none;user-select:none';
     document.body.appendChild(v);
-    try { localStorage.setItem('wos:build', '2c944b4-snowhush-nowgg'); } catch (e) {}
+    try { localStorage.setItem('wos:build', '20261102-snowhub'); } catch (e) {}
   }
 
   var THINK_GIFS = {
@@ -3814,8 +3926,9 @@ function driftSite(url) {
     var st = document.createElement('style');
     st.id = 'drift-think-styles';
     st.textContent = `
-      body.drift-hub .icons { display:flex !important; flex-direction:column !important; position:fixed !important; left:0 !important; top:0 !important; bottom:calc(var(--tbh,76px)) !important; width:200px !important; background:var(--omni,#1c1c1e) !important; padding:12px 8px !important; gap:4px !important; z-index:10 !important; overflow:auto !important; } body.drift-hub .icons .ico { position:static !important; width:100% !important; text-align:left !important; border-radius:8px !important; }
-      body.drift-hub .icons .ico { position:static !important; width:auto !important; margin:0 !important; }
+      body.drift-hub .icons { display:none !important; }
+      body.drift-hub #task { display:none !important; }
+      #task .tb, #task #clock, .icons .ico { color:#fff; }
       body.drift-round-tb #task { border-radius: 22px 22px 0 0 !important; overflow: hidden; backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); }
       body.drift-macos-desk #task { border-radius: 24px 24px 0 0 !important; overflow: hidden; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
       .icons.jiggle .ico { animation: drift-jiggle .28s infinite alternate; }
@@ -3844,15 +3957,15 @@ function driftSite(url) {
 
   }
 
+  window.openSettingsPanel = openSettingsPanel;
   onReady(function () { boot(); setTimeout(installThinkStyles, 400); setTimeout(installVersionBadge, 500); });
   console.log('[Drift] fixup loaded');
 })();
 
   var hubStyle = document.createElement('style');
   hubStyle.id = 'drift-hub-css';
-  hubStyle.textContent = '#drift-hub-side{position:fixed;left:0;top:0;bottom:0;width:220px;background:var(--omni,#1c1c1e);display:none;flex-direction:column;z-index:20;padding:16px 10px;gap:8px;overflow:hidden}#drift-hub-side.collapsed{width:48px}#drift-hub-side .hub-brand{font:700 28px system-ui;color:#fff;text-align:center;background:url(/drift-mark.png) center/60% no-repeat;padding:24px 0}#drift-hub-side .hub-welcome{text-align:center;opacity:.8;font-size:13px;margin-bottom:6px}#drift-hub-side .hub-search{width:100%;height:36px;border-radius:18px;border:none;padding:0 12px;background:rgba(255,255,255,.12);color:#fff}body.drift-liquid #drift-hub-side .hub-search{background:rgba(255,255,255,.18);backdrop-filter:blur(12px)}#drift-hub-side .hub-sections{flex:1;overflow:auto;display:flex;flex-direction:column;gap:4px}#drift-hub-side .hub-sec{display:flex;align-items:center;gap:8px;background:transparent;border:none;color:#eee;padding:8px;border-radius:8px;text-align:left;cursor:pointer}#drift-hub-side .hub-sec i{width:22px;height:22px;display:inline-flex}#drift-hub-side .hub-settings,#drift-hub-side .hub-toggle{background:rgba(255,255,255,.1);border:none;color:#fff;padding:8px;border-radius:8px;cursor:pointer}#drift-hub-stage{position:fixed;left:220px;top:0;right:0;bottom:0;background:#000;z-index:15;display:none}body.drift-hub #task,.drift-hub .icons{display:none!important}body.drift-hub [data-desk-only]{display:none!important}';
+  hubStyle.textContent = '#drift-hub-side{position:fixed;left:0;top:0;bottom:0;width:220px;background:#f4f4f6;color:#111;display:none;flex-direction:column;z-index:20;padding:12px 10px;gap:8px;overflow:hidden;border-right:1px solid rgba(0,0,0,.08)}#drift-hub-side.collapsed{width:0;padding:0;border:0;overflow:visible}#drift-hub-side.collapsed>*{display:none!important}#drift-hub-side.collapsed .hub-toggle{display:flex!important;position:fixed;left:10px;top:10px;z-index:30}#drift-hub-side .hub-search{width:100%;height:36px;border-radius:18px;border:1px solid rgba(0,0,0,.08);padding:0 12px;background:#fff;color:#111;box-sizing:border-box}#drift-hub-side .hub-sections{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:4px;scrollbar-width:none;-ms-overflow-style:none}#drift-hub-side .hub-sections::-webkit-scrollbar{display:none;width:0;height:0}#drift-hub-side .hub-sec{display:flex;align-items:center;gap:8px;background:transparent;border:none;color:#111;padding:8px;border-radius:8px;text-align:left;cursor:pointer;font:600 13px system-ui}#drift-hub-side .hub-sec i{width:22px;height:22px;display:inline-flex;flex:none}#drift-hub-side .hub-sec i img,#drift-hub-side .hub-sec i svg{width:22px;height:22px}#drift-hub-side .hub-settings,#drift-hub-side .hub-toggle,#drift-hub-side .hub-home{background:#fff;border:1px solid rgba(0,0,0,.08);color:#111;padding:8px;border-radius:8px;cursor:pointer}#drift-hub-stage{position:fixed;left:220px;top:0;right:0;bottom:0;background:#050505;z-index:15;display:none;overflow:hidden}body.drift-hub #task,body.drift-hub .icons,body.drift-hub #drift-settings-btn,body.drift-hub #drift-page-dots{display:none!important}body.drift-hub [data-desk-only]{display:none!important}#task .tb,#task #clock,.icons .ico{color:#fff}.hub-home{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:28px 18px 40px;background:#050505 url(/drift-mark.png) center 12%/160px no-repeat;color:#fff}.hub-word{font:800 76px/0.9 system-ui;letter-spacing:-2px;color:#fff;margin-top:28px}.hub-hi{opacity:.75;font:15px system-ui}.hub-web{width:min(560px,92%);height:52px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.1);color:#fff;padding:0 18px;font:16px system-ui;outline:none;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}body.drift-liquid .hub-web{background:rgba(255,255,255,.16)}.hub-tiles{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:780px;margin-top:8px}.hub-tile{width:108px;min-height:104px;border-radius:18px;border:1px solid rgba(0,0,0,.06);background:#f4f4f6;color:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;font:600 12px system-ui;padding:10px 6px}.hub-tile i{width:36px;height:36px;display:grid;place-items:center}.hub-tile i img,.hub-tile i svg{width:36px;height:36px}';
   if (!document.getElementById('drift-hub-css')) document.head.appendChild(hubStyle);
-
 
   function installHubMode() {
     if (window.__driftHubInstalled) return;
@@ -3861,19 +3974,24 @@ function driftSite(url) {
     if (!desk) return;
     var side = document.createElement('div');
     side.id = 'drift-hub-side';
-    side.innerHTML = '<div class="hub-brand"><span>Drift</span></div><div class="hub-welcome">Welcome To drift</div><input class="hub-search" placeholder="Search…" /><div class="hub-sections"></div><button type="button" class="hub-settings">Settings</button><button type="button" class="hub-toggle">☰</button>';
+    side.innerHTML = '<button type="button" class="hub-toggle">☰</button><input class="hub-search" placeholder="Search apps" /><div class="hub-sections"></div><button type="button" class="hub-home">Home</button><button type="button" class="hub-settings">Settings</button>';
     desk.appendChild(side);
     var stage = document.createElement('div');
     stage.id = 'drift-hub-stage';
     desk.appendChild(stage);
     var sections = side.querySelector('.hub-sections');
     var search = side.querySelector('.hub-search');
+    function appIds() {
+      var apps = window.DRIFT_APPS || Object.keys(window.XAPPS || {});
+      if (!apps || !apps.length) apps = ['browser','ai','yt','movies','minecraft','discord','github','roblox'];
+      return apps;
+    }
     function listApps() {
+      var q = (search.value || '').toLowerCase().trim();
       sections.innerHTML = '';
-      var apps = (window.DRIFT_APPS || Object.keys(window.XAPPS || {}));
-      if (!apps.length) apps = ['browser','ai','yt','movies','discord','github','roblox'];
-      apps.forEach(function (id) {
-        var name = (window.APPS && window.APPS[id]) || id;
+      appIds().forEach(function (id) {
+        var name = (window.APPS && window.APPS[id]) || (window.XAPPS && window.XAPPS[id] && window.XAPPS[id].n) || id;
+        if (q && String(name).toLowerCase().indexOf(q) < 0 && String(id).toLowerCase().indexOf(q) < 0) return;
         var ico = (window.IC && window.IC[id]) || '';
         var b = document.createElement('button');
         b.type = 'button';
@@ -3883,28 +4001,57 @@ function driftSite(url) {
         sections.appendChild(b);
       });
     }
+    function paintHome() {
+      stage.innerHTML = '';
+      stage.style.display = 'block';
+      var home = document.createElement('div');
+      home.className = 'hub-home';
+      home.innerHTML = '<div class="hub-word">Drift</div><div class="hub-hi">Welcome To drift</div><input class="hub-web" placeholder="Search the web…" /><div class="hub-tiles"></div>';
+      stage.appendChild(home);
+      var tiles = home.querySelector('.hub-tiles');
+      appIds().slice(0, 8).forEach(function (id) {
+        var name = (window.APPS && window.APPS[id]) || id;
+        var ico = (window.IC && window.IC[id]) || '';
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'hub-tile';
+        b.innerHTML = '<i>' + ico + '</i><span>' + name + '</span>';
+        b.onclick = function () { openSection(id); };
+        tiles.appendChild(b);
+      });
+      var web = home.querySelector('.hub-web');
+      web.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter') return;
+        var q = web.value.trim();
+        openSection('browser');
+        if (!q) return;
+        setTimeout(function () {
+          var fr = stage.querySelector('iframe');
+          if (fr) fr.src = '/go?u=' + encodeURIComponent('https://duckduckgo.com/?kl=us-en&q=' + encodeURIComponent(q));
+        }, 300);
+      });
+    }
     function openSection(id) {
       stage.innerHTML = '';
       stage.style.display = 'block';
       var root = document.createElement('div');
-      root.style.cssText = 'height:100%;width:100%;position:relative;overflow:hidden';
+      root.style.cssText = 'height:100%;width:100%;position:relative;overflow:hidden;background:#000';
       stage.appendChild(root);
       var fn = (window.XAPPS && window.XAPPS[id] && window.XAPPS[id].f) || null;
       if (typeof fn === 'function') fn(root);
       else if (id === 'browser' && typeof window.openProxied === 'function') window.openProxied('https://duckduckgo.com/', root);
     }
+    search.addEventListener('input', listApps);
     search.addEventListener('keydown', function (e) {
       if (e.key !== 'Enter') return;
-      var q = search.value.trim();
-      if (!q) return;
-      openSection('browser');
-      setTimeout(function () {
-        var fr = stage.querySelector('iframe');
-        if (fr) fr.src = 'https://drift.hostless.app/go?u=' + encodeURIComponent('https://duckduckgo.com/?q=' + encodeURIComponent(q));
-      }, 200);
+      e.preventDefault();
+      var first = sections.querySelector('.hub-sec');
+      if (first) first.click();
     });
+    side.querySelector('.hub-home').onclick = paintHome;
     side.querySelector('.hub-settings').onclick = function () {
-      if (typeof openSettingsPanel === 'function') openSettingsPanel();
+      if (typeof window.openSettingsPanel === 'function') window.openSettingsPanel();
+      else if (typeof openSettingsPanel === 'function') openSettingsPanel();
     };
     side.querySelector('.hub-toggle').onclick = function () {
       side.classList.toggle('collapsed');
@@ -3913,7 +4060,9 @@ function driftSite(url) {
     function apply() {
       var on = document.body.classList.contains('drift-hub');
       side.style.display = on ? 'flex' : 'none';
-      stage.style.display = on ? 'block' : 'none';
+      if (!on) stage.style.display = 'none';
+      else if (!stage.childNodes.length) paintHome();
+      else stage.style.display = 'block';
       var task = document.getElementById('task');
       if (task) task.style.display = on ? 'none' : '';
       var icons = desk.querySelector('.icons');
@@ -3926,4 +4075,3 @@ function driftSite(url) {
   }
   try { if (localStorage.getItem('wos:hub') === '1') document.body.classList.add('drift-hub'); } catch (e) {}
   setTimeout(installHubMode, 800);
-
