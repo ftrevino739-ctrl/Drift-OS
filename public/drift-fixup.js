@@ -2232,7 +2232,24 @@ function driftSite(url) {
       '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px">' +
       '<div style="flex:1"><b>Dynamic OS</b>' +
       '<div style="opacity:.75;font-size:12px;margin-top:4px">Lets you adapt the screen as if this were another operating system. This is the only way past the OS Adapts restriction.</div></div>' +
-      switchHTML('drift-dynamic-sw', dynOn) + '</div></section>' +
+      switchHTML('drift-dynamic-sw', dynOn) + '</div>' +
+      '<div style="margin:16px 0 8px;font-weight:700">AI thinking style</div>' +
+      '<div style="opacity:.75;font-size:12px;margin-bottom:8px">Choose how the AI looks while it thinks.</div>' +
+      '<select id="drift-think-style" style="display:block;width:100%;padding:8px;border-radius:8px;border:1px solid #333;background:#14141c;color:#eee">' +
+      '<option value="default">Default</option>' +
+      '<option value="claude">Claude (blinking logo)</option>' +
+      '<option value="grok">Grok (orb)</option>' +
+      '<option value="chatgpt">ChatGPT (thinking orb)</option>' +
+      '<option value="deepseek">Deepseek</option>' +
+      '<option value="gemini">Gemini (three dots)</option></select>' +
+      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin:16px 0">' +
+      '<div style="flex:1"><b>Hub mode</b>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Apps on the left like a dashboard (Noahs Tutoring style, Drift colors).</div></div>' +
+      switchHTML('drift-hub-sw', localStorage.getItem('wos:hub') === '1') + '</div>' +
+      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px">' +
+      '<div style="flex:1"><b>Background clock</b>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Large clock in the middle of the desktop. Apps cannot be placed on it.</div></div>' +
+      switchHTML('drift-clock-sw', localStorage.getItem('wos:bg-clock') === '1') + '</div></section>' +
       '<section data-sec="os" style="display:none">' +
       '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px">' +
       '<div style="flex:1"><b>Adapt Drift for ChromeOS</b>' +
@@ -2435,6 +2452,24 @@ function driftSite(url) {
     wireSwitch(panel.querySelector('#drift-app-glass-sw'), function (on) {
       try { localStorage.setItem('wos:liquid-apps', on ? '1' : '0'); } catch (e) {}
       installAppGlass();
+    });
+    var thinkStyle = panel.querySelector('#drift-think-style');
+    if (thinkStyle) {
+      try { thinkStyle.value = localStorage.getItem('wos:think-style') || 'default'; } catch (e) {}
+      thinkStyle.onchange = function () {
+        try { localStorage.setItem('wos:think-style', thinkStyle.value); } catch (e) {}
+        document.body.dataset.thinkStyle = thinkStyle.value;
+      };
+    }
+    wireSwitch(panel.querySelector('#drift-hub-sw'), function (on) {
+      try { localStorage.setItem('wos:hub', on ? '1' : '0'); } catch (e) {}
+      document.body.classList.toggle('drift-hub', !!on);
+      if (typeof rend === 'function') try { rend(); } catch (e) {}
+    });
+    wireSwitch(panel.querySelector('#drift-clock-sw'), function (on) {
+      try { localStorage.setItem('wos:bg-clock', on ? '1' : '0'); } catch (e) {}
+      document.body.classList.toggle('drift-bg-clock', !!on);
+      installBgClock(!!on);
     });
     wireSwitch(panel.querySelector('#drift-dynamic-sw'), function (on) {
       try { localStorage.setItem('wos:dynamic-os', on ? '1' : '0'); } catch (e) {}
@@ -3586,6 +3621,52 @@ function driftSite(url) {
     }, 3000);
   }
 
-  onReady(boot);
+
+  function installBgClock(on) {
+    var el = document.getElementById('drift-bg-clock');
+    if (!on) { if (el) el.remove(); return; }
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'drift-bg-clock';
+      el.style.cssText = 'position:fixed;left:50%;top:46%;transform:translate(-50%,-50%);z-index:1;pointer-events:none;font:700 72px system-ui;color:rgba(255,255,255,.85);text-shadow:0 4px 24px rgba(0,0,0,.5);letter-spacing:-2px;user-select:none';
+      document.body.appendChild(el);
+    }
+    function tick() {
+      if (!document.getElementById('drift-bg-clock')) return;
+      var d = new Date();
+      el.textContent = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      setTimeout(tick, 1000);
+    }
+    tick();
+  }
+  function installThinkStyles() {
+    if (document.getElementById('drift-think-styles')) return;
+    var st = document.createElement('style');
+    st.id = 'drift-think-styles';
+    st.textContent = `
+      body.drift-hub .icons { display:flex !important; flex-direction:column !important; left:12px !important; top:calc(env(safe-area-inset-top,0px)+14px) !important; width:220px !important; height:auto !important; gap:6px !important; align-items:flex-start !important; }
+      body.drift-hub .icons .ico { position:static !important; width:auto !important; margin:0 !important; }
+      #drift-bg-clock { animation: drift-clock-fade .4s ease; }
+      @keyframes drift-clock-fade { from { opacity:0 } to { opacity:1 } }
+      .think-panel.live::before { content:''; display:inline-block; width:18px; height:18px; margin-right:8px; vertical-align:middle; }
+      body[data-think-style="claude"] .think-panel.live::before { background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23D97706' d='M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z'/%3E%3C/svg%3E") center/contain no-repeat; animation: drift-blink 1s infinite; }
+      body[data-think-style="grok"] .think-panel.live::before { border-radius:50%; background:radial-gradient(circle at 30% 30%,#7EC8FF,#0B1A36); box-shadow:0 0 12px #7EC8FF; animation: drift-pulse 1.2s infinite; }
+      body[data-think-style="chatgpt"] .think-panel.live::before { border-radius:50%; background:radial-gradient(circle,#8b7bff,#6fc3ff); animation: drift-wobble 1.4s infinite; }
+      body[data-think-style="deepseek"] .think-panel.live::before { border-radius:4px; background:linear-gradient(135deg,#4F46E5,#06B6D4); animation: drift-spin 1.6s linear infinite; }
+      body[data-think-style="gemini"] .think-panel.live::before { background:none; width:36px; }
+      body[data-think-style="gemini"] .think-panel.live::after { content:''; display:inline-block; width:6px; height:6px; border-radius:50%; background:#4285F4; margin:0 2px; animation: drift-dot 1.2s infinite; box-shadow:10px 0 0 #EA4335, 20px 0 0 #FBBC05; }
+      @keyframes drift-blink { 0%,100%{opacity:1} 50%{opacity:.35} }
+      @keyframes drift-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.15)} }
+      @keyframes drift-wobble { 0%,100%{transform:scale(1) rotate(0)} 50%{transform:scale(1.08) rotate(8deg)} }
+      @keyframes drift-spin { to{transform:rotate(360deg)} }
+      @keyframes drift-dot { 0%,80%,100%{opacity:.3} 40%{opacity:1} }
+    `;
+    document.head.appendChild(st);
+    try { document.body.dataset.thinkStyle = localStorage.getItem('wos:think-style') || 'default'; } catch (e) {}
+    try { if (localStorage.getItem('wos:hub') === '1') document.body.classList.add('drift-hub'); } catch (e) {}
+    try { if (localStorage.getItem('wos:bg-clock') === '1') { document.body.classList.add('drift-bg-clock'); installBgClock(true); } } catch (e) {}
+  }
+
+  onReady(function () { boot(); setTimeout(installThinkStyles, 400); });
   console.log('[Drift] fixup loaded');
 })();
