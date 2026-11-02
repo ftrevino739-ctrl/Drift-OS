@@ -3714,12 +3714,20 @@ function driftSite(url) {
       if (e.target.closest('.ico')) return;
       sx = e.clientX;
     });
+    var dragging = null;
+    icons.addEventListener('pointerdown', function (e) {
+      var ico = e.target.closest('.ico');
+      if (!ico) return;
+      dragging = ico;
+    });
     wrap.addEventListener('pointerup', function (e) {
       var dx = e.clientX - sx;
-      var nearRight = e.clientX > window.innerWidth - 40;
-      var ico = e.target.closest && e.target.closest('.ico');
-      if (nearRight && ico && page < 2) { go(page + 1); return; }
+      var nearRight = e.clientX > window.innerWidth - 50;
+      var nearLeft = e.clientX < 50;
+      if (dragging && nearRight && page < 2) { go(page + 1); dragging = null; return; }
+      if (dragging && nearLeft && page > 0) { go(page - 1); dragging = null; return; }
       if (Math.abs(dx) > 60) go(page + (dx < 0 ? 1 : -1));
+      dragging = null;
     });
     var jiggling = false;
     function setJiggle(on) {
@@ -3748,12 +3756,40 @@ function driftSite(url) {
     document.body.appendChild(v);
     try { localStorage.setItem('wos:build', '2c944b4-snowhush-nowgg'); } catch (e) {}
   }
+
+  var THINK_GIFS = {
+    claude: 'https://media.tenor.com/images/placeholder-claude.gif',
+    chatgpt: 'https://media.tenor.com/images/placeholder-chatgpt.gif',
+    grok: 'https://media.tenor.com/images/placeholder-grok.gif',
+    gemini: 'https://media.tenor.com/images/placeholder-gemini.gif',
+    deepseek: 'https://media.tenor.com/images/placeholder-deepseek.gif',
+    default: ''
+  };
+  function showThinkGif(style) {
+    var old = document.getElementById('drift-think-gif');
+    if (old) old.remove();
+    var url = THINK_GIFS[style] || THINK_GIFS.default;
+    if (!url || url.indexOf('placeholder') !== -1) return;
+    var img = document.createElement('img');
+    img.id = 'drift-think-gif';
+    img.src = url;
+    img.alt = style;
+    img.style.cssText = 'position:absolute;width:28px;height:28px;border-radius:6px;object-fit:contain;z-index:5;pointer-events:none';
+    var am = document.querySelector('.am');
+    if (am) am.appendChild(img);
+  }
+  function hideThinkGif() {
+    var el = document.getElementById('drift-think-gif');
+    if (el) el.remove();
+  }
+  window.driftShowThinkGif = showThinkGif;
+  window.driftHideThinkGif = hideThinkGif;
   function installThinkStyles() {
     if (document.getElementById('drift-think-styles')) return;
     var st = document.createElement('style');
     st.id = 'drift-think-styles';
     st.textContent = `
-      body.drift-hub .icons { display:flex !important; flex-direction:column !important; left:12px !important; top:calc(env(safe-area-inset-top,0px)+14px) !important; width:220px !important; height:auto !important; gap:6px !important; align-items:flex-start !important; }
+      body.drift-hub .icons { display:flex !important; flex-direction:column !important; position:fixed !important; left:0 !important; top:0 !important; bottom:calc(var(--tbh,76px)) !important; width:200px !important; background:var(--omni,#1c1c1e) !important; padding:12px 8px !important; gap:4px !important; z-index:10 !important; overflow:auto !important; } body.drift-hub .icons .ico { position:static !important; width:100% !important; text-align:left !important; border-radius:8px !important; }
       body.drift-hub .icons .ico { position:static !important; width:auto !important; margin:0 !important; }
       body.drift-round-tb #task { border-radius: 22px 22px 0 0 !important; overflow: hidden; backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); }
       body.drift-macos-desk #task { border-radius: 24px 24px 0 0 !important; overflow: hidden; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
