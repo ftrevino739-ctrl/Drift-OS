@@ -578,7 +578,7 @@
     }
   }, 1000);
   window.driftSnow = function (on) {
-    snowOn = false;
+    snowOn = !!on;
     if (snowTimer) cancelAnimationFrame(snowTimer);
     snowTimer = 0;
     if (snowCanvas && snowCanvas.parentNode) snowCanvas.parentNode.removeChild(snowCanvas);
@@ -586,6 +586,28 @@
     snowCtx = null;
     try { localStorage.setItem('wos:xmas', on ? '1' : '0'); } catch (e) {}
     document.body.classList.toggle('drift-snow', !!on);
+    if (on) {
+      try { measureCm(); } catch (e) {}
+      var canvas = document.createElement('canvas');
+      canvas.className = 'snow';
+      canvas.id = 'drift-snow';
+      canvas.setAttribute('aria-hidden', 'true');
+      canvas.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:100000';
+      document.body.appendChild(canvas);
+      snowCanvas = canvas;
+      snowCtx = canvas.getContext('2d');
+      function resize() {
+        var dpr = window.devicePixelRatio || 1;
+        canvas.width = Math.floor(window.innerWidth * dpr);
+        canvas.height = Math.floor(window.innerHeight * dpr);
+        canvas.style.width = window.innerWidth + 'px';
+        canvas.style.height = window.innerHeight + 'px';
+        if (snowCtx) snowCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+      resize();
+      window.addEventListener('resize', resize);
+      snowTimer = requestAnimationFrame(snowFrame);
+    }
     if (!document.getElementById('drift-snow-under')) {
       var under = document.createElement('style');
       under.id = 'drift-snow-under';

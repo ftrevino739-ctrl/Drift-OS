@@ -1717,8 +1717,9 @@ function driftSite(url) {
   function robloxShell(root) {
     root.innerHTML = '';
     root.style.cssText = 'height:100%;min-height:0;position:relative;background:#0e0e0e';
-    if (typeof window.openProxied === 'function') window.openProxied('https://now.gg/apps/roblox-corporation/5349/roblox.html', root);
-    else operaPage('https://now.gg/apps/roblox-corporation/5349/roblox.html', 'edge')(root);
+    var bing = 'https://www.bing.com/search?q=play+roblox+now.gg';
+    if (typeof window.openProxied === 'function') window.openProxied(bing, root);
+    else operaPage(bing, 'chrome')(root);
   }
   function inAppPage(url) {
     return function (root) {
@@ -1765,6 +1766,20 @@ function driftSite(url) {
       open();
     };
   }
+
+  function watchFor404(frame, reloadFn) {
+    var n = 0;
+    var t = setInterval(function () {
+      if (!frame || !frame.isConnected || ++n > 12) { clearInterval(t); return; }
+      var text = '';
+      try { text = frame.contentDocument && frame.contentDocument.body ? String(frame.contentDocument.body.innerText || '').slice(0, 400) : ''; } catch (e) { text = ''; }
+      if (/\b404\b|Not Found|Page not found|Uh oh/i.test(text)) {
+        clearInterval(t);
+        if (typeof reloadFn === 'function') setTimeout(reloadFn, 600);
+      }
+    }, 800);
+  }
+
   function operaPage(url, browser) {
     browser = browser || "edge";
     return function (root) {
@@ -2249,7 +2264,15 @@ function driftSite(url) {
       '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px">' +
       '<div style="flex:1"><b>Background clock</b>' +
       '<div style="opacity:.75;font-size:12px;margin-top:4px">Large clock in the middle of the desktop. Apps cannot be placed on it.</div></div>' +
-      switchHTML('drift-clock-sw', localStorage.getItem('wos:bg-clock') === '1') + '</div></section>' +
+      switchHTML('drift-clock-sw', localStorage.getItem('wos:bg-clock') === '1') + '</div>' +
+      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px">' +
+      '<div style="flex:1"><b>macOS desktops</b>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Multiple desktops with page dots and jiggle mode (iOS style).</div></div>' +
+      switchHTML('drift-macos-desk-sw', localStorage.getItem('wos:macos-desk') === '1') + '</div>' +
+      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px">' +
+      '<div style="flex:1"><b>Rounded taskbar</b>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">macOS-style rounded dock with blur.</div></div>' +
+      switchHTML('drift-roundtb-sw', localStorage.getItem('wos:round-tb') === '1') + '</div></section>' +
       '<section data-sec="os" style="display:none">' +
       '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px">' +
       '<div style="flex:1"><b>Adapt Drift for ChromeOS</b>' +
@@ -2375,8 +2398,8 @@ function driftSite(url) {
     showSec('ui');
     var bmClass = panel.querySelector('#drift-bm-class');
     var bmGuest = panel.querySelector('#drift-bm-guest');
-    var classJs = 'javascript:' + "(function(){function real(){var href='';try{href=location.href;}catch(e){}var q='';try{var u=new URL(href);q=u.searchParams.get('q')||u.searchParams.get('query')||'';var m=href.indexOf('/scramjet/');if(m!==-1){var rest=decodeURIComponent(href.slice(m+10).split('#')[0]);if(/^https?:/i.test(rest)){var ru=new URL(rest);q=ru.searchParams.get('q')||ru.searchParams.get('query')||q;href=rest;}}}catch(e){}if(/drift\\.hostless\\.app\\/go/i.test(href)){try{var g=new URL(href);if(g.searchParams.get('u'))href=g.searchParams.get('u');}catch(e){}}return q?('https://duckduckgo.com/?kl=us-en&q='+encodeURIComponent(q)):href;}var dest='https://drift.hostless.app/os?browse='+encodeURIComponent(real());try{if(window.parent&&window.parent!==window){window.parent.location.href=dest;return;}}catch(e){}try{window.top.location.href=dest;}catch(e){location.href=dest;}})();";
-    var guestJs = 'javascript:' + "(function(){function real(){var href='';try{href=location.href;}catch(e){}var q='',target=href;try{var u=new URL(href);q=u.searchParams.get('q')||u.searchParams.get('query')||'';var m=href.indexOf('/scramjet/');if(m!==-1){var rest=decodeURIComponent(href.slice(m+10).split('#')[0]);if(/^https?:/i.test(rest)){href=rest;u=new URL(rest);q=u.searchParams.get('q')||u.searchParams.get('query')||q;}}if(/drift\\.hostless\\.app\\/go/i.test(href)){var g=new URL(href);if(g.searchParams.get('u')){href=g.searchParams.get('u');u=new URL(href);q=u.searchParams.get('q')||q;}}if(q)target='https://www.google.com/search?igu=1&hl=en&gl=us&q='+encodeURIComponent(q);else if(/google\\./i.test(u.hostname)){u.searchParams.set('igu','1');if(!u.searchParams.get('hl'))u.searchParams.set('hl','en');target=u.toString();}}catch(e){}return target;}var dest='https://drift.hostless.app/os?browse='+encodeURIComponent(real());try{if(window.parent&&window.parent!==window){window.parent.location.href=dest;return;}}catch(e){}try{window.top.location.href=dest;}catch(e){location.href=dest;}})();";
+    var classJs = 'javascript:' + "(function(){function real(){var href='';try{href=location.href;}catch(e){}var q='';try{var u=new URL(href);q=u.searchParams.get('q')||u.searchParams.get('query')||'';var m=href.indexOf('/scramjet/');if(m!==-1){var rest=decodeURIComponent(href.slice(m+10).split('#')[0]);if(/^https?:/i.test(rest)){var ru=new URL(rest);q=ru.searchParams.get('q')||ru.searchParams.get('query')||q;href=rest;}}}catch(e){}if(/drift\\.hostless\\.app\\/go/i.test(href)){try{var g=new URL(href);if(g.searchParams.get('u'))href=g.searchParams.get('u');}catch(e){}}return q?('https://duckduckgo.com/?kl=us-en&q='+encodeURIComponent(q)):href;}var dest='https://drift.hostless.app/go?u='+encodeURIComponent(real());try{if(window.parent&&window.parent!==window){window.parent.location.href=dest;return;}}catch(e){}try{window.top.location.href=dest;}catch(e){location.href=dest;}})();";
+    var guestJs = 'javascript:' + "(function(){function real(){var href='';try{href=location.href;}catch(e){}var q='',target=href;try{var u=new URL(href);q=u.searchParams.get('q')||u.searchParams.get('query')||'';var m=href.indexOf('/scramjet/');if(m!==-1){var rest=decodeURIComponent(href.slice(m+10).split('#')[0]);if(/^https?:/i.test(rest)){href=rest;u=new URL(rest);q=u.searchParams.get('q')||u.searchParams.get('query')||q;}}if(/drift\\.hostless\\.app\\/go/i.test(href)){var g=new URL(href);if(g.searchParams.get('u')){href=g.searchParams.get('u');u=new URL(href);q=u.searchParams.get('q')||q;}}if(q)target='https://www.google.com/search?igu=1&hl=en&gl=us&q='+encodeURIComponent(q);else if(/google\\./i.test(u.hostname)){u.searchParams.set('igu','1');if(!u.searchParams.get('hl'))u.searchParams.set('hl','en');target=u.toString();}}catch(e){}return target;}var dest='https://drift.hostless.app/go?u='+encodeURIComponent(real());try{if(window.parent&&window.parent!==window){window.parent.location.href=dest;return;}}catch(e){}try{window.top.location.href=dest;}catch(e){location.href=dest;}})();";
     function copyBm(text, title, how) {
       function done() {
         var old = document.getElementById('drift-copied');
@@ -2471,6 +2494,15 @@ function driftSite(url) {
       document.body.classList.toggle('drift-bg-clock', !!on);
       installBgClock(!!on);
     });
+    wireSwitch(panel.querySelector('#drift-macos-desk-sw'), function (on) {
+      try { localStorage.setItem('wos:macos-desk', on ? '1' : '0'); } catch (e) {}
+      document.body.classList.toggle('drift-macos-desk', !!on);
+      if (on) installMacosDesks();
+    });
+    wireSwitch(panel.querySelector('#drift-roundtb-sw'), function (on) {
+      try { localStorage.setItem('wos:round-tb', on ? '1' : '0'); } catch (e) {}
+      document.body.classList.toggle('drift-round-tb', !!on);
+    });
     wireSwitch(panel.querySelector('#drift-dynamic-sw'), function (on) {
       try { localStorage.setItem('wos:dynamic-os', on ? '1' : '0'); } catch (e) {}
       if (!on) applySavedAdapts(true);
@@ -2499,7 +2531,7 @@ function driftSite(url) {
       if (!raw) return;
       var url = raw;
       if (!/^https?:/i.test(url)) url = 'https://' + url.replace(/^\/+/, '');
-      var js = 'javascript:(function(){location.href=\'https://drift.hostless.app/os?browse=\'+encodeURIComponent(\'' + url.replace(/\\/g, '\\\\').replace(/\'/g, '\\\'') + '\');})();';
+      var js = 'javascript:(function(){location.href=\'https://drift.hostless.app/go?u=\'+encodeURIComponent(\'' + url.replace(/\\/g, '\\\\').replace(/\'/g, '\\\'') + '\');})();';
       var out = panel.querySelector('#drift-bypass-out');
       if (out) out.value = js;
     };
@@ -3628,7 +3660,7 @@ function driftSite(url) {
     if (!el) {
       el = document.createElement('div');
       el.id = 'drift-bg-clock';
-      el.style.cssText = 'position:fixed;left:50%;top:46%;transform:translate(-50%,-50%);z-index:1;pointer-events:none;font:700 72px system-ui;color:rgba(255,255,255,.85);text-shadow:0 4px 24px rgba(0,0,0,.5);letter-spacing:-2px;user-select:none';
+      el.style.cssText = 'position:fixed;left:50%;top:32%;transform:translate(-50%,-50%);z-index:1;pointer-events:none;font:700 64px system-ui;color:rgba(255,255,255,.9);letter-spacing:-1px;user-select:none;padding:18px 28px;border-radius:28px;background:rgba(255,255,255,.12);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.18);box-shadow:0 8px 32px rgba(0,0,0,.25)';
       document.body.appendChild(el);
     }
     function tick() {
@@ -3639,6 +3671,72 @@ function driftSite(url) {
     }
     tick();
   }
+
+  function installMacosDesks() {
+    if (window.__driftMacosDesks) return;
+    window.__driftMacosDesks = true;
+    var desk = document.getElementById('desk');
+    if (!desk) return;
+    var icons = desk.querySelector('.icons');
+    if (!icons) return;
+    var wrap = document.getElementById('drift-pages');
+    if (!wrap) {
+      wrap = document.createElement('div');
+      wrap.id = 'drift-pages';
+      wrap.style.cssText = 'position:relative;width:100%;height:100%;overflow:hidden';
+      icons.parentNode.insertBefore(wrap, icons);
+      wrap.appendChild(icons);
+    }
+    icons.style.transition = 'transform .35s cubic-bezier(.2,.8,.2,1)';
+    icons.style.width = '100%';
+    var page = 0;
+    var dots = document.getElementById('drift-page-dots');
+    if (!dots) {
+      dots = document.createElement('div');
+      dots.id = 'drift-page-dots';
+      dots.style.cssText = 'position:absolute;bottom:calc(var(--tbh,76px) + 10px);left:0;right:0;display:flex;justify-content:center;gap:7px;z-index:6;pointer-events:none';
+      desk.appendChild(dots);
+    }
+    function paint() {
+      dots.innerHTML = '';
+      for (var i = 0; i < 3; i++) {
+        var d = document.createElement('span');
+        d.style.cssText = 'width:8px;height:8px;border-radius:50%;background:' + (i === page ? '#fff' : 'rgba(255,255,255,.4)');
+        dots.appendChild(d);
+      }
+    }
+    function go(p) {
+      page = Math.max(0, Math.min(2, p));
+      icons.style.transform = 'translateX(' + (-page * 100) + '%)';
+      paint();
+    }
+    paint();
+    var sx = 0;
+    wrap.addEventListener('pointerdown', function (e) {
+      if (e.target.closest('.ico')) return;
+      sx = e.clientX;
+    });
+    wrap.addEventListener('pointerup', function (e) {
+      var dx = e.clientX - sx;
+      if (Math.abs(dx) > 60) go(page + (dx < 0 ? 1 : -1));
+    });
+    var jiggling = false;
+    function setJiggle(on) {
+      jiggling = on;
+      icons.classList.toggle('jiggle', on);
+    }
+    icons.addEventListener('pointerdown', function (e) {
+      var ico = e.target.closest('.ico');
+      if (!ico) return;
+      var t = setTimeout(function () { setJiggle(true); }, 550);
+      function clear() { clearTimeout(t); icons.removeEventListener('pointerup', clear); icons.removeEventListener('pointercancel', clear); }
+      icons.addEventListener('pointerup', clear);
+      icons.addEventListener('pointercancel', clear);
+    });
+    document.addEventListener('pointerdown', function (e) {
+      if (jiggling && !e.target.closest('.ico')) setJiggle(false);
+    });
+  }
   function installThinkStyles() {
     if (document.getElementById('drift-think-styles')) return;
     var st = document.createElement('style');
@@ -3646,6 +3744,9 @@ function driftSite(url) {
     st.textContent = `
       body.drift-hub .icons { display:flex !important; flex-direction:column !important; left:12px !important; top:calc(env(safe-area-inset-top,0px)+14px) !important; width:220px !important; height:auto !important; gap:6px !important; align-items:flex-start !important; }
       body.drift-hub .icons .ico { position:static !important; width:auto !important; margin:0 !important; }
+      body.drift-round-tb #task { border-radius: 22px 22px 0 0 !important; overflow: hidden; backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); }
+      .icons.jiggle .ico { animation: drift-jiggle .28s infinite alternate; }
+      @keyframes drift-jiggle { from { transform: rotate(-2.5deg); } to { transform: rotate(2.5deg); } }
       #drift-bg-clock { animation: drift-clock-fade .4s ease; }
       @keyframes drift-clock-fade { from { opacity:0 } to { opacity:1 } }
       .think-panel.live::before { content:''; display:inline-block; width:18px; height:18px; margin-right:8px; vertical-align:middle; }
@@ -3665,6 +3766,9 @@ function driftSite(url) {
     try { document.body.dataset.thinkStyle = localStorage.getItem('wos:think-style') || 'default'; } catch (e) {}
     try { if (localStorage.getItem('wos:hub') === '1') document.body.classList.add('drift-hub'); } catch (e) {}
     try { if (localStorage.getItem('wos:bg-clock') === '1') { document.body.classList.add('drift-bg-clock'); installBgClock(true); } } catch (e) {}
+    try { if (localStorage.getItem('wos:macos-desk') === '1') { document.body.classList.add('drift-macos-desk'); setTimeout(installMacosDesks, 600); } } catch (e) {}
+    try { if (localStorage.getItem('wos:round-tb') === '1') document.body.classList.add('drift-round-tb'); } catch (e) {}
+
   }
 
   onReady(function () { boot(); setTimeout(installThinkStyles, 400); });
