@@ -1473,9 +1473,10 @@ function ai(root){
     if(imgs.length){const g=document.createElement('div');g.className='thumbs';imgs.forEach(b=>{const i=new Image();i.src=URL.createObjectURL(b);g.appendChild(i)});ub.appendChild(g)}
     am.querySelectorAll('.think-panel').forEach(n=>{n.open=false;n.classList.remove('live')});
     const showThink=(function(){try{return localStorage.getItem('wos:show-think')==='1'}catch(e){return false}})();
-    const think=document.createElement('details');think.className='think-panel live';think.open=true;
+    const think=document.createElement('details');think.className='think-panel live';think.open=!!showThink;
     think.innerHTML='<summary><span class="chev">\u25BE</span> Pensó durante <span data-sec>0</span> segundos</summary><div class="think-body"></div>';
-    if(showThink) am.appendChild(think);
+    if(!showThink) think.hidden=true;
+    am.appendChild(think);
     const thinkBody=think.querySelector('.think-body'), thinkSec=think.querySelector('[data-sec]');
     const started=Date.now();
     const thinkTimer=setInterval(()=>{thinkSec.textContent=String(Math.max(1,Math.round((Date.now()-started)/1000)))},250);
@@ -1533,10 +1534,10 @@ function ai(root){
       sourceRows=(sj.results||[]).filter(x=>x&&x.url).slice(0,5);
       if(sourceRows.length){
         sources='Páginas que abrí:\n'+sourceRows.map(x=>'• '+(x.title||x.url)+'\n  '+x.url).join('\n');
-        steps.push('Websites viewed: '+sourceRows.length+'.');
+        steps.push('Leí '+sourceRows.length+' páginas.');
         paintThink();
       }else{sources='Busqué y no encontré páginas útiles.';steps.push(sources);paintThink()}
-    }).catch(()=>{sources='Intenté buscar y no pude leer las páginas.';steps.push(sources);paintThink()}):(function(){if(/\b(c[oó]digo|html|css|javascript|python|script|lua|luau)\b/i.test(q))steps.push('Voy a escribir el archivo completo en un bloque de código, para copiarlo y descargarlo.');else steps.push('No websites to open. We answer directly.');paintThink();return Promise.resolve()})();
+    }).catch(()=>{sources='Intenté buscar y no pude leer las páginas.';steps.push(sources);paintThink()}):(function(){if(/\b(c[oó]digo|html|css|javascript|python|script|lua|luau)\b/i.test(q))steps.push('Voy a escribir el archivo completo en un bloque de código, para copiarlo y descargarlo.');else steps.push('No hace falta abrir sitios. Escribo la respuesta.');paintThink();return Promise.resolve()})();
     const out=add('a','');
     if(think.parentNode) out.after(think);
     const pre=[
@@ -1563,8 +1564,10 @@ function ai(root){
       const secs=Math.max(1,Math.round((Date.now()-started)/1000));
       think.classList.remove('live');
       think.open=false;
-      think.querySelector('summary').innerHTML='<span class="chev">\u25BE</span> Pensó durante <span>'+secs+'</span> segundos';
-      paintThink();
+      if(!think.hidden){
+        think.querySelector('summary').innerHTML='<span class="chev">\u25BE</span> Pensó durante <span>'+secs+'</span> segundos';
+        paintThink();
+      } else think.remove();
       searchDone.then(function(){if(!think.isConnected)return;paintThink();if(thinkBody&&sourceRows.length)sourceRow(thinkBody,sourceRows);const host=(out.querySelector&&out.querySelector('.ans-bar'))||out;if(out.isConnected)sourceRow(host,sourceRows)}).catch(function(){});
       let txt=(r.text||'').replace(/Gemini said/gi,'Drift said');
       const thm=txt.match(/<think>([\s\S]*?)<\/think>/i)||txt.match(/\(thinking\)([\s\S]*?)\(\/thinking\)/i);
@@ -1625,7 +1628,7 @@ function ai(root){
         try{S.d.chats=(S.d.chats||[]).slice(0,6);(S.d.chats||[]).forEach(ch=>{if(ch&&ch.msgs&&ch.msgs.length>16)ch.msgs=ch.msgs.slice(-16)});save()}catch(e2){}
       }
     }catch(e){
-      try{clearInterval(thinkTimer);think.classList.remove('live');think.open=false;const secs=Math.max(1,Math.round((Date.now()-started)/1000));think.querySelector('summary').innerHTML='<span class="chev">\u25BE</span> Pensó durante <span>'+secs+'</span> segundos';paintThink()}catch(x){}
+      try{clearInterval(thinkTimer);think.classList.remove('live');if(think.hidden){think.remove()}else{think.open=false;const secs=Math.max(1,Math.round((Date.now()-started)/1000));think.querySelector('summary').innerHTML='<span class="chev">\u25BE</span> Pensó durante <span>'+secs+'</span> segundos';paintThink()}}catch(x){}
       const kept=(out.textContent||'').trim();
       if(kept.length>80){answerTools(out, kept)}
       else{out.className='e';out.textContent=(e&&e.message)||'No se pudo obtener respuesta.';mine.pop()}
