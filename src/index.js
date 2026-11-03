@@ -111,11 +111,12 @@ function loadAndPatchIndex() {
 	);
 
 	const tag =
-		'<script src="/drift-extras.js?v=20261102-think" defer></script>' +
-		'<script src="/chromebook-proxy.js?v=20261102-think" defer></script>' +
-		'<script src="/wayground-ai.js?v=20261102-think" defer></script>' +
-		'<script src="/drift-fixup.js?v=20261102-think" defer></script>' +
-		'<script src="/drift-userpatch.js?v=20261102-think" defer></script>' +
+		'<script src="/drift-extras.js?v=20261103-pack" defer></script>' +
+		'<script src="/chromebook-proxy.js?v=20261103-pack" defer></script>' +
+		'<script src="/wayground-ai.js?v=20261103-pack" defer></script>' +
+		'<script src="/drift-fixup.js?v=20261103-pack" defer></script>' +
+		'<script src="/drift-userpatch.js?v=20261103-pack" defer></script>' +
+		"<script>window.__DRIFT_BUILD_WANT='20261103-pack';setTimeout(function(){if(window.__DRIFT_BUILD===window.__DRIFT_BUILD_WANT)return;var d=document.getElementById('drift-old');if(d)return;d=document.createElement('div');d.id='drift-old';d.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#000;color:#eee;overflow:auto;padding:28px;font:16px/1.5 system-ui';d.innerHTML='<div style=\"max-width:680px;margin:0 auto\"><b style=\"font-size:28px\">Versión vieja de Drift</b><p>Se abrió una copia guardada. Recarga forzada. No hace falta una terminal ni apagar el equipo con un comando.</p><p><b>Chrome, Edge, ChromeOS y Linux:</b> Ctrl+Shift+R. Si sigue igual, en la configuración del sitio borra los datos de Drift y entra otra vez.</p><p><b>Firefox:</b> Ctrl+Shift+R. Si sigue, Ajustes → Privacidad → borrar cookies y datos de este sitio.</p><p><b>Safari en Mac:</b> Opción+Comando+E y luego Comando+R. En iPhone o iPad: Ajustes → Safari → borrar historial y datos del sitio, o quita el acceso directo y ábrelo de nuevo.</p><p><b>Windows:</b> cierra el navegador desde la barra de tareas y ábrelo otra vez. El último paso, en cualquier sistema, es reiniciar el dispositivo desde el menú de apagado, no desde la terminal.</p></div>';document.body.appendChild(d);},2500);</script>" +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +
@@ -347,8 +348,16 @@ fastify.post("/api/duck", { bodyLimit: 1024 * 1024 }, async (req, reply) => {
 	})).filter((m) => m.content);
 	if (!messages.length) messages.push({ role: "user", content: "Hello" });
 	let text = "";
-	try { text = await duckChat(model, messages); } catch { text = ""; duckVqd = ""; }
-	if (!text || /did not (answer|offer|respond)/i.test(text)) text = await fastAnswer(messages);
+	const fastP = fastAnswer(messages);
+	const duckP = duckChat(model, messages).catch(() => { duckVqd = ""; return ""; });
+	try {
+		text = await Promise.race([
+			duckP.then((t) => (t && !/did not (answer|offer|respond)/i.test(t) ? t : new Promise(() => {}))),
+			new Promise((resolve) => setTimeout(() => resolve(fastP), 1800)),
+		]);
+		if (text && typeof text.then === "function") text = await text;
+	} catch { text = ""; }
+	if (!text || /did not (answer|offer|respond)|DuckDuckGo did not/i.test(text)) text = await fastP;
 	if (!text || /DuckDuckGo did not/i.test(text)) return reply.code(502).send({ error: { message: "No se pudo obtener respuesta." } });
 	reply.header("cache-control", "no-store");
 	return { content: [{ type: "text", text }] };
@@ -1673,7 +1682,7 @@ fastify.get("/api/yt-file", async (req, reply) => proxyMedia(req, reply, "yt", "
 fastify.get("/api/tt-file", async (req, reply) => proxyMedia(req, reply, "tt", "https://www.tiktok.com/"));
 fastify.get("/api/tt-feed", async (req, reply) => {
 	const cursor = String(req.query.cursor || "0").replace(/[^0-9]/g, "").slice(0, 8) || "0";
-	const r = await fetch("https://www.tikwm.com/api/feed/list?region=US&count=8&cursor=" + cursor, {
+	const r = await fetch("https://www.tikwm.com/api/feed/list?region=MX&count=8&cursor=" + cursor, {
 		headers: { "user-agent": "Mozilla/5.0", accept: "application/json" },
 	});
 	const j = await r.json();

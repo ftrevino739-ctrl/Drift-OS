@@ -65,9 +65,9 @@ iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#fff}
       if (qm) { try { q = decodeURIComponent(qm[1].replace(/\+/g, ' ')); } catch (e4) { q = qm[1]; } }
     }
     q = String(q || '').replace(/\s+/g, ' ').trim();
-    if (q) return 'https://duckduckgo.com/?kl=us-en&q=' + encodeURIComponent(q);
+    if (q) return 'https://duckduckgo.com/?kl=mx-es&ia=web&q=' + encodeURIComponent(q);
     if (/^https?:/i.test(href) && !/linewize|classwize|goguardian|securly/i.test(href)) return href;
-    return 'https://duckduckgo.com/';
+    return 'https://duckduckgo.com/?kl=mx-es';
   }
   var params = new URLSearchParams(location.search);
   var target = searched(params.get('u') || '');
@@ -95,8 +95,8 @@ iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#fff}
     playing = true;
     var cv = document.getElementById('cube');
     var ctx = cv.getContext('2d');
-    var y = 0, vy = 0, dead = false, score = 0, best = 0, raf = 0, started = false;
-    var obs = [];
+    var y = 0, vy = 0, dead = false, score = 0, best = 0, coins = 0, tickN = 0, raf = 0, started = false, shake = 0;
+    var obs = [], flakes = [], far = [], coinsA = [], dust = [];
     try { best = Number(sessionStorage.getItem('wos:cube-best') || 0) || 0; } catch (e) {}
     function size() {
       var w0 = Math.max(320, cv.clientWidth || innerWidth), h0 = Math.max(220, cv.clientHeight || innerHeight);
@@ -106,13 +106,21 @@ iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#fff}
     }
     function reset() {
       var box = size();
-      y = box.h - 118; vy = 0; dead = false; started = false; score = 0; obs = [];
+      y = box.h - 118; vy = 0; dead = false; started = false; score = 0; coins = 0; tickN = 0; shake = 0;
+      obs = []; flakes = []; far = []; coinsA = []; dust = [];
+      var i;
+      for (i = 0; i < 7; i++) far.push({ x: Math.random() * box.w, h: 40 + Math.random() * 90, w: 70 + Math.random() * 80 });
+      for (i = 0; i < 46; i++) flakes.push({ x: Math.random() * box.w, y: Math.random() * box.h, r: 0.6 + Math.random() * 1.8, v: 0.45 + Math.random() * 1.3, o: 0.35 + Math.random() * 0.55 });
     }
     function jump() {
       if (dead) { reset(); return; }
       started = true;
       var box = size();
-      if (y >= box.h - 122) vy = -10.4;
+      if (y >= box.h - 122) {
+        vy = -10.4;
+        var k;
+        for (k = 0; k < 6; k++) dust.push({ x: 92, y: y + 18, vx: -1.2 - Math.random() * 2, vy: -Math.random() * 1.4, l: 16 });
+      }
     }
     function onKey(e) {
       if (e.code !== 'Space' && e.key !== ' ' && e.key !== 'ArrowUp') return;
@@ -122,35 +130,141 @@ iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#fff}
     cv.addEventListener('pointerdown', jump);
     window.addEventListener('keydown', onKey);
     reset();
+    function ridge(px, ground, ph, wide, fill) {
+      ctx.beginPath();
+      ctx.moveTo(px, ground);
+      ctx.lineTo(px + wide * 0.42, ground - ph * 0.62);
+      ctx.lineTo(px + wide * 0.7, ground - ph);
+      ctx.lineTo(px + wide * 1.15, ground - ph * 0.48);
+      ctx.lineTo(px + wide * 1.55, ground);
+      ctx.closePath();
+      ctx.fillStyle = fill;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(px + wide * 0.52, ground - ph * 0.78);
+      ctx.lineTo(px + wide * 0.7, ground - ph);
+      ctx.lineTo(px + wide * 0.9, ground - ph * 0.7);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(255,255,255,.92)';
+      ctx.fill();
+    }
     function frame() {
       if (!fail.classList.contains('on')) { cancelAnimationFrame(raf); return; }
       var box = size();
-      var ground = box.h - 86;
-      ctx.fillStyle = '#10141c';
+      var ground = box.h - 54;
+      tickN++;
+      if (shake > 0) shake *= 0.86;
+      ctx.save();
+      if (shake > 0.4) ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake);
+      var sky = ctx.createLinearGradient(0, 0, 0, ground);
+      sky.addColorStop(0, '#06101f');
+      sky.addColorStop(0.45, '#1a4b86');
+      sky.addColorStop(1, '#f3d7b0');
+      ctx.fillStyle = sky;
       ctx.fillRect(0, 0, box.w, box.h);
-      ctx.fillStyle = '#1c2430';
-      ctx.fillRect(0, ground, box.w, box.h - ground);
+      ctx.fillStyle = 'rgba(255,255,255,.9)';
+      var fi;
+      for (fi = 0; fi < flakes.length; fi++) {
+        var flake = flakes[fi];
+        flake.y += flake.v;
+        flake.x += Math.sin((tickN + fi) / 30) * 0.25;
+        if (flake.y > ground) { flake.y = -4; flake.x = Math.random() * box.w; }
+        ctx.globalAlpha = flake.o;
+        ctx.beginPath();
+        ctx.arc(flake.x, flake.y, flake.r, 0, 6.3);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      var speed = started && !dead ? 4.6 + Math.min(5.5, score / 28) : 1.2;
+      var bi;
+      for (bi = 0; bi < far.length; bi++) {
+        var hill = far[bi];
+        hill.x -= speed * 0.18;
+        if (hill.x < -hill.w) hill.x = box.w + 20;
+        ridge(hill.x, ground, hill.h * 0.55, hill.w, 'rgba(90,120,160,.35)');
+      }
+      var snowG = ctx.createLinearGradient(0, ground - 8, 0, box.h);
+      snowG.addColorStop(0, '#f7fbff');
+      snowG.addColorStop(1, '#8ea4bf');
+      ctx.fillStyle = '#16324d';
+      ctx.fillRect(0, ground + 8, box.w, box.h);
+      ctx.fillStyle = snowG;
+      ctx.fillRect(0, ground - 2, box.w, 14);
       if (started && !dead) {
-        score += 1;
-        if (score % 90 === 0) obs.push({ x: box.w + 20, w: 26 + (score % 3) * 10, h: 36 + (score % 4) * 8 });
+        vy += 0.46;
+        y += vy;
+        if (y > ground - 28) { y = ground - 28; vy = 0; }
+        if (tickN % Math.max(52, 92 - Math.floor(score / 12)) === 0) {
+          var hgt = 34 + Math.random() * 86;
+          obs.push({ x: box.w + 24, hgt: hgt, wide: 26 + Math.random() * 18, passed: false });
+          if (Math.random() < 0.65) coinsA.push({ x: box.w + 70, y: ground - hgt - 36 - Math.random() * 20, got: false });
+        }
       }
-      vy += 0.48; y += vy;
-      if (y > ground - 28) { y = ground - 28; vy = 0; }
+      var i;
+      for (i = 0; i < obs.length; i++) {
+        obs[i].x -= speed;
+        ridge(obs[i].x, ground + 6, obs[i].hgt, obs[i].wide, '#6d8caf');
+        var top = ground - obs[i].hgt + 16;
+        var left = obs[i].x + obs[i].wide * 0.35;
+        var right = obs[i].x + obs[i].wide * 1.05;
+        if (started && !dead && 78 < right && 78 + 22 > left && y < top + obs[i].hgt - 18 && y + 22 > top + 8) {
+          dead = true;
+          shake = 10;
+        }
+        if (!obs[i].passed && obs[i].x + obs[i].wide < 70) { obs[i].passed = true; score += 1; }
+      }
+      obs = obs.filter(function (o) { return o.x > -120; });
+      for (i = 0; i < coinsA.length; i++) {
+        var coin = coinsA[i];
+        coin.x -= speed;
+        if (!coin.got) {
+          ctx.fillStyle = '#ffe56a';
+          ctx.beginPath();
+          ctx.arc(coin.x, coin.y + Math.sin(tickN / 8 + i) * 3, 6, 0, 6.3);
+          ctx.fill();
+          if (started && !dead && Math.abs(coin.x - 88) < 16 && Math.abs(coin.y - (y + 8)) < 16) {
+            coin.got = true;
+            coins++;
+            score += 3;
+          }
+        }
+      }
+      coinsA = coinsA.filter(function (c) { return c.x > -20 && !c.got; });
+      if (score > best) { best = score; try { sessionStorage.setItem('wos:cube-best', String(best)); } catch (e2) {} }
+      for (i = dust.length - 1; i >= 0; i--) {
+        var p = dust[i];
+        p.x += p.vx; p.y += p.vy; p.l--;
+        ctx.globalAlpha = Math.max(0, p.l / 16);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(p.x, p.y, 3, 3);
+        if (p.l <= 0) dust.splice(i, 1);
+      }
+      ctx.globalAlpha = 1;
+      ctx.save();
+      ctx.translate(86, y + 12);
+      ctx.rotate(!dead && vy < -0.4 ? -0.35 : (vy > 1 ? 0.25 : 0));
       ctx.fillStyle = '#7ec8ff';
-      ctx.fillRect(78, y, 28, 28);
-      for (var i = obs.length - 1; i >= 0; i--) {
-        var o = obs[i];
-        if (started && !dead) o.x -= 5.2;
-        ctx.fillStyle = '#e8f4ff';
-        ctx.fillRect(o.x, ground - o.h, o.w, o.h);
-        if (78 + 28 > o.x + 6 && 78 < o.x + o.w - 6 && y + 28 > ground - o.h + 4) dead = true;
-        if (o.x < -80) obs.splice(i, 1);
-      }
-      if (dead && score > best) { best = score; try { sessionStorage.setItem('wos:cube-best', String(best)); } catch (e) {} }
+      ctx.fillRect(-12, -12, 22, 22);
+      ctx.fillStyle = '#e8f4ff';
+      ctx.fillRect(-12, -12, 7, 22);
+      ctx.restore();
       ctx.fillStyle = '#fff';
-      ctx.font = '16px system-ui';
-      ctx.fillText(dead ? 'Tap to retry  ' + Math.floor(score / 8) : String(Math.floor(score / 8)), 16, box.h - 24);
-      ctx.fillText('best ' + Math.floor(best / 8), box.w - 110, box.h - 24);
+      ctx.font = '700 18px system-ui';
+      ctx.fillText(String(score), 16, 28);
+      ctx.font = '13px system-ui';
+      ctx.fillText('best ' + best + '   coins ' + coins, 16, 48);
+      if (!started) {
+        ctx.font = '700 20px system-ui';
+        ctx.fillText('Tap or space — jump the peaks', 16, box.h * 0.38);
+      }
+      if (dead) {
+        ctx.fillStyle = 'rgba(6,16,31,.5)';
+        ctx.fillRect(0, 0, box.w, box.h);
+        ctx.fillStyle = '#fff';
+        ctx.font = '800 28px system-ui';
+        ctx.fillText('Wiped out', box.w * 0.5 - 70, box.h * 0.42);
+      }
+      ctx.restore();
       raf = requestAnimationFrame(frame);
     }
     raf = requestAnimationFrame(frame);
@@ -254,6 +368,87 @@ iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#fff}
     var note = fail.querySelector('.note');
     if (note) note.lastChild.textContent = 'The search could not start.';
   }
+})();
+</script>
+<div id="drift-pass" style="position:fixed;right:12px;bottom:12px;z-index:8;width:280px;background:rgba(12,12,14,.92);color:#eee;border-radius:16px;padding:10px;font:13px/1.4 system-ui;box-shadow:0 10px 30px rgba(0,0,0,.35)">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b>Bypass</b><span><button type="button" data-m="full" style="border:0;background:#2a2a2e;color:#fff;border-radius:8px;padding:4px 8px;cursor:pointer">Abierta</button> <button type="button" data-m="mini" style="border:0;background:#2a2a2e;color:#fff;border-radius:8px;padding:4px 8px;cursor:pointer">Poco</button> <button type="button" data-m="off" style="border:0;background:#2a2a2e;color:#fff;border-radius:8px;padding:4px 8px;cursor:pointer">Oculta</button></span></div>
+  <div data-body>
+    <label style="display:flex;justify-content:space-between;margin-top:8px">Protector <input type="checkbox" data-k="wos:protector"></label>
+    <div style="margin-top:6px">Si hay clase <select data-k="wos:prot-class"><option value="alert">Avisar</option><option value="classroom">Avisar y Classroom</option></select></div>
+    <label style="display:block;margin-top:6px">Classroom <input data-k="wos:kb-class" placeholder="F10" style="width:100%;box-sizing:border-box"></label>
+    <label style="display:block;margin-top:6px">Docs <input data-k="wos:kb-docs" placeholder="atajo" style="width:100%;box-sizing:border-box"></label>
+    <textarea data-ai placeholder="AI assistant" style="width:100%;box-sizing:border-box;min-height:48px;margin-top:8px;background:#111;color:#eee;border:1px solid #333;border-radius:8px"></textarea>
+    <button type="button" data-ask style="margin-top:6px;border:0;border-radius:8px;background:#e8e8e8;color:#111;padding:6px 10px;font-weight:700;cursor:pointer">Preguntar</button>
+    <div data-out style="margin-top:6px;max-height:80px;overflow:auto;opacity:.85"></div>
+  </div>
+</div>
+<script>
+(function () {
+  var bar = document.getElementById('drift-pass');
+  if (!bar) return;
+  var body = bar.querySelector('[data-body]');
+  function mode(m) {
+    try { localStorage.setItem('wos:pass-bar', m); } catch (e) {}
+    bar.style.display = m === 'off' ? 'none' : 'block';
+    if (body) body.style.display = m === 'mini' ? 'none' : 'block';
+  }
+  var saved = 'full';
+  try { saved = localStorage.getItem('wos:pass-bar') || 'full'; } catch (e) {}
+  mode(saved);
+  bar.querySelectorAll('[data-m]').forEach(function (b) { b.onclick = function () { mode(b.getAttribute('data-m')); }; });
+  bar.querySelectorAll('[data-k]').forEach(function (el) {
+    var k = el.getAttribute('data-k');
+    try { if (el.type === 'checkbox') el.checked = localStorage.getItem(k) === '1'; else el.value = localStorage.getItem(k) || ''; } catch (e) {}
+    el.onchange = function () {
+      try { localStorage.setItem(k, el.type === 'checkbox' ? (el.checked ? '1' : '0') : el.value); } catch (e) {}
+    };
+  });
+  function keyHit(spec, e) {
+    spec = String(spec || '').trim().toLowerCase();
+    if (!spec) return false;
+    var key = String(e.key || '').toLowerCase();
+    var code = String(e.code || '').toLowerCase();
+    if (spec === key || spec === code || spec === code.replace(/^key/, '')) return true;
+    var parts = spec.split('+').map(function (s) { return s.trim(); }).filter(Boolean);
+    if (parts.length < 2) return false;
+    var last = parts[parts.length - 1];
+    if (last !== key && last !== code && ('key' + last) !== code) return false;
+    for (var i = 0; i < parts.length - 1; i++) {
+      var p = parts[i];
+      if ((p === 'ctrl' || p === 'control') && !e.ctrlKey) return false;
+      else if (p === 'alt' && !e.altKey) return false;
+      else if (p === 'shift' && !e.shiftKey) return false;
+      else if ((p === 'meta' || p === 'cmd' || p === 'command') && !e.metaKey) return false;
+    }
+    return true;
+  }
+  window.addEventListener('keydown', function (e) {
+    if (e.target && /input|textarea|select/i.test(e.target.tagName || '')) return;
+    var cls = '', docs = '', cur = '';
+    try {
+      cls = localStorage.getItem('wos:kb-class') || '';
+      docs = localStorage.getItem('wos:kb-docs') || '';
+      cur = new URLSearchParams(location.search).get('u') || '';
+    } catch (err) {}
+    var dest = '';
+    if (keyHit(cls, e)) dest = 'https://classroom.google.com/';
+    else if (keyHit(docs, e)) dest = 'https://docs.google.com/document/u/0/';
+    if (!dest) return;
+    if (cur && cur.indexOf(dest.replace(/^https?:\/\//, '').split('/')[0]) !== -1) return;
+    e.preventDefault();
+    location.href = '/go?u=' + encodeURIComponent(dest);
+  });
+  bar.querySelector('[data-ask]').onclick = async function () {
+    var q = bar.querySelector('[data-ai]').value.trim();
+    var out = bar.querySelector('[data-out]');
+    if (!q) return;
+    out.textContent = 'Contestando…';
+    try {
+      var r = await fetch('/api/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ max_tokens: 600, messages: [{ role: 'user', content: q }], system: 'Responde en español de México, breve.' }) });
+      var j = await r.json();
+      out.textContent = ((j.content || []).map(function (x) { return x.text || ''; }).join('')) || 'Sin respuesta.';
+    } catch (e) { out.textContent = 'Sin respuesta.'; }
+  };
 })();
 </script>
 </body>

@@ -401,13 +401,28 @@ export function handleMod(req, res) {
       const b = await readBody(req);
       const name = String(b.app || "").trim().slice(0, 48);
       if (!name) return send(res, 400, { error: "Missing app." });
+      const who = String(b.user || "guest").trim().slice(0, 40) || "guest";
+      const ms = Math.max(0, Math.min(120000, Number(b.ms) || 0));
       const now = new Date();
       const month = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
       if (!db.usage || db.usage.month !== month) db.usage = { month, apps: {} };
       const day = String(now.getDate());
+      const hour = String(now.getHours());
       const apps = db.usage.apps;
-      if (!apps[name] || typeof apps[name] !== "object") apps[name] = {};
-      apps[name][day] = (Number(apps[name][day]) || 0) + 1;
+      let row = apps[name];
+      if (!row || typeof row !== "object" || !row.days) {
+        const days = {};
+        if (row && typeof row === "object") {
+          Object.keys(row).forEach((k) => { if (/^\d+$/.test(k)) days[k] = Number(row[k]) || 0; });
+        }
+        row = { days, hours: {}, users: {}, opens: 0, ms: 0 };
+      }
+      row.days[day] = (Number(row.days[day]) || 0) + 1;
+      row.hours[hour] = (Number(row.hours[hour]) || 0) + 1;
+      row.users[who] = (Number(row.users[who]) || 0) + 1;
+      row.opens = (Number(row.opens) || 0) + 1;
+      row.ms = (Number(row.ms) || 0) + ms;
+      apps[name] = row;
       save(db);
       return send(res, 200, { ok: true });
     }

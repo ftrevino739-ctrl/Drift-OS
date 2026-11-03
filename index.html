@@ -133,13 +133,16 @@ h1{font-weight:500;margin:0 0 8px}
 .sheet{position:absolute;inset:0;background:var(--bar);z-index:4;display:none;flex-direction:column;padding:10px;gap:10px;overflow-y:auto;-webkit-overflow-scrolling:touch}.sheet.show{display:flex}.sheet .card{flex:none}.sheet .mo{min-height:52px}
 .sh{display:flex;align-items:center;justify-content:space-between}
 .card{background:var(--win);border-radius:16px;overflow:hidden}.mo{display:flex;width:100%;justify-content:space-between;align-items:center;border:0;border-bottom:1px solid var(--line);background:none;color:var(--ink);padding:14px 16px;text-align:left;cursor:pointer;font-size:16px}.mo:last-child{border-bottom:0}.mo b{display:block;font-weight:500}.mo small{color:var(--mute);font-size:13px}.mo i{color:var(--ink);font-style:normal}
-.auth{position:fixed;inset:0;background:var(--win);color:var(--ink);z-index:300000;display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto}
-.ab{width:min(380px,100%);display:flex;flex-direction:column;gap:14px}
-.lg{font-size:30px;font-weight:800;letter-spacing:-1px}.lg span{background:var(--btn);color:var(--bt);padding:0 8px;border-radius:8px;margin-left:4px}
-.ab h2{font-size:30px;margin:14px 0 0}.ab p{margin:0;color:var(--mute)}
-.ab input{height:52px;border-radius:14px;border:1px solid var(--line);background:var(--omni);color:var(--ink);padding:0 18px;font-size:16px;outline:none}.ab input:focus{border-color:var(--ink)}
-.ab .go{height:52px;border-radius:14px;border:0;background:var(--btn);color:var(--bt);font-size:17px;font-weight:700;cursor:pointer}
-.ab .sw{text-align:center;color:var(--ink);font-weight:600;cursor:pointer;margin-top:6px}.ab small{color:var(--mute)}
+.auth{position:fixed;inset:0;background:#000;color:#f2f2f2;z-index:300000;display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto}
+.ab{width:min(360px,100%);display:flex;flex-direction:column;gap:12px}
+.lg{font-size:28px;font-weight:750;letter-spacing:-.04em}
+.ab h2{display:none}
+.ab p{margin:0;color:#9a9a9a}
+.ab input{height:48px;border-radius:12px;border:1px solid #2a2a2a;background:#111;color:#fff;padding:0 14px;font-size:16px;outline:none}
+.ab input:focus{border-color:#888}
+.ab .go{height:48px;border-radius:12px;border:0;background:#f2f2f2;color:#111;font-size:16px;font-weight:700;cursor:pointer}
+.ab .sw{text-align:center;color:#ddd;font-weight:600;cursor:pointer;margin-top:4px}
+.ab small{color:#8a8a8a}
 .ax{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);right:14px;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--omni);color:var(--ink);cursor:pointer}
 .ctx{position:absolute;z-index:6;width:240px;background:var(--win);border:1px solid var(--line);border-radius:22px;box-shadow:0 12px 40px rgba(0,0,0,.35);padding:6px 0}
 .ctx button{display:flex;align-items:center;gap:14px;width:100%;border:0;background:none;color:var(--ink);padding:13px 20px;font-size:17px;cursor:pointer;text-align:left}
@@ -1469,15 +1472,27 @@ function ai(root){
     const ub=add('u',q),imgs=pend.splice(0);th.innerHTML='';
     if(imgs.length){const g=document.createElement('div');g.className='thumbs';imgs.forEach(b=>{const i=new Image();i.src=URL.createObjectURL(b);g.appendChild(i)});ub.appendChild(g)}
     am.querySelectorAll('.think-panel').forEach(n=>{n.open=false;n.classList.remove('live')});
+    const showThink=(function(){try{return localStorage.getItem('wos:show-think')==='1'}catch(e){return false}})();
     const think=document.createElement('details');think.className='think-panel live';think.open=true;
     think.innerHTML='<summary><span class="chev">\u25BE</span> Pensó durante <span data-sec>0</span> segundos</summary><div class="think-body"></div>';
-    am.appendChild(think);
+    if(showThink) am.appendChild(think);
     const thinkBody=think.querySelector('.think-body'), thinkSec=think.querySelector('[data-sec]');
     const started=Date.now();
     const thinkTimer=setInterval(()=>{thinkSec.textContent=String(Math.max(1,Math.round((Date.now()-started)/1000)))},250);
     let sources='', sourceRows=[], thoughtNote='';
     const replyLang=/[áéíóúñ¿¡]|\b(dame|c[oó]digo|hola|qu[eé]|por favor)\b/i.test(q)?'Spanish':'English';
-    const steps=['The user is telling us: "'+q.replace(/\s+/g,' ').slice(0,220)+'".','We need an answer clearly in '+replyLang+'.','We will not introduce ourselves. We only say Drift if they ask who we are.', customInstr?('Custom instructions are on, and the worker must follow them: '+customInstr.replace(/\s+/g,' ').slice(0,180)):'No custom instructions.'];
+    const steps=(function(){
+      const ask=q.replace(/\s+/g,' ').trim();
+      const code=/\b(c[oó]digo|code|html|css|javascript|python|script|lua|luau|archivo|file)\b/i.test(ask);
+      const web=/\b(qui[eé]n|quien|noticias|precio|clima|weather|hoy|latest|busca|search|fuente)\b/i.test(ask) && !code;
+      const out=['Qué pide: '+ask.slice(0,240)+'.'];
+      out.push(code?'Pide un archivo. Lo parto en objetivo, piezas y un solo bloque completo, sin cortarlo.':'No pide archivo. Respondo en prosa.');
+      out.push(web?'Hay un dato de hoy. Primero miro páginas y luego contesto.':'No hace falta abrir sitios. Uso lo que ya está en la pregunta.');
+      if(customInstr) out.push('Hay instrucciones propias. Las sigo: '+customInstr.replace(/\s+/g,' ').slice(0,160));
+      out.push('Compruebo que la respuesta cubre el pedido y que no me presento.');
+      out.push('Ahora escribo la respuesta.');
+      return out;
+    })();
     function paintThink(){
       if(!think.isConnected)return;
       thinkBody.innerHTML='';
@@ -1889,7 +1904,7 @@ function acct(){
 }
 function authUI(mode='in'){
   const up=mode==='up',m=document.createElement('div');m.className='auth';
-  m.innerHTML=`<button class="ax" aria-label="Close">✕</button><div class="ab"><div class="lg">Web<span>OS</span></div><h2>Drift OS</h2><p>${up?'Regístrate para guardar tus chats.':'Inicia sesión para guardar tus chats.'}</p><input id="au" placeholder="Usuario" autocomplete="username" autocapitalize="none"><input id="ap" type="password" placeholder="Contraseña" autocomplete="${up?'new-password':'current-password'}">${up?'<input id="ac" type="password" placeholder="Confirmar contraseña" autocomplete="new-password">':''}<small id="am">Las cuentas se guardan solo en este dispositivo.</small><button class="go">${up?'Registrarme':'Iniciar sesión'}</button><a class="sw">${up?'¿Ya tienes cuenta? Inicia sesión':'¿Necesitas una cuenta? Regístrate'}</a></div>`;
+  m.innerHTML=`<button class="ax" aria-label="Close">✕</button><div class="ab"><div class="lg">Drift OS</div><p>${up?'Regístrate para guardar tus chats.':'Inicia sesión para guardar tus chats.'}</p><input id="au" placeholder="Usuario" autocomplete="username" autocapitalize="none"><input id="ap" type="password" placeholder="Contraseña" autocomplete="${up?'new-password':'current-password'}">${up?'<input id="ac" type="password" placeholder="Confirmar contraseña" autocomplete="new-password">':''}<small id="am">La cuenta guarda en este dispositivo tus chats de IA y de Chat.</small><button class="go">${up?'Registrarme':'Iniciar sesión'}</button><a class="sw">${up?'¿Ya tienes cuenta? Inicia sesión':'¿Necesitas una cuenta? Regístrate'}</a></div>`;
   document.body.appendChild(m);
   const ok=async()=>{
     const u=$('#au',m).value.trim().toLowerCase(),p=$('#ap',m).value,msg=$('#am',m),U=LS.get('wos:users',{});
@@ -2709,7 +2724,7 @@ function vscode(root){
     const q=(box.value||'').trim(); if(!q)return;
     box.value='';
     chatSay('u', q);
-    const hold=chatSay('a','…');
+    const hold=chatSay('a','Leo lo que pediste y el archivo abierto.');
     const follow=/^(yes|ok|si|sí|hazlo|do it|make it|make the file|can you make the file|crea(lo| el archivo)?)$/i.test(q);
     const asked=follow&&askAI.last? (askAI.last+'\n\nThe user said: '+q+'. Create the file now.') : q;
     askAI.last=q;
@@ -2737,6 +2752,7 @@ function vscode(root){
       return made;
     }
     try{
+      hold.textContent='Voy a escribir el archivo completo, sin cortarlo.';
       let text=await pull(asked);
       let made=fences(text);
       if(!made.length&&wants){

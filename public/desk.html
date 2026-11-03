@@ -119,6 +119,7 @@
     <div class="bar">
       <button class="tab on" type="button" data-view="request">Request</button>
       <button class="tab" type="button" data-view="sessions">Edit sessions</button>
+      <button class="tab" type="button" data-view="apps">Apps</button>
       <button class="tab" type="button" data-view="usage">Usage</button>
       <span style="flex:1"></span>
       <button class="ghost" type="button" id="out">Sign out</button>
@@ -145,6 +146,10 @@
           <tbody id="sessions"></tbody>
         </table>
       </div>
+    </div>
+    <div id="view-apps" hidden>
+      <div id="app-list" style="display:flex;flex-direction:column;gap:8px"></div>
+      <div id="app-diag" hidden style="margin-top:16px;background:#fff;color:#245;border-radius:12px;padding:12px"></div>
     </div>
     <div id="view-usage" hidden>
       <div id="ug-head" class="ug-head"></div>
@@ -197,8 +202,10 @@ document.querySelectorAll(".bar .tab").forEach(function (btn) {
     document.getElementById("view-request").hidden = view !== "request";
     document.getElementById("view-sessions").hidden = view !== "sessions";
     document.getElementById("view-usage").hidden = view !== "usage";
-    document.querySelector(".panel").classList.toggle("wide", view === "usage");
-    if (view === "sessions") loadSessions();
+    document.getElementById("view-apps").hidden = view !== "apps";
+    document.querySelector(".panel").classList.toggle("wide", view === "usage" || view === "apps");
+    if (view === "apps") loadApps();
+    else if (view === "sessions") loadSessions();
     else if (view === "usage") loadUsage();
     else loadRequests(false);
   };
@@ -291,7 +298,14 @@ function buildRequestRow(row) {
     hw.onblur = function () { editGrace = Date.now() + 800; };
     var save = document.createElement("button"); save.className = "copy"; save.type = "button"; save.textContent = "Apply modificaction";
     save.style.marginRight = "22px";
-    save.onclick = function () { decide(row.id, "update", { maxUses: uses.value, hwidLimit: hw.value }); };
+    save.onclick = function () {
+      decide(row.id, "update", { maxUses: uses.value, hwidLimit: hw.value }).then(function () {
+        var note = document.createElement("div");
+        note.textContent = "Code successfully changed.";
+        note.style.marginTop = "8px";
+        act.appendChild(note);
+      });
+    };
     var revoke = document.createElement("button"); revoke.className = "no"; revoke.type = "button"; revoke.textContent = "Revoke";
     revoke.onclick = function () { decide(row.id, "revoke"); };
     act.append(label, document.createTextNode("Uses "), uses, document.createTextNode("Hardware ID "), hw, save, revoke);
@@ -379,6 +393,62 @@ async function loadSessions() {
     sb.appendChild(er);
   }
 }
+async function loadApps() {
+  var r = await fetch("/api/usage");
+  if (r.status === 401) return;
+  var j = r.ok ? await r.json() : { apps: {} };
+  var apps = j.apps || {};
+  var names = Object.keys(apps);
+  ["Browser","AI","YouTube","Movies","Minecraft","Discord","Gmail","TikTok","Classroom","Roblox","Games","Chat","GitHub","WhatsApp","Wayground","JS Injector","VS Code"].forEach(function (n) { if (names.indexOf(n) < 0) names.push(n); });
+  var list = document.getElementById("app-list");
+  var diag = document.getElementById("app-diag");
+  list.replaceChildren();
+  names.forEach(function (name) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.style.cssText = "display:flex;align-items:center;justify-content:space-between;gap:10px;background:#0e1624;color:#e8f4ff;border:1px solid rgba(126,200,255,.3);border-radius:12px;padding:10px 12px;cursor:pointer;text-align:left";
+    var logo = document.createElement("span");
+    logo.textContent = name.slice(0, 1).toUpperCase();
+    logo.style.cssText = "width:28px;height:28px;border-radius:8px;display:grid;place-items:center;background:#16324f;font-weight:800";
+    var lab = document.createElement("span");
+    lab.textContent = name;
+    lab.style.flex = "1";
+    b.append(lab, logo);
+    b.onclick = function () { paintDiag(name, apps[name] || {}); };
+    list.appendChild(b);
+  });
+  function paintDiag(name, row) {
+    var days = row.days || {};
+    var hours = row.hours || {};
+    var users = row.users || {};
+    var keys = Object.keys(days);
+    if (!keys.length) Object.keys(row).forEach(function (k) { if (/^\d+$/.test(k)) days[k] = row[k]; });
+    var max = 1, peakDay = "—", peakN = 0, sum = 0;
+    var series = [];
+    for (var d = 1; d <= 31; d++) {
+      var n = Number(days[String(d)]) || 0;
+      series.push(n); sum += n; if (n > max) max = n; if (n > peakN) { peakN = n; peakDay = String(d); }
+    }
+    var hourBits = [], bestH = "—", bestHN = 0;
+    Object.keys(hours).forEach(function (h) {
+      var n = Number(hours[h]) || 0;
+      hourBits.push(h + ":00 (" + n + ")");
+      if (n > bestHN) { bestHN = n; bestH = h + ":00"; }
+    });
+    var who = Object.keys(users).map(function (u) { return u + " (" + users[u] + ")"; });
+    var opens = Number(row.opens) || sum;
+    var avg = opens ? Math.round((Number(row.ms) || 0) / opens) : 0;
+    var w = 520, h = 220, pad = 28;
+    var pts = series.map(function (n, i) {
+      var x = pad + (i / 30) * (w - pad * 2);
+      var y = h - pad - (n / max) * (h - pad * 2);
+      return x + "," + y;
+    }).join(" ");
+    diag.hidden = false;
+    diag.innerHTML = '<b>' + name + '</b><div style="margin:6px 0 10px;font-size:14px">Usuarios: ' + (who.join(", ") || "nadie todavía") + '. Veces: ' + opens + '. Día con más uso: ' + peakDay + '. Hora con más uso: ' + bestH + '. Tardó en abrir, de media: ' + avg + ' ms.</div>' +
+      '<svg viewBox="0 0 ' + w + ' ' + h + '" width="100%" height="220" style="background:#fff"><defs><pattern id="g" width="40" height="28" patternUnits="userSpaceOnUse"><path d="M40 0H0V28" fill="none" stroke="#7aa2c4" stroke-width="1"/></pattern></defs><rect x="24" y="8" width="' + (w - 48) + '" height="' + (h - 36) + '" fill="url(#g)"/><polyline fill="none" stroke="#e0a106" stroke-width="3" points="' + pts + '"/><polyline fill="none" stroke="#2f6fed" stroke-width="3" points="' + pts + '"/></svg>';
+  }
+}
 async function loadUsage() {
   var r = await fetch("/api/usage");
   if (r.status === 401) return;
@@ -386,10 +456,14 @@ async function loadUsage() {
   var known = ["Calculator","Browser","AI","YouTube","Cámara","Música","Netflix","VS Code","Discord","Gmail","Instagram","TikTok","Classroom","Canva","Roblox","Gimkit","Games","Chat","GitHub","WhatsApp","Wayground","JS Injector","Gemini","ClassDojo"];
   var counts = j.apps || {};
   Object.keys(counts).forEach(function (name) { if (known.indexOf(name) < 0) known.push(name); });
+  function daysOf(name) {
+    var row = counts[name] || {};
+    return row.days || row;
+  }
   function total(name) {
-    var days = counts[name] || {};
+    var days = daysOf(name);
     var n = 0;
-    Object.keys(days).forEach(function (d) { n += Number(days[d]) || 0; });
+    Object.keys(days).forEach(function (d) { if (d !== "hours" && d !== "users" && d !== "opens" && d !== "ms") n += Number(days[d]) || 0; });
     return n;
   }
   var most = known[0], least = known[0], mostN = -1, leastN = Infinity;
@@ -404,7 +478,7 @@ async function loadUsage() {
   list.replaceChildren();
   var max = 1;
   known.forEach(function (name) {
-    var days = counts[name] || {};
+    var days = daysOf(name);
     for (var d = 1; d <= 31; d++) max = Math.max(max, Number(days[String(d)]) || 0);
   });
   known.forEach(function (name) {
@@ -416,7 +490,7 @@ async function loadUsage() {
     bars.className = "ug-bars";
     var labels = document.createElement("div");
     labels.className = "ug-days";
-    var days = counts[name] || {};
+    var days = daysOf(name);
     for (var d = 1; d <= 31; d++) {
       var n = Number(days[String(d)]) || 0;
       var bar = document.createElement("i");
@@ -450,6 +524,7 @@ fetch("/api/requests").then(function (r) { if (r.ok) openDesk(); });
 setInterval(function () {
   if (!document.getElementById("desk").classList.contains("on")) return;
   if (view === "sessions") loadSessions();
+  else if (view === "apps") loadApps();
   else if (view === "usage") loadUsage();
   else loadRequests(false);
 }, 5000);

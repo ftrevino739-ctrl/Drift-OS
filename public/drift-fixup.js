@@ -1,6 +1,7 @@
 /* Drift fixup */
 (function () {
   'use strict';
+  window.__DRIFT_BUILD = '20261103-pack';
   window.DRIFT_BEST_MODEL = window.DRIFT_BEST_MODEL || 'mistralai/mistral-large-4-0';
   window.DRIFT_CODE_MODEL = 'google/gemini-3.8-flash';
 
@@ -739,14 +740,12 @@ function driftSite(url) {
       host.appendChild(view);
       var sources = type === 'tv'
         ? [
-            ['VidSrc', 'https://vidsrc.xyz/embed/tv/' + item.id + '/' + (season || 1) + '/' + (episode || 1)],
-            ['VidSrc 2', 'https://vidsrc.cc/v2/embed/tv/' + item.id + '/' + (season || 1) + '/' + (episode || 1)],
-            ['Videasy', 'https://player.videasy.net/tv/' + item.id + '/' + (season || 1) + '/' + (episode || 1)]
+            ['Videasy', 'https://player.videasy.net/tv/' + item.id + '/' + (season || 1) + '/' + (episode || 1)],
+            ['VidSrc', 'https://vidsrc.cc/v2/embed/tv/' + item.id + '/' + (season || 1) + '/' + (episode || 1)]
           ]
         : [
-            ['VidSrc', 'https://vidsrc.xyz/embed/movie/' + item.id],
-            ['VidSrc 2', 'https://vidsrc.cc/v2/embed/movie/' + item.id],
-            ['Videasy', 'https://player.videasy.net/movie/' + item.id]
+            ['Videasy', 'https://player.videasy.net/movie/' + item.id],
+            ['VidSrc', 'https://vidsrc.cc/v2/embed/movie/' + item.id]
           ];
       var slot = view.querySelector('[data-slot]');
       function useSrc(i) {
@@ -1143,14 +1142,73 @@ function driftSite(url) {
     window.XAPPS.gbuild = { n: 'Game Builder', f: driftSite('https://tesana.com/create') };
     window.XAPPS.minecraft = { n: 'Minecraft', f: function (root) {
       root.innerHTML = '';
-      root.style.cssText = 'height:100%;min-height:0;position:relative;background:#000';
-      var url = 'https://eaglercraft.com/play?version=1.8.8&launch=1';
-      if (typeof window.openProxied === 'function') window.openProxied(url, root);
-      else root.textContent = 'Minecraft is still starting.';
+      root.style.cssText = 'height:100%;min-height:0;position:relative;background:#000;color:#ddd';
+      var note = document.createElement('div');
+      note.textContent = 'Eaglercraft 1.8.8';
+      note.style.cssText = 'position:absolute;left:12px;top:8px;z-index:4;font:600 13px system-ui;pointer-events:none';
+      root.appendChild(note);
+      var urls = ['https://eaglercraft.com/mc/1.8.8/', 'https://eaglercraft.com/play?version=1.8.8&launch=1'];
+      var step = 0;
+      function mount(url) {
+        note.textContent = 'Eaglercraft 1.8.8';
+        if (typeof window.openProxied !== 'function') { note.textContent = 'Eaglercraft 1.8.8 — el proxy aún no arranca.'; return; }
+        root.querySelectorAll('iframe,.sjt').forEach(function (n) { n.remove(); });
+        window.openProxied(url, root);
+      }
+      mount(urls[0]);
+      var n = 0;
+      var timer = setInterval(function () {
+        if (!root.isConnected || ++n > 16) { clearInterval(timer); return; }
+        var fr = root.querySelector('iframe');
+        if (!fr) return;
+        var text = '';
+        try { text = fr.contentDocument && fr.contentDocument.body ? String(fr.contentDocument.body.innerText || '').slice(0, 240) : ''; } catch (e) { text = ''; }
+        if (/not found|refused|can.t be reached|ERR_|eaglercraft/i.test(text) && step < 1) {
+          step = 1;
+          mount(urls[1]);
+        }
+      }, 900);
     } };
     window.XAPPS.espn = { n: 'ESPN', f: espnApp };
     window.XAPPS.yt = { n: 'YouTube', f: youtubeApp };
-    window.XAPPS.tt = { n: 'TikTok', f: typeof window.__driftTtFeed === 'function' ? window.__driftTtFeed : driftSite('https://www.tiktok.com/foryou') };
+    window.XAPPS.tt = { n: 'TikTok', f: function (root) {
+      root.innerHTML = '';
+      root.style.cssText = 'height:100%;overflow:auto;background:#000;color:#fff';
+      var box = document.createElement('div');
+      root.appendChild(box);
+      var cursor = '0', pages = 0;
+      function more() {
+        if (pages > 6) return;
+        pages++;
+        fetch('/api/tt-feed?cursor=' + encodeURIComponent(cursor)).then(function (r) { return r.json(); }).then(function (j) {
+          var items = (j && j.items) || [];
+          if (!items.length && pages === 1 && typeof window.openProxied === 'function') {
+            root.innerHTML = '';
+            window.openProxied('https://www.tiktok.com/foryou?lang=en', root);
+            return;
+          }
+          items.forEach(function (it) {
+            var v = document.createElement('video');
+            v.controls = true; v.playsInline = true; v.src = it.play;
+            v.style.cssText = 'width:100%;max-height:78vh;background:#000;display:block';
+            var cap = document.createElement('div');
+            cap.style.cssText = 'padding:8px 12px 18px;font:14px system-ui';
+            cap.textContent = (it.author ? '@' + it.author + ' · ' : '') + (it.title || '');
+            box.appendChild(v); box.appendChild(cap);
+          });
+          cursor = (j && j.cursor) || cursor;
+        }).catch(function () {
+          if (typeof window.openProxied === 'function') {
+            root.innerHTML = '';
+            window.openProxied('https://www.tiktok.com/foryou?lang=en', root);
+          }
+        });
+      }
+      more();
+      root.addEventListener('scroll', function () {
+        if (root.scrollTop + root.clientHeight > root.scrollHeight - 80) more();
+      });
+    } };
     window.XAPPS.gem = { n: 'Gemini', f: driftSite('https://gemini.google.com/app') };
     window.XAPPS.movies = { n: 'Movies', f: function (root) {
       var prov = 'racial';
@@ -1161,7 +1219,33 @@ function driftSite(url) {
         }
         prov = localStorage.getItem('wos:movies') || 'racial';
       } catch (e) {}
-      if (prov !== 'onlyflix' && prov !== 'noah') return moviesApp(root);
+      if (prov !== 'onlyflix' && prov !== 'noah') {
+        root.innerHTML = '';
+        root.style.cssText = 'height:100%;min-height:0;position:relative;overflow:hidden;background:#000';
+        var page = 'https://racialequityleadership.com/movies.html';
+        if (typeof window.openProxied !== 'function') return moviesApp(root);
+        Promise.resolve(window.openProxied(page, root)).then(function (f) {
+          var n = 0;
+          var timer = setInterval(function () {
+            if (!root.isConnected || ++n > 40) { clearInterval(timer); return; }
+            var fr = (f && f.frame) || root.querySelector('iframe');
+            if (!fr) return;
+            try {
+              var doc = fr.contentDocument;
+              if (doc && !doc.getElementById('drift-racial-hide')) {
+                var st = doc.createElement('style');
+                st.id = 'drift-racial-hide';
+                st.textContent = 'aside,nav,.sidebar,#sidebar,.side-bar,#side,.drawer,[class*="sidebar"],[class*="side-nav"],[id*="sidebar"]{display:none!important}body{margin-left:0!important;padding-left:0!important}';
+                (doc.head || doc.documentElement).appendChild(st);
+              }
+              var href = '';
+              try { href = String(fr.contentWindow.location.href || ''); } catch (e2) { href = ''; }
+              if (href && /racialequityleadership\.com\/?(?:\?|#|$)/i.test(href) && !/movies/i.test(href)) fr.contentWindow.location.replace(page);
+            } catch (e) {}
+          }, 700);
+        }).catch(function () { moviesApp(root); });
+        return;
+      }
       var url = prov === 'noah' ? 'https://noahstutoring.academy/' : 'https://onlyflix.to/';
       root.innerHTML = '';
       root.style.cssText = 'height:100%;min-height:0;position:relative;overflow:hidden;background:#000';
@@ -1207,7 +1291,10 @@ function driftSite(url) {
     } };
     window.__driftWhatsApp = 1;
     window.XAPPS.whatsapp = { n: 'WhatsApp', f: function (root) {
-      operaPage('https://web.whatsapp.com/', 'edge')(root);
+      root.innerHTML = '';
+      root.style.cssText = 'height:100%;min-height:0;position:relative;background:#111b21';
+      if (typeof window.openProxied === 'function') window.openProxied('https://web.whatsapp.com/', root);
+      else root.textContent = 'WhatsApp is still starting.';
     } };
     window.__driftGithub = 1;
     window.XAPPS.github = { n: 'GitHub', f: operaPage('https://github.com/login', 'chrome') };
@@ -1810,7 +1897,7 @@ function driftSite(url) {
   function robloxShell(root) {
     root.innerHTML = '';
     root.style.cssText = 'height:100%;min-height:0;position:relative;background:#111';
-    var url = 'https://now.gg/apps/roblox-corporation/5349/roblox.html?hl=es-419&gl=MX';
+    var url = 'https://now.gg/play/roblox-corporation/5349/roblox?hl=es-419&gl=MX';
     if (typeof window.openProxied !== 'function') {
       root.textContent = 'Roblox is still starting.';
       return;
@@ -2059,19 +2146,8 @@ function driftSite(url) {
   function wireLoginApps() {
     try {
       if (!window.XAPPS) return;
-      window.XAPPS.gmail = { n: 'Gmail', f: googleMethods('Gmail', [
-      ['Edge', 'https://mail.google.com/mail/u/0/', 'edge'],
-      ['HTML', 'https://mail.google.com/mail/u/0/h/', 'edge'],
-      ['Sign in', 'https://accounts.google.com/ServiceLogin?service=mail&continue=' + encodeURIComponent('https://mail.google.com/mail/u/0/') + '&hl=en', 'opera'],
-      ['Opera', 'https://mail.google.com/mail/u/0/', 'opera']
-    ]) };
       if (window.APPS) window.APPS.classroom = 'Classroom';
-      window.XAPPS.classroom = { n: 'Classroom', f: googleMethods('Classroom', [
-        ['Edge', 'https://classroom.google.com/', 'edge'],
-        ['Sign in', 'https://accounts.google.com/ServiceLogin?service=classroom&continue=' + encodeURIComponent('https://classroom.google.com/') + '&hl=en', 'edge'],
-        ['Opera', 'https://classroom.google.com/', 'opera'],
-        ['Firefox', 'https://classroom.google.com/', 'firefox']
-      ]) };
+      installGoogleApps();
       delete window.XAPPS.canva;
       if (window.APPS) delete window.APPS.canva;
       window.__driftRoblox = robloxShell;
@@ -2102,17 +2178,9 @@ function driftSite(url) {
     if (window.__driftProtHook) return;
     window.__driftProtHook = true;
     var strong = /StreamingClass|startStreamingClass|streaming[_ ]?(class|screen)|class started|clase iniciada|live view|teacher is viewing|viewing your screen|screen capture started|captureVisibleTab|screenshot|frame captured/i;
-    var heartRe = /heartbeat sent/i;
-    var hearts = [];
     function consider(text, why) {
       if (!text) return;
       if (strong.test(text)) protectorHit(why);
-      else if (heartRe.test(text)) {
-        var now = Date.now();
-        hearts.push(now);
-        hearts = hearts.filter(function (t) { return now - t < 20000; });
-        if (hearts.length >= 2) protectorHit('heartbeat');
-      }
     }
     ['log', 'info', 'debug', 'warn', 'error'].forEach(function (m) {
       var orig = console[m];
@@ -2192,7 +2260,7 @@ function driftSite(url) {
     function sawClass(node) {
       var blob = classBlob(node);
       if (!blob || !joinRe.test(blob)) return;
-      if (!/linewize|classwize|goguardian|securly|class started|clase iniciada|joined class|en clase|sesi[oó]n iniciada/i.test(blob)) return;
+      if (!/linewize|classwize|goguardian|securly|live view|streaming/i.test(blob)) return;
       if (window.__driftClassAt) return;
       window.__driftClassAt = Date.now();
       classAction('Protector: you connected to a class.');
@@ -2208,7 +2276,8 @@ function driftSite(url) {
         var blob = (node.id || '') + ' ' + (typeof node.className === 'string' ? node.className : '') + ' ' + src;
         var text = '';
         try { if (node.childNodes && node.childNodes.length < 6) text = (node.innerText || '').slice(0, 180); } catch (e2) {}
-        if (!/linewize|classwize|goguardian|securly/i.test(blob + ' ' + text) && !/you are (now )?connected|conectado a|class session|en clase|joined class/i.test(text)) continue;
+        if (!/classwize|linewize|goguardian|securly/i.test(blob + ' ' + text)) continue;
+        if (!/class started|clase iniciada|joined class|live view|viewing your screen|streaming|en clase ahora|class is in session/i.test(blob + ' ' + text)) continue;
         window.__driftClassAt = Date.now();
         var msg = text.replace(/\s+/g, ' ').trim().slice(0, 140);
         classAction('Protector: you connected to a class' + (msg ? ': ' + msg : '.'));
@@ -2293,6 +2362,9 @@ function driftSite(url) {
     var W = Math.min(860, window.innerWidth - 24);
     var H = Math.min(640, window.innerHeight - 110);
     panel.style.cssText = 'width:' + W + 'px;height:' + H + 'px;left:' + Math.max(8, (window.innerWidth - W) / 2) + 'px;top:40px;z-index:2147483001';
+    if (document.body.classList.contains('drift-hub')) {
+      panel.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:auto;width:min(980px,100%);height:100%;border-radius:0;z-index:2147483001';
+    }
     var liquidOn = false, eduOn = false, gk = 'lazy', kbHide = 'F9', kbClass = 'F10', appSize = 'lg', tbSize = 'lg', orbOn = true, xmasOn = false;
     var dynOn = false, macOn = false, winOn = false, linOn = false, lensOn = false;
     function onFlag(key) {
@@ -2426,6 +2498,14 @@ function driftSite(url) {
       '<div style="opacity:.75;font-size:12px;margin-top:4px">Off until you turn this on. Then the Drift ball appears. Drag it anywhere. Each reply has an X to dismiss it.</div></div>' +
       switchHTML('drift-orb-sw', orbOn) + '</div>' +
       '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px">' +
+      '<div style="flex:1"><b>Ver razonamiento</b>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Apagado hasta que lo actives. Entonces el cuadro gris muestra el razonamiento, no solo una plantilla.</div></div>' +
+      switchHTML('drift-think-sw', onFlag('wos:show-think')) + '</div>' +
+      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px">' +
+      '<div style="flex:1"><b>Support Drift</b>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Un aviso pequeño en el escritorio. Apagado hasta que lo actives.</div></div>' +
+      switchHTML('drift-support-sw', onFlag('wos:support')) + '</div>' +
+      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px">' +
       '<div style="flex:1"><b>NO dev apps</b>' +
       '<div style="opacity:.75;font-size:12px;margin-top:4px">This deletes VS Code, JS Injector and GitHub.</div></div>' +
       switchHTML('drift-nodev-sw', localStorage.getItem('wos:no-dev') === '1') + '</div>' +
@@ -2483,7 +2563,7 @@ function driftSite(url) {
       '<button type="button" id="drift-clean-random" style="flex:1;padding:10px;border:1px solid rgba(255,255,255,.16);border-radius:10px;background:transparent;color:#fff;font-weight:600;cursor:pointer">Random</button></div></div>' +
       '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:16px;border-top:1px solid rgba(255,255,255,.08);padding-top:14px">' +
       '<div style="flex:1"><b>Protector</b>' +
-      '<div style="opacity:.75;font-size:12px;margin-top:4px">If Drift detects someone is viewing your screen on Linewize it instantly redirects you to classroom.google.com. It leaves on Class started, Streaming screen, a screenshot upload, or Heartbeat sent twice in a few seconds. The extension can stay installed. It does not leave just because Linewize is on.</div></div>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Solo si hay una clase activa (live view, streaming o “class started”). Tener Linewize instalado no cuenta como clase.</div></div>' +
       switchHTML('drift-prot-sw', localStorage.getItem('wos:protector') === '1') + '</div>' +
       '<div style="margin:22px 0 14px;padding-left:2px"><div style="font-size:12px;font-weight:650;margin-bottom:6px">When a class connects</div>' +
       '<label style="display:flex;gap:8px;align-items:center;margin-top:6px;cursor:pointer"><input type="radio" name="prot-class" value="alert"/> Only alert</label>' +
@@ -2550,9 +2630,9 @@ function driftSite(url) {
           }catch(e){}
         }
         q=String(q||'').replace(/\s+/g,' ').trim();
-        if(q) return 'https://duckduckgo.com/?kl=us-en&q='+encodeURIComponent(q);
+        if(q) return 'https://duckduckgo.com/?kl=mx-es&ia=web&q='+encodeURIComponent(q);
         if(/^https?:/i.test(href) && !/linewize|classwize|goguardian|securly/i.test(href)) return href;
-        return 'https://duckduckgo.com/';
+        return 'https://duckduckgo.com/?kl=mx-es';
       }
       location.href='https://drift.hostless.app/go?u='+encodeURIComponent(real());
     }
@@ -2749,6 +2829,13 @@ function driftSite(url) {
     wireSwitch(panel.querySelector('#drift-orb-sw'), function (on) {
       try { localStorage.setItem('wos:ai-orb', on ? '1' : '0'); } catch (e) {}
       installOrb();
+    });
+    wireSwitch(panel.querySelector('#drift-think-sw'), function (on) {
+      try { localStorage.setItem('wos:show-think', on ? '1' : '0'); } catch (e) {}
+    });
+    wireSwitch(panel.querySelector('#drift-support-sw'), function (on) {
+      try { localStorage.setItem('wos:support', on ? '1' : '0'); } catch (e) {}
+      installSupport();
     });
     wireSwitch(panel.querySelector('#drift-nodev-sw'), function (on) { setNoDev(on); });
     wireSwitch(panel.querySelector('#drift-delapps-sw'), function (on) {
@@ -3008,6 +3095,95 @@ function driftSite(url) {
       ? 'body.drift-low *{animation:none!important;transition:none!important}body.drift-low #task,body.drift-low .win,body.drift-low #menu{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}body.drift-low #drift-snow{display:none!important}'
       : '';
   }
+  function openLensAsk() {
+    var old = document.getElementById('drift-lens-ask');
+    if (old) old.remove();
+    var veil = document.createElement('div');
+    veil.id = 'drift-lens-ask';
+    veil.style.cssText = 'position:fixed;inset:0;z-index:2147483004;background:rgba(0,0,0,.45);cursor:crosshair';
+    var tip = document.createElement('div');
+    tip.textContent = 'Arrastra para marcar lo que quieres preguntar';
+    tip.style.cssText = 'position:absolute;left:50%;top:18px;transform:translateX(-50%);background:#111;color:#fff;padding:8px 12px;border-radius:999px;font:13px system-ui;pointer-events:none';
+    var box = document.createElement('div');
+    box.style.cssText = 'position:absolute;border:2px solid #fff;background:rgba(255,255,255,.15);display:none';
+    veil.append(tip, box);
+    document.body.appendChild(veil);
+    var x0 = 0, y0 = 0, drag = false;
+    veil.addEventListener('pointerdown', function (e) {
+      if (e.target !== veil && e.target !== box) return;
+      drag = true; x0 = e.clientX; y0 = e.clientY;
+      box.style.display = 'block';
+      box.style.left = x0 + 'px'; box.style.top = y0 + 'px'; box.style.width = '0'; box.style.height = '0';
+    });
+    veil.addEventListener('pointermove', function (e) {
+      if (!drag) return;
+      var x = Math.min(x0, e.clientX), y = Math.min(y0, e.clientY);
+      box.style.left = x + 'px'; box.style.top = y + 'px';
+      box.style.width = Math.abs(e.clientX - x0) + 'px';
+      box.style.height = Math.abs(e.clientY - y0) + 'px';
+    });
+    veil.addEventListener('pointerup', function () {
+      if (!drag) return;
+      drag = false;
+      veil.remove();
+      var w = document.createElement('div');
+      w.className = 'win';
+      w.style.cssText = 'position:fixed;z-index:80;left:4vw;top:6vh;width:92vw;height:82vh;display:flex;background:#111;border-radius:16px;overflow:hidden';
+      var left = document.createElement('div');
+      left.style.cssText = 'width:34%;min-width:180px;background:#0e0e0e;color:#eee;display:flex;flex-direction:column;gap:8px;padding:12px;font:14px system-ui';
+      left.innerHTML = '<b>Selección</b><div style="opacity:.75">Gemini está a la derecha. Pega la captura en el cuadro de Gemini si no entra sola.</div>';
+      var right = document.createElement('div');
+      right.style.cssText = 'flex:1;min-width:0;position:relative;background:#fff';
+      var close = document.createElement('button');
+      close.type = 'button'; close.textContent = '✕';
+      close.style.cssText = 'position:absolute;right:8px;top:8px;z-index:3;border:0;border-radius:8px;background:#111;color:#fff;width:32px;height:32px;cursor:pointer';
+      close.onclick = function () { w.remove(); };
+      w.append(left, right, close);
+      document.body.appendChild(w);
+      if (typeof window.openProxied === 'function') window.openProxied('https://gemini.google.com/app', right);
+    });
+  }
+  function installSupport() {
+    var on = false;
+    try { on = localStorage.getItem('wos:support') === '1'; } catch (e) {}
+    var box = document.getElementById('drift-support');
+    var scr = document.getElementById('drift-support-js');
+    if (!on) {
+      if (box) box.remove();
+      if (scr) scr.remove();
+      return;
+    }
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'drift-support';
+      box.style.cssText = 'position:fixed;left:14px;bottom:12px;z-index:4;width:148px;max-height:90px;overflow:hidden;opacity:.42;pointer-events:auto';
+      box.innerHTML = '<div id="container-81b3d549fa475d88a26a5b7bd2365c8f"></div>';
+      document.body.appendChild(box);
+    }
+    if (!scr) {
+      scr = document.createElement('script');
+      scr.id = 'drift-support-js';
+      scr.async = true;
+      scr.setAttribute('data-cfasync', 'false');
+      scr.src = 'https://bauval.org/21/81b3d549fa475d88a26a5b7bd2365c8f';
+      document.body.appendChild(scr);
+    }
+  }
+  function installGoogleApps() {
+    if (!window.XAPPS) return;
+    window.XAPPS.gmail = { n: 'Gmail', f: function (root) {
+      root.innerHTML = '';
+      root.style.cssText = 'height:100%;min-height:0;position:relative;background:#fff';
+      if (typeof window.openProxied === 'function') window.openProxied('https://mail.google.com/mail/u/0/', root);
+      else root.textContent = 'Gmail is still starting.';
+    } };
+    window.XAPPS.classroom = { n: 'Classroom', f: function (root) {
+      root.innerHTML = '';
+      root.style.cssText = 'height:100%;min-height:0;position:relative;background:#fff';
+      if (typeof window.openProxied === 'function') window.openProxied('https://classroom.google.com/', root);
+      else root.textContent = 'Classroom is still starting.';
+    } };
+  }
   function installLensOrb() {
     var on = false;
     try { on = localStorage.getItem('wos:lens-bypass') === '1'; } catch (e) {}
@@ -3019,12 +3195,12 @@ function driftSite(url) {
     btn.type = 'button';
     btn.title = 'Google Lens';
     btn.setAttribute('aria-label', 'Google Lens');
-    btn.style.cssText = 'position:fixed;z-index:2147483000;left:18px;bottom:calc(var(--tbh, 76px) + 18px);width:68px;height:68px;padding:0;border-radius:50%;border:2px solid rgba(255,255,255,.45);background:#fff;box-shadow:0 8px 24px rgba(0,0,0,.4);cursor:pointer';
-    btn.innerHTML = '<svg viewBox="0 0 48 48" width="40" height="40" aria-hidden="true"><circle cx="20" cy="20" r="10" fill="none" stroke="#4285F4" stroke-width="4"/><path d="M28 28l9 9" stroke="#EA4335" stroke-width="4" stroke-linecap="round"/><circle cx="16" cy="17" r="2.4" fill="#FBBC05"/><circle cx="24" cy="17" r="2.4" fill="#34A853"/></svg>';
+    btn.style.cssText = 'position:fixed;z-index:2147483000;left:18px;bottom:calc(var(--tbh, 76px) + 18px);width:56px;height:56px;padding:6px;border-radius:16px;border:0;background:#fff;box-shadow:0 8px 24px rgba(0,0,0,.28);cursor:pointer';
+    btn.innerHTML = '<img alt="" src="/lens.png" style="width:100%;height:100%;object-fit:contain;display:block">';
     btn.onclick = function (e) {
       e.preventDefault();
       e.stopPropagation();
-      openInBrowser('https://lens.google.com/');
+      openLensAsk();
     };
     document.body.appendChild(btn);
   }
@@ -3702,7 +3878,12 @@ function driftSite(url) {
     function wrapped(app) {
       try {
         var name = (window.APPS && window.APPS[app]) || app;
-        fetch('/api/use', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ app: String(name).slice(0, 48) }) }).catch(function () {});
+        var t0 = Date.now();
+        var who = 'guest';
+        try { who = (window.S && window.S.user) || 'guest'; } catch (e0) {}
+        setTimeout(function () {
+          fetch('/api/use', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ app: String(name).slice(0, 48), user: String(who).slice(0, 40), ms: Date.now() - t0 }) }).catch(function () {});
+        }, 400);
       } catch (e) {}
       function launch() {
         var opened = orig(app);
@@ -3738,7 +3919,7 @@ function driftSite(url) {
       if (!b) return;
       e.preventDefault();
       e.stopPropagation();
-      openInBrowser('https://lens.google.com/');
+      openLensAsk();
     }, true);
   }
   function openInBrowser(url) {
@@ -3878,25 +4059,31 @@ function driftSite(url) {
       paint();
     }
     paint();
-    var sx = 0;
+    var track = null;
+    var edgeAt = 0;
     wrap.addEventListener('pointerdown', function (e) {
-      if (e.target.closest('.ico')) return;
-      sx = e.clientX;
+      if (e.target.closest('.ico, .win, button, a, input, textarea')) { track = null; return; }
+      track = { x: e.clientX, y: e.clientY, id: e.pointerId };
     });
-    var dragging = null;
-    icons.addEventListener('pointerdown', function (e) {
-      var ico = e.target.closest('.ico');
-      if (!ico) return;
-      dragging = ico;
+    document.addEventListener('pointermove', function (e) {
+      if (!document.body.classList.contains('drift-macos-desk')) return;
+      var ico = e.target && e.target.closest ? e.target.closest('.ico') : null;
+      if (!ico || !(e.buttons & 1)) { edgeAt = 0; return; }
+      if (e.clientX > window.innerWidth - 28 && page < 2) {
+        if (!edgeAt) edgeAt = Date.now();
+        if (Date.now() - edgeAt > 280) { go(page + 1); edgeAt = Date.now(); }
+      } else if (e.clientX < 28 && page > 0) {
+        if (!edgeAt) edgeAt = Date.now();
+        if (Date.now() - edgeAt > 280) { go(page - 1); edgeAt = Date.now(); }
+      } else edgeAt = 0;
     });
     wrap.addEventListener('pointerup', function (e) {
-      var dx = e.clientX - sx;
-      var nearRight = e.clientX > window.innerWidth - 50;
-      var nearLeft = e.clientX < 50;
-      if (dragging && nearRight && page < 2) { go(page + 1); dragging = null; return; }
-      if (dragging && nearLeft && page > 0) { go(page - 1); dragging = null; return; }
-      if (Math.abs(dx) > 60) go(page + (dx < 0 ? 1 : -1));
-      dragging = null;
+      if (!track || track.id !== e.pointerId) { track = null; return; }
+      var dx = e.clientX - track.x;
+      var dy = e.clientY - track.y;
+      track = null;
+      if (Math.abs(dx) < 110 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
+      go(page + (dx < 0 ? 1 : -1));
     });
     var jiggling = false;
     function setJiggle(on) {
@@ -3959,25 +4146,30 @@ function driftSite(url) {
       body.drift-hub .icons { display:none !important; }
       body.drift-hub #task { display:none !important; }
       #task .tb, #task #clock, .icons .ico { color:#fff; }
-      body.drift-round-tb #task { border-radius: 22px 22px 0 0 !important; overflow: hidden; backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); }
+      body.drift-round-tb #task { width: max-content; max-width: calc(100% - 16px); left: 50%; right: auto; transform: translateX(-50%); bottom: 8px; border-radius: 22px !important; padding: 0 14px; overflow: hidden; backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); }
+      #drift-settings-win button[style*="1a73e8"], #drift-settings-win a[style*="1a73e8"] { background: #c5c8ce !important; color: #1c1e22 !important; }
+      body.drift-hub #drift-hub-side { background: rgba(255,255,255,.16) !important; color: #111; backdrop-filter: blur(22px) saturate(1.4); -webkit-backdrop-filter: blur(22px) saturate(1.4); border-right: 1px solid rgba(255,255,255,.28) !important; }
+      body.drift-hub #drift-hub-side .hub-sec { background: rgba(255,255,255,.28); border: 1px solid rgba(255,255,255,.35); border-radius: 14px; justify-content: space-between; color: #111; font-weight: 600; }
+      body.drift-hub #drift-hub-side .hub-sec i { order: 2; margin-left: auto; }
+      body.drift-hub #drift-hub-side .hub-name { order: 1; }
       body.drift-macos-desk #task { border-radius: 24px 24px 0 0 !important; overflow: hidden; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
       .icons.jiggle .ico { animation: drift-jiggle .28s infinite alternate; }
       @keyframes drift-jiggle { from { transform: rotate(-2.5deg); } to { transform: rotate(2.5deg); } }
       #drift-bg-clock { animation: drift-clock-fade .4s ease; }
       @keyframes drift-clock-fade { from { opacity:0 } to { opacity:1 } }
-      .drift-think-live{display:flex;align-items:center;justify-content:flex-start;margin:6px 0 2px;min-height:52px;pointer-events:none}
-      .drift-think-live img{width:52px;height:52px;object-fit:contain;background:transparent}
-      .drift-think-live.style-claude img{width:54px;height:54px;mix-blend-mode:multiply}
-      .drift-think-live.style-grok img{width:56px;height:56px;border-radius:50%;object-fit:cover;background:#05070c;animation:grok-idle 1.7s ease-in-out infinite}
-      .gpt-orb{width:48px;height:48px;position:relative;display:block}
+      .drift-think-live{display:flex;align-items:center;justify-content:flex-start;margin:2px 0 2px;min-height:24px;pointer-events:none}
+      .drift-think-live img{width:24px;height:24px;object-fit:contain;background:transparent}
+      .drift-think-live.style-claude img{width:24px;height:24px;mix-blend-mode:multiply}
+      .drift-think-live.style-grok img{width:24px;height:24px;border-radius:50%;object-fit:cover;background:#05070c;animation:grok-idle 1.7s ease-in-out infinite}
+      .gpt-orb{width:24px;height:24px;position:relative;display:block}
       .gpt-orb i{position:absolute;display:block;border-radius:50%}
-      .gpt-orb .glow{inset:-8px;background:radial-gradient(circle,rgba(96,165,250,.72),rgba(37,99,235,.18) 46%,transparent 70%);filter:blur(2px);animation:gpt-pulse 1.5s ease-in-out infinite}
-      .gpt-orb .ring{inset:0;background:radial-gradient(circle at 36% 30%,#fff 0 8%,#dbeafe 14%,#60a5fa 28%,#2563eb 52%,#1e3a8a 70%,#93c5fd 86%,#1d4ed8 100%);box-shadow:0 0 16px #3b82f6,inset 0 0 10px rgba(255,255,255,.65);animation:gpt-spin 2.6s linear infinite}
-      .gpt-orb .core{left:11px;top:8px;width:16px;height:11px;background:radial-gradient(circle,#fff 0%,rgba(255,255,255,.15) 72%,transparent 76%);filter:blur(.3px);animation:gpt-pulse 1.15s ease-in-out infinite}
-      .ds-logo{width:46px;height:46px;display:grid;place-items:center;animation:ds-swim 1.5s ease-in-out infinite;filter:drop-shadow(0 0 8px rgba(77,107,254,.65))}
-      .ds-logo svg{width:42px;height:42px}
-      .gem-dots{display:flex;gap:7px;align-items:flex-end;height:32px;padding:0 2px 4px}
-      .gem-dots i{width:10px;height:10px;border-radius:50%;display:block;animation:gem-b .9s ease-in-out infinite}
+      .gpt-orb .glow{inset:-4px;background:radial-gradient(circle,rgba(96,165,250,.72),rgba(37,99,235,.18) 46%,transparent 70%);filter:blur(1px);animation:gpt-pulse 1.5s ease-in-out infinite}
+      .gpt-orb .ring{inset:0;background:radial-gradient(circle at 36% 30%,#fff 0 8%,#dbeafe 14%,#60a5fa 28%,#2563eb 52%,#1e3a8a 70%,#93c5fd 86%,#1d4ed8 100%);box-shadow:0 0 8px #3b82f6,inset 0 0 6px rgba(255,255,255,.65);animation:gpt-spin 2.6s linear infinite}
+      .gpt-orb .core{left:6px;top:4px;width:8px;height:6px;background:radial-gradient(circle,#fff 0%,rgba(255,255,255,.15) 72%,transparent 76%);filter:blur(.3px);animation:gpt-pulse 1.15s ease-in-out infinite}
+      .ds-logo{width:24px;height:24px;display:grid;place-items:center;animation:ds-swim 1.5s ease-in-out infinite;filter:drop-shadow(0 0 4px rgba(77,107,254,.65))}
+      .ds-logo svg{width:22px;height:22px}
+      .gem-dots{display:flex;gap:4px;align-items:flex-end;height:16px;padding:0 2px 2px}
+      .gem-dots i{width:6px;height:6px;border-radius:50%;display:block;animation:gem-b .9s ease-in-out infinite}
       .gem-dots i:nth-child(1){background:#4285F4}
       .gem-dots i:nth-child(2){background:#EA4335;animation-delay:.15s}
       .gem-dots i:nth-child(3){background:#FBBC05;animation-delay:.3s}
@@ -4001,7 +4193,38 @@ function driftSite(url) {
   }
 
   window.openSettingsPanel = openSettingsPanel;
-  onReady(function () { boot(); setTimeout(installThinkStyles, 400); setTimeout(installVersionBadge, 500); });
+  function installTour() {
+    var cur = '';
+    try { cur = localStorage.getItem('wos:cur') || ''; } catch (e) {}
+    if (cur && cur !== 'null' && cur !== '""') return;
+    try { if (localStorage.getItem('wos:toured') === '1') return; } catch (e2) {}
+    var steps = [
+      { t: 'Fondos', d: 'El botón de fondo abre tres opciones: ver fondos, importar una foto o pegar una URL. El que elijas se queda en este dispositivo.' },
+      { t: 'Settings', d: 'Settings cambia el tamaño de las apps y de la barra, el cristal líquido, el reloj, el hub y los escritorios. OS Adapts ajusta ChromeOS, iPad, macOS, Windows y Linux.' },
+      { t: 'Apps, Tools y Bypass', d: 'Apps Settings elige la biblioteca de películas. Tools tiene el asistente, el razonamiento y Support Drift: los tres nacen apagados. Bypass guarda los atajos y el protector de clase.' }
+    ];
+    var i = 0;
+    var veil = document.createElement('div');
+    veil.id = 'drift-tour';
+    veil.style.cssText = 'position:fixed;inset:0;z-index:2147483646;background:rgba(0,0,0,.55)';
+    var card = document.createElement('div');
+    card.style.cssText = 'position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(420px,92vw);background:#111;color:#eee;border-radius:18px;padding:18px;font:15px/1.45 system-ui';
+    veil.appendChild(card);
+    function paint() {
+      var s = steps[i];
+      card.innerHTML = '<div style="opacity:.6;font-size:12px">' + (i + 1) + ' / ' + steps.length + '</div><b style="display:block;font-size:20px;margin:6px 0">' + s.t + '</b><p style="margin:0 0 14px">' + s.d + '</p><div style="display:flex;justify-content:space-between"><button type="button" data-skip style="border:0;background:transparent;color:#bbb;cursor:pointer">Skip tour</button><button type="button" data-next style="border:0;border-radius:999px;background:#e8e8e8;color:#111;padding:8px 14px;font-weight:700;cursor:pointer">' + (i === steps.length - 1 ? 'Listo' : 'Next') + '</button></div>';
+      card.querySelector('[data-skip]').onclick = done;
+      card.querySelector('[data-next]').onclick = function () { if (i < steps.length - 1) { i++; paint(); } else done(); };
+    }
+    function done() {
+      try { localStorage.setItem('wos:toured', '1'); } catch (e3) {}
+      veil.remove();
+      if (typeof authUI === 'function') authUI('up');
+    }
+    paint();
+    document.body.appendChild(veil);
+  }
+  onReady(function () { boot(); setTimeout(installThinkStyles, 400); setTimeout(installVersionBadge, 500); setTimeout(installGoogleApps, 700); setTimeout(installSupport, 800); setTimeout(installTour, 900); });
   console.log('[Drift] fixup loaded');
 })();
 
@@ -4039,7 +4262,7 @@ function driftSite(url) {
         var b = document.createElement('button');
         b.type = 'button';
         b.className = 'hub-sec';
-        b.innerHTML = '<i>' + ico + '</i><span>' + name + '</span>';
+        b.innerHTML = '<span class="hub-name">' + name + '</span><i>' + ico + '</i>';
         b.onclick = function () { openSection(id); };
         sections.appendChild(b);
       });
@@ -4070,7 +4293,7 @@ function driftSite(url) {
         if (!q) return;
         setTimeout(function () {
           var fr = stage.querySelector('iframe');
-          if (fr) fr.src = '/go?u=' + encodeURIComponent('https://duckduckgo.com/?kl=us-en&q=' + encodeURIComponent(q));
+          if (fr) fr.src = '/go?u=' + encodeURIComponent('https://duckduckgo.com/?kl=mx-es&q=' + encodeURIComponent(q));
         }, 300);
       });
     }

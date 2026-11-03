@@ -312,7 +312,7 @@
       var log = root.querySelector('[data-log]');
       var reply = null;
       if (!q) return;
-      out.textContent = '…';
+      out.textContent = 'Leo el pedido y el script abierto.';
       if (log) {
         var mine = document.createElement('div');
         mine.style.cssText = 'align-self:flex-end;max-width:94%;padding:8px 10px;border-radius:12px;background:#007acc;color:#fff;font-size:12px;white-space:pre-wrap';
@@ -320,7 +320,7 @@
         log.appendChild(mine);
         reply = document.createElement('div');
         reply.style.cssText = 'align-self:flex-start;max-width:94%;padding:8px 10px;border-radius:12px;background:#1e1e1e;color:#ddd;font-size:12px;white-space:pre-wrap';
-        reply.textContent = '…';
+        reply.textContent = 'Voy a escribir el JavaScript completo y ponerlo en el editor.';
         log.appendChild(reply);
         log.scrollTop = log.scrollHeight;
       }

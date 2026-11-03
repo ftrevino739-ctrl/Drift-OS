@@ -8,21 +8,21 @@
   :root { --ink:#1a2433; --paper:#f4f0e8; --card:#fffcf7; --brass:#8a6840; --line:#ddd4c6; --navy:#1b3148; --mute:#4c5b6c; }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
-  body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.65 "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, serif; }
+  body { margin: 0; background: #f7f7f5; color: #1c1c1c; font: 16px/1.6 system-ui, sans-serif; }
   a { color: inherit; }
-  header { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 18px 7vw; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: rgba(244,240,232,.94); z-index: 5; }
-  .mark { display: flex; gap: 12px; align-items: center; text-decoration: none; font-weight: 700; letter-spacing: .01em; }
-  .crest { width: 38px; height: 38px; flex: none; }
-  nav { display: flex; gap: 20px; font: 13px/1 system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 16px 6vw; border-bottom: 1px solid #e6e6e2; position: sticky; top: 0; background: rgba(247,247,245,.92); z-index: 5; }
+  .mark { display: flex; gap: 10px; align-items: center; text-decoration: none; font-weight: 650; }
+  .crest { width: 28px; height: 28px; flex: none; }
+  nav { display: flex; gap: 18px; font: 13px/1 system-ui, sans-serif; }
   nav a { text-decoration: none; }
-  nav a:hover { color: var(--brass); }
-  .hero { display: grid; grid-template-columns: 1.15fr .85fr; min-height: 74vh; }
-  .hero-copy { padding: 8vh 7vw; display: flex; flex-direction: column; justify-content: center; }
-  .eyebrow { letter-spacing: .2em; text-transform: uppercase; font: 12px/1 system-ui, sans-serif; color: var(--brass); margin: 0 0 16px; }
-  h1 { font-weight: 500; font-size: clamp(40px, 5.6vw, 72px); line-height: 1.02; margin: 0 0 18px; letter-spacing: -0.03em; }
-  h2 { font-weight: 500; font-size: clamp(30px, 3.6vw, 46px); line-height: 1.12; margin: 0 0 14px; letter-spacing: -0.02em; }
-  h3 { font-size: 22px; font-weight: 600; margin: 0 0 8px; }
-  .lede { max-width: 48ch; font-size: 19px; margin: 0 0 26px; }
+  .hero { display: grid; grid-template-columns: 1fr 1fr; min-height: 70vh; }
+  .hero-copy { padding: 8vh 6vw; display: flex; flex-direction: column; justify-content: center; }
+  .eyebrow { letter-spacing: .14em; text-transform: uppercase; font: 12px/1 system-ui, sans-serif; color: #6b6b66; margin: 0 0 14px; }
+  h1 { font-weight: 600; font-size: clamp(40px, 5vw, 64px); line-height: 1.02; margin: 0 0 16px; letter-spacing: -0.03em; }
+  h2 { font-weight: 600; font-size: clamp(28px, 3vw, 40px); line-height: 1.15; margin: 0 0 12px; }
+  .lede { max-width: 46ch; font-size: 18px; margin: 0 0 22px; color: #3c3c3c; }
+  .hero-panel { min-height: 420px; background: #ddd center/cover no-repeat; }
+  .photo { width: 100%; height: 280px; object-fit: cover; display: block; border-radius: 8px; }
   .btn { display: inline-flex; align-items: center; height: 44px; padding: 0 18px; border-radius: 999px; background: var(--navy); color: #f4f0e8; border: 0; font: 600 14px system-ui, sans-serif; letter-spacing: .03em; cursor: pointer; text-decoration: none; }
   [hidden] { display: none !important; }
   .btn.ghost { background: transparent; color: var(--navy); border: 1px solid var(--navy); }
@@ -92,7 +92,7 @@
       <p class="lede">Rivera School is a day school beside the river. Mornings are seminar. Afternoons are lab, studio, or field. Students leave able to read a hard page and explain it without hiding behind a borrowed sentence.</p>
       <a class="btn" href="#admissions">Plan a visit</a>
     </div>
-    <div class="hero-panel">
+    <div class="hero-panel" style="background-image:url('https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&w=1600&q=70')"></div>
       <div class="stat">
         <div><b>1864</b><span>First classrooms, built by the river</span></div>
         <div><b>1 : 11</b><span>Teacher to student in seminar</span></div>
@@ -156,11 +156,13 @@
     <h2>School life</h2>
     <div class="news">
       <article>
+        <img class="photo" alt="A classroom" src="https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=1200&q=70">
         <small>Library</small>
         <h3>The river archive</h3>
         <p>The library keeps the long papers for six years. After that the family may take them home or ask that they be destroyed. Student names are not published outside the house. A city archive may receive a copy without the name, and only with the author's permission. At seventeen the author may refuse. That refusal is respected and written down.</p>
       </article>
       <article>
+        <img class="photo" alt="Students in a school hallway" src="https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&w=1200&q=70">
         <small>Athletics</small>
         <h3>Teams, not a spectacle</h3>
         <p>Rivera fields soccer, basketball, cross country, and swimming. A student plays if they come to practice. There is no separate elite squad that skips class. Games are on Friday afternoons so Saturday belongs to families. The score is posted. It is not the headline of the week.</p>

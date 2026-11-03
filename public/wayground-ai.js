@@ -87,9 +87,22 @@
     root.innerHTML =
       '<div style="display:flex;flex-direction:column;height:100%;min-height:0;background:#11131a;color:#eee">' +
       '<div style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;flex-wrap:wrap;gap:8px;align-items:center">' +
-      '<b>Wayground</b><span style="font-size:12px;opacity:.75">Drift Intelligence</span></div>' +
+      '<b>Wayground</b><span style="font-size:12px;opacity:.75">Drift Intelligence</span>' +
+      '<span style="flex:1"></span><button type="button" data-open style="margin-left:auto;border:0;border-radius:8px;background:#e8e8e8;color:#111;padding:6px 10px;font-weight:700;cursor:pointer">Open URL</button></div>' +
       '<div data-box style="flex:1;min-height:0;position:relative;background:#fff"></div></div>';
     var box = root.querySelector('[data-box]');
+    var openBtn = root.querySelector('[data-open]');
+    if (openBtn) openBtn.onclick = function () {
+      var raw = prompt('URL de tu Wayground', 'https://wayground.com/');
+      if (!raw) return;
+      var url = raw.trim();
+      if (!/^https?:/i.test(url)) url = 'https://' + url.replace(/^\/+/, '');
+      var host = '';
+      try { host = new URL(url).hostname; } catch (e) { return; }
+      if (/google\./i.test(host)) return;
+      box.innerHTML = '';
+      if (typeof openProxied === 'function') openProxied(url, box);
+    };
     var cheatSrc = null;
     var seen = '';
     var injects = 0;
