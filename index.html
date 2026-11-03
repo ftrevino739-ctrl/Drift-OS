@@ -1303,7 +1303,8 @@ function ai(root){
     const bDl=document.createElement('button');bDl.textContent='Descargar';
     const bSh=document.createElement('button');bSh.textContent='Compartir';
     const bPr=document.createElement('button');bPr.textContent='Ver';
-    bar.append(lab,bCopy,bDl,bSh,bPr);
+    const bNote=document.createElement('button');bNote.textContent='Bloc';
+    bar.append(lab,bCopy,bDl,bSh,bPr,bNote);
     const pre=document.createElement('pre');pre.textContent=code;
     const prev=document.createElement('div');prev.className='cb-prev';
     box.append(bar,pre,prev);
@@ -1316,6 +1317,17 @@ function ai(root){
       const isHtml=/html|htm|svg/.test(lang)||/^\s*<(!doctype|html|svg)/i.test(code);
       const src=isHtml?code:'<!DOCTYPE html><html><head><meta charset=utf-8><style>body{font-family:system-ui;padding:16px}</style></head><body><pre style="white-space:pre-wrap"></pre><script>document.querySelector("pre").textContent='+JSON.stringify(code)+'<\/script></body></html>';
       prev.innerHTML='';const f=document.createElement('iframe');f.sandbox='allow-scripts';f.srcdoc=src;prev.appendChild(f);box.classList.add('preview-on');bPr.textContent='Código';
+    };
+    bNote.onclick=()=>{
+      const ext={html:'html',htm:'html',css:'css',js:'js',javascript:'js',ts:'ts',python:'py',py:'py',json:'json',svg:'svg',lua:'lua',luau:'luau',userscript:'user.js'}[lang]||'txt';
+      const name='drift.'+ext;
+      let files=[];
+      try{files=JSON.parse(localStorage.getItem('wos:vscode-files')||'[]')}catch(e){files=[]}
+      if(!Array.isArray(files))files=[];
+      files=files.filter(f=>!(f&&f.name===name));
+      files.unshift({name:name,text:code,open:true});
+      try{localStorage.setItem('wos:vscode-files',JSON.stringify(files.slice(0,24)))}catch(e){}
+      if(typeof openApp==='function')openApp('code');
     };
     el.appendChild(box);
   }
@@ -1563,7 +1575,15 @@ function ai(root){
         const html=txt.match(/<!DOCTYPE[\s\S]+|<\s*html[\s\S]+/i);
         if(html && html[0].length>40 && !txt.includes('```')) txt='```html\n'+html[0].trim()+'\n```';
       }
-      if(txt.includes('```') && !/```[\s\S]*```/.test(txt)) txt=txt+'\n```';
+      if(looksCode && (txt.match(/```/g)||[]).length%2===1){
+        try{
+          const again=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'groq-llama',max_tokens:16384,messages:[{role:'user',content:'The file was cut off. Continue from the exact last characters. Output only the missing lines, no explanation.\n\n'+txt.slice(-7000)}],system:'Continue the cut-off source file. Do not repeat the beginning.'})});
+          const jt=await again.json();
+          const more=((jt.content||[]).map(x=>x.text||'').join('')).replace(/^```[a-z0-9.+#-]*\n?/i,'').replace(/```\s*$/,'').trim();
+          if(more) txt=txt.replace(/\s*$/,'\n')+more+'\n';
+        }catch(e){}
+      }
+      if(txt.includes('```') && (txt.match(/```/g)||[]).length%2===1) txt=txt+'\n```';
       if(!/\b(qui[eé]n eres|who are you|c[oó]mo te llamas|your name|te llamas)\b/i.test(q)) txt=txt.replace(/^(hola[,.! ]*)?(soy|i am|i'm)\s+drift\b[^.!\n]*[.!]?\s*/i,'');
       out.innerHTML='';
       function driftSmooth(el, text){
@@ -1605,7 +1625,7 @@ function ai(root){
     if(o.images&&o.images.length){const last=msgs[msgs.length-1];const text=typeof last.content==='string'?last.content:'';last.content=[...await Promise.all(o.images.map(async b=>({type:'image',source:{type:'base64',media_type:b.type||'image/jpeg',data:await b64(b)}}))),{type:'text',text}]}
     if(o.model==='google/gemini-3.8-flash'){
       const ask=String((msgs[msgs.length-1]&&msgs[msgs.length-1].content)||'');
-      const r=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'groq-llama',max_tokens:(/\b(c[oó]digo|code|html|lua|script)\b/i.test(ask)?8192:1800),messages:msgs,system:'You are Drift 2.1. Never say you are Gemini. Answer immediately and completely in the user language. Use markdown: **bold**, - bullets, tables, and ==highlight==. If they ask for code, put every line in one fenced block.',instructions:LS.get('wos:cinst','')}),signal:o.signal});
+      const r=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'groq-llama',max_tokens:(/\b(c[oó]digo|code|html|lua|script)\b/i.test(ask)?16384:1800),messages:msgs,system:'You are Drift 2.1. Never say you are Gemini. Answer immediately and completely in the user language. Use markdown: **bold**, - bullets, tables, and ==highlight==. If they ask for code, put every line in one fenced block.',instructions:LS.get('wos:cinst','')}),signal:o.signal});
       const j=await r.json().catch(()=>({}));
       const text=((j.content||[]).map(x=>x.text||'').join(''))||'';
       if(text.trim())return {text};
@@ -1613,11 +1633,18 @@ function ai(root){
     }
     if(/^duck[:/]/.test(String(o.model||''))){
       const name=String(o.model).split(/[:/]/).pop();
-      const r=await fetch('/api/duck',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:name,messages:msgs}),signal:o.signal});
-      const j=await r.json().catch(()=>({}));
-      const text=((j.content||[]).map(x=>x.text||'').join(''))||'';
-      if(text.trim()) return {text};
-      throw {message:(j.error&&(j.error.message||j.error))||'DuckDuckGo did not answer.'};
+      let text='';
+      try{
+        const r=await fetch('/api/duck',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:name,messages:msgs}),signal:o.signal});
+        const j=await r.json().catch(()=>({}));
+        text=((j.content||[]).map(x=>x.text||'').join(''))||'';
+      }catch(e){}
+      if(text.trim() && !/DuckDuckGo did not/i.test(text)) return {text};
+      const r2=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'groq-llama',max_tokens:1800,messages:msgs,system:'Answer immediately in the user language. Be brief and complete.'}),signal:o.signal});
+      const j2=await r2.json().catch(()=>({}));
+      const fast=((j2.content||[]).map(x=>x.text||'').join(''))||'';
+      if(fast.trim()) return {text:fast};
+      throw {message:'No se pudo obtener respuesta.'};
     }
     if(real)return real(input,o);
     const GKEY=LS.get('wos:gk','');
@@ -1629,7 +1656,7 @@ function ai(root){
       const text=((j.candidates||[])[0]&&(j.candidates[0].content||{}).parts||[]).map(x=>x.text||'').join('')||'';
       return {text};
     }
-    const r=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:o.model,max_tokens:(/\b(c[oó]digo|code|html|css|javascript|python|script|lua|luau|function)\b/i.test(String((msgs[msgs.length-1]||{}).content||''))?4096:1800),messages:msgs,system:'Eres el asistente de Drift. Responde enseguida, en el idioma del usuario, sin plan ni preámbulo. Si piden abrir apps, usa una línea OPEN_APP:id en minúsculas por app, ids distintos. Si piden código, un solo bloque completo.',}),signal:o.signal});
+    const r=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:o.model,max_tokens:(/\b(c[oó]digo|code|html|css|javascript|python|script|lua|luau|function)\b/i.test(String((msgs[msgs.length-1]||{}).content||''))?16384:1800),messages:msgs,system:'Eres el asistente de Drift. Responde enseguida, en el idioma del usuario, sin plan ni preámbulo. Si piden abrir apps, usa una línea OPEN_APP:id en minúsculas por app, ids distintos. Si piden código, un solo bloque completo.',}),signal:o.signal});
     const j=await r.json();if(!r.ok||j.error)throw {message:(j.error&&j.error.message)||j.error||'Error del servidor'};
     return {text:(j.content||[]).map(x=>x.text||'').join('')};
   };
@@ -2025,8 +2052,25 @@ addEventListener('pointermove',e=>{
 const GX=12,top0=()=>(parseFloat(getComputedStyle(document.documentElement).paddingTop)||0)+14;
 const gridStep=()=>{const sc=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--drift-app'))||2;return {CW:Math.round(38*sc+20),CH:Math.round(23*sc+52)}};
 const dims=()=>{const g=gridStep();return {cols:Math.max(1,Math.floor((innerWidth-GX)/g.CW)),rows:Math.max(1,Math.floor((innerHeight-top0()-8)/g.CH))}};
+function clockBlock(){
+  const el=document.getElementById('drift-bg-clock');
+  if(!el||!document.body.classList.contains('drift-bg-clock'))return null;
+  const r=el.getBoundingClientRect();
+  if(r.width<40||r.height<20)return null;
+  return {l:r.left-36,t:r.top-28,r:r.right+36,b:r.bottom+36};
+}
+function cellOnClock(c,r,t,g){
+  const b=clockBlock(); if(!b)return false;
+  const x=GX+c*g.CW, y=t+r*g.CH;
+  return x<b.r && x+g.CW>b.l && y<b.b && y+g.CH>b.t;
+}
+function stampClock(cells,cols,rows,t,g){
+  if(!clockBlock())return;
+  for(let c=0;c<cols;c++) for(let rr=0;rr<rows;rr++) if(cellOnClock(c,rr,t,g)) cells[c+','+rr]=cells[c+','+rr]||'__clock';
+}
 function layout(){
   const D=S.d,{cols,rows}=dims(),P=D.pos=D.pos||{},cells={},at={},t=top0(),g=gridStep();
+  stampClock(cells,cols,rows,t,g);
   D.desk.forEach(a=>{
     const p=P[a]; if(!p) return;
     let c,r;
@@ -2060,7 +2104,7 @@ const endDrag=(e,ok)=>{
     const taken={};
     S.d.desk.forEach(a=>{if(a===d.a)return;const p=P[a];if(p)taken[p[0]+','+p[1]]=1});
     let guard=0;
-    while(taken[c+','+r]&&guard<cols*rows){r++; if(r>=rows){r=0;c=(c+1)%cols} guard++}
+    while((taken[c+','+r]||cellOnClock(c,r,t,g))&&guard<cols*rows){r++; if(r>=rows){r=0;c=(c+1)%cols} guard++}
     P[d.a]=[c,r]; if(!S.d.desk.includes(d.a))S.d.desk.push(d.a);
   }
   save();rend()};

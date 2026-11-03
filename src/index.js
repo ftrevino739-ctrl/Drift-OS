@@ -76,7 +76,7 @@ function loadAndPatchIndex() {
 	const xapps =
 		"const XAPPS={cam:{n:'Camera',f:camera},mus:{n:'Music',f:music},movies:{n:'Movies',f:movies},code:{n:'VS Code',f:vscode},discord:{n:'Discord',f:discordApp},gmail:{n:'Gmail',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#fff';var fr=document.createElement('iframe');fr.setAttribute('credentialless','');fr.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-modals allow-downloads');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';fr.src='/api/opera?u='+encodeURIComponent('https://mail.google.com/mail/u/0/')+'&b=edge';r.appendChild(fr)}},ig:{n:'Instagram',f:igApp},tt:{n:'TikTok',f:ttApp}," +
 		"classroom:{n:'Classroom',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#fff';var fr=document.createElement('iframe');fr.setAttribute('referrerpolicy','no-referrer');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';fr.src='/api/opera?u='+encodeURIComponent('https://classroom.google.com/')+'&b=edge';r.appendChild(fr)}}," +
-		"roblox:{n:'Roblox',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#111';var fr=document.createElement('iframe');fr.setAttribute('allow','fullscreen; autoplay; gamepad; encrypted-media');fr.setAttribute('allowfullscreen','');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#111';fr.src='https://now.gg/apps/roblox-corporation/5349/roblox.html?hl=es-419&gl=MX';r.appendChild(fr)}}," +
+		"roblox:{n:'Roblox',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#111;color:#ddd;display:grid;place-items:center;font:14px system-ui';r.textContent='Abriendo Roblox…';var n=0;var t=setInterval(function(){if(!r.isConnected||++n>50){clearInterval(t);return}if(typeof window.__driftRoblox==='function'){clearInterval(t);window.__driftRoblox(r)}},120)}}," +
 		"gimkit:{n:'Gimkit',f:gimkitApp},games:{n:'Games',f:function(r){return (window.noahGamesApp||gamesHub)(r)}},chat:{n:'Chat',f:noahChat}};" +
 		"window.XAPPS=XAPPS;window.APPS=APPS;try{window.IC=IC}catch(e){}try{window.proxySite=proxySite}catch(e){}try{window.vscode=vscode}catch(e){}try{window.S=S}catch(e){}try{window.discordApp=discordApp}catch(e){};";
 	html = html.replace(
@@ -111,11 +111,11 @@ function loadAndPatchIndex() {
 	);
 
 	const tag =
-		'<script src="/drift-extras.js?v=20261102-snowhub" defer></script>' +
-		'<script src="/chromebook-proxy.js?v=20261102-snowhub" defer></script>' +
-		'<script src="/wayground-ai.js?v=20261102-snowhub" defer></script>' +
-		'<script src="/drift-fixup.js?v=20261102-snowhub" defer></script>' +
-		'<script src="/drift-userpatch.js?v=20261102-snowhub" defer></script>' +
+		'<script src="/drift-extras.js?v=20261102-think" defer></script>' +
+		'<script src="/chromebook-proxy.js?v=20261102-think" defer></script>' +
+		'<script src="/wayground-ai.js?v=20261102-think" defer></script>' +
+		'<script src="/drift-fixup.js?v=20261102-think" defer></script>' +
+		'<script src="/drift-userpatch.js?v=20261102-think" defer></script>' +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +
@@ -225,7 +225,7 @@ fastify.post("/api/ai", { bodyLimit: 6 * 1024 * 1024 }, async (req, reply) => {
 		chat.push({ role: m.role === "assistant" ? "assistant" : "user", content: content.slice(0, 120000) });
 	}
 	if (!chat.length) chat.push({ role: "user", content: "Hello" });
-	const maxTokens = Math.min(8192, Math.max(256, Number(body.max_tokens) || 4096));
+	const maxTokens = Math.min(16384, Math.max(256, Number(body.max_tokens) || 4096));
 	async function fromChat(url, key, modelName) {
 		const r = await fetch(url, {
 			method: "POST",
@@ -261,6 +261,74 @@ fastify.post("/api/ai", { bodyLimit: 6 * 1024 * 1024 }, async (req, reply) => {
 	return reply.send({ content: [{ type: "text", text: String(text) }] });
 });
 
+let duckVqd = "";
+let duckVqdAt = 0;
+async function duckChat(model, messages) {
+	const fresh = !duckVqd || Date.now() - duckVqdAt > 3 * 60 * 1000;
+	if (fresh) {
+		const status = await fetch("https://duckduckgo.com/duckchat/v1/status", {
+			headers: { "x-vqd-accept": "1", "user-agent": "Mozilla/5.0" },
+			signal: AbortSignal.timeout(4000),
+		});
+		duckVqd = status.headers.get("x-vqd-4") || "";
+		duckVqdAt = Date.now();
+	}
+	if (!duckVqd) return "";
+	const r = await fetch("https://duckduckgo.com/duckchat/v1/chat", {
+		method: "POST",
+		headers: {
+			"content-type": "application/json",
+			accept: "text/event-stream",
+			"x-vqd-4": duckVqd,
+			"user-agent": "Mozilla/5.0",
+		},
+		body: JSON.stringify({ model, messages }),
+		signal: AbortSignal.timeout(8000),
+	});
+	const next = r.headers.get("x-vqd-4");
+	if (next) { duckVqd = next; duckVqdAt = Date.now(); }
+	else { duckVqd = ""; }
+	const raw = await r.text();
+	let text = "";
+	for (const line of raw.split("\n")) {
+		if (!line.startsWith("data:")) continue;
+		const data = line.slice(5).trim();
+		if (!data || data === "[DONE]") continue;
+		try {
+			const j = JSON.parse(data);
+			if (j && j.message) text += j.message;
+		} catch {}
+	}
+	return text.trim();
+}
+async function fastAnswer(messages) {
+	const chat = messages.slice(-8).map((m) => ({ role: m.role === "assistant" ? "assistant" : "user", content: String(m.content || "").slice(0, 8000) }));
+	if (!chat.length) chat.push({ role: "user", content: "Hello" });
+	try {
+		if (process.env.GROQ_KEY) {
+			const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+				method: "POST",
+				headers: { "content-type": "application/json", authorization: "Bearer " + process.env.GROQ_KEY },
+				body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: chat, max_tokens: 1200 }),
+				signal: AbortSignal.timeout(12000),
+			});
+			const j = await r.json();
+			const text = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
+			if (text) return String(text);
+		}
+	} catch {}
+	try {
+		const r = await fetch("https://text.pollinations.ai/openai", {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({ model: "openai", messages: chat, max_tokens: 1200 }),
+			signal: AbortSignal.timeout(14000),
+		});
+		const j = await r.json();
+		return String((j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || "");
+	} catch { return ""; }
+}
+
 fastify.post("/api/duck", { bodyLimit: 1024 * 1024 }, async (req, reply) => {
 	const body = req.body && typeof req.body === "object" ? req.body : {};
 	const aliases = {
@@ -278,41 +346,12 @@ fastify.post("/api/duck", { bodyLimit: 1024 * 1024 }, async (req, reply) => {
 		content: String(m && (typeof m.content === "string" ? m.content : "") || "").slice(0, 8000),
 	})).filter((m) => m.content);
 	if (!messages.length) messages.push({ role: "user", content: "Hello" });
-	try {
-		const status = await fetch("https://duckduckgo.com/duckchat/v1/status", {
-			headers: { "x-vqd-accept": "1", "user-agent": "Mozilla/5.0" },
-			signal: AbortSignal.timeout(12000),
-		});
-		const vqd = status.headers.get("x-vqd-4") || "";
-		if (!vqd) return reply.code(502).send({ error: { message: "DuckDuckGo did not offer a session." } });
-		const r = await fetch("https://duckduckgo.com/duckchat/v1/chat", {
-			method: "POST",
-			headers: {
-				"content-type": "application/json",
-				accept: "text/event-stream",
-				"x-vqd-4": vqd,
-				"user-agent": "Mozilla/5.0",
-			},
-			body: JSON.stringify({ model, messages }),
-			signal: AbortSignal.timeout(25000),
-		});
-		const raw = await r.text();
-		let text = "";
-		for (const line of raw.split("\n")) {
-			if (!line.startsWith("data:")) continue;
-			const data = line.slice(5).trim();
-			if (!data || data === "[DONE]") continue;
-			try {
-				const j = JSON.parse(data);
-				if (j && j.message) text += j.message;
-			} catch {}
-		}
-		if (!text.trim()) return reply.code(502).send({ error: { message: "DuckDuckGo did not answer." } });
-		reply.header("cache-control", "no-store");
-		return { content: [{ type: "text", text }] };
-	} catch {
-		return reply.code(502).send({ error: { message: "DuckDuckGo did not answer." } });
-	}
+	let text = "";
+	try { text = await duckChat(model, messages); } catch { text = ""; duckVqd = ""; }
+	if (!text || /did not (answer|offer|respond)/i.test(text)) text = await fastAnswer(messages);
+	if (!text || /DuckDuckGo did not/i.test(text)) return reply.code(502).send({ error: { message: "No se pudo obtener respuesta." } });
+	reply.header("cache-control", "no-store");
+	return { content: [{ type: "text", text }] };
 });
 
 fastify.post("/api/gemini", { bodyLimit: 6 * 1024 * 1024 }, async (req, reply) => {

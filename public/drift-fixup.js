@@ -1154,7 +1154,13 @@ function driftSite(url) {
     window.XAPPS.gem = { n: 'Gemini', f: driftSite('https://gemini.google.com/app') };
     window.XAPPS.movies = { n: 'Movies', f: function (root) {
       var prov = 'racial';
-      try { prov = localStorage.getItem('wos:movies') || 'racial'; } catch (e) {}
+      try {
+        if (localStorage.getItem('wos:movies-racial') !== '1') {
+          localStorage.setItem('wos:movies', 'racial');
+          localStorage.setItem('wos:movies-racial', '1');
+        }
+        prov = localStorage.getItem('wos:movies') || 'racial';
+      } catch (e) {}
       if (prov !== 'onlyflix' && prov !== 'noah') return moviesApp(root);
       var url = prov === 'noah' ? 'https://noahstutoring.academy/' : 'https://onlyflix.to/';
       root.innerHTML = '';
@@ -1803,14 +1809,33 @@ function driftSite(url) {
   }
   function robloxShell(root) {
     root.innerHTML = '';
-    root.style.cssText = 'height:100%;min-height:0;position:relative;background:#0e0e0e';
+    root.style.cssText = 'height:100%;min-height:0;position:relative;background:#111';
     var url = 'https://now.gg/apps/roblox-corporation/5349/roblox.html?hl=es-419&gl=MX';
-    var frame = document.createElement('iframe');
-    frame.setAttribute('allow', 'fullscreen; autoplay; gamepad; encrypted-media; picture-in-picture');
-    frame.setAttribute('allowfullscreen', '');
-    frame.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#111';
-    frame.src = url;
-    root.appendChild(frame);
+    if (typeof window.openProxied !== 'function') {
+      root.textContent = 'Roblox is still starting.';
+      return;
+    }
+    Promise.resolve(window.openProxied(url, root)).then(function (f) {
+      var n = 0;
+      var timer = setInterval(function () {
+        if (!root.isConnected || ++n > 28) { clearInterval(timer); return; }
+        var fr = (f && f.frame) || root.querySelector('iframe');
+        if (!fr) return;
+        try {
+          var doc = fr.contentDocument;
+          if (!doc) return;
+          var nodes = doc.querySelectorAll('button, a, [role="button"]');
+          for (var i = 0; i < nodes.length; i++) {
+            var label = String(nodes[i].textContent || '').replace(/\s+/g, ' ').trim();
+            if (/^(play|jugar|launch|iniciar)$/i.test(label) || /play now|jugar ahora|launch game/i.test(label)) {
+              nodes[i].click();
+              clearInterval(timer);
+              return;
+            }
+          }
+        } catch (e) {}
+      }, 700);
+    }).catch(function () {});
   }
   function inAppPage(url) {
     return function (root) {
@@ -2615,6 +2640,7 @@ function driftSite(url) {
       thinkStyle.onchange = function () {
         try { localStorage.setItem('wos:think-style', thinkStyle.value); } catch (e) {}
         document.body.dataset.thinkStyle = thinkStyle.value;
+        if (typeof window.__driftSyncThink === 'function') window.__driftSyncThink();
       };
     }
     wireSwitch(panel.querySelector('#drift-hub-sw'), function (on) {
@@ -3799,9 +3825,15 @@ function driftSite(url) {
     function tick() {
       if (!document.getElementById('drift-bg-clock')) return;
       var d = new Date();
-      el.textContent = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      var next = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      if (el.textContent !== next) {
+        el.textContent = next;
+        if (typeof layout === 'function') layout();
+      }
       setTimeout(tick, 1000);
     }
+    el.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (typeof layout === 'function') layout();
     tick();
   }
 
@@ -3885,42 +3917,40 @@ function driftSite(url) {
   }
 
   function installVersionBadge() {
-    if (document.getElementById('drift-version')) return;
-    var v = document.createElement('div');
-    v.id = 'drift-version';
-    v.textContent = 'Drift 2.1 · ' + (localStorage.getItem('wos:build') || '2c944b4+');
-    v.style.cssText = 'position:fixed;right:10px;bottom:6px;z-index:5;font:11px system-ui;color:rgba(255,255,255,.55);pointer-events:none;user-select:none';
-    document.body.appendChild(v);
-    try { localStorage.setItem('wos:build', '20261102-snowhub'); } catch (e) {}
+    var v = document.getElementById('drift-version');
+    if (v) v.remove();
   }
 
-  var THINK_GIFS = {
-    claude: 'https://media.tenor.com/images/placeholder-claude.gif',
-    chatgpt: 'https://media.tenor.com/images/placeholder-chatgpt.gif',
-    grok: 'https://media.tenor.com/images/placeholder-grok.gif',
-    gemini: 'https://media.tenor.com/images/placeholder-gemini.gif',
-    deepseek: 'https://media.tenor.com/images/placeholder-deepseek.gif',
-    default: ''
-  };
-  function showThinkGif(style) {
-    var old = document.getElementById('drift-think-gif');
-    if (old) old.remove();
-    var url = THINK_GIFS[style] || THINK_GIFS.default;
-    if (!url || url.indexOf('placeholder') !== -1) return;
-    var img = document.createElement('img');
-    img.id = 'drift-think-gif';
-    img.src = url;
-    img.alt = style;
-    img.style.cssText = 'position:absolute;width:28px;height:28px;border-radius:6px;object-fit:contain;z-index:5;pointer-events:none';
-    var am = document.querySelector('.am');
-    if (am) am.appendChild(img);
+  var DS_WHALE = '<svg viewBox="0 0 24 24" width="40" height="40" aria-hidden="true"><path fill="#4D6BFE" d="M23.748 4.482c-.254-.124-.364.113-.512.234-.051.039-.094.09-.137.136-.372.397-.806.657-1.373.626-.829-.046-1.537.214-2.163.848-.133-.782-.575-1.248-1.247-1.548-.352-.156-.708-.311-.955-.65-.172-.241-.219-.51-.305-.774-.055-.16-.11-.323-.293-.35-.2-.031-.278.136-.356.276-.313.572-.434 1.202-.422 1.84.027 1.436.633 2.58 1.838 3.393.137.093.172.187.129.323-.082.28-.18.552-.266.833-.055.179-.137.217-.329.14a5.526 5.526 0 01-1.736-1.18c-.857-.828-1.631-1.742-2.597-2.458a11.365 11.365 0 00-.689-.471c-.985-.957.13-1.743.388-1.836.27-.098.093-.432-.779-.428-.872.004-1.67.295-2.687.684a3.055 3.055 0 01-.465.137 9.597 9.597 0 00-2.883-.102c-1.885.21-3.39 1.102-4.497 2.623C.082 8.606-.231 10.684.152 12.85c.403 2.284 1.569 4.175 3.36 5.653 1.858 1.533 3.997 2.284 6.438 2.14 1.482-.085 3.133-.284 4.994-1.86.47.234.962.327 1.78.397.63.059 1.236-.03 1.705-.128.735-.156.684-.837.419-.961-2.155-1.004-1.682-.595-2.113-.926 1.096-1.296 2.746-2.642 3.392-7.003.05-.347.007-.565 0-.845-.004-.17.035-.237.23-.256a4.173 4.173 0 001.545-.475c1.396-.763 1.96-2.015 2.093-3.517.02-.23-.004-.467-.247-.588zM11.581 18c-2.089-1.642-3.102-2.183-3.52-2.16-.392.024-.321.471-.235.763.09.288.207.486.371.739.114.167.192.416-.113.603-.673.416-1.842-.14-1.897-.167-1.361-.802-2.5-1.86-3.301-3.307-.774-1.393-1.224-2.887-1.298-4.482-.02-.386.093-.522.477-.592a4.696 4.696 0 011.529-.039c2.132.312 3.946 1.265 5.468 2.774.868.86 1.525 1.887 2.202 2.891.72 1.066 1.494 2.082 2.48 2.914.348.292.625.514.891.677-.802.09-2.14.11-3.054-.614zm1-6.44a.306.306 0 01.415-.287.302.302 0 01.2.288.306.306 0 01-.31.307.303.303 0 01-.304-.308zm3.11 1.596c-.2.081-.399.151-.59.16a1.245 1.245 0 01-.798-.254c-.274-.23-.47-.358-.552-.758a1.73 1.73 0 01.016-.588c.07-.327-.008-.537-.239-.727-.187-.156-.426-.199-.688-.199a.559.559 0 01-.254-.078c-.11-.054-.2-.19-.114-.358.028-.054.16-.186.192-.21.356-.202.767-.136 1.146.016.352.144.618.408 1.001.782.391.451.462.576.685.914.176.265.336.537.445.848.067.195-.019.354-.25.452z"></path></svg>';
+  function thinkLiveMarkup(style) {
+    if (style === 'claude') return '<img alt="" src="/think-claude.gif">';
+    if (style === 'grok') return '<img alt="" src="/think-grok.png">';
+    if (style === 'chatgpt') return '<span class="gpt-orb"><i class="glow"></i><i class="ring"></i><i class="core"></i></span>';
+    if (style === 'deepseek') return '<span class="ds-logo">' + DS_WHALE + '</span>';
+    if (style === 'gemini') return '<span class="gem-dots"><i></i><i></i><i></i></span>';
+    return '';
   }
-  function hideThinkGif() {
-    var el = document.getElementById('drift-think-gif');
-    if (el) el.remove();
+  function syncThinkLive() {
+    var live = document.querySelector('.think-panel.live');
+    var box = document.getElementById('drift-think-live');
+    var style = (document.body.dataset.thinkStyle || 'default');
+    var html = thinkLiveMarkup(style);
+    if (!live || !html) {
+      if (box) box.remove();
+      return;
+    }
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'drift-think-live';
+    }
+    var want = 'drift-think-live style-' + style;
+    if (box.className !== want) {
+      box.className = want;
+      box.innerHTML = html;
+    }
+    if (box.parentNode !== live.parentNode || box.nextSibling !== live) live.parentNode.insertBefore(box, live);
   }
-  window.driftShowThinkGif = showThinkGif;
-  window.driftHideThinkGif = hideThinkGif;
+  window.__driftSyncThink = syncThinkLive;
   function installThinkStyles() {
     if (document.getElementById('drift-think-styles')) return;
     var st = document.createElement('style');
@@ -3935,18 +3965,27 @@ function driftSite(url) {
       @keyframes drift-jiggle { from { transform: rotate(-2.5deg); } to { transform: rotate(2.5deg); } }
       #drift-bg-clock { animation: drift-clock-fade .4s ease; }
       @keyframes drift-clock-fade { from { opacity:0 } to { opacity:1 } }
-      .think-panel.live::before { content:''; display:inline-block; width:18px; height:18px; margin-right:8px; vertical-align:middle; }
-      body[data-think-style="claude"] .think-panel.live::before { background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23D97706' d='M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z'/%3E%3C/svg%3E") center/contain no-repeat; animation: drift-blink 1s infinite; }
-      body[data-think-style="grok"] .think-panel.live::before { border-radius:50%; background:radial-gradient(circle at 30% 30%,#7EC8FF,#0B1A36); box-shadow:0 0 12px #7EC8FF; animation: drift-pulse 1.2s infinite; }
-      body[data-think-style="chatgpt"] .think-panel.live::before { border-radius:50%; background:radial-gradient(circle,#8b7bff,#6fc3ff); animation: drift-wobble 1.4s infinite; }
-      body[data-think-style="deepseek"] .think-panel.live::before { border-radius:4px; background:linear-gradient(135deg,#4F46E5,#06B6D4); animation: drift-spin 1.6s linear infinite; }
-      body[data-think-style="gemini"] .think-panel.live::before { background:none; width:36px; }
-      body[data-think-style="gemini"] .think-panel.live::after { content:''; display:inline-block; width:6px; height:6px; border-radius:50%; background:#4285F4; margin:0 2px; animation: drift-dot 1.2s infinite; box-shadow:10px 0 0 #EA4335, 20px 0 0 #FBBC05; }
-      @keyframes drift-blink { 0%,100%{opacity:1} 50%{opacity:.35} }
-      @keyframes drift-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.15)} }
-      @keyframes drift-wobble { 0%,100%{transform:scale(1) rotate(0)} 50%{transform:scale(1.08) rotate(8deg)} }
-      @keyframes drift-spin { to{transform:rotate(360deg)} }
-      @keyframes drift-dot { 0%,80%,100%{opacity:.3} 40%{opacity:1} }
+      .drift-think-live{display:flex;align-items:center;justify-content:flex-start;margin:6px 0 2px;min-height:52px;pointer-events:none}
+      .drift-think-live img{width:52px;height:52px;object-fit:contain;background:transparent}
+      .drift-think-live.style-claude img{width:54px;height:54px;mix-blend-mode:multiply}
+      .drift-think-live.style-grok img{width:56px;height:56px;border-radius:50%;object-fit:cover;background:#05070c;animation:grok-idle 1.7s ease-in-out infinite}
+      .gpt-orb{width:48px;height:48px;position:relative;display:block}
+      .gpt-orb i{position:absolute;display:block;border-radius:50%}
+      .gpt-orb .glow{inset:-8px;background:radial-gradient(circle,rgba(96,165,250,.72),rgba(37,99,235,.18) 46%,transparent 70%);filter:blur(2px);animation:gpt-pulse 1.5s ease-in-out infinite}
+      .gpt-orb .ring{inset:0;background:radial-gradient(circle at 36% 30%,#fff 0 8%,#dbeafe 14%,#60a5fa 28%,#2563eb 52%,#1e3a8a 70%,#93c5fd 86%,#1d4ed8 100%);box-shadow:0 0 16px #3b82f6,inset 0 0 10px rgba(255,255,255,.65);animation:gpt-spin 2.6s linear infinite}
+      .gpt-orb .core{left:11px;top:8px;width:16px;height:11px;background:radial-gradient(circle,#fff 0%,rgba(255,255,255,.15) 72%,transparent 76%);filter:blur(.3px);animation:gpt-pulse 1.15s ease-in-out infinite}
+      .ds-logo{width:46px;height:46px;display:grid;place-items:center;animation:ds-swim 1.5s ease-in-out infinite;filter:drop-shadow(0 0 8px rgba(77,107,254,.65))}
+      .ds-logo svg{width:42px;height:42px}
+      .gem-dots{display:flex;gap:7px;align-items:flex-end;height:32px;padding:0 2px 4px}
+      .gem-dots i{width:10px;height:10px;border-radius:50%;display:block;animation:gem-b .9s ease-in-out infinite}
+      .gem-dots i:nth-child(1){background:#4285F4}
+      .gem-dots i:nth-child(2){background:#EA4335;animation-delay:.15s}
+      .gem-dots i:nth-child(3){background:#FBBC05;animation-delay:.3s}
+      @keyframes grok-idle{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-6px) rotate(4deg)}}
+      @keyframes gpt-spin{to{transform:rotate(360deg)}}
+      @keyframes gpt-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.62;transform:scale(.9)}}
+      @keyframes ds-swim{0%,100%{transform:translate(0,1px) rotate(-8deg)}50%{transform:translate(4px,-6px) rotate(6deg)}}
+      @keyframes gem-b{0%,70%,100%{transform:translateY(0) scale(.85);opacity:.55}35%{transform:translateY(-10px) scale(1.15);opacity:1}}
     `;
     document.head.appendChild(st);
     try { document.body.dataset.thinkStyle = localStorage.getItem('wos:think-style') || 'default'; } catch (e) {}
@@ -3954,7 +3993,11 @@ function driftSite(url) {
     try { if (localStorage.getItem('wos:bg-clock') === '1') { document.body.classList.add('drift-bg-clock'); installBgClock(true); } } catch (e) {}
     try { if (localStorage.getItem('wos:macos-desk') === '1') { document.body.classList.add('drift-macos-desk'); setTimeout(installMacosDesks, 600); } } catch (e) {}
     try { if (localStorage.getItem('wos:round-tb') === '1') document.body.classList.add('drift-round-tb'); } catch (e) {}
-
+    if (!window.__driftThinkObs) {
+      window.__driftThinkObs = new MutationObserver(function () { syncThinkLive(); });
+      window.__driftThinkObs.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] });
+    }
+    syncThinkLive();
   }
 
   window.openSettingsPanel = openSettingsPanel;
