@@ -1911,6 +1911,7 @@ function acct(){
 }
 function authUI(mode='in'){
   const up=mode==='up', forced=!S.user, m=document.createElement('div');m.className='auth';
+  if(forced) document.body.classList.add('drift-login');
   m.innerHTML=`${forced?'':'<button class="ax" aria-label="Close">✕</button>'}<div class="ab"><div class="lg">Drift OS</div><p>${up?'Regístrate para guardar tus chats.':'Inicia sesión para guardar tus chats.'}</p><input id="au" placeholder="Usuario" autocomplete="username" autocapitalize="none"><input id="ap" type="password" placeholder="Contraseña" autocomplete="${up?'new-password':'current-password'}">${up?'<input id="ac" type="password" placeholder="Confirmar contraseña" autocomplete="new-password">':''}<small id="am">La cuenta guarda en este dispositivo tus chats de IA y de Chat.</small><button class="go">${up?'Registrarme':'Iniciar sesión'}</button><a class="sw">${up?'¿Ya tienes cuenta? Inicia sesión':'¿Necesitas una cuenta? Regístrate'}</a></div>`;
   document.body.appendChild(m);
   const ok=async()=>{
@@ -1920,6 +1921,7 @@ function authUI(mode='in'){
     let h;try{h=await H(u,p)}catch{msg.textContent='Tu navegador no permite crear cuentas aquí.';return}
     if(up){if(U[u]){msg.textContent='Ese usuario ya existe.';return}U[u]=h;LS.set('wos:users',U)}
     else if(U[u]!==h){msg.textContent='Usuario o contraseña incorrectos.';return}
+    document.body.classList.remove('drift-login');
     m.remove();sw(u);
   };
   m.onclick=e=>{if(!forced&&e.target.closest('.ax'))m.remove();else if(e.target.closest('.sw')){m.remove();authUI(up?'in':'up')}else if(e.target.closest('.go'))ok()};

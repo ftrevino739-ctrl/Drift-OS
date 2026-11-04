@@ -1,7 +1,7 @@
 /* Drift fixup */
 (function () {
   'use strict';
-  window.__DRIFT_BUILD = '20261103-b';
+  window.__DRIFT_BUILD = '20261103-c';
   window.DRIFT_BEST_MODEL = window.DRIFT_BEST_MODEL || 'mistralai/mistral-large-4-0';
   window.DRIFT_CODE_MODEL = 'google/gemini-3.8-flash';
 
@@ -1184,7 +1184,14 @@ function driftSite(url) {
           return;
         }
         try { localStorage.setItem('wos:gforms', u); } catch (e) {}
-        operaPage(u, 'firefox')(root);
+        root.innerHTML = '<div style="height:100%;display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;padding:24px;text-align:center;font:14px system-ui;background:#fff;color:#111"><b style="font-size:18px">Google Forms</b><div style="max-width:420px;opacity:.7">Se abre en el navegador, sin proxy.</div><button data-again type="button" style="padding:10px 16px;border:0;border-radius:10px;background:#c5c8ce;color:#111;font-weight:700;cursor:pointer">Abrir otra vez</button></div>';
+        function openForm() {
+          var w = window.open(u, '_blank', 'noopener');
+          var again = root.querySelector('[data-again]');
+          if (!w && again) again.textContent = 'Permite las ventanas, luego pulsa Abrir otra vez';
+        }
+        root.querySelector('[data-again]').onclick = openForm;
+        openForm();
       };
     } };
     window.XAPPS.yt = { n: 'YouTube', f: youtubeApp };
@@ -1295,12 +1302,32 @@ function driftSite(url) {
           }
           if (prov === 'onlyflix') {
             try {
+              if (!root.querySelector('#drift-movies-name')) {
+                var brand = document.createElement('div');
+                brand.id = 'drift-movies-name';
+                brand.textContent = 'Drift Movies';
+                brand.style.cssText = 'position:absolute;z-index:6;left:12px;top:10px;padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.22);color:#fff;font:700 13px system-ui;pointer-events:none;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.35)';
+                root.appendChild(brand);
+              }
               var doc = fr.contentDocument;
               if (doc && !doc.getElementById('drift-of-hide')) {
                 var st = doc.createElement('style');
                 st.id = 'drift-of-hide';
                 st.textContent = '.intro,.splash,.loader,.loading,video.intro,#intro,.welcome,.ad,.ads,.popup,.modal,.overlay,[class*=ad-],[id*=ad-],[class*=pop],[class*=banner],.jw-ad,.ima-ad-container{display:none!important}body{overflow:auto!important;background:#000!important}';
                 (doc.head || doc.documentElement).appendChild(st);
+              }
+              if (doc && doc.documentElement && !doc.documentElement.getAttribute('data-drift-movies')) {
+                doc.documentElement.setAttribute('data-drift-movies', '1');
+                try { doc.title = 'Drift Movies'; } catch (e3) {}
+                try {
+                  var walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
+                  var node;
+                  while ((node = walker.nextNode())) {
+                    if (node.nodeValue && node.nodeValue.length < 48 && /onlyflix/i.test(node.nodeValue)) {
+                      node.nodeValue = node.nodeValue.replace(/onlyflix/ig, 'Drift Movies');
+                    }
+                  }
+                } catch (e4) {}
               }
             } catch (e2) {}
           }
@@ -1357,6 +1384,14 @@ function driftSite(url) {
         window.S.d.v20 = 1;
         changed = true;
         if (window.S.d.desk.indexOf('gforms') < 0) window.S.d.desk.push('gforms');
+      }
+      if (window.S && window.S.d && !window.S.d.v21) {
+        window.S.d.v21 = 1;
+        changed = true;
+        if (!window.S.d.pins) window.S.d.pins = [];
+        ['movies', 'games', 'classroom', 'roblox', 'whatsapp', 'discord'].forEach(function (id) {
+          if (window.S.d.pins.indexOf(id) < 0) window.S.d.pins.push(id);
+        });
       }
       if (changed) {
         if (typeof save === 'function') save();
@@ -2528,9 +2563,9 @@ function driftSite(url) {
       '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="games-lib" value="poki"/> Poki</label>' +
       '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="games-lib" value="crazygames"/> CrazyGames</label></div>' +
       '<div style="margin:16px 0 14px"><b>Choose your Movies</b>' +
-      '<div style="opacity:.75;font-size:12px;margin-top:4px">Racial is the in-app catalog (Racial styles) and plays here. Onlyflix and Noah open that library. If a site says blocked, Drift uses the in-app player.</div>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Racial is the in-app catalog (Racial styles) and plays here. Drift Movies and Noah open that library. If a site says blocked, Drift uses the in-app player.</div>' +
       '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="movies-src" value="racial"/> Racial</label>' +
-      '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="movies-src" value="onlyflix"/> Onlyflix</label>' +
+      '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="movies-src" value="onlyflix"/> drift movies</label>' +
       '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer"><input type="radio" name="movies-src" value="noah"/> Noah</label></div>' +
       '<div style="margin-bottom:12px"><b style="display:block;margin-bottom:8px">Gimkit injection default</b>' + opts + '</div></section>' +
       '<section data-sec="tools" style="display:none">' +
@@ -2678,27 +2713,37 @@ function driftSite(url) {
     var classJs = 'javascript:(' + driftBypassBody.toString() + ')();';
     var guestJs = classJs;
     function googleMenuBody() {
-      if (!/google\./i.test(location.hostname)) { alert('Ábrelo en una página de Google.'); return; }
+      if (!/google\./i.test(location.hostname)) { alert('Open this on a Google page.'); return; }
       var old = document.getElementById('drift-gmenu');
       if (old) { old.remove(); return; }
+      var css = document.createElement('style');
+      css.textContent = '#drift-gmenu{position:fixed;right:12px;bottom:12px;z-index:2147483646;width:min(340px,calc(100% - 24px));max-height:78vh;overflow:auto;color:#111;border-radius:22px;padding:12px;font:13px/1.4 system-ui,sans-serif;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.48);box-shadow:0 12px 40px rgba(0,0,0,.18);backdrop-filter:blur(22px) saturate(1.6);-webkit-backdrop-filter:blur(22px) saturate(1.6)}#drift-gmenu input,#drift-gmenu select,#drift-gmenu textarea{width:100%;box-sizing:border-box;margin-top:4px;padding:8px;border-radius:10px;border:1px solid rgba(255,255,255,.55);background:rgba(255,255,255,.5);color:#111}#drift-gmenu button{border:0;border-radius:10px;background:#c5c8ce;color:#111;font-weight:700;padding:8px 10px;cursor:pointer}#drift-gmenu [data-head] button{padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.55)}';
+      document.documentElement.appendChild(css);
       var bar = document.createElement('div');
       bar.id = 'drift-gmenu';
-      bar.style.cssText = 'position:fixed;right:12px;bottom:12px;z-index:2147483646;width:300px;max-height:70vh;overflow:auto;background:#111;color:#eee;border-radius:16px;padding:12px;font:13px/1.4 system-ui,sans-serif;box-shadow:0 12px 32px rgba(0,0,0,.4)';
-      bar.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center"><b>Bypass</b><span><button type="button" data-m="full">Abierta</button> <button type="button" data-m="mini">Poco</button> <button type="button" data-m="off">Oculta</button></span></div><div data-body><label style="display:flex;justify-content:space-between;margin-top:8px">Protector <input type="checkbox" data-k="wos:protector"></label><div style="margin-top:6px">Si hay clase <select data-k="wos:prot-class"><option value="alert">Avisar</option><option value="classroom">Avisar y Classroom</option></select></div><label style="display:block;margin-top:6px">Ocultar no educativas <input data-k="wos:kb-hide" placeholder="F9" style="width:100%;box-sizing:border-box"></label><label style="display:block;margin-top:6px">Classroom <input data-k="wos:kb-class" placeholder="F10" style="width:100%;box-sizing:border-box"></label><label style="display:block;margin-top:6px">Discovery <input data-k="wos:kb-disc" placeholder="atajo" style="width:100%;box-sizing:border-box"></label><label style="display:block;margin-top:6px">ALEKS <input data-k="wos:kb-aleks" placeholder="atajo" style="width:100%;box-sizing:border-box"></label><label style="display:block;margin-top:6px">Docs <input data-k="wos:kb-docs" placeholder="atajo" style="width:100%;box-sizing:border-box"></label></div>';
+      bar.innerHTML = '<div data-head style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b>Bypass</b><span><button type="button" data-toggle>Close</button> <button type="button" data-kill>Close taskbar</button></span></div><div data-body><div data-settings><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><b>Protector</b><input type="checkbox" data-k="wos:protector" style="width:auto"></div><div style="margin-top:8px">When a class connects<select data-k="wos:prot-class"><option value="alert">Only alert</option><option value="classroom">Alert and open Classroom</option></select></div><label style="display:block;margin-top:8px">Hide non-edu apps<input data-k="wos:kb-hide" placeholder="F9"></label><label style="display:block;margin-top:8px">Classroom<input data-k="wos:kb-class" placeholder="F10"></label><label style="display:block;margin-top:8px">Discovery<input data-k="wos:kb-disc" placeholder="shortcut"></label><label style="display:block;margin-top:8px">ALEKS<input data-k="wos:kb-aleks" placeholder="shortcut"></label><label style="display:block;margin-top:8px">Google Docs<input data-k="wos:kb-docs" placeholder="shortcut"></label><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><b>Education mode</b><input type="checkbox" data-k="wos:edu-mode" style="width:auto"></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><b>AI assistant</b><input type="checkbox" data-orb style="width:auto"></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><b>Google Lens</b><input type="checkbox" data-k="wos:lens-bypass" style="width:auto"></div><div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(0,0,0,.12)"><b>Clean search history</b><select data-clean-site><option value="docs">Google Docs</option><option value="discovery">Discovery Education</option><option value="classroom">Classroom</option><option value="canva">Canva</option><option value="other">Wikipedia</option></select><label style="display:block;margin-top:6px">Tabs (1 to 20)<input data-clean-n type="number" min="1" max="20" value="1"></label><div style="display:flex;gap:8px;margin-top:8px"><button type="button" data-clean-open style="flex:1">Open</button><button type="button" data-clean-random style="flex:1;background:transparent;border:1px solid rgba(0,0,0,.2)">Random</button></div></div><button type="button" data-ia style="width:100%;margin-top:12px">Open IA chat</button></div><div data-chat hidden><div data-log style="min-height:72px;max-height:180px;overflow:auto;white-space:pre-wrap"></div><img data-preview alt="" hidden style="max-width:100%;border-radius:12px;margin-top:6px"><input data-photo type="file" accept="image/*"><textarea data-ai placeholder="Text only" style="min-height:64px"></textarea><button type="button" data-ask style="width:100%;margin-top:8px">Send</button></div></div>';
       document.documentElement.appendChild(bar);
       var body = bar.querySelector('[data-body]');
+      var settings = bar.querySelector('[data-settings]');
+      var chat = bar.querySelector('[data-chat]');
+      var toggle = bar.querySelector('[data-toggle]');
+      var photoUrl = '';
+      var ball = null;
       function mode(m) {
         try { localStorage.setItem('wos:pass-bar', m); } catch (e) {}
-        if (body) body.style.display = m === 'mini' || m === 'off' ? 'none' : 'block';
-        bar.style.display = m === 'off' ? 'none' : 'block';
+        var off = m === 'off';
+        var open = m !== 'mini' && !off;
+        bar.style.display = off ? 'none' : 'block';
+        if (body) body.hidden = !open;
+        if (toggle) toggle.textContent = open ? 'Close' : 'Open';
         var peek = document.getElementById('drift-gmenu-peek');
-        if (m !== 'off' && peek) peek.remove();
+        if (m !== 'off' && peek) peek.style.display = 'none';
         if (m === 'off' && !peek) {
           peek = document.createElement('button');
           peek.id = 'drift-gmenu-peek';
           peek.type = 'button';
-          peek.textContent = 'Mostrar';
-          peek.style.cssText = 'display:none;position:fixed;right:10px;bottom:10px;z-index:2147483646;border:0;border-radius:999px;background:#e8e8e8;color:#111;padding:8px 12px;font:700 12px system-ui;cursor:pointer';
+          peek.textContent = 'Show';
+          peek.style.cssText = 'display:none;position:fixed;right:10px;bottom:10px;z-index:2147483646;border:0;border-radius:999px;background:rgba(255,255,255,.8);color:#111;padding:8px 12px;font:700 12px system-ui;cursor:pointer';
           peek.onclick = function () { mode('full'); };
           document.documentElement.appendChild(peek);
           window.addEventListener('pointermove', function (e) {
@@ -2711,13 +2756,94 @@ function driftSite(url) {
           });
         }
       }
-      bar.querySelectorAll('[data-m]').forEach(function (b) { b.onclick = function () { mode(b.getAttribute('data-m')); }; });
+      var saved = 'full';
+      try { saved = localStorage.getItem('wos:pass-bar') || 'full'; } catch (e) {}
+      mode(saved === 'off' ? 'off' : (saved === 'mini' ? 'mini' : 'full'));
+      toggle.onclick = function () { mode(body.hidden ? 'full' : 'mini'); };
+      bar.querySelector('[data-kill]').onclick = function () { mode('off'); };
       bar.querySelectorAll('[data-k]').forEach(function (el) {
         var k = el.getAttribute('data-k');
         try { if (el.type === 'checkbox') el.checked = localStorage.getItem(k) === '1'; else el.value = localStorage.getItem(k) || ''; } catch (e) {}
         el.onchange = function () { try { localStorage.setItem(k, el.type === 'checkbox' ? (el.checked ? '1' : '0') : el.value); } catch (e) {} };
       });
+      function showBall(on) {
+        if (!on) { if (ball) ball.remove(); ball = null; return; }
+        if (ball) return;
+        ball = document.createElement('button');
+        ball.type = 'button';
+        ball.style.cssText = 'position:fixed;right:18px;bottom:88px;z-index:2147483646;width:68px;height:68px;padding:0;border-radius:50%;border:2px solid rgba(255,255,255,.45);background:#071226;overflow:hidden;cursor:grab';
+        ball.innerHTML = '<img src="https://drift.hostless.app/drift-mark.png" alt="" style="width:100%;height:100%;object-fit:cover;transform:scale(1.18);pointer-events:none">';
+        var drag = null;
+        ball.addEventListener('pointerdown', function (e) { drag = { x: e.clientX, y: e.clientY, l: ball.offsetLeft, t: ball.offsetTop, moved: false }; });
+        window.addEventListener('pointermove', function (e) {
+          if (!drag) return;
+          var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+          if (Math.abs(dx) + Math.abs(dy) > 4) drag.moved = true;
+          ball.style.left = (drag.l + dx) + 'px';
+          ball.style.top = (drag.t + dy) + 'px';
+          ball.style.right = 'auto';
+          ball.style.bottom = 'auto';
+        });
+        window.addEventListener('pointerup', function () {
+          if (drag && !drag.moved) { mode('full'); settings.hidden = true; chat.hidden = false; bar.querySelector('[data-ia]').textContent = 'Settings'; }
+          drag = null;
+        });
+        document.documentElement.appendChild(ball);
+      }
+      var orb = bar.querySelector('[data-orb]');
+      try { orb.checked = localStorage.getItem('wos:ai-orb') === '1'; } catch (e) {}
+      showBall(orb.checked);
+      orb.onchange = function () { try { localStorage.setItem('wos:ai-orb', orb.checked ? '1' : '0'); } catch (e) {} showBall(orb.checked); };
+      var sites = { docs: 'https://docs.google.com/', discovery: 'https://www.discoveryeducation.com/', classroom: 'https://classroom.google.com/', canva: 'https://www.canva.com/', other: 'https://en.wikipedia.org/' };
+      function openClean(list) {
+        var blocked = false;
+        list.forEach(function (u) { var w = null; try { w = window.open(u, '_blank', 'popup,width=1100,height=760'); } catch (e) { w = null; } if (!w) blocked = true; });
+        var btn = bar.querySelector('[data-clean-open]');
+        if (blocked) { btn.hidden = false; btn.textContent = 'Allow pop-ups, then press Open'; }
+        else btn.hidden = true;
+      }
+      bar.querySelector('[data-clean-open]').onclick = function () {
+        var n = parseInt(bar.querySelector('[data-clean-n]').value, 10) || 1;
+        if (n < 1) n = 1; if (n > 20) n = 20;
+        var u = sites[bar.querySelector('[data-clean-site]').value] || sites.other;
+        var list = []; for (var i = 0; i < n; i++) list.push(u); openClean(list);
+      };
+      bar.querySelector('[data-clean-random]').onclick = function () {
+        var list = [sites.docs, sites.discovery, sites.classroom, sites.canva];
+        for (var i = list.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = list[i]; list[i] = list[j]; list[j] = t; }
+        openClean(list);
+      };
+      bar.querySelector('[data-ia]').onclick = function () {
+        var showChat = !settings.hidden;
+        settings.hidden = showChat;
+        chat.hidden = !showChat;
+        this.textContent = showChat ? 'Settings' : 'Open IA chat';
+      };
+      bar.querySelector('[data-photo]').onchange = function () {
+        var file = this.files && this.files[0];
+        photoUrl = '';
+        var img = bar.querySelector('[data-preview]');
+        if (!file) { img.hidden = true; return; }
+        var reader = new FileReader();
+        reader.onload = function () { photoUrl = String(reader.result || ''); img.src = photoUrl; img.hidden = false; };
+        reader.readAsDataURL(file);
+      };
+      bar.querySelector('[data-ask]').onclick = function () {
+        var q = bar.querySelector('[data-ai]').value.trim();
+        var log = bar.querySelector('[data-log]');
+        if (!q && !photoUrl) return;
+        bar.querySelector('[data-ai]').value = '';
+        log.textContent = (log.textContent ? log.textContent + '\n' : '') + (q || 'Photo');
+        var content = photoUrl ? [{ type: 'text', text: q || 'What is in this photo?' }, { type: 'image_url', image_url: { url: photoUrl } }] : (q || 'Hello');
+        photoUrl = '';
+        bar.querySelector('[data-preview]').hidden = true;
+        fetch('https://drift.hostless.app/api/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'smart', max_tokens: 1200, messages: [{ role: 'user', content: content }], system: 'You are Drift. Reply with text only. Never write code and never use a fenced block. Answer in the user language. Be complete.' }) }).then(function (r) { return r.json(); }).then(function (j) {
+          var text = ((j.content || []).map(function (x) { return x.text || ''; }).join('')) || 'No answer.';
+          log.textContent += '\n' + text.replace(/```[\s\S]*?```/g, '').trim();
+        }).catch(function () { log.textContent += '\nNo answer.'; });
+      };
       window.addEventListener('keydown', function (e) {
+        if (e.target && /input|textarea|select/i.test(e.target.tagName || '')) return;
         function hit(spec) {
           spec = String(spec || '').trim().toLowerCase();
           if (!spec) return false;
@@ -3380,31 +3506,31 @@ function driftSite(url) {
   }
   function installGoogleApps() {
     if (!window.XAPPS) return;
-    function googleOpera(url, root) {
-      operaPage(url, 'firefox')(root);
-      var n = 0;
-      var timer = setInterval(function () {
-        if (!root.isConnected || ++n > 10) { clearInterval(timer); return; }
-        var fr = root.querySelector('iframe');
-        var text = '';
-        try { text = fr && fr.contentDocument && fr.contentDocument.body ? String(fr.contentDocument.body.innerText || '').slice(0, 500) : ''; } catch (e) { text = ''; }
-        if (/401|malformed|That.s an error/i.test(text)) {
-          clearInterval(timer);
-          var basic = /classroom/i.test(url) ? 'https://classroom.google.com/u/0/h' : 'https://mail.google.com/mail/u/0/h/';
-          if (url !== basic) operaPage(basic, 'firefox')(root);
+    function directGoogle(label, url) {
+      return function (root) {
+        root.innerHTML = '';
+        root.style.cssText = 'height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center;background:#fff;color:#111;font:14px system-ui';
+        var title = document.createElement('b');
+        title.style.fontSize = '18px';
+        title.textContent = label;
+        var note = document.createElement('div');
+        note.style.cssText = 'max-width:420px;opacity:.75';
+        note.textContent = 'Se abre en este navegador, sin proxy.';
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = 'Abrir ' + label;
+        btn.style.cssText = 'padding:10px 16px;border:0;border-radius:10px;background:#c5c8ce;color:#111;font-weight:700;cursor:pointer';
+        function open() {
+          var w = window.open(url, '_blank', 'noopener');
+          if (!w) btn.textContent = 'Permite las ventanas, luego pulsa Abrir';
         }
-      }, 900);
+        btn.onclick = open;
+        root.append(title, note, btn);
+        open();
+      };
     }
-    window.XAPPS.gmail = { n: 'Gmail', f: function (root) {
-      root.innerHTML = '';
-      root.style.cssText = 'height:100%;min-height:0;position:relative;background:#fff';
-      googleOpera('https://mail.google.com/mail/u/0/', root);
-    } };
-    window.XAPPS.classroom = { n: 'Classroom', f: function (root) {
-      root.innerHTML = '';
-      root.style.cssText = 'height:100%;min-height:0;position:relative;background:#fff';
-      googleOpera('https://classroom.google.com/', root);
-    } };
+    window.XAPPS.gmail = { n: 'Gmail', f: directGoogle('Gmail', 'https://mail.google.com/mail/u/0/') };
+    window.XAPPS.classroom = { n: 'Classroom', f: directGoogle('Classroom', 'https://classroom.google.com/') };
   }
   function installLensOrb() {
     var on = false;
@@ -4370,8 +4496,26 @@ function driftSite(url) {
       #task .tb, #task #clock, .icons .ico { color:#fff; }
       body.drift-round-tb #task { width: max-content; max-width: calc(100% - 16px); left: 50%; right: auto; transform: translateX(-50%); bottom: 8px; border-radius: 22px !important; padding: 0 14px; overflow: hidden; backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); }
       #drift-settings-win button[style*="1a73e8"], #drift-settings-win a[style*="1a73e8"] { background: #c5c8ce !important; color: #1c1e22 !important; }
-      #task { padding-right: 280px !important; box-sizing: border-box !important; }
-      #drift-join { position: absolute; right: 168px; top: 50%; transform: translateY(-50%); z-index: 6; border: 0; border-radius: 999px; background: #e8e8e8; color: #111; font: 650 12px system-ui; padding: 6px 10px; cursor: pointer; white-space: nowrap; }
+      #task { padding-right: 248px !important; box-sizing: border-box !important; }
+      #pins { margin-left: auto; min-width: 0; max-width: calc(100% - 64px); display: flex; overflow-x: auto; scrollbar-width: none; }
+      #pins::-webkit-scrollbar { display: none; }
+      #drift-join { position: absolute; right: 128px; top: 50%; transform: translateY(-50%); z-index: 6; border: 0; border-radius: 999px; background: #e8e8e8; color: #111; font: 650 12px system-ui; padding: 6px 10px; cursor: pointer; white-space: nowrap; }
+      body.drift-login #task,
+      body.drift-login .icons,
+      body.drift-login #menu,
+      body.drift-login .win,
+      body.drift-login #drift-snow,
+      body.drift-login #drift-orb,
+      body.drift-login #drift-orb-panel,
+      body.drift-login #drift-lens-orb,
+      body.drift-login #drift-support,
+      body.drift-login #drift-bg-clock,
+      body.drift-login #drift-page-dots,
+      body.drift-login #drift-settings-btn,
+      body.drift-login #drift-hub-side,
+      body.drift-login #drift-hub-stage,
+      body.drift-login #drift-join { display: none !important; }
+      body.drift-login { background: #000 !important; }
       #drift-settings-win nav button { min-height: 40px; font-weight: 650; }
       #drift-settings-win #drift-set-main section > div { padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.06); }
       #drift-settings-win input, #drift-settings-win select, #drift-settings-win textarea { max-width: 100%; box-sizing: border-box; }
@@ -4424,30 +4568,72 @@ function driftSite(url) {
   function installTour() {
     var cur = '';
     try { cur = localStorage.getItem('wos:cur') || ''; } catch (e) {}
-    if (cur && cur !== 'null' && cur !== '""') return;
-    try { if (localStorage.getItem('wos:toured') === '1') return; } catch (e2) {}
+    var hasAccount = !!(cur && cur !== 'null' && cur !== '""');
+    try { if (localStorage.getItem('wos:tour-en') === '1') return; } catch (e2) {}
     var steps = [
-      { t: 'Fondos', d: 'El botón de fondo abre tres opciones: ver fondos, importar una foto o pegar una URL. El que elijas se queda en este dispositivo.' },
-      { t: 'Settings', d: 'Settings cambia el tamaño de las apps y de la barra, el cristal líquido, el reloj, el hub y los escritorios. OS Adapts ajusta ChromeOS, iPad, macOS, Windows y Linux.' },
-      { t: 'Apps, Tools y Bypass', d: 'Apps Settings elige la biblioteca de películas. Tools tiene el asistente, el razonamiento y Support Drift: los tres nacen apagados. Bypass guarda los atajos y el protector de clase.' }
+      { sel: '.icons', t: 'Desktop', d: 'Apps live on the desktop. Drag one to move it. Open it with a click.' },
+      { sel: '#task', t: 'Taskbar', d: 'Pinned apps sit here, close to the account button and the clock, with a small gap so they do not cover each other.' },
+      { sel: '#start', t: 'Start', d: 'Opens the full app list.' },
+      { sel: '#clock', t: 'Clock', d: 'Time and date. The account button stays just to its left.' },
+      { sel: '#drift-settings-win', nav: 'ui', t: 'Settings · UI', d: 'Home button, app size, taskbar size, liquid glass, snow, hub, background clock, macOS desktops, and the rounded taskbar.' },
+      { sel: '#drift-settings-win [data-sec="os"]', nav: 'os', t: 'Settings · OS Adapts', d: 'Fits Drift to ChromeOS, iPad, macOS, Windows, or Linux. Dynamic OS, in UI, is what unlocks these.' },
+      { sel: '#drift-settings-win [data-sec="apps"]', nav: 'apps', t: 'Settings · Apps', d: 'Choose the games library and the movie provider. Drift Movies is that provider. Racial stays the in-app catalog.' },
+      { sel: '#drift-settings-win [data-sec="tools"]', nav: 'tools', t: 'Settings · Tools', d: 'AI assistant is the Drift ball. Reasoning, Support Drift, and the switches that remove dev apps stay off until you turn them on.' },
+      { sel: '#drift-settings-win [data-sec="bypass"]', nav: 'bypass', t: 'Settings · Bypass', d: 'Keybinds, education mode, clean history, Protector, Lens, and the bookmarklets. The bypass bar uses these same controls.' }
     ];
     var i = 0;
     var veil = document.createElement('div');
     veil.id = 'drift-tour';
-    veil.style.cssText = 'position:fixed;inset:0;z-index:2147483646;background:rgba(0,0,0,.55)';
+    veil.style.cssText = 'position:fixed;inset:0;z-index:2147483645;background:transparent';
+    var hole = document.createElement('div');
+    hole.style.cssText = 'position:fixed;border:2px solid #fff;border-radius:16px;box-shadow:0 0 0 9999px rgba(0,0,0,.62);pointer-events:none;z-index:2147483645';
     var card = document.createElement('div');
-    card.style.cssText = 'position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(420px,92vw);background:#111;color:#eee;border-radius:18px;padding:18px;font:15px/1.45 system-ui';
-    veil.appendChild(card);
+    card.style.cssText = 'position:fixed;z-index:2147483647;width:min(380px,92vw);background:rgba(255,255,255,.16);color:#111;border:1px solid rgba(255,255,255,.45);border-radius:18px;padding:16px;font:15px/1.45 system-ui;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:0 12px 40px rgba(0,0,0,.28)';
+    veil.append(hole, card);
+    function target(sel) {
+      try { return document.querySelector(sel); } catch (e) { return null; }
+    }
+    function place(el) {
+      var r = el ? el.getBoundingClientRect() : { left: 24, top: 24, width: 80, height: 40, bottom: 64, right: 104 };
+      if (!el || r.width < 2) r = { left: 24, top: 24, width: Math.min(280, innerWidth - 48), height: 48, bottom: 72, right: 304 };
+      hole.style.left = Math.max(4, r.left - 6) + 'px';
+      hole.style.top = Math.max(4, r.top - 6) + 'px';
+      hole.style.width = Math.max(28, r.width + 12) + 'px';
+      hole.style.height = Math.max(28, r.height + 12) + 'px';
+      var below = r.bottom + 16;
+      if (below + 180 > innerHeight) below = Math.max(12, r.top - 190);
+      card.style.top = below + 'px';
+      card.style.left = Math.max(12, Math.min(r.left, innerWidth - 392)) + 'px';
+    }
     function paint() {
       var s = steps[i];
-      card.innerHTML = '<div style="opacity:.6;font-size:12px">' + (i + 1) + ' / ' + steps.length + '</div><b style="display:block;font-size:20px;margin:6px 0">' + s.t + '</b><p style="margin:0 0 14px">' + s.d + '</p><div style="display:flex;justify-content:space-between"><button type="button" data-skip style="border:0;background:transparent;color:#bbb;cursor:pointer">Skip tour</button><button type="button" data-next style="border:0;border-radius:999px;background:#e8e8e8;color:#111;padding:8px 14px;font-weight:700;cursor:pointer">' + (i === steps.length - 1 ? 'Listo' : 'Next') + '</button></div>';
+      if (s.nav) {
+        var panel = document.getElementById('drift-settings-win');
+        if (!panel && typeof openSettingsPanel === 'function') openSettingsPanel();
+        panel = document.getElementById('drift-settings-win');
+        if (panel) {
+          var nav = panel.querySelector('[data-nav="' + s.nav + '"]');
+          if (nav) nav.click();
+        }
+      }
+      var el = target(s.sel);
+      place(el);
+      card.innerHTML = '<div style="opacity:.65;font-size:12px">' + (i + 1) + ' / ' + steps.length + '</div><b style="display:block;font-size:18px;margin:4px 0 6px">' + s.t + '</b><p style="margin:0 0 12px">' + s.d + '</p><div style="display:flex;justify-content:space-between"><button type="button" data-skip style="border:0;background:transparent;color:#333;cursor:pointer">Skip tour</button><button type="button" data-next style="border:0;border-radius:999px;background:#e8e8e8;color:#111;padding:8px 14px;font-weight:700;cursor:pointer">' + (i === steps.length - 1 ? 'Done' : 'Next') + '</button></div>';
       card.querySelector('[data-skip]').onclick = done;
-      card.querySelector('[data-next]').onclick = function () { if (i < steps.length - 1) { i++; paint(); } else done(); };
+      card.querySelector('[data-next]').onclick = function () {
+        if (i < steps.length - 1) { i++; paint(); }
+        else done();
+      };
     }
     function done() {
-      try { localStorage.setItem('wos:toured', '1'); } catch (e3) {}
+      try { localStorage.setItem('wos:tour-en', '1'); localStorage.setItem('wos:toured', '1'); } catch (e3) {}
       veil.remove();
-      if (typeof authUI === 'function') authUI('up');
+      var panel = document.getElementById('drift-settings-win');
+      if (panel) panel.remove();
+      if (!hasAccount && typeof authUI === 'function') {
+        authUI('up');
+        document.body.classList.add('drift-login');
+      }
     }
     paint();
     document.body.appendChild(veil);
@@ -4465,8 +4651,10 @@ function driftSite(url) {
     var btn = document.getElementById('drift-join');
     if (hasAccount()) {
       if (btn) btn.remove();
+      document.body.classList.remove('drift-login');
       return;
     }
+    if (document.querySelector('.auth') && !document.getElementById('drift-tour')) document.body.classList.add('drift-login');
     if (!document.querySelector('.auth') && !document.getElementById('drift-tour') && typeof authUI === 'function') authUI('up');
     if (!btn) {
       btn = document.createElement('button');

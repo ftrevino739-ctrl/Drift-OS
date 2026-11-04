@@ -113,12 +113,12 @@ function loadAndPatchIndex() {
 	);
 
 	const tag =
-		'<script src="/drift-extras.js?v=20261103-b" defer></script>' +
-		'<script src="/chromebook-proxy.js?v=20261103-b" defer></script>' +
-		'<script src="/wayground-ai.js?v=20261103-b" defer></script>' +
-		'<script src="/drift-fixup.js?v=20261103-b" defer></script>' +
-		'<script src="/drift-userpatch.js?v=20261103-b" defer></script>' +
-		"<script>window.__DRIFT_BUILD_WANT='20261103-b';setTimeout(function(){if(window.__DRIFT_BUILD===window.__DRIFT_BUILD_WANT)return;var d=document.getElementById('drift-old');if(d)return;d=document.createElement('div');d.id='drift-old';d.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#000;color:#eee;overflow:auto;padding:28px;font:16px/1.5 system-ui';d.innerHTML='<div style=\"max-width:680px;margin:0 auto\"><b style=\"font-size:28px\">Versión vieja de Drift</b><p>Se abrió una copia guardada. Recarga forzada. No hace falta una terminal ni apagar el equipo con un comando.</p><p><b>Chrome, Edge, ChromeOS y Linux:</b> Ctrl+Shift+R. Si sigue igual, en la configuración del sitio borra los datos de Drift y entra otra vez.</p><p><b>Firefox:</b> Ctrl+Shift+R. Si sigue, Ajustes → Privacidad → borrar cookies y datos de este sitio.</p><p><b>Safari en Mac:</b> Opción+Comando+E y luego Comando+R. En iPhone o iPad: Ajustes → Safari → borrar historial y datos del sitio, o quita el acceso directo y ábrelo de nuevo.</p><p><b>Windows:</b> cierra el navegador desde la barra de tareas y ábrelo otra vez. El último paso, en cualquier sistema, es reiniciar el dispositivo desde el menú de apagado, no desde la terminal.</p></div>';document.body.appendChild(d);},2500);</script>" +
+		'<script src="/drift-extras.js?v=20261103-c" defer></script>' +
+		'<script src="/chromebook-proxy.js?v=20261103-c" defer></script>' +
+		'<script src="/wayground-ai.js?v=20261103-c" defer></script>' +
+		'<script src="/drift-fixup.js?v=20261103-c" defer></script>' +
+		'<script src="/drift-userpatch.js?v=20261103-c" defer></script>' +
+		"<script>window.__DRIFT_BUILD_WANT='20261103-c';setTimeout(function(){if(window.__DRIFT_BUILD===window.__DRIFT_BUILD_WANT)return;var d=document.getElementById('drift-old');if(d)return;d=document.createElement('div');d.id='drift-old';d.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#000;color:#eee;overflow:auto;padding:28px;font:16px/1.5 system-ui';d.innerHTML='<div style=\"max-width:680px;margin:0 auto\"><b style=\"font-size:28px\">Versión vieja de Drift</b><p>Se abrió una copia guardada. Recarga forzada. No hace falta una terminal ni apagar el equipo con un comando.</p><p><b>Chrome, Edge, ChromeOS y Linux:</b> Ctrl+Shift+R. Si sigue igual, en la configuración del sitio borra los datos de Drift y entra otra vez.</p><p><b>Firefox:</b> Ctrl+Shift+R. Si sigue, Ajustes → Privacidad → borrar cookies y datos de este sitio.</p><p><b>Safari en Mac:</b> Opción+Comando+E y luego Comando+R. En iPhone o iPad: Ajustes → Safari → borrar historial y datos del sitio, o quita el acceso directo y ábrelo de nuevo.</p><p><b>Windows:</b> cierra el navegador desde la barra de tareas y ábrelo otra vez. El último paso, en cualquier sistema, es reiniciar el dispositivo desde el menú de apagado, no desde la terminal.</p></div>';document.body.appendChild(d);},2500);</script>" +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +
@@ -222,7 +222,14 @@ fastify.get("/mod", async (_req, reply) => {
 	return reply.type("text/html; charset=utf-8").send(fs.readFileSync(path.join(publicPath, "desk.html"), "utf8"));
 });
 
+fastify.options("/api/ai", async (_req, reply) => {
+	reply.header("access-control-allow-origin", "*");
+	reply.header("access-control-allow-methods", "POST, OPTIONS");
+	reply.header("access-control-allow-headers", "content-type");
+	return reply.code(204).send();
+});
 fastify.post("/api/ai", { bodyLimit: 6 * 1024 * 1024 }, async (req, reply) => {
+	reply.header("access-control-allow-origin", "*");
 	const body = req.body && typeof req.body === "object" ? req.body : {};
 	const incoming = Array.isArray(body.messages) ? body.messages.slice(0, 40) : [];
 	const chat = [];
@@ -230,17 +237,39 @@ fastify.post("/api/ai", { bodyLimit: 6 * 1024 * 1024 }, async (req, reply) => {
 	if (system) chat.push({ role: "system", content: system });
 	for (const m of incoming) {
 		if (!m) continue;
-		const content = typeof m.content === "string" ? m.content : JSON.stringify(m.content || "");
-		if (!content) continue;
-		chat.push({ role: m.role === "assistant" ? "assistant" : "user", content: content.slice(0, 120000) });
+		let content = m.content;
+		if (typeof content === "string") content = content.slice(0, 120000);
+		else if (Array.isArray(content)) {
+			const parts = [];
+			for (const p of content) {
+				if (!p || typeof p !== "object") continue;
+				if (p.type === "text") parts.push({ type: "text", text: String(p.text || "").slice(0, 8000) });
+				else if (p.type === "image_url") {
+					const url = String((p.image_url && p.image_url.url) || "");
+					if (/^data:image\/(png|jpe?g|webp|gif);base64,/i.test(url) && url.length < 3500000) parts.push({ type: "image_url", image_url: { url } });
+				}
+			}
+			content = parts.length ? parts : "";
+		} else content = "";
+		if (!content || (Array.isArray(content) && !content.length)) continue;
+		chat.push({ role: m.role === "assistant" ? "assistant" : "user", content });
 	}
 	if (!chat.length) chat.push({ role: "user", content: "Hello" });
+	const hasImage = chat.some((m) => Array.isArray(m.content) && m.content.some((p) => p.type === "image_url"));
+	const smart = hasImage || body.model === "smart" || body.model === "groq-llama";
+	const modelName = hasImage ? "meta-llama/llama-4-scout-17b-16e-instruct" : (smart ? "llama-3.3-70b-versatile" : "llama-3.1-8b-instant");
 	const maxTokens = Math.min(16384, Math.max(256, Number(body.max_tokens) || 4096));
-	async function fromChat(url, key, modelName) {
+	function flatChat() {
+		return chat.map((m) => ({
+			role: m.role,
+			content: typeof m.content === "string" ? m.content : m.content.filter((p) => p.type === "text").map((p) => p.text).join("\n"),
+		}));
+	}
+	async function fromChat(url, key, name, messages) {
 		const r = await fetch(url, {
 			method: "POST",
 			headers: { "content-type": "application/json", authorization: "Bearer " + key },
-			body: JSON.stringify({ model: modelName, messages: chat, max_tokens: maxTokens }),
+			body: JSON.stringify({ model: name, messages, max_tokens: maxTokens }),
 			signal: AbortSignal.timeout(55000),
 		});
 		if (!r.ok) throw new Error("upstream");
@@ -251,15 +280,18 @@ fastify.post("/api/ai", { bodyLimit: 6 * 1024 * 1024 }, async (req, reply) => {
 	}
 	let text = "";
 	try {
-		if (process.env.GROQ_KEY) text = await fromChat("https://api.groq.com/openai/v1/chat/completions", process.env.GROQ_KEY, "llama-3.1-8b-instant");
-		else if (process.env.OPENROUTER_KEY) text = await fromChat("https://openrouter.ai/api/v1/chat/completions", process.env.OPENROUTER_KEY, "meta-llama/llama-3.2-3b-instruct:free");
+		if (process.env.GROQ_KEY) text = await fromChat("https://api.groq.com/openai/v1/chat/completions", process.env.GROQ_KEY, modelName, chat);
+		else if (process.env.OPENROUTER_KEY) text = await fromChat("https://openrouter.ai/api/v1/chat/completions", process.env.OPENROUTER_KEY, smart ? "meta-llama/llama-3.3-70b-instruct:free" : "meta-llama/llama-3.2-3b-instruct:free", flatChat());
 	} catch { text = ""; }
+	if (!text && hasImage && process.env.GROQ_KEY) {
+		try { text = await fromChat("https://api.groq.com/openai/v1/chat/completions", process.env.GROQ_KEY, "llama-3.3-70b-versatile", flatChat()); } catch { text = ""; }
+	}
 	if (!text) {
 		try {
 			const r = await fetch("https://text.pollinations.ai/openai", {
 				method: "POST",
 				headers: { "content-type": "application/json" },
-				body: JSON.stringify({ model: "llama", messages: chat, max_tokens: maxTokens }),
+				body: JSON.stringify({ model: "llama", messages: flatChat(), max_tokens: maxTokens }),
 				signal: AbortSignal.timeout(55000),
 			});
 			const j = await r.json();
