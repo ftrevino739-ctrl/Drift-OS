@@ -113,12 +113,12 @@ function loadAndPatchIndex() {
 	);
 
 	const tag =
-		'<script src="/drift-extras.js?v=20261103-c" defer></script>' +
-		'<script src="/chromebook-proxy.js?v=20261103-c" defer></script>' +
-		'<script src="/wayground-ai.js?v=20261103-c" defer></script>' +
-		'<script src="/drift-fixup.js?v=20261103-c" defer></script>' +
-		'<script src="/drift-userpatch.js?v=20261103-c" defer></script>' +
-		"<script>window.__DRIFT_BUILD_WANT='20261103-c';setTimeout(function(){if(window.__DRIFT_BUILD===window.__DRIFT_BUILD_WANT)return;var d=document.getElementById('drift-old');if(d)return;d=document.createElement('div');d.id='drift-old';d.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#000;color:#eee;overflow:auto;padding:28px;font:16px/1.5 system-ui';d.innerHTML='<div style=\"max-width:680px;margin:0 auto\"><b style=\"font-size:28px\">Versión vieja de Drift</b><p>Se abrió una copia guardada. Recarga forzada. No hace falta una terminal ni apagar el equipo con un comando.</p><p><b>Chrome, Edge, ChromeOS y Linux:</b> Ctrl+Shift+R. Si sigue igual, en la configuración del sitio borra los datos de Drift y entra otra vez.</p><p><b>Firefox:</b> Ctrl+Shift+R. Si sigue, Ajustes → Privacidad → borrar cookies y datos de este sitio.</p><p><b>Safari en Mac:</b> Opción+Comando+E y luego Comando+R. En iPhone o iPad: Ajustes → Safari → borrar historial y datos del sitio, o quita el acceso directo y ábrelo de nuevo.</p><p><b>Windows:</b> cierra el navegador desde la barra de tareas y ábrelo otra vez. El último paso, en cualquier sistema, es reiniciar el dispositivo desde el menú de apagado, no desde la terminal.</p></div>';document.body.appendChild(d);},2500);</script>" +
+		'<script src="/drift-extras.js?v=20261103-d" defer></script>' +
+		'<script src="/chromebook-proxy.js?v=20261103-d" defer></script>' +
+		'<script src="/wayground-ai.js?v=20261103-d" defer></script>' +
+		'<script src="/drift-fixup.js?v=20261103-d" defer></script>' +
+		'<script src="/drift-userpatch.js?v=20261103-d" defer></script>' +
+		"<script>window.__DRIFT_BUILD_WANT='20261103-d';setTimeout(function(){if(window.__DRIFT_BUILD===window.__DRIFT_BUILD_WANT)return;var d=document.getElementById('drift-old');if(d)return;d=document.createElement('div');d.id='drift-old';d.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#000;color:#eee;overflow:auto;padding:28px;font:16px/1.5 system-ui';d.innerHTML='<div style=\"max-width:680px;margin:0 auto\"><b style=\"font-size:28px\">Versión vieja de Drift</b><p>Se abrió una copia guardada. Recarga forzada. No hace falta una terminal ni apagar el equipo con un comando.</p><p><b>Chrome, Edge, ChromeOS y Linux:</b> Ctrl+Shift+R. Si sigue igual, en la configuración del sitio borra los datos de Drift y entra otra vez.</p><p><b>Firefox:</b> Ctrl+Shift+R. Si sigue, Ajustes → Privacidad → borrar cookies y datos de este sitio.</p><p><b>Safari en Mac:</b> Opción+Comando+E y luego Comando+R. En iPhone o iPad: Ajustes → Safari → borrar historial y datos del sitio, o quita el acceso directo y ábrelo de nuevo.</p><p><b>Windows:</b> cierra el navegador desde la barra de tareas y ábrelo otra vez. El último paso, en cualquier sistema, es reiniciar el dispositivo desde el menú de apagado, no desde la terminal.</p></div>';document.body.appendChild(d);},2500);</script>" +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +
@@ -338,7 +338,8 @@ async function duckChat(model, messages) {
 		if (!data || data === "[DONE]") continue;
 		try {
 			const j = JSON.parse(data);
-			if (j && j.message) text += j.message;
+			if (j && (j.action === "error" || j.error)) continue;
+			if (j && j.message && !/talked\s+to+\s*much/i.test(j.message)) text += j.message;
 		} catch {}
 	}
 	return text.trim();
@@ -398,16 +399,37 @@ fastify.post("/api/duck", { bodyLimit: 1024 * 1024 }, async (req, reply) => {
 	};
 	const who = names[model] || ("the DuckDuckGo model " + model + ". You are not ChatGPT.");
 	const primed = [{ role: "user", content: "For this chat you are " + who + " If asked what model you are, answer with that name only." }, { role: "assistant", content: "Understood." }].concat(messages);
+	function stripDuck(t) {
+		return String(t || "").replace(/[^.!?\n]*talked\s+to+\s*much[^.!?\n]*[.!?]?/gi, "").trim();
+	}
+	function duckBad(t) {
+		t = stripDuck(t);
+		return !t || /did not (answer|offer|respond)|DuckDuckGo did not/i.test(t);
+	}
 	let text = "";
-	try { text = await duckChat(model, primed); } catch { duckVqd = ""; text = ""; }
-	if (!text || /did not (answer|offer|respond)|DuckDuckGo did not/i.test(text)) {
+	try { text = stripDuck(await duckChat(model, primed)); } catch { duckVqd = ""; text = ""; }
+	if (duckBad(text)) {
+		duckVqd = "";
+		try { text = stripDuck(await duckChat(model, primed)); } catch { text = ""; }
+	}
+	if (duckBad(text)) {
+		try { text = stripDuck(await fastAnswer(messages)); } catch { text = ""; }
+	}
+	if (duckBad(text)) {
 		return reply.code(502).send({ error: { message: "Duck no contestó. Vuelve a intentar." } });
 	}
 	reply.header("cache-control", "no-store");
 	return { content: [{ type: "text", text }] };
 });
 
+fastify.options("/api/gemini", async (_req, reply) => {
+	reply.header("access-control-allow-origin", "*");
+	reply.header("access-control-allow-methods", "POST, OPTIONS");
+	reply.header("access-control-allow-headers", "content-type");
+	return reply.code(204).send();
+});
 fastify.post("/api/gemini", { bodyLimit: 6 * 1024 * 1024 }, async (req, reply) => {
+	reply.header("access-control-allow-origin", "*");
 	const key = process.env.GEMINI_API_KEY || "";
 	if (!key) return reply.code(404).send({ error: "no-key" });
 	const models = ["gemini-3.8-flash", "gemini-2.5-flash"];

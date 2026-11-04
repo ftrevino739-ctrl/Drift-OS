@@ -1,7 +1,7 @@
 /* Drift fixup */
 (function () {
   'use strict';
-  window.__DRIFT_BUILD = '20261103-c';
+  window.__DRIFT_BUILD = '20261103-d';
   window.DRIFT_BEST_MODEL = window.DRIFT_BEST_MODEL || 'mistralai/mistral-large-4-0';
   window.DRIFT_CODE_MODEL = 'google/gemini-3.8-flash';
 
@@ -2715,20 +2715,51 @@ function driftSite(url) {
     function googleMenuBody() {
       if (!/google\./i.test(location.hostname)) { alert('Open this on a Google page.'); return; }
       var old = document.getElementById('drift-gmenu');
-      if (old) { old.remove(); return; }
-      var css = document.createElement('style');
-      css.textContent = '#drift-gmenu{position:fixed;right:12px;bottom:12px;z-index:2147483646;width:min(340px,calc(100% - 24px));max-height:78vh;overflow:auto;color:#111;border-radius:22px;padding:12px;font:13px/1.4 system-ui,sans-serif;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.48);box-shadow:0 12px 40px rgba(0,0,0,.18);backdrop-filter:blur(22px) saturate(1.6);-webkit-backdrop-filter:blur(22px) saturate(1.6)}#drift-gmenu input,#drift-gmenu select,#drift-gmenu textarea{width:100%;box-sizing:border-box;margin-top:4px;padding:8px;border-radius:10px;border:1px solid rgba(255,255,255,.55);background:rgba(255,255,255,.5);color:#111}#drift-gmenu button{border:0;border-radius:10px;background:#c5c8ce;color:#111;font-weight:700;padding:8px 10px;cursor:pointer}#drift-gmenu [data-head] button{padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.55)}';
-      document.documentElement.appendChild(css);
+      if (old) { old.remove(); window.__driftGBar = null; return; }
+      var css = document.getElementById('drift-gmenu-css');
+      if (!css) {
+        css = document.createElement('style');
+        css.id = 'drift-gmenu-css';
+        css.textContent = '#drift-gmenu{position:fixed;right:12px;bottom:12px;z-index:2147483646;width:min(340px,calc(100vw - 24px));min-width:220px;min-height:160px;max-height:86vh;overflow:auto;resize:both;color:#111;border-radius:22px;padding:12px;font:13px/1.4 system-ui,sans-serif;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.48);box-shadow:0 12px 40px rgba(0,0,0,.18);backdrop-filter:blur(22px) saturate(1.6)}#drift-gmenu input,#drift-gmenu select,#drift-gmenu textarea{width:100%;box-sizing:border-box;margin-top:4px;padding:8px;border-radius:10px;border:1px solid rgba(255,255,255,.55);background:rgba(255,255,255,.5);color:#111}#drift-gmenu button{border:0;border-radius:10px;background:#c5c8ce;color:#111;font-weight:700;padding:8px 10px;cursor:pointer}#drift-gmenu [data-head]{cursor:move;user-select:none}#drift-gmenu [data-head] button{padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.55)}#drift-gmenu [data-log]{display:flex;flex-direction:column;gap:6px;min-height:72px;max-height:220px;overflow:auto}#drift-gmenu .u{align-self:flex-end;max-width:86%;background:#1a73e8;color:#fff;border-radius:12px 12px 4px 12px;padding:6px 8px;white-space:pre-wrap}#drift-gmenu .a{align-self:flex-start;max-width:86%;background:rgba(255,255,255,.78);color:#111;border-radius:12px 12px 12px 4px;padding:6px 8px;white-space:pre-wrap}';
+        document.documentElement.appendChild(css);
+      }
       var bar = document.createElement('div');
       bar.id = 'drift-gmenu';
-      bar.innerHTML = '<div data-head style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b>Bypass</b><span><button type="button" data-toggle>Close</button> <button type="button" data-kill>Close taskbar</button></span></div><div data-body><div data-settings><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><b>Protector</b><input type="checkbox" data-k="wos:protector" style="width:auto"></div><div style="margin-top:8px">When a class connects<select data-k="wos:prot-class"><option value="alert">Only alert</option><option value="classroom">Alert and open Classroom</option></select></div><label style="display:block;margin-top:8px">Hide non-edu apps<input data-k="wos:kb-hide" placeholder="F9"></label><label style="display:block;margin-top:8px">Classroom<input data-k="wos:kb-class" placeholder="F10"></label><label style="display:block;margin-top:8px">Discovery<input data-k="wos:kb-disc" placeholder="shortcut"></label><label style="display:block;margin-top:8px">ALEKS<input data-k="wos:kb-aleks" placeholder="shortcut"></label><label style="display:block;margin-top:8px">Google Docs<input data-k="wos:kb-docs" placeholder="shortcut"></label><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><b>Education mode</b><input type="checkbox" data-k="wos:edu-mode" style="width:auto"></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><b>AI assistant</b><input type="checkbox" data-orb style="width:auto"></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><b>Google Lens</b><input type="checkbox" data-k="wos:lens-bypass" style="width:auto"></div><div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(0,0,0,.12)"><b>Clean search history</b><select data-clean-site><option value="docs">Google Docs</option><option value="discovery">Discovery Education</option><option value="classroom">Classroom</option><option value="canva">Canva</option><option value="other">Wikipedia</option></select><label style="display:block;margin-top:6px">Tabs (1 to 20)<input data-clean-n type="number" min="1" max="20" value="1"></label><div style="display:flex;gap:8px;margin-top:8px"><button type="button" data-clean-open style="flex:1">Open</button><button type="button" data-clean-random style="flex:1;background:transparent;border:1px solid rgba(0,0,0,.2)">Random</button></div></div><button type="button" data-ia style="width:100%;margin-top:12px">Open IA chat</button></div><div data-chat hidden><div data-log style="min-height:72px;max-height:180px;overflow:auto;white-space:pre-wrap"></div><img data-preview alt="" hidden style="max-width:100%;border-radius:12px;margin-top:6px"><input data-photo type="file" accept="image/*"><textarea data-ai placeholder="Text only" style="min-height:64px"></textarea><button type="button" data-ask style="width:100%;margin-top:8px">Send</button></div></div>';
+      bar.innerHTML = '<div data-head style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b>Bypass</b><span><button type="button" data-toggle>Close</button> <button type="button" data-kill>Close taskbar</button></span></div><div data-body><div data-settings><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><b>Protector</b><input type="checkbox" data-k="wos:protector" style="width:auto"></div><div style="margin-top:8px">When a class connects<select data-k="wos:prot-class"><option value="alert">Only alert</option><option value="classroom">Alert and open Classroom</option></select></div><div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(0,0,0,.12)"><b>custom keybinds</b><div data-kb-note style="opacity:.7;font-size:11px">Only 3 controls</div><label style="display:block;margin-top:8px">Hide non-edu apps<input data-kb="wos:kb-hide" readonly></label><label style="display:block;margin-top:8px">Classroom<input data-kb="wos:kb-class" readonly></label><label style="display:block;margin-top:8px">Discovery<input data-kb="wos:kb-disc" readonly></label><label style="display:block;margin-top:8px">ALEKS<input data-kb="wos:kb-aleks" readonly></label><label style="display:block;margin-top:8px">Google Docs<input data-kb="wos:kb-docs" readonly></label></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><b>AI assistant</b><input type="checkbox" data-orb style="width:auto"></div><div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(0,0,0,.12)"><b>Clean search history</b><select data-clean-site><option value="docs">Google Docs</option><option value="discovery">Discovery Education</option><option value="classroom">Classroom</option><option value="canva">Canva</option><option value="other">Wikipedia</option></select><label style="display:block;margin-top:6px">Tabs (1 to 20)<input data-clean-n type="number" min="1" max="20" value="1"></label><div style="display:flex;gap:8px;margin-top:8px"><button type="button" data-clean-open style="flex:1">Open</button><button type="button" data-clean-random style="flex:1;background:transparent;border:1px solid rgba(0,0,0,.2)">Random</button></div></div><button type="button" data-ia style="width:100%;margin-top:12px">Open IA chat</button></div><div data-chat hidden><button type="button" data-back style="margin-bottom:8px">Back</button><div data-log></div><input data-file type="file" style="margin-top:8px"><textarea data-ai placeholder="Ask" style="min-height:64px"></textarea><button type="button" data-ask style="width:100%;margin-top:8px">Send</button></div></div>';
       document.documentElement.appendChild(bar);
+      window.__driftGBar = bar;
       var body = bar.querySelector('[data-body]');
       var settings = bar.querySelector('[data-settings]');
       var chat = bar.querySelector('[data-chat]');
       var toggle = bar.querySelector('[data-toggle]');
-      var photoUrl = '';
-      var ball = null;
+      var turns = [];
+      var fileNote = '';
+      var fileImage = '';
+      try {
+        var box0 = JSON.parse(localStorage.getItem('wos:bar-box') || 'null');
+        if (box0 && box0.w) { bar.style.width = box0.w + 'px'; if (box0.h) bar.style.height = box0.h + 'px'; }
+        if (box0 && box0.l != null) { bar.style.left = box0.l + 'px'; bar.style.top = box0.t + 'px'; bar.style.right = 'auto'; bar.style.bottom = 'auto'; }
+      } catch (e) {}
+      function saveBox() {
+        try { localStorage.setItem('wos:bar-box', JSON.stringify({ l: bar.offsetLeft, t: bar.offsetTop, w: bar.offsetWidth, h: bar.offsetHeight })); } catch (e) {}
+      }
+      var dragBar = null;
+      var head = bar.querySelector('[data-head]');
+      if (head) {
+        head.addEventListener('pointerdown', function (e) {
+          if (e.target && e.target.closest && e.target.closest('button')) return;
+          dragBar = { x: e.clientX, y: e.clientY, l: bar.offsetLeft, t: bar.offsetTop };
+          bar.style.right = 'auto'; bar.style.bottom = 'auto';
+          try { head.setPointerCapture(e.pointerId); } catch (err) {}
+        });
+        head.addEventListener('pointermove', function (e) {
+          if (!dragBar) return;
+          bar.style.left = (dragBar.l + e.clientX - dragBar.x) + 'px';
+          bar.style.top = (dragBar.t + e.clientY - dragBar.y) + 'px';
+        });
+        head.addEventListener('pointerup', function () { if (dragBar) { dragBar = null; saveBox(); } });
+      }
+      if (window.ResizeObserver) { try { new ResizeObserver(function () { if (bar.isConnected) saveBox(); }).observe(bar); } catch (e) {} }
       function mode(m) {
         try { localStorage.setItem('wos:pass-bar', m); } catch (e) {}
         var off = m === 'off';
@@ -2746,14 +2777,17 @@ function driftSite(url) {
           peek.style.cssText = 'display:none;position:fixed;right:10px;bottom:10px;z-index:2147483646;border:0;border-radius:999px;background:rgba(255,255,255,.8);color:#111;padding:8px 12px;font:700 12px system-ui;cursor:pointer';
           peek.onclick = function () { mode('full'); };
           document.documentElement.appendChild(peek);
-          window.addEventListener('pointermove', function (e) {
-            var on = 'full';
-            try { on = localStorage.getItem('wos:pass-bar') || 'full'; } catch (err) {}
-            var p = document.getElementById('drift-gmenu-peek');
-            if (!p) return;
-            if (on !== 'off') { p.style.display = 'none'; return; }
-            p.style.display = (e.clientX > innerWidth - 120 && e.clientY > innerHeight - 80) ? 'block' : 'none';
-          });
+          if (!window.__driftGPeek) {
+            window.__driftGPeek = 1;
+            window.addEventListener('pointermove', function (e) {
+              var on = 'full';
+              try { on = localStorage.getItem('wos:pass-bar') || 'full'; } catch (err) {}
+              var p = document.getElementById('drift-gmenu-peek');
+              if (!p) return;
+              if (on !== 'off') { p.style.display = 'none'; return; }
+              p.style.display = (e.clientX > innerWidth - 120 && e.clientY > innerHeight - 80) ? 'block' : 'none';
+            });
+          }
         }
       }
       var saved = 'full';
@@ -2766,34 +2800,154 @@ function driftSite(url) {
         try { if (el.type === 'checkbox') el.checked = localStorage.getItem(k) === '1'; else el.value = localStorage.getItem(k) || ''; } catch (e) {}
         el.onchange = function () { try { localStorage.setItem(k, el.type === 'checkbox' ? (el.checked ? '1' : '0') : el.value); } catch (e) {} };
       });
+      function keyName(e) {
+        if (e.key === ' ') return 'Space';
+        if (e.key === 'Control') return 'Ctrl';
+        if (e.key === 'Alt') return 'Alt';
+        if (e.key === 'Shift') return 'Shift';
+        if (e.key === 'Meta') return 'Meta';
+        return e.key.length === 1 ? e.key.toUpperCase() : e.key;
+      }
+      function matchCombo(e, combo) {
+        var parts = String(combo || '').split('+').map(function (s) { return s.trim().toLowerCase(); }).filter(Boolean);
+        if (!parts.length) return false;
+        var down = {};
+        var pressed = window.__driftPressed || {};
+        if (e.ctrlKey) down.ctrl = 1;
+        if (e.altKey) down.alt = 1;
+        if (e.shiftKey) down.shift = 1;
+        if (e.metaKey) down.meta = 1;
+        Object.keys(pressed).forEach(function (kk) { if (pressed[kk]) down[kk] = 1; });
+        var n = keyName(e).toLowerCase();
+        if (n !== 'ctrl' && n !== 'alt' && n !== 'shift' && n !== 'meta') down[n] = 1;
+        for (var i = 0; i < parts.length; i++) if (!down[parts[i]]) return false;
+        return true;
+      }
+      bar.querySelectorAll('[data-kb]').forEach(function (el) {
+        var k = el.getAttribute('data-kb');
+        var fb = k === 'wos:kb-hide' ? 'F9' : (k === 'wos:kb-class' ? 'F10' : '');
+        var savedKb = '';
+        try { savedKb = localStorage.getItem(k) || ''; } catch (e) {}
+        el.value = savedKb || fb;
+        el.addEventListener('focus', function () { el._keys = []; el._prev = el.value; });
+        el.addEventListener('keydown', function (e) {
+          e.preventDefault(); e.stopPropagation();
+          if (!el._keys) el._keys = [];
+          var name = keyName(e);
+          if (el._keys.indexOf(name) < 0 && el._keys.length < 8) el._keys.push(name);
+          el.value = el._keys.join('+');
+          clearTimeout(el._t);
+          el._t = setTimeout(function () {
+            var next = String(el.value || '').trim();
+            var was = String(el._prev || '').trim();
+            var others = 0;
+            bar.querySelectorAll('[data-kb]').forEach(function (x) { if (x !== el && String(x.value || '').trim()) others++; });
+            if (next && !was && others >= 3) {
+              el.value = was;
+              var note = bar.querySelector('[data-kb-note]');
+              if (note) note.textContent = 'Only 3 controls';
+              el._keys = [];
+              return;
+            }
+            try { localStorage.setItem(k, next); } catch (err) {}
+            if (!next && fb) el.value = fb;
+            el._keys = [];
+            el.blur();
+          }, 700);
+        });
+      });
+      function pull(j) { return ((j && j.content) || []).map(function (x) { return x.text || ''; }).join('').trim(); }
+      async function driftFast(messages) {
+        var r = await fetch('https://holy-firefly-982c.fert0480.workers.dev/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'groq-llama-8b', max_tokens: 1200, messages: messages, system: 'You are Drift 2.1. Answer in the user language. Be complete. Read any attached file text.' }) });
+        var j = await r.json();
+        var text = pull(j);
+        if (text) return text;
+        throw new Error((j && j.error && (j.error.message || j.error)) || 'Try again.');
+      }
+      async function driftVision(data, ask) {
+        var text = '';
+        try {
+          var body = { systemInstruction: { parts: [{ text: 'You are Drift 2.1. The user is showing you a screenshot. Answer about what is visible, in their language, in one complete reply. Never say Gemini.' }] }, contents: [{ role: 'user', parts: [{ inlineData: { mimeType: 'image/jpeg', data: data } }, { text: ask }]}], generationConfig: { maxOutputTokens: 2048, temperature: 0.4 } };
+          var r = await fetch('https://drift.hostless.app/api/gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+          var j = await r.json();
+          if (r.ok) {
+            var parts = ((((j.candidates || [])[0] || {}).content || {}).parts || []);
+            text = parts.map(function (p) { return p.text || ''; }).join('').trim();
+          }
+        } catch (e) {}
+        if (!text) {
+          var r2 = await fetch('https://holy-firefly-982c.fert0480.workers.dev/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'google/gemini-3.8-flash', max_tokens: 2048, messages: [{ role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: data } }, { type: 'text', text: ask }] }], system: 'You are Drift 2.1. Answer about the screenshot. Never say Gemini.' }) });
+          var j2 = await r2.json();
+          text = pull(j2);
+        }
+        if (!text) throw new Error('Try again.');
+        return text;
+      }
+      function sayNear(text) {
+        var n0 = document.getElementById('drift-ball-ans');
+        if (n0) n0.remove();
+        var n = document.createElement('div');
+        n.id = 'drift-ball-ans';
+        n.textContent = text;
+        n.style.cssText = 'position:fixed;z-index:2147483646;right:18px;bottom:168px;width:min(320px,90vw);max-height:40vh;overflow:auto;background:rgba(255,255,255,.92);color:#111;border-radius:14px;padding:10px;font:13px/1.4 system-ui;box-shadow:0 8px 24px rgba(0,0,0,.2)';
+        document.documentElement.appendChild(n);
+      }
+      async function grab() {
+        var stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+        var video = document.createElement('video');
+        video.srcObject = stream; video.muted = true;
+        try { await video.play(); } catch (e) {}
+        await new Promise(function (res) { setTimeout(res, 400); });
+        var w = Math.min(960, video.videoWidth || 960);
+        var h = Math.max(1, Math.round(w * ((video.videoHeight || 720) / (video.videoWidth || 1280))));
+        var canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(video, 0, 0, w, h);
+        stream.getTracks().forEach(function (t) { try { t.stop(); } catch (e) {} });
+        return canvas.toDataURL('image/jpeg', 0.62).split(',')[1];
+      }
+      async function screenAsk() {
+        var data = '';
+        try { data = await grab(); }
+        catch (e) { sayNear('Allow the screen prompt, then tap the Drift ball again.'); return; }
+        var q = prompt('What do you want to know about this screen?', 'What is on my screen?');
+        if (!q) return;
+        sayNear('…');
+        var text = '';
+        try { text = await driftVision(data, q); }
+        catch (e1) { try { text = await driftVision(data, q); } catch (e2) { text = String((e2 && e2.message) || (e1 && e1.message) || ''); } }
+        sayNear(text || 'Try again.');
+      }
       function showBall(on) {
-        if (!on) { if (ball) ball.remove(); ball = null; return; }
+        try { localStorage.setItem('wos:ai-orb', on ? '1' : '0'); } catch (e) {}
+        var ball = document.getElementById('drift-gball');
+        if (!on) { if (ball) ball.remove(); return; }
         if (ball) return;
         ball = document.createElement('button');
+        ball.id = 'drift-gball';
         ball.type = 'button';
         ball.style.cssText = 'position:fixed;right:18px;bottom:88px;z-index:2147483646;width:68px;height:68px;padding:0;border-radius:50%;border:2px solid rgba(255,255,255,.45);background:#071226;overflow:hidden;cursor:grab';
         ball.innerHTML = '<img src="https://drift.hostless.app/drift-mark.png" alt="" style="width:100%;height:100%;object-fit:cover;transform:scale(1.18);pointer-events:none">';
         var drag = null;
-        ball.addEventListener('pointerdown', function (e) { drag = { x: e.clientX, y: e.clientY, l: ball.offsetLeft, t: ball.offsetTop, moved: false }; });
-        window.addEventListener('pointermove', function (e) {
+        ball.addEventListener('pointerdown', function (e) {
+          drag = { x: e.clientX, y: e.clientY, l: ball.offsetLeft, t: ball.offsetTop, moved: false };
+          try { ball.setPointerCapture(e.pointerId); } catch (err) {}
+        });
+        ball.addEventListener('pointermove', function (e) {
           if (!drag) return;
           var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
           if (Math.abs(dx) + Math.abs(dy) > 4) drag.moved = true;
           ball.style.left = (drag.l + dx) + 'px';
           ball.style.top = (drag.t + dy) + 'px';
-          ball.style.right = 'auto';
-          ball.style.bottom = 'auto';
+          ball.style.right = 'auto'; ball.style.bottom = 'auto';
         });
-        window.addEventListener('pointerup', function () {
-          if (drag && !drag.moved) { mode('full'); settings.hidden = true; chat.hidden = false; bar.querySelector('[data-ia]').textContent = 'Settings'; }
-          drag = null;
-        });
+        ball.addEventListener('pointerup', function () { if (drag && !drag.moved) screenAsk(); drag = null; });
         document.documentElement.appendChild(ball);
       }
       var orb = bar.querySelector('[data-orb]');
       try { orb.checked = localStorage.getItem('wos:ai-orb') === '1'; } catch (e) {}
       showBall(orb.checked);
-      orb.onchange = function () { try { localStorage.setItem('wos:ai-orb', orb.checked ? '1' : '0'); } catch (e) {} showBall(orb.checked); };
+      orb.onchange = function () { showBall(orb.checked); };
       var sites = { docs: 'https://docs.google.com/', discovery: 'https://www.discoveryeducation.com/', classroom: 'https://classroom.google.com/', canva: 'https://www.canva.com/', other: 'https://en.wikipedia.org/' };
       function openClean(list) {
         var blocked = false;
@@ -2813,53 +2967,108 @@ function driftSite(url) {
         for (var i = list.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = list[i]; list[i] = list[j]; list[j] = t; }
         openClean(list);
       };
+      function bubble(kind, text) {
+        var log = bar.querySelector('[data-log]');
+        var d = document.createElement('div');
+        d.className = kind === 'u' ? 'u' : 'a';
+        d.textContent = text;
+        log.appendChild(d);
+        log.scrollTop = log.scrollHeight;
+        return d;
+      }
+      function usable(s) {
+        if (!s) return '';
+        var bad = 0, n = Math.min(s.length, 2000);
+        for (var i = 0; i < n; i++) { var c = s.charCodeAt(i); if (c === 0 || c < 9) bad++; }
+        if (bad > n * 0.05) return '';
+        return s.slice(0, 14000);
+      }
       bar.querySelector('[data-ia]').onclick = function () {
-        var showChat = !settings.hidden;
-        settings.hidden = showChat;
-        chat.hidden = !showChat;
-        this.textContent = showChat ? 'Settings' : 'Open IA chat';
+        settings.hidden = true; chat.hidden = false; mode('full');
       };
-      bar.querySelector('[data-photo]').onchange = function () {
+      bar.querySelector('[data-back]').onclick = function () {
+        settings.hidden = false; chat.hidden = true;
+      };
+      bar.querySelector('[data-file]').onchange = function () {
         var file = this.files && this.files[0];
-        photoUrl = '';
-        var img = bar.querySelector('[data-preview]');
-        if (!file) { img.hidden = true; return; }
+        fileNote = ''; fileImage = '';
+        if (!file) return;
         var reader = new FileReader();
-        reader.onload = function () { photoUrl = String(reader.result || ''); img.src = photoUrl; img.hidden = false; };
-        reader.readAsDataURL(file);
+        var img = /^image\//.test(file.type);
+        reader.onload = function () {
+          var raw = String(reader.result || '');
+          if (img) fileImage = raw.split(',')[1] || '';
+          else { var text = usable(raw); fileNote = text ? ('File ' + file.name + ':\n' + text) : ('File ' + file.name); }
+        };
+        if (img) reader.readAsDataURL(file); else reader.readAsText(file);
       };
       bar.querySelector('[data-ask]').onclick = function () {
-        var q = bar.querySelector('[data-ai]').value.trim();
-        var log = bar.querySelector('[data-log]');
-        if (!q && !photoUrl) return;
-        bar.querySelector('[data-ai]').value = '';
-        log.textContent = (log.textContent ? log.textContent + '\n' : '') + (q || 'Photo');
-        var content = photoUrl ? [{ type: 'text', text: q || 'What is in this photo?' }, { type: 'image_url', image_url: { url: photoUrl } }] : (q || 'Hello');
-        photoUrl = '';
-        bar.querySelector('[data-preview]').hidden = true;
-        fetch('https://drift.hostless.app/api/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'smart', max_tokens: 1200, messages: [{ role: 'user', content: content }], system: 'You are Drift. Reply with text only. Never write code and never use a fenced block. Answer in the user language. Be complete.' }) }).then(function (r) { return r.json(); }).then(function (j) {
-          var text = ((j.content || []).map(function (x) { return x.text || ''; }).join('')) || 'No answer.';
-          log.textContent += '\n' + text.replace(/```[\s\S]*?```/g, '').trim();
-        }).catch(function () { log.textContent += '\nNo answer.'; });
+        var box = bar.querySelector('[data-ai]');
+        var q = box.value.trim();
+        if (!q && !fileNote && !fileImage) return;
+        box.value = '';
+        bubble('u', q || (fileImage ? 'Image' : 'File'));
+        var hold = bubble('a', '…');
+        var note = fileNote, img = fileImage;
+        fileNote = ''; fileImage = '';
+        var input = bar.querySelector('[data-file]');
+        if (input) input.value = '';
+        var job = img ? driftVision(img, (q || 'What is in this image?') + (note ? '\n\n' + note : '')) : (function () {
+          turns.push({ role: 'user', content: (q || 'Read the attached file.') + (note ? '\n\n' + note : '') });
+          return driftFast(turns.slice(-8));
+        })();
+        Promise.resolve(job).then(function (text) {
+          if (!img) turns.push({ role: 'assistant', content: text });
+          hold.textContent = text || 'Try again.';
+        }).catch(function () {
+          var again = img ? driftVision(img, q || 'What is in this image?') : driftFast(turns.slice(-8));
+          Promise.resolve(again).then(function (text) { hold.textContent = text || 'Try again.'; }).catch(function (err) { hold.textContent = String((err && err.message) || 'Try again.'); });
+        });
       };
-      window.addEventListener('keydown', function (e) {
-        if (e.target && /input|textarea|select/i.test(e.target.tagName || '')) return;
-        function hit(spec) {
-          spec = String(spec || '').trim().toLowerCase();
-          if (!spec) return false;
-          var key = String(e.key || '').toLowerCase();
-          return spec === key || spec === String(e.code || '').toLowerCase();
-        }
-        var dest = '';
-        try {
-          if (hit(localStorage.getItem('wos:kb-class'))) dest = 'https://classroom.google.com/';
-          else if (hit(localStorage.getItem('wos:kb-docs'))) dest = 'https://docs.google.com/document/u/0/';
-          else if (hit(localStorage.getItem('wos:kb-disc'))) dest = 'https://www.discoveryeducation.com/';
-          else if (hit(localStorage.getItem('wos:kb-aleks'))) dest = 'https://www.aleks.com/';
-        } catch (err) {}
-        if (!dest || location.href.indexOf(dest.split('/')[2]) !== -1) return;
-        location.href = dest;
-      });
+      if (!window.__driftGKeys) {
+        window.__driftGKeys = 1;
+        window.__driftPressed = {};
+        window.addEventListener('keydown', function (e) {
+          var live = window.__driftGBar;
+          var nm = (e.key === ' ' ? 'space' : String(e.key || '').toLowerCase());
+          if (nm !== 'control' && nm !== 'alt' && nm !== 'shift' && nm !== 'meta') window.__driftPressed[nm] = 1;
+          if (!live || !live.isConnected) return;
+          if (e.target && e.target.closest && e.target.closest('#drift-gmenu')) return;
+          if (e.target && /input|textarea|select/i.test(e.target.tagName || '')) return;
+          function stored(key, fb) { var v = ''; try { v = localStorage.getItem(key) || ''; } catch (e2) {} return v || fb; }
+          function hit(combo) {
+            var parts = String(combo || '').split('+').map(function (s) { return s.trim().toLowerCase(); }).filter(Boolean);
+            if (!parts.length) return false;
+            var down = {};
+            if (e.ctrlKey) down.ctrl = 1; if (e.altKey) down.alt = 1; if (e.shiftKey) down.shift = 1; if (e.metaKey) down.meta = 1;
+            Object.keys(window.__driftPressed).forEach(function (kk) { if (window.__driftPressed[kk]) down[kk] = 1; });
+            if (nm && nm !== 'control' && nm !== 'alt' && nm !== 'shift' && nm !== 'meta') down[nm] = 1;
+            for (var i = 0; i < parts.length; i++) if (!down[parts[i]]) return false;
+            return true;
+          }
+          var map = [
+            ['wos:kb-hide', '', 'F9'],
+            ['wos:kb-class', 'https://classroom.google.com/', 'F10'],
+            ['wos:kb-docs', 'https://docs.google.com/document/u/0/', ''],
+            ['wos:kb-disc', 'https://www.discoveryeducation.com/', ''],
+            ['wos:kb-aleks', 'https://www.aleks.com/', '']
+          ];
+          for (var i = 0; i < map.length; i++) {
+            if (!hit(stored(map[i][0], map[i][2]))) continue;
+            if (!map[i][1]) {
+              try { localStorage.setItem('wos:edu-mode', localStorage.getItem('wos:edu-mode') === '1' ? '0' : '1'); } catch (err3) {}
+              return;
+            }
+            if (location.href.indexOf(map[i][1].split('/')[2]) !== -1) return;
+            location.href = map[i][1];
+            return;
+          }
+        }, true);
+        window.addEventListener('keyup', function (e) {
+          var nm = (e.key === ' ' ? 'space' : String(e.key || '').toLowerCase());
+          if (window.__driftPressed) window.__driftPressed[nm] = 0;
+        }, true);
+      }
     }
     var menuJs = 'javascript:(' + googleMenuBody.toString() + ')();';
     function copyBm(text, title, how) {
