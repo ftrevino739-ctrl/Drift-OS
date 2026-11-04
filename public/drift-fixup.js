@@ -1,7 +1,7 @@
 /* Drift fixup */
 (function () {
   'use strict';
-  window.__DRIFT_BUILD = '20261103-pack';
+  window.__DRIFT_BUILD = '20261103-b';
   window.DRIFT_BEST_MODEL = window.DRIFT_BEST_MODEL || 'mistralai/mistral-large-4-0';
   window.DRIFT_CODE_MODEL = 'google/gemini-3.8-flash';
 
@@ -1137,6 +1137,8 @@ function driftSite(url) {
     window.APPS.winemu = 'Windows emulator';
     window.APPS.gbuild = 'Game Builder';
     window.APPS.minecraft = 'Minecraft';
+    window.APPS.gforms = 'Google Forms';
+    IC.gforms = '<svg viewBox="0 0 48 48" width="100%" height="100%"><rect width="48" height="48" rx="10" fill="#673AB7"/><path fill="#fff" d="M14 12h14l8 8v16a2 2 0 0 1-2 2H14a2 2 0 0 1-2-2V14a2 2 0 0 1 2-2z"/><path fill="#D1C4E9" d="M28 12v8h8"/><path fill="#673AB7" d="M18 26h12v2H18zm0 5h12v2H18zm0 5h8v2h-8z"/></svg>';
     window.XAPPS.aleks = { n: 'ALEKS', f: driftSite('https://www.aleks.com/') };
     window.XAPPS.winemu = { n: 'Windows emulator', f: windowsEmulator };
     window.XAPPS.gbuild = { n: 'Game Builder', f: driftSite('https://tesana.com/create') };
@@ -1170,6 +1172,21 @@ function driftSite(url) {
       }, 900);
     } };
     window.XAPPS.espn = { n: 'ESPN', f: espnApp };
+    window.XAPPS.gforms = { n: 'Google Forms', f: function (root) {
+      root.innerHTML = '<div style="height:100%;display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;padding:24px;text-align:center;font:14px system-ui;background:#fff;color:#111"><b style="font-size:18px">Google Forms</b><div style="max-width:420px;opacity:.7">Pega el link del formulario. Solo se abre un Google Form.</div><input data-u placeholder="https://docs.google.com/forms/..." style="width:min(480px,100%);padding:10px;border-radius:10px;border:1px solid #ccc;box-sizing:border-box"><button data-go type="button" style="padding:10px 16px;border:0;border-radius:10px;background:#c5c8ce;color:#111;font-weight:700;cursor:pointer">Abrir</button></div>';
+      var input = root.querySelector('[data-u]');
+      try { input.value = localStorage.getItem('wos:gforms') || ''; } catch (e) {}
+      root.querySelector('[data-go]').onclick = function () {
+        var u = String(input.value || '').trim();
+        if (!/^https:\/\/(docs\.google\.com\/forms\/|forms\.gle\/)/i.test(u)) {
+          input.value = '';
+          input.placeholder = 'Tiene que ser un link de Google Forms';
+          return;
+        }
+        try { localStorage.setItem('wos:gforms', u); } catch (e) {}
+        operaPage(u, 'firefox')(root);
+      };
+    } };
     window.XAPPS.yt = { n: 'YouTube', f: youtubeApp };
     window.XAPPS.tt = { n: 'TikTok', f: function (root) {
       root.innerHTML = '';
@@ -1225,9 +1242,8 @@ function driftSite(url) {
         var page = 'https://racialequityleadership.com/movies.html';
         if (typeof window.openProxied !== 'function') return moviesApp(root);
         Promise.resolve(window.openProxied(page, root)).then(function (f) {
-          var n = 0;
           var timer = setInterval(function () {
-            if (!root.isConnected || ++n > 40) { clearInterval(timer); return; }
+            if (!root.isConnected) { clearInterval(timer); return; }
             var fr = (f && f.frame) || root.querySelector('iframe');
             if (!fr) return;
             try {
@@ -1240,7 +1256,15 @@ function driftSite(url) {
               }
               var href = '';
               try { href = String(fr.contentWindow.location.href || ''); } catch (e2) { href = ''; }
-              if (href && /racialequityleadership\.com\/?(?:\?|#|$)/i.test(href) && !/movies/i.test(href)) fr.contentWindow.location.replace(page);
+              try { if (window.SJC && window.SJC.decodeUrl) { var dec = window.SJC.decodeUrl(href); if (dec) href = dec; } } catch (e3) {}
+              var home = false;
+              if (href && /racialequityleadership\.com/i.test(href) && !/movies\.html/i.test(href)) {
+                try {
+                  var path = new URL(href).pathname.replace(/\/+$/, '') || '/';
+                  home = path === '/' || path === '/index.html' || path === '/index' || path === '/home' || path === '/home.html';
+                } catch (e4) { home = /racialequityleadership\.com\/?(?:\?|#|$)/i.test(href); }
+              }
+              if (home) fr.contentWindow.location.replace(page);
             } catch (e) {}
           }, 700);
         }).catch(function () { moviesApp(root); });
@@ -1293,8 +1317,7 @@ function driftSite(url) {
     window.XAPPS.whatsapp = { n: 'WhatsApp', f: function (root) {
       root.innerHTML = '';
       root.style.cssText = 'height:100%;min-height:0;position:relative;background:#111b21';
-      if (typeof window.openProxied === 'function') window.openProxied('https://web.whatsapp.com/', root);
-      else root.textContent = 'WhatsApp is still starting.';
+      operaPage('https://web.whatsapp.com/', 'firefox', true)(root);
     } };
     window.__driftGithub = 1;
     window.XAPPS.github = { n: 'GitHub', f: operaPage('https://github.com/login', 'chrome') };
@@ -1329,6 +1352,11 @@ function driftSite(url) {
         window.S.d.v19 = 1;
         changed = true;
         if (window.S.d.desk.indexOf('minecraft') < 0) window.S.d.desk.push('minecraft');
+      }
+      if (window.S && window.S.d && !window.S.d.v20) {
+        window.S.d.v20 = 1;
+        changed = true;
+        if (window.S.d.desk.indexOf('gforms') < 0) window.S.d.desk.push('gforms');
       }
       if (changed) {
         if (typeof save === 'function') save();
@@ -1897,32 +1925,44 @@ function driftSite(url) {
   function robloxShell(root) {
     root.innerHTML = '';
     root.style.cssText = 'height:100%;min-height:0;position:relative;background:#111';
-    var url = 'https://now.gg/play/roblox-corporation/5349/roblox?hl=es-419&gl=MX';
+    var urls = ['https://web.cloudmoonapp.com/game/com.roblox.client/', 'https://www.easyfun.gg/cloud-games/roblox.html'];
+    var step = 0;
     if (typeof window.openProxied !== 'function') {
       root.textContent = 'Roblox is still starting.';
       return;
     }
-    Promise.resolve(window.openProxied(url, root)).then(function (f) {
-      var n = 0;
-      var timer = setInterval(function () {
-        if (!root.isConnected || ++n > 28) { clearInterval(timer); return; }
-        var fr = (f && f.frame) || root.querySelector('iframe');
-        if (!fr) return;
-        try {
-          var doc = fr.contentDocument;
-          if (!doc) return;
-          var nodes = doc.querySelectorAll('button, a, [role="button"]');
-          for (var i = 0; i < nodes.length; i++) {
-            var label = String(nodes[i].textContent || '').replace(/\s+/g, ' ').trim();
-            if (/^(play|jugar|launch|iniciar)$/i.test(label) || /play now|jugar ahora|launch game/i.test(label)) {
-              nodes[i].click();
-              clearInterval(timer);
-              return;
+    function mount(url) {
+      root.querySelectorAll('iframe,.sjt').forEach(function (n) { n.remove(); });
+      var old = root.querySelector('#drift-rbx-ads');
+      if (old) old.remove();
+      Promise.resolve(window.openProxied(url, root)).then(function () {
+        var n = 0;
+        var timer = setInterval(function () {
+          if (!root.isConnected || ++n > 20) { clearInterval(timer); return; }
+          var fr = root.querySelector('iframe');
+          if (!fr) return;
+          try {
+            var doc = fr.contentDocument;
+            if (!doc) return;
+            if (!doc.getElementById('drift-rbx-ads')) {
+              var st = doc.createElement('style');
+              st.id = 'drift-rbx-ads';
+              st.textContent = 'ins,.adsbygoogle,[id^=google_ads],[id*=aswift],[class*="ad-banner"],[class*="advert"],.ad-container,.popup-ad,#ad-container,.adsbox{display:none!important}';
+              (doc.head || doc.documentElement).appendChild(st);
             }
-          }
-        } catch (e) {}
-      }, 700);
-    }).catch(function () {});
+            var text = doc.body ? String(doc.body.innerText || '').slice(0, 280) : '';
+            if (step < 1 && /not found|refused|can.t be reached|ERR_|404/i.test(text)) {
+              step = 1;
+              clearInterval(timer);
+              mount(urls[1]);
+            }
+          } catch (e) {}
+        }, 800);
+      }).catch(function () {
+        if (step < 1) { step = 1; mount(urls[1]); }
+      });
+    }
+    mount(urls[0]);
   }
   function inAppPage(url) {
     return function (root) {
@@ -1983,7 +2023,7 @@ function driftSite(url) {
     }, 800);
   }
 
-  function operaPage(url, browser) {
+  function operaPage(url, browser, loose) {
     browser = browser || "edge";
     return function (root) {
       root.innerHTML = '<div class="sjt" style="height:100%;min-height:0;position:relative;background:#fff"></div>';
@@ -1998,7 +2038,8 @@ function driftSite(url) {
         box.innerHTML = "";
         var frame = document.createElement("iframe");
         frame.setAttribute("referrerpolicy", "no-referrer");
-        frame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms allow-modals allow-downloads allow-pointer-lock");
+        if (!loose) frame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms allow-modals allow-downloads allow-pointer-lock");
+        frame.setAttribute("allow", "camera; microphone; clipboard-read; clipboard-write; fullscreen");
         frame.style.cssText = "position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff";
         frame.src = "/api/opera?u=" + encodeURIComponent(url) + "&b=" + encodeURIComponent(browser);
         box.appendChild(frame);
@@ -2572,14 +2613,11 @@ function driftSite(url) {
       '<div style="flex:1"><b>Google Lens bypass</b>' +
       '<div style="opacity:.75;font-size:12px;margin-top:4px">Shows a Google Lens button, like the assistant. Press it to use Lens.</div></div>' +
       switchHTML('drift-lens-sw', lensOn) + '</div>' +
-      '<div style="margin-top:16px;border-top:1px solid rgba(255,255,255,.08);padding-top:14px">' +
-      '<b>Full bypass (drift)</b>' +
-      '<div style="opacity:.75;font-size:12px;margin-top:4px">On a Google search, or on a site, this opens that search on DuckDuckGo through Scramjet. It does not open the Drift desktop.</div>' +
-      '<a id="drift-bm-class" href="#" style="display:inline-block;margin-top:8px;padding:8px 12px;border-radius:10px;background:#1a73e8;color:#fff;text-decoration:none;font-weight:650">Full bypass (drift)</a></div>' +
-      '<div style="margin-top:16px">' +
-      '<b>Full bypass</b>' +
-      '<div style="opacity:.75;font-size:12px;margin-top:4px">Same bookmarklet: the search opens on DuckDuckGo through Scramjet, in this tab.</div>' +
-      '<a id="drift-bm-guest" href="#" style="display:inline-block;margin-top:8px;padding:8px 12px;border-radius:10px;background:#1a73e8;color:#fff;text-decoration:none;font-weight:650">Full bypass</a></div>' +
+      '<div style="margin-top:16px;border-top:1px solid rgba(255,255,255,.08);padding-top:14px"><b>Bookmarklets</b>' +
+      '<div style="opacity:.75;font-size:12px;margin:4px 0 8px">Arrástralos a la barra de marcadores del navegador real. Pulsa el nombre para copiarlo.</div>' +
+      '<div class="bm-card"><div><b>Full bypass (drift)</b><div style="opacity:.75;font-size:12px">La búsqueda se abre en DuckDuckGo en español (MX), en esta pestaña. No abre el escritorio.</div></div><a id="drift-bm-class" href="#" style="flex:none;padding:8px 12px;border-radius:10px;background:#c5c8ce;color:#111;text-decoration:none;font-weight:700">Copiar</a></div>' +
+      '<div class="bm-card"><div><b>Full bypass</b><div style="opacity:.75;font-size:12px">El mismo marcador. Se queda en esta pestaña.</div></div><a id="drift-bm-guest" href="#" style="flex:none;padding:8px 12px;border-radius:10px;background:#c5c8ce;color:#111;text-decoration:none;font-weight:700">Copiar</a></div>' +
+      '<div class="bm-card"><div><b>Menú en Google</b><div style="opacity:.75;font-size:12px">En una página de Google, sin proxy. Es el menú de Bypass, no el escritorio.</div></div><a id="drift-bm-menu" href="#" style="flex:none;padding:8px 12px;border-radius:10px;background:#c5c8ce;color:#111;text-decoration:none;font-weight:700">Copiar</a></div></div>' +
       '<button type="button" id="drift-docs-btn" style="margin-top:12px;width:100%;padding:10px;border:1px solid rgba(255,255,255,.14);border-radius:10px;background:transparent;color:#fff;font-weight:600;cursor:pointer">Drift docs</button></section></div></div>';
     panel.querySelector('[data-x]').onclick = function (e) { e.stopPropagation(); panel.remove(); };
     function showSec(id) {
@@ -2596,6 +2634,7 @@ function driftSite(url) {
     showSec('ui');
     var bmClass = panel.querySelector('#drift-bm-class');
     var bmGuest = panel.querySelector('#drift-bm-guest');
+    var bmMenu = panel.querySelector('#drift-bm-menu');
     function driftBypassBody() {
       function dec(s){try{return decodeURIComponent(String(s||'').replace(/\+/g,' '));}catch(e){return s;}}
       function junk(s){return String(s||'').replace(/[?#&](?:user|userid|user_id|device|deviceid|device_id|hardware|hardwareid|hwid|hw_id|token|session|sid|school|org|policy|reason|category)=[^&#]*/gi,'');}
@@ -2638,6 +2677,65 @@ function driftSite(url) {
     }
     var classJs = 'javascript:(' + driftBypassBody.toString() + ')();';
     var guestJs = classJs;
+    function googleMenuBody() {
+      if (!/google\./i.test(location.hostname)) { alert('Ábrelo en una página de Google.'); return; }
+      var old = document.getElementById('drift-gmenu');
+      if (old) { old.remove(); return; }
+      var bar = document.createElement('div');
+      bar.id = 'drift-gmenu';
+      bar.style.cssText = 'position:fixed;right:12px;bottom:12px;z-index:2147483646;width:300px;max-height:70vh;overflow:auto;background:#111;color:#eee;border-radius:16px;padding:12px;font:13px/1.4 system-ui,sans-serif;box-shadow:0 12px 32px rgba(0,0,0,.4)';
+      bar.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center"><b>Bypass</b><span><button type="button" data-m="full">Abierta</button> <button type="button" data-m="mini">Poco</button> <button type="button" data-m="off">Oculta</button></span></div><div data-body><label style="display:flex;justify-content:space-between;margin-top:8px">Protector <input type="checkbox" data-k="wos:protector"></label><div style="margin-top:6px">Si hay clase <select data-k="wos:prot-class"><option value="alert">Avisar</option><option value="classroom">Avisar y Classroom</option></select></div><label style="display:block;margin-top:6px">Ocultar no educativas <input data-k="wos:kb-hide" placeholder="F9" style="width:100%;box-sizing:border-box"></label><label style="display:block;margin-top:6px">Classroom <input data-k="wos:kb-class" placeholder="F10" style="width:100%;box-sizing:border-box"></label><label style="display:block;margin-top:6px">Discovery <input data-k="wos:kb-disc" placeholder="atajo" style="width:100%;box-sizing:border-box"></label><label style="display:block;margin-top:6px">ALEKS <input data-k="wos:kb-aleks" placeholder="atajo" style="width:100%;box-sizing:border-box"></label><label style="display:block;margin-top:6px">Docs <input data-k="wos:kb-docs" placeholder="atajo" style="width:100%;box-sizing:border-box"></label></div>';
+      document.documentElement.appendChild(bar);
+      var body = bar.querySelector('[data-body]');
+      function mode(m) {
+        try { localStorage.setItem('wos:pass-bar', m); } catch (e) {}
+        if (body) body.style.display = m === 'mini' || m === 'off' ? 'none' : 'block';
+        bar.style.display = m === 'off' ? 'none' : 'block';
+        var peek = document.getElementById('drift-gmenu-peek');
+        if (m !== 'off' && peek) peek.remove();
+        if (m === 'off' && !peek) {
+          peek = document.createElement('button');
+          peek.id = 'drift-gmenu-peek';
+          peek.type = 'button';
+          peek.textContent = 'Mostrar';
+          peek.style.cssText = 'display:none;position:fixed;right:10px;bottom:10px;z-index:2147483646;border:0;border-radius:999px;background:#e8e8e8;color:#111;padding:8px 12px;font:700 12px system-ui;cursor:pointer';
+          peek.onclick = function () { mode('full'); };
+          document.documentElement.appendChild(peek);
+          window.addEventListener('pointermove', function (e) {
+            var on = 'full';
+            try { on = localStorage.getItem('wos:pass-bar') || 'full'; } catch (err) {}
+            var p = document.getElementById('drift-gmenu-peek');
+            if (!p) return;
+            if (on !== 'off') { p.style.display = 'none'; return; }
+            p.style.display = (e.clientX > innerWidth - 120 && e.clientY > innerHeight - 80) ? 'block' : 'none';
+          });
+        }
+      }
+      bar.querySelectorAll('[data-m]').forEach(function (b) { b.onclick = function () { mode(b.getAttribute('data-m')); }; });
+      bar.querySelectorAll('[data-k]').forEach(function (el) {
+        var k = el.getAttribute('data-k');
+        try { if (el.type === 'checkbox') el.checked = localStorage.getItem(k) === '1'; else el.value = localStorage.getItem(k) || ''; } catch (e) {}
+        el.onchange = function () { try { localStorage.setItem(k, el.type === 'checkbox' ? (el.checked ? '1' : '0') : el.value); } catch (e) {} };
+      });
+      window.addEventListener('keydown', function (e) {
+        function hit(spec) {
+          spec = String(spec || '').trim().toLowerCase();
+          if (!spec) return false;
+          var key = String(e.key || '').toLowerCase();
+          return spec === key || spec === String(e.code || '').toLowerCase();
+        }
+        var dest = '';
+        try {
+          if (hit(localStorage.getItem('wos:kb-class'))) dest = 'https://classroom.google.com/';
+          else if (hit(localStorage.getItem('wos:kb-docs'))) dest = 'https://docs.google.com/document/u/0/';
+          else if (hit(localStorage.getItem('wos:kb-disc'))) dest = 'https://www.discoveryeducation.com/';
+          else if (hit(localStorage.getItem('wos:kb-aleks'))) dest = 'https://www.aleks.com/';
+        } catch (err) {}
+        if (!dest || location.href.indexOf(dest.split('/')[2]) !== -1) return;
+        location.href = dest;
+      });
+    }
+    var menuJs = 'javascript:(' + googleMenuBody.toString() + ')();';
     function copyBm(text, title, how) {
       function done() {
         var old = document.getElementById('drift-copied');
@@ -2690,6 +2788,14 @@ function driftSite(url) {
         e.preventDefault();
         e.stopPropagation();
         copyBm(guestJs, 'Full bypass', 'Full bypass loads that search on DuckDuckGo through Scramjet. It stays in this tab. It does not open the Drift desktop.');
+      };
+    }
+    if (bmMenu) {
+      bmMenu.setAttribute('href', '#');
+      bmMenu.onclick = function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        copyBm(menuJs, 'Menú en Google', 'En una página de Google aparece el menú de Bypass. No usa el proxy y no abre Drift.');
       };
     }
     var homeNow = 'drift';
@@ -3100,48 +3206,151 @@ function driftSite(url) {
     if (old) old.remove();
     var veil = document.createElement('div');
     veil.id = 'drift-lens-ask';
-    veil.style.cssText = 'position:fixed;inset:0;z-index:2147483004;background:rgba(0,0,0,.45);cursor:crosshair';
+    veil.style.cssText = 'position:fixed;inset:0;z-index:2147483004;background:rgba(0,0,0,.28);cursor:crosshair';
     var tip = document.createElement('div');
-    tip.textContent = 'Arrastra para marcar lo que quieres preguntar';
+    tip.textContent = 'Arrastra para marcar. Luego puedes mover el cuadro.';
     tip.style.cssText = 'position:absolute;left:50%;top:18px;transform:translateX(-50%);background:#111;color:#fff;padding:8px 12px;border-radius:999px;font:13px system-ui;pointer-events:none';
     var box = document.createElement('div');
-    box.style.cssText = 'position:absolute;border:2px solid #fff;background:rgba(255,255,255,.15);display:none';
+    box.style.cssText = 'position:absolute;border:2px solid #1a73e8;background:rgba(26,115,232,.18);display:none;cursor:move;touch-action:none';
+    var ask = document.createElement('button');
+    ask.type = 'button';
+    ask.textContent = 'Preguntar a Gemini';
+    ask.style.cssText = 'position:absolute;left:0;bottom:-36px;border:0;border-radius:999px;background:#1a73e8;color:#fff;font:650 12px system-ui;padding:6px 10px;cursor:pointer;white-space:nowrap';
+    box.appendChild(ask);
     veil.append(tip, box);
     document.body.appendChild(veil);
-    var x0 = 0, y0 = 0, drag = false;
+    var x0 = 0, y0 = 0, drag = false, moving = false, mx = 0, my = 0;
     veil.addEventListener('pointerdown', function (e) {
-      if (e.target !== veil && e.target !== box) return;
-      drag = true; x0 = e.clientX; y0 = e.clientY;
+      if (e.target === ask) return;
+      if (e.target === box) {
+        moving = true;
+        mx = e.clientX - box.offsetLeft;
+        my = e.clientY - box.offsetTop;
+        return;
+      }
+      drag = true;
+      x0 = e.clientX;
+      y0 = e.clientY;
       box.style.display = 'block';
-      box.style.left = x0 + 'px'; box.style.top = y0 + 'px'; box.style.width = '0'; box.style.height = '0';
+      box.style.left = x0 + 'px';
+      box.style.top = y0 + 'px';
+      box.style.width = '0';
+      box.style.height = '0';
     });
     veil.addEventListener('pointermove', function (e) {
+      if (moving) {
+        box.style.left = Math.max(0, e.clientX - mx) + 'px';
+        box.style.top = Math.max(0, e.clientY - my) + 'px';
+        return;
+      }
       if (!drag) return;
       var x = Math.min(x0, e.clientX), y = Math.min(y0, e.clientY);
-      box.style.left = x + 'px'; box.style.top = y + 'px';
+      box.style.left = x + 'px';
+      box.style.top = y + 'px';
       box.style.width = Math.abs(e.clientX - x0) + 'px';
       box.style.height = Math.abs(e.clientY - y0) + 'px';
     });
-    veil.addEventListener('pointerup', function () {
-      if (!drag) return;
-      drag = false;
+    veil.addEventListener('pointerup', function () { drag = false; moving = false; });
+    ask.onclick = async function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var rect = box.getBoundingClientRect();
       veil.remove();
+      var blob = null;
+      try {
+        var stream = await navigator.mediaDevices.getDisplayMedia({ video: { displaySurface: 'browser' }, preferCurrentTab: true, selfBrowserSurface: 'include', monitorTypeSurfaces: 'exclude', surfaceSwitching: 'exclude' });
+        var video = document.createElement('video');
+        video.srcObject = stream;
+        video.muted = true;
+        await video.play();
+        await new Promise(function (res) { setTimeout(res, 180); });
+        var scale = video.videoWidth / Math.max(1, window.innerWidth);
+        var c = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(rect.width * scale));
+        c.height = Math.max(1, Math.round(rect.height * scale));
+        c.getContext('2d').drawImage(video, rect.left * scale, rect.top * scale, rect.width * scale, rect.height * scale, 0, 0, c.width, c.height);
+        stream.getTracks().forEach(function (t) { t.stop(); });
+        blob = await new Promise(function (res) { c.toBlob(res, 'image/jpeg', 0.86); });
+      } catch (err) { blob = null; }
       var w = document.createElement('div');
-      w.className = 'win';
-      w.style.cssText = 'position:fixed;z-index:80;left:4vw;top:6vh;width:92vw;height:82vh;display:flex;background:#111;border-radius:16px;overflow:hidden';
-      var left = document.createElement('div');
-      left.style.cssText = 'width:34%;min-width:180px;background:#0e0e0e;color:#eee;display:flex;flex-direction:column;gap:8px;padding:12px;font:14px system-ui';
-      left.innerHTML = '<b>Selección</b><div style="opacity:.75">Gemini está a la derecha. Pega la captura en el cuadro de Gemini si no entra sola.</div>';
-      var right = document.createElement('div');
-      right.style.cssText = 'flex:1;min-width:0;position:relative;background:#fff';
+      w.style.cssText = 'position:fixed;z-index:80;left:8vw;top:8vh;width:min(520px,92vw);height:min(640px,84vh);display:flex;flex-direction:column;background:#fff;color:#1f1f1f;border-radius:24px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.28);font:15px system-ui';
+      var head = document.createElement('div');
+      head.style.cssText = 'display:flex;align-items:center;gap:8px;padding:12px 14px;cursor:move;user-select:none';
+      head.innerHTML = '<span style="width:18px;height:18px;border-radius:50%;background:conic-gradient(#4285f4,#ea4335,#fbbc05,#34a853,#4285f4)"></span><b>Gemini</b><span style="opacity:.6;font-size:12px">Invitado</span>';
       var close = document.createElement('button');
-      close.type = 'button'; close.textContent = '✕';
-      close.style.cssText = 'position:absolute;right:8px;top:8px;z-index:3;border:0;border-radius:8px;background:#111;color:#fff;width:32px;height:32px;cursor:pointer';
+      close.type = 'button';
+      close.textContent = '✕';
+      close.style.cssText = 'margin-left:auto;border:0;background:transparent;font-size:16px;cursor:pointer';
       close.onclick = function () { w.remove(); };
-      w.append(left, right, close);
+      var chrome = document.createElement('button');
+      chrome.type = 'button';
+      chrome.textContent = 'Abrir Gemini en Chrome';
+      chrome.style.cssText = 'border:0;border-radius:999px;background:#e8eaed;padding:6px 10px;cursor:pointer;font:650 12px system-ui';
+      chrome.onclick = function () { window.open('https://gemini.google.com/app?hl=es-419', '_blank', 'noopener'); };
+      head.append(chrome, close);
+      var log = document.createElement('div');
+      log.style.cssText = 'flex:1;overflow:auto;padding:8px 16px 12px';
+      if (blob) {
+        var img = document.createElement('img');
+        img.alt = 'Selección';
+        img.src = URL.createObjectURL(blob);
+        img.style.cssText = 'max-width:100%;border-radius:16px;display:block;margin:8px 0';
+        var cap = document.createElement('div');
+        cap.style.cssText = 'font-size:12px;opacity:.6;margin-bottom:8px';
+        cap.textContent = 'De la pantalla · adjunto al chat';
+        log.append(cap, img);
+      } else {
+        var miss = document.createElement('div');
+        miss.style.cssText = 'opacity:.7;margin:8px 0';
+        miss.textContent = 'No se pudo capturar el recorte. Elige la pestaña Drift si Chrome lo pide, o descríbelo abajo.';
+        log.appendChild(miss);
+      }
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;gap:8px;padding:12px;border-top:1px solid #eee';
+      var input = document.createElement('input');
+      input.placeholder = 'Pregunta sobre lo que marcaste';
+      input.style.cssText = 'flex:1;border:0;background:#f1f3f4;border-radius:999px;padding:12px 14px;font:15px system-ui';
+      var send = document.createElement('button');
+      send.type = 'button';
+      send.textContent = 'Enviar';
+      send.style.cssText = 'border:0;border-radius:999px;background:#1a73e8;color:#fff;padding:0 14px;font-weight:700;cursor:pointer';
+      row.append(input, send);
+      w.append(head, log, row);
       document.body.appendChild(w);
-      if (typeof window.openProxied === 'function') window.openProxied('https://gemini.google.com/app', right);
-    });
+      var dx = 0, dy = 0, on = false;
+      head.addEventListener('pointerdown', function (ev) {
+        if (ev.target === close || ev.target === chrome) return;
+        on = true;
+        dx = ev.clientX - w.offsetLeft;
+        dy = ev.clientY - w.offsetTop;
+      });
+      window.addEventListener('pointermove', function (ev) {
+        if (!on) return;
+        w.style.left = (ev.clientX - dx) + 'px';
+        w.style.top = (ev.clientY - dy) + 'px';
+      });
+      window.addEventListener('pointerup', function () { on = false; });
+      async function go() {
+        var q = input.value.trim() || '¿Qué hay en esta selección?';
+        input.value = '';
+        var me = document.createElement('div');
+        me.style.cssText = 'margin:8px 0;background:#f1f3f4;border-radius:16px;padding:10px 12px';
+        me.textContent = q;
+        var reply = document.createElement('div');
+        reply.style.cssText = 'margin:8px 0;white-space:pre-wrap';
+        reply.textContent = 'Gemini está contestando…';
+        log.append(me, reply);
+        log.scrollTop = log.scrollHeight;
+        try {
+          var text = '';
+          if (typeof window.driftAsk === 'function') text = await window.driftAsk(q, blob);
+          if (!text) reply.textContent = 'Sin respuesta.';
+          else reply.textContent = text;
+        } catch (err2) { reply.textContent = 'Sin respuesta.'; }
+      }
+      send.onclick = go;
+      input.onkeydown = function (ev) { if (ev.key === 'Enter') go(); };
+    };
   }
   function installSupport() {
     var on = false;
@@ -3171,17 +3380,30 @@ function driftSite(url) {
   }
   function installGoogleApps() {
     if (!window.XAPPS) return;
+    function googleOpera(url, root) {
+      operaPage(url, 'firefox')(root);
+      var n = 0;
+      var timer = setInterval(function () {
+        if (!root.isConnected || ++n > 10) { clearInterval(timer); return; }
+        var fr = root.querySelector('iframe');
+        var text = '';
+        try { text = fr && fr.contentDocument && fr.contentDocument.body ? String(fr.contentDocument.body.innerText || '').slice(0, 500) : ''; } catch (e) { text = ''; }
+        if (/401|malformed|That.s an error/i.test(text)) {
+          clearInterval(timer);
+          var basic = /classroom/i.test(url) ? 'https://classroom.google.com/u/0/h' : 'https://mail.google.com/mail/u/0/h/';
+          if (url !== basic) operaPage(basic, 'firefox')(root);
+        }
+      }, 900);
+    }
     window.XAPPS.gmail = { n: 'Gmail', f: function (root) {
       root.innerHTML = '';
       root.style.cssText = 'height:100%;min-height:0;position:relative;background:#fff';
-      if (typeof window.openProxied === 'function') window.openProxied('https://mail.google.com/mail/u/0/', root);
-      else root.textContent = 'Gmail is still starting.';
+      googleOpera('https://mail.google.com/mail/u/0/', root);
     } };
     window.XAPPS.classroom = { n: 'Classroom', f: function (root) {
       root.innerHTML = '';
       root.style.cssText = 'height:100%;min-height:0;position:relative;background:#fff';
-      if (typeof window.openProxied === 'function') window.openProxied('https://classroom.google.com/', root);
-      else root.textContent = 'Classroom is still starting.';
+      googleOpera('https://classroom.google.com/', root);
     } };
   }
   function installLensOrb() {
@@ -4148,6 +4370,12 @@ function driftSite(url) {
       #task .tb, #task #clock, .icons .ico { color:#fff; }
       body.drift-round-tb #task { width: max-content; max-width: calc(100% - 16px); left: 50%; right: auto; transform: translateX(-50%); bottom: 8px; border-radius: 22px !important; padding: 0 14px; overflow: hidden; backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); }
       #drift-settings-win button[style*="1a73e8"], #drift-settings-win a[style*="1a73e8"] { background: #c5c8ce !important; color: #1c1e22 !important; }
+      #task { padding-right: 280px !important; box-sizing: border-box !important; }
+      #drift-join { position: absolute; right: 168px; top: 50%; transform: translateY(-50%); z-index: 6; border: 0; border-radius: 999px; background: #e8e8e8; color: #111; font: 650 12px system-ui; padding: 6px 10px; cursor: pointer; white-space: nowrap; }
+      #drift-settings-win nav button { min-height: 40px; font-weight: 650; }
+      #drift-settings-win #drift-set-main section > div { padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.06); }
+      #drift-settings-win input, #drift-settings-win select, #drift-settings-win textarea { max-width: 100%; box-sizing: border-box; }
+      #drift-settings-win .bm-card { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 12px; margin: 8px 0; border: 1px solid rgba(255,255,255,.1); border-radius: 14px; background: rgba(255,255,255,.04); }
       body.drift-hub #drift-hub-side { background: rgba(255,255,255,.16) !important; color: #111; backdrop-filter: blur(22px) saturate(1.4); -webkit-backdrop-filter: blur(22px) saturate(1.4); border-right: 1px solid rgba(255,255,255,.28) !important; }
       body.drift-hub #drift-hub-side .hub-sec { background: rgba(255,255,255,.28); border: 1px solid rgba(255,255,255,.35); border-radius: 14px; justify-content: space-between; color: #111; font-weight: 600; }
       body.drift-hub #drift-hub-side .hub-sec i { order: 2; margin-left: auto; }
@@ -4224,7 +4452,33 @@ function driftSite(url) {
     paint();
     document.body.appendChild(veil);
   }
-  onReady(function () { boot(); setTimeout(installThinkStyles, 400); setTimeout(installVersionBadge, 500); setTimeout(installGoogleApps, 700); setTimeout(installSupport, 800); setTimeout(installTour, 900); });
+  function installAccountGate() {
+    function hasAccount() {
+      try {
+        var raw = localStorage.getItem('wos:cur');
+        if (!raw || raw === 'null' || raw === '""') return false;
+        var name = JSON.parse(raw);
+        var users = JSON.parse(localStorage.getItem('wos:users') || '{}');
+        return !!(name && users && users[name]);
+      } catch (e) { return false; }
+    }
+    var btn = document.getElementById('drift-join');
+    if (hasAccount()) {
+      if (btn) btn.remove();
+      return;
+    }
+    if (!document.querySelector('.auth') && !document.getElementById('drift-tour') && typeof authUI === 'function') authUI('up');
+    if (!btn) {
+      btn = document.createElement('button');
+      btn.id = 'drift-join';
+      btn.type = 'button';
+      btn.textContent = 'Crear cuenta';
+      btn.onclick = function () { if (typeof authUI === 'function' && !document.querySelector('.auth')) authUI('up'); };
+      var task = document.getElementById('task');
+      if (task) task.appendChild(btn);
+    }
+  }
+  onReady(function () { boot(); setTimeout(installThinkStyles, 400); setTimeout(installVersionBadge, 500); setTimeout(installGoogleApps, 700); setTimeout(installSupport, 800); setTimeout(installTour, 900); setTimeout(installAccountGate, 1100); setInterval(installAccountGate, 4000); });
   console.log('[Drift] fixup loaded');
 })();
 

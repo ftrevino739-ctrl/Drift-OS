@@ -370,32 +370,55 @@ iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#fff}
   }
 })();
 </script>
-<div id="drift-pass" style="position:fixed;right:12px;bottom:12px;z-index:8;width:280px;background:rgba(12,12,14,.92);color:#eee;border-radius:16px;padding:10px;font:13px/1.4 system-ui;box-shadow:0 10px 30px rgba(0,0,0,.35)">
+<div id="drift-pass" style="position:fixed;right:12px;bottom:12px;z-index:8;width:min(320px,calc(100% - 24px));max-height:72vh;overflow:auto;background:rgba(12,12,14,.94);color:#eee;border-radius:16px;padding:10px;font:13px/1.4 system-ui;box-shadow:0 10px 30px rgba(0,0,0,.35)">
   <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b>Bypass</b><span><button type="button" data-m="full" style="border:0;background:#2a2a2e;color:#fff;border-radius:8px;padding:4px 8px;cursor:pointer">Abierta</button> <button type="button" data-m="mini" style="border:0;background:#2a2a2e;color:#fff;border-radius:8px;padding:4px 8px;cursor:pointer">Poco</button> <button type="button" data-m="off" style="border:0;background:#2a2a2e;color:#fff;border-radius:8px;padding:4px 8px;cursor:pointer">Oculta</button></span></div>
   <div data-body>
     <label style="display:flex;justify-content:space-between;margin-top:8px">Protector <input type="checkbox" data-k="wos:protector"></label>
     <div style="margin-top:6px">Si hay clase <select data-k="wos:prot-class"><option value="alert">Avisar</option><option value="classroom">Avisar y Classroom</option></select></div>
+    <label style="display:block;margin-top:6px">Ocultar no educativas <input data-k="wos:kb-hide" placeholder="F9" style="width:100%;box-sizing:border-box"></label>
     <label style="display:block;margin-top:6px">Classroom <input data-k="wos:kb-class" placeholder="F10" style="width:100%;box-sizing:border-box"></label>
+    <label style="display:block;margin-top:6px">Discovery <input data-k="wos:kb-disc" placeholder="atajo" style="width:100%;box-sizing:border-box"></label>
+    <label style="display:block;margin-top:6px">ALEKS <input data-k="wos:kb-aleks" placeholder="atajo" style="width:100%;box-sizing:border-box"></label>
     <label style="display:block;margin-top:6px">Docs <input data-k="wos:kb-docs" placeholder="atajo" style="width:100%;box-sizing:border-box"></label>
-    <textarea data-ai placeholder="AI assistant" style="width:100%;box-sizing:border-box;min-height:48px;margin-top:8px;background:#111;color:#eee;border:1px solid #333;border-radius:8px"></textarea>
-    <button type="button" data-ask style="margin-top:6px;border:0;border-radius:8px;background:#e8e8e8;color:#111;padding:6px 10px;font-weight:700;cursor:pointer">Preguntar</button>
-    <div data-out style="margin-top:6px;max-height:80px;overflow:auto;opacity:.85"></div>
+    <label style="display:flex;justify-content:space-between;margin-top:10px">Asistente (Drift ball) <input type="checkbox" data-orb></label>
   </div>
+</div>
+<button id="drift-pass-peek" type="button" style="display:none;position:fixed;right:10px;bottom:10px;z-index:9;border:0;border-radius:999px;background:#e8e8e8;color:#111;padding:8px 12px;font:700 12px system-ui;cursor:pointer">Mostrar</button>
+<button id="drift-go-ball" type="button" hidden style="position:fixed;right:18px;bottom:88px;z-index:9;width:68px;height:68px;padding:0;border-radius:50%;border:2px solid rgba(255,255,255,.45);background:#071226;overflow:hidden;cursor:grab"><img src="/drift-mark.png" alt="" style="width:100%;height:100%;object-fit:cover;transform:scale(1.18);pointer-events:none"></button>
+<div id="drift-go-chat" hidden style="position:fixed;right:18px;bottom:166px;z-index:9;width:280px;background:#111;color:#eee;border-radius:16px;padding:10px;font:13px system-ui">
+  <textarea data-ai placeholder="Pregunta a Drift" style="width:100%;box-sizing:border-box;min-height:64px;background:#0c0c0e;color:#eee;border:1px solid #333;border-radius:10px"></textarea>
+  <button type="button" data-ask style="margin-top:6px;border:0;border-radius:8px;background:#e8e8e8;color:#111;padding:6px 10px;font-weight:700;cursor:pointer">Preguntar</button>
+  <div data-out style="margin-top:6px;max-height:120px;overflow:auto;opacity:.9"></div>
 </div>
 <script>
 (function () {
   var bar = document.getElementById('drift-pass');
+  var peek = document.getElementById('drift-pass-peek');
+  var ball = document.getElementById('drift-go-ball');
+  var chat = document.getElementById('drift-go-chat');
   if (!bar) return;
   var body = bar.querySelector('[data-body]');
   function mode(m) {
     try { localStorage.setItem('wos:pass-bar', m); } catch (e) {}
-    bar.style.display = m === 'off' ? 'none' : 'block';
-    if (body) body.style.display = m === 'mini' ? 'none' : 'block';
+    var off = m === 'off';
+    bar.style.display = off ? 'none' : 'block';
+    if (body) body.style.display = m === 'mini' ? 'none' : '';
+    if (peek) peek.style.display = 'none';
   }
   var saved = 'full';
   try { saved = localStorage.getItem('wos:pass-bar') || 'full'; } catch (e) {}
   mode(saved);
   bar.querySelectorAll('[data-m]').forEach(function (b) { b.onclick = function () { mode(b.getAttribute('data-m')); }; });
+  if (peek) {
+    peek.onclick = function () { mode('full'); };
+    window.addEventListener('pointermove', function (e) {
+      var m = 'full';
+      try { m = localStorage.getItem('wos:pass-bar') || 'full'; } catch (err) {}
+      if (m !== 'off') { peek.style.display = 'none'; return; }
+      var near = e.clientX > innerWidth - 120 && e.clientY > innerHeight - 80;
+      peek.style.display = near ? 'block' : 'none';
+    });
+  }
   bar.querySelectorAll('[data-k]').forEach(function (el) {
     var k = el.getAttribute('data-k');
     try { if (el.type === 'checkbox') el.checked = localStorage.getItem(k) === '1'; else el.value = localStorage.getItem(k) || ''; } catch (e) {}
@@ -403,6 +426,47 @@ iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#fff}
       try { localStorage.setItem(k, el.type === 'checkbox' ? (el.checked ? '1' : '0') : el.value); } catch (e) {}
     };
   });
+  var orb = bar.querySelector('[data-orb]');
+  function orbOn(on) {
+    try { localStorage.setItem('wos:go-orb', on ? '1' : '0'); } catch (e) {}
+    if (ball) ball.hidden = !on;
+    if (!on && chat) chat.hidden = true;
+  }
+  if (orb) {
+    try { orb.checked = localStorage.getItem('wos:go-orb') === '1'; } catch (e) {}
+    orbOn(orb.checked);
+    orb.onchange = function () { orbOn(orb.checked); };
+  }
+  if (ball && chat) {
+    var drag = null;
+    ball.addEventListener('pointerdown', function (e) {
+      drag = { x: e.clientX, y: e.clientY, l: ball.offsetLeft, t: ball.offsetTop, moved: false };
+    });
+    window.addEventListener('pointermove', function (e) {
+      if (!drag) return;
+      var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      if (Math.abs(dx) + Math.abs(dy) > 4) drag.moved = true;
+      ball.style.left = (drag.l + dx) + 'px';
+      ball.style.top = (drag.t + dy) + 'px';
+      ball.style.right = 'auto';
+      ball.style.bottom = 'auto';
+    });
+    window.addEventListener('pointerup', function () {
+      if (drag && !drag.moved) chat.hidden = !chat.hidden;
+      drag = null;
+    });
+    chat.querySelector('[data-ask]').onclick = async function () {
+      var q = chat.querySelector('[data-ai]').value.trim();
+      var out = chat.querySelector('[data-out]');
+      if (!q) return;
+      out.textContent = 'Contestando…';
+      try {
+        var r = await fetch('/api/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ max_tokens: 1200, messages: [{ role: 'user', content: q }], system: 'You are Drift. Responde en español de México, completo, sin cortar la frase.' }) });
+        var j = await r.json();
+        out.textContent = ((j.content || []).map(function (x) { return x.text || ''; }).join('')) || 'Sin respuesta.';
+      } catch (e) { out.textContent = 'Sin respuesta.'; }
+    };
+  }
   function keyHit(spec, e) {
     spec = String(spec || '').trim().toLowerCase();
     if (!spec) return false;
@@ -424,31 +488,26 @@ iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#fff}
   }
   window.addEventListener('keydown', function (e) {
     if (e.target && /input|textarea|select/i.test(e.target.tagName || '')) return;
-    var cls = '', docs = '', cur = '';
-    try {
-      cls = localStorage.getItem('wos:kb-class') || '';
-      docs = localStorage.getItem('wos:kb-docs') || '';
-      cur = new URLSearchParams(location.search).get('u') || '';
-    } catch (err) {}
-    var dest = '';
-    if (keyHit(cls, e)) dest = 'https://classroom.google.com/';
-    else if (keyHit(docs, e)) dest = 'https://docs.google.com/document/u/0/';
-    if (!dest) return;
-    if (cur && cur.indexOf(dest.replace(/^https?:\/\//, '').split('/')[0]) !== -1) return;
-    e.preventDefault();
-    location.href = '/go?u=' + encodeURIComponent(dest);
+    var cur = '';
+    try { cur = new URLSearchParams(location.search).get('u') || ''; } catch (err) {}
+    var map = [
+      ['wos:kb-class', 'https://classroom.google.com/'],
+      ['wos:kb-docs', 'https://docs.google.com/document/u/0/'],
+      ['wos:kb-disc', 'https://www.discoveryeducation.com/'],
+      ['wos:kb-aleks', 'https://www.aleks.com/']
+    ];
+    for (var i = 0; i < map.length; i++) {
+      var spec = '';
+      try { spec = localStorage.getItem(map[i][0]) || ''; } catch (err2) {}
+      if (!keyHit(spec, e)) continue;
+      var dest = map[i][1];
+      var host = dest.replace(/^https?:\/\//, '').split('/')[0];
+      if (cur.indexOf(host) !== -1) return;
+      e.preventDefault();
+      location.href = '/go?u=' + encodeURIComponent(dest);
+      return;
+    }
   });
-  bar.querySelector('[data-ask]').onclick = async function () {
-    var q = bar.querySelector('[data-ai]').value.trim();
-    var out = bar.querySelector('[data-out]');
-    if (!q) return;
-    out.textContent = 'Contestando…';
-    try {
-      var r = await fetch('/api/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ max_tokens: 600, messages: [{ role: 'user', content: q }], system: 'Responde en español de México, breve.' }) });
-      var j = await r.json();
-      out.textContent = ((j.content || []).map(function (x) { return x.text || ''; }).join('')) || 'Sin respuesta.';
-    } catch (e) { out.textContent = 'Sin respuesta.'; }
-  };
 })();
 </script>
 </body>

@@ -209,8 +209,11 @@
   function whatsappApp(root) {
     root.innerHTML = '';
     root.style.cssText = 'height:100%;min-height:0;position:relative;background:#111b21';
-    if (typeof openProxied === 'function') openProxied('https://web.whatsapp.com/', root);
-    else root.textContent = 'WhatsApp needs Scramjet.';
+    var frame = document.createElement('iframe');
+    frame.setAttribute('referrerpolicy', 'no-referrer');
+    frame.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#111b21';
+    frame.src = '/api/opera?u=' + encodeURIComponent('https://web.whatsapp.com/') + '&b=firefox';
+    root.appendChild(frame);
   }
 
   function githubApp(root) {

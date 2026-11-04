@@ -1,4 +1,5 @@
 import { createServer } from "node:http";
+import https from "node:https";
 import { fileURLToPath } from "url";
 import crypto from "node:crypto";
 import fs from "node:fs";
@@ -6,6 +7,7 @@ import path from "node:path";
 import { Readable } from "node:stream";
 import Fastify from "fastify";
 import fastifyStatic from "@fastify/static";
+import { WebSocketServer, WebSocket as NodeWS } from "ws";
 import { handleMod } from "./mod-desk.js";
 
 const rootPath = fileURLToPath(new URL("../", import.meta.url));
@@ -111,12 +113,12 @@ function loadAndPatchIndex() {
 	);
 
 	const tag =
-		'<script src="/drift-extras.js?v=20261103-pack" defer></script>' +
-		'<script src="/chromebook-proxy.js?v=20261103-pack" defer></script>' +
-		'<script src="/wayground-ai.js?v=20261103-pack" defer></script>' +
-		'<script src="/drift-fixup.js?v=20261103-pack" defer></script>' +
-		'<script src="/drift-userpatch.js?v=20261103-pack" defer></script>' +
-		"<script>window.__DRIFT_BUILD_WANT='20261103-pack';setTimeout(function(){if(window.__DRIFT_BUILD===window.__DRIFT_BUILD_WANT)return;var d=document.getElementById('drift-old');if(d)return;d=document.createElement('div');d.id='drift-old';d.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#000;color:#eee;overflow:auto;padding:28px;font:16px/1.5 system-ui';d.innerHTML='<div style=\"max-width:680px;margin:0 auto\"><b style=\"font-size:28px\">Versión vieja de Drift</b><p>Se abrió una copia guardada. Recarga forzada. No hace falta una terminal ni apagar el equipo con un comando.</p><p><b>Chrome, Edge, ChromeOS y Linux:</b> Ctrl+Shift+R. Si sigue igual, en la configuración del sitio borra los datos de Drift y entra otra vez.</p><p><b>Firefox:</b> Ctrl+Shift+R. Si sigue, Ajustes → Privacidad → borrar cookies y datos de este sitio.</p><p><b>Safari en Mac:</b> Opción+Comando+E y luego Comando+R. En iPhone o iPad: Ajustes → Safari → borrar historial y datos del sitio, o quita el acceso directo y ábrelo de nuevo.</p><p><b>Windows:</b> cierra el navegador desde la barra de tareas y ábrelo otra vez. El último paso, en cualquier sistema, es reiniciar el dispositivo desde el menú de apagado, no desde la terminal.</p></div>';document.body.appendChild(d);},2500);</script>" +
+		'<script src="/drift-extras.js?v=20261103-b" defer></script>' +
+		'<script src="/chromebook-proxy.js?v=20261103-b" defer></script>' +
+		'<script src="/wayground-ai.js?v=20261103-b" defer></script>' +
+		'<script src="/drift-fixup.js?v=20261103-b" defer></script>' +
+		'<script src="/drift-userpatch.js?v=20261103-b" defer></script>' +
+		"<script>window.__DRIFT_BUILD_WANT='20261103-b';setTimeout(function(){if(window.__DRIFT_BUILD===window.__DRIFT_BUILD_WANT)return;var d=document.getElementById('drift-old');if(d)return;d=document.createElement('div');d.id='drift-old';d.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#000;color:#eee;overflow:auto;padding:28px;font:16px/1.5 system-ui';d.innerHTML='<div style=\"max-width:680px;margin:0 auto\"><b style=\"font-size:28px\">Versión vieja de Drift</b><p>Se abrió una copia guardada. Recarga forzada. No hace falta una terminal ni apagar el equipo con un comando.</p><p><b>Chrome, Edge, ChromeOS y Linux:</b> Ctrl+Shift+R. Si sigue igual, en la configuración del sitio borra los datos de Drift y entra otra vez.</p><p><b>Firefox:</b> Ctrl+Shift+R. Si sigue, Ajustes → Privacidad → borrar cookies y datos de este sitio.</p><p><b>Safari en Mac:</b> Opción+Comando+E y luego Comando+R. En iPhone o iPad: Ajustes → Safari → borrar historial y datos del sitio, o quita el acceso directo y ábrelo de nuevo.</p><p><b>Windows:</b> cierra el navegador desde la barra de tareas y ábrelo otra vez. El último paso, en cualquier sistema, es reiniciar el dispositivo desde el menú de apagado, no desde la terminal.</p></div>';document.body.appendChild(d);},2500);</script>" +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +
@@ -159,13 +161,20 @@ const fastify = Fastify({
 				handler(req, res);
 			})
 			.on("upgrade", (req, socket, head) => {
-				if (wisp && req.url && req.url.endsWith("/wisp/")) {
+				const pathOnly = String(req.url || "").split("?")[0];
+				if (wisp && pathOnly.endsWith("/wisp/")) {
 					try {
 						wisp.routeRequest(req, socket, head);
 					} catch {
 						socket.end();
 					}
-				} else socket.end();
+					return;
+				}
+				if (pathOnly === "/api/wa-ws") {
+					try { routeWhatsAppSocket(req, socket, head); } catch { socket.destroy(); }
+					return;
+				}
+				socket.end();
 			}),
 });
 
@@ -242,15 +251,15 @@ fastify.post("/api/ai", { bodyLimit: 6 * 1024 * 1024 }, async (req, reply) => {
 	}
 	let text = "";
 	try {
-		if (process.env.GROQ_KEY) text = await fromChat("https://api.groq.com/openai/v1/chat/completions", process.env.GROQ_KEY, "llama-3.3-70b-versatile");
-		else if (process.env.OPENROUTER_KEY) text = await fromChat("https://openrouter.ai/api/v1/chat/completions", process.env.OPENROUTER_KEY, "openai/gpt-oss-20b:free");
+		if (process.env.GROQ_KEY) text = await fromChat("https://api.groq.com/openai/v1/chat/completions", process.env.GROQ_KEY, "llama-3.1-8b-instant");
+		else if (process.env.OPENROUTER_KEY) text = await fromChat("https://openrouter.ai/api/v1/chat/completions", process.env.OPENROUTER_KEY, "meta-llama/llama-3.2-3b-instruct:free");
 	} catch { text = ""; }
 	if (!text) {
 		try {
 			const r = await fetch("https://text.pollinations.ai/openai", {
 				method: "POST",
 				headers: { "content-type": "application/json" },
-				body: JSON.stringify({ model: "openai", messages: chat, max_tokens: maxTokens }),
+				body: JSON.stringify({ model: "llama", messages: chat, max_tokens: maxTokens }),
 				signal: AbortSignal.timeout(55000),
 			});
 			const j = await r.json();
@@ -347,18 +356,21 @@ fastify.post("/api/duck", { bodyLimit: 1024 * 1024 }, async (req, reply) => {
 		content: String(m && (typeof m.content === "string" ? m.content : "") || "").slice(0, 8000),
 	})).filter((m) => m.content);
 	if (!messages.length) messages.push({ role: "user", content: "Hello" });
+	const names = {
+		"gpt-4o-mini": "Duck GPT (GPT-4o mini on DuckDuckGo). You are not GPT-4.",
+		"claude-3-haiku-20240307": "Duck Haiku (Claude 3 Haiku). You are not ChatGPT.",
+		"meta-llama/Llama-3.3-70B-Instruct-Turbo": "Duck Llama (Meta Llama 3.3 70B). You are not ChatGPT.",
+		"mistralai/Mistral-Small-24B-Instruct-2501": "Duck Mistral. You are not ChatGPT.",
+		"gemma-4-31b": "Duck Gemma. You are not ChatGPT.",
+		"gpt-oss-120b": "Duck OSS. You are not ChatGPT.",
+	};
+	const who = names[model] || ("the DuckDuckGo model " + model + ". You are not ChatGPT.");
+	const primed = [{ role: "user", content: "For this chat you are " + who + " If asked what model you are, answer with that name only." }, { role: "assistant", content: "Understood." }].concat(messages);
 	let text = "";
-	const fastP = fastAnswer(messages);
-	const duckP = duckChat(model, messages).catch(() => { duckVqd = ""; return ""; });
-	try {
-		text = await Promise.race([
-			duckP.then((t) => (t && !/did not (answer|offer|respond)/i.test(t) ? t : new Promise(() => {}))),
-			new Promise((resolve) => setTimeout(() => resolve(fastP), 1800)),
-		]);
-		if (text && typeof text.then === "function") text = await text;
-	} catch { text = ""; }
-	if (!text || /did not (answer|offer|respond)|DuckDuckGo did not/i.test(text)) text = await fastP;
-	if (!text || /DuckDuckGo did not/i.test(text)) return reply.code(502).send({ error: { message: "No se pudo obtener respuesta." } });
+	try { text = await duckChat(model, primed); } catch { duckVqd = ""; text = ""; }
+	if (!text || /did not (answer|offer|respond)|DuckDuckGo did not/i.test(text)) {
+		return reply.code(502).send({ error: { message: "Duck no contestó. Vuelve a intentar." } });
+	}
 	reply.header("cache-control", "no-store");
 	return { content: [{ type: "text", text }] };
 });
@@ -644,6 +656,43 @@ function browserName(raw) {
 	const name = String(raw || "edge").toLowerCase();
 	return BROWSER_PROFILES[name] ? name : "edge";
 }
+const waWss = new WebSocketServer({ noServer: true });
+function routeWhatsAppSocket(req, socket, head) {
+	let target = "";
+	try { target = new URL(req.url, "http://localhost").searchParams.get("u") || ""; } catch { target = ""; }
+	let host = "";
+	try { host = new URL(target).hostname; } catch { host = ""; }
+	if (!/^wss:\/\//i.test(target) || !/(^|\.)whatsapp\.com$/i.test(host)) {
+		socket.destroy();
+		return;
+	}
+	waWss.handleUpgrade(req, socket, head, (client) => {
+		const upstream = new NodeWS(target, {
+			headers: {
+				Origin: "https://web.whatsapp.com",
+				"User-Agent": BROWSER_PROFILES.firefox.ua,
+			},
+		});
+		const pending = [];
+		let open = false;
+		client.on("message", (data, isBinary) => {
+			if (!open) pending.push([data, isBinary]);
+			else upstream.send(data, { binary: isBinary });
+		});
+		upstream.on("open", () => {
+			open = true;
+			for (const item of pending) upstream.send(item[0], { binary: item[1] });
+			pending.length = 0;
+		});
+		upstream.on("message", (data, isBinary) => {
+			if (client.readyState === NodeWS.OPEN) client.send(data, { binary: isBinary });
+		});
+		client.on("close", () => { try { upstream.close(); } catch {} });
+		upstream.on("close", () => { try { client.close(); } catch {} });
+		client.on("error", () => { try { upstream.close(); } catch {} });
+		upstream.on("error", () => { try { client.close(); } catch {} });
+	});
+}
 const operaJars = new Map();
 function operaHostOk(host) {
 	host = String(host || "").toLowerCase();
@@ -754,6 +803,9 @@ function operaBoot(browser) {
   try { Object.defineProperty(navigator, "vendor", { configurable: true, get: function(){ return "Google Inc."; } }); } catch (e) {}
   } else {
   try { Object.defineProperty(navigator, "vendor", { configurable: true, get: function(){ return ""; } }); } catch (e) {}
+  try { delete window.chrome; } catch (e) {}
+  try { Object.defineProperty(window, "chrome", { configurable: true, get: function(){ return undefined; } }); } catch (e) {}
+  try { Object.defineProperty(navigator, "userAgentData", { configurable: true, get: function(){ return undefined; } }); } catch (e) {}
   }
   try { Object.defineProperty(navigator, "cookieEnabled", { configurable: true, get: function(){ return true; } }); } catch (e) {}
   var memCookie = "";
@@ -783,6 +835,28 @@ function operaBoot(browser) {
   function abs(u){ try { return new URL(u, document.baseURI).href; } catch (e) { return ""; } }
   function waHere(){ try { return /(^|\\.)whatsapp\\.com$/i.test(new URL(document.baseURI).hostname); } catch (e) { return false; } }
   function sameWa(u){ try { return /(^|\\.)whatsapp\\.com$/i.test(new URL(abs(u)).hostname); } catch (e) { return false; } }
+  try {
+    if (navigator.serviceWorker && navigator.serviceWorker.register) {
+      navigator.serviceWorker.register = function(){ return Promise.reject(new Error("blocked")); };
+    }
+  } catch (e) {}
+  if (waHere()) {
+    var RealWS = window.WebSocket;
+    function DriftWS(url, proto) {
+      var next = url;
+      try {
+        var absU = abs(String(url || ""));
+        if (/^wss?:/i.test(absU) && sameWa(absU)) next = ours("/api/wa-ws?u=" + encodeURIComponent(absU.replace(/^ws:/i, "wss:")));
+      } catch (e) {}
+      return proto === undefined ? new RealWS(next) : new RealWS(next, proto);
+    }
+    DriftWS.prototype = RealWS.prototype;
+    DriftWS.CONNECTING = RealWS.CONNECTING;
+    DriftWS.OPEN = RealWS.OPEN;
+    DriftWS.CLOSING = RealWS.CLOSING;
+    DriftWS.CLOSED = RealWS.CLOSED;
+    window.WebSocket = DriftWS;
+  }
   function ours(path){ return location.origin + path; }
   function googleHost(u){
     try {
@@ -1051,6 +1125,46 @@ function operaInject(html, pageUrl, browser, origin) {
 	if (/<head[^>]*>/i.test(html)) return html.replace(/<head[^>]*>/i, (m) => m + boot);
 	return boot + html;
 }
+function rawHttps(url, method, headers, body) {
+	return new Promise((resolve, reject) => {
+		const u = new URL(url);
+		const req = https.request({
+			hostname: u.hostname,
+			port: u.port || 443,
+			path: u.pathname + u.search,
+			method,
+			headers,
+		}, (res) => {
+			const chunks = [];
+			res.on("data", (c) => chunks.push(c));
+			res.on("end", () => {
+				const buf = Buffer.concat(chunks);
+				const map = new Map();
+				const setCookies = [];
+				const raw = res.rawHeaders || [];
+				for (let i = 0; i < raw.length; i += 2) {
+					const k = String(raw[i] || "").toLowerCase();
+					const v = String(raw[i + 1] || "");
+					if (k === "set-cookie") setCookies.push(v);
+					else map.set(k, map.has(k) ? map.get(k) + ", " + v : v);
+				}
+				resolve({
+					status: res.statusCode || 0,
+					headers: {
+						get(name) { return map.get(String(name || "").toLowerCase()) || null; },
+						getSetCookie() { return setCookies; },
+						forEach(fn) { for (const [k, v] of map) fn(v, k); },
+					},
+					text() { return Promise.resolve(buf.toString("utf8")); },
+					arrayBuffer() { return Promise.resolve(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)); },
+				});
+			});
+		});
+		req.on("error", reject);
+		if (body && method !== "GET" && method !== "HEAD") req.write(body);
+		req.end();
+	});
+}
 async function operaFetch(target, method, form, jar, contentType, extraHeaders, browser) {
 	const profile = BROWSER_PROFILES[browserName(browser)];
 	let current = target;
@@ -1066,16 +1180,27 @@ async function operaFetch(target, method, form, jar, contentType, extraHeaders, 
 			accept: verb === "GET" && !form
 				? "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
 				: "text/html,application/xhtml+xml,application/json,application/xml;q=0.9,*/*;q=0.8",
-			"accept-language": "en-US,en;q=0.9",
+			"accept-language": "es-MX,es;q=0.9,en;q=0.8",
 		};
 		if (verb !== "GET") headers.origin = u.origin;
 		if (referer) headers.referer = referer;
 		else if (/(^|\.)roblox\.com$/i.test(u.hostname)) headers.referer = "https://www.roblox.com/";
-		if (verb === "GET" && i === 0) {
-			headers["sec-fetch-dest"] = "document";
-			headers["sec-fetch-mode"] = "navigate";
-			headers["sec-fetch-site"] = "none";
-			headers["sec-fetch-user"] = "?1";
+		const clientMode = extraHeaders && typeof extraHeaders === "object" ? extraHeaders["sec-fetch-mode"] || extraHeaders["Sec-Fetch-Mode"] : "";
+		if (!clientMode) {
+			const pathName = u.pathname;
+			let dest = "document";
+			let mode = "navigate";
+			if (/\.(?:m?js)(?:$)/i.test(pathName)) { dest = "script"; mode = "no-cors"; }
+			else if (/\.css$/i.test(pathName)) { dest = "style"; mode = "no-cors"; }
+			else if (/\.(?:png|jpe?g|gif|webp|svg|ico|avif|woff2?)$/i.test(pathName)) { dest = "image"; mode = "no-cors"; }
+			headers["sec-fetch-dest"] = dest;
+			headers["sec-fetch-mode"] = mode;
+			let site = "none";
+			if (referer) {
+				try { site = new URL(referer).origin === u.origin ? "same-origin" : "cross-site"; } catch { site = "cross-site"; }
+			}
+			headers["sec-fetch-site"] = site;
+			if (mode === "navigate") headers["sec-fetch-user"] = "?1";
 			headers["upgrade-insecure-requests"] = "1";
 		}
 		if (profile.ch) {
@@ -1094,12 +1219,7 @@ async function operaFetch(target, method, form, jar, contentType, extraHeaders, 
 		const cookie = operaCookie(jar, current);
 		if (cookie) headers.cookie = cookie;
 		if (verb === "POST") headers["content-type"] = contentType || "application/x-www-form-urlencoded";
-		const r = await fetch(current, {
-			method: verb,
-			headers,
-			body: verb === "POST" ? body : undefined,
-			redirect: "manual",
-		});
+		const r = await rawHttps(current, verb, headers, verb === "POST" ? body : "");
 		operaStore(jar, current, r);
 		if (r.status >= 300 && r.status < 400) {
 			const loc = r.headers.get("location");

@@ -1585,7 +1585,7 @@ function ai(root){
       if(typeof window.driftAct==='function'){const __a=window.driftAct('',txt);if(typeof __a==='string'&&__a.trim())txt=__a}
       if(looksCode && fenceBody(txt).length<80){
         try{
-          const again=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'groq-llama',max_tokens:4096,messages:[{role:'user',content:q}],system:'Return ONLY one fenced block with the complete file they asked for. No outline. Every line.',instructions:customInstr||''})});
+          const again=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'groq-llama-8b',max_tokens:8192,messages:[{role:'user',content:q}],system:'Return ONLY one fenced block with the complete file they asked for. No outline. Every line.',instructions:customInstr||''})});
           const jt=await again.json();
           const more=((jt.content||[]).map(x=>x.text||'').join(''));
           if(fenceBody(more).length>fenceBody(txt).length) txt=more;
@@ -1595,13 +1595,21 @@ function ai(root){
       }
       if(looksCode && (txt.match(/```/g)||[]).length%2===1){
         try{
-          const again=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'groq-llama',max_tokens:16384,messages:[{role:'user',content:'The file was cut off. Continue from the exact last characters. Output only the missing lines, no explanation.\n\n'+txt.slice(-7000)}],system:'Continue the cut-off source file. Do not repeat the beginning.'})});
+          const again=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'groq-llama-8b',max_tokens:8192,messages:[{role:'user',content:'The file was cut off. Continue from the exact last characters. Output only the missing lines, no explanation.\n\n'+txt.slice(-7000)}],system:'Continue the cut-off source file. Do not repeat the beginning.'})});
           const jt=await again.json();
           const more=((jt.content||[]).map(x=>x.text||'').join('')).replace(/^```[a-z0-9.+#-]*\n?/i,'').replace(/```\s*$/,'').trim();
           if(more) txt=txt.replace(/\s*$/,'\n')+more+'\n';
         }catch(e){}
       }
       if(txt.includes('```') && (txt.match(/```/g)||[]).length%2===1) txt=txt+'\n```';
+      if(txt && txt.length>700 && !/[.!?…"»)\]]$/.test(txt.trim()) && (txt.match(/```/g)||[]).length%2===0){
+        try{
+          const again=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'groq-llama-8b',max_tokens:4096,messages:[{role:'user',content:'The reply was cut off. Continue from the exact last characters. Do not repeat the start.\n\n'+txt.slice(-2500)}],system:'Continue the cut-off answer. Do not restart it.'})});
+          const jt=await again.json();
+          const more=((jt.content||[]).map(x=>x.text||'').join('')).trim();
+          if(more && more.length>12) txt=txt.replace(/\s*$/,'\n')+more;
+        }catch(e){}
+      }
       if(!/\b(qui[eé]n eres|who are you|c[oó]mo te llamas|your name|te llamas)\b/i.test(q)) txt=txt.replace(/^(hola[,.! ]*)?(soy|i am|i'm)\s+drift\b[^.!\n]*[.!]?\s*/i,'');
       out.innerHTML='';
       function driftSmooth(el, text){
@@ -1642,8 +1650,8 @@ function ai(root){
     const msgs=input.map(m=>({role:m.role,content:m.content}));
     if(o.images&&o.images.length){const last=msgs[msgs.length-1];const text=typeof last.content==='string'?last.content:'';last.content=[...await Promise.all(o.images.map(async b=>({type:'image',source:{type:'base64',media_type:b.type||'image/jpeg',data:await b64(b)}}))),{type:'text',text}]}
     if(o.model==='google/gemini-3.8-flash'){
-      const ask=String((msgs[msgs.length-1]&&msgs[msgs.length-1].content)||'');
-      const r=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'groq-llama',max_tokens:(/\b(c[oó]digo|code|html|lua|script)\b/i.test(ask)?16384:1800),messages:msgs,system:'You are Drift 2.1. Never say you are Gemini. Answer immediately and completely in the user language. Use markdown: **bold**, - bullets, tables, and ==highlight==. If they ask for code, put every line in one fenced block.',instructions:LS.get('wos:cinst','')}),signal:o.signal});
+      const ask=String((msgs[msgs.length-1]&&(typeof msgs[msgs.length-1].content==='string'?msgs[msgs.length-1].content:''))||'');
+      const r=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'groq-llama-8b',max_tokens:8192,messages:msgs,system:'You are Drift 2.1. Answer immediately and completely in the user language. Do not stop halfway. If they ask for code, put every line in one fenced block.',instructions:LS.get('wos:cinst','')}),signal:o.signal});
       const j=await r.json().catch(()=>({}));
       const text=((j.content||[]).map(x=>x.text||'').join(''))||'';
       if(text.trim())return {text};
@@ -1658,11 +1666,7 @@ function ai(root){
         text=((j.content||[]).map(x=>x.text||'').join(''))||'';
       }catch(e){}
       if(text.trim() && !/DuckDuckGo did not/i.test(text)) return {text};
-      const r2=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'groq-llama',max_tokens:1800,messages:msgs,system:'Answer immediately in the user language. Be brief and complete.'}),signal:o.signal});
-      const j2=await r2.json().catch(()=>({}));
-      const fast=((j2.content||[]).map(x=>x.text||'').join(''))||'';
-      if(fast.trim()) return {text:fast};
-      throw {message:'No se pudo obtener respuesta.'};
+      throw {message:'Duck no contestó. Vuelve a intentar.'};
     }
     if(real)return real(input,o);
     const GKEY=LS.get('wos:gk','');
@@ -1906,8 +1910,8 @@ function acct(){
   m.onclick=e=>{const x=e.target.dataset.x;if(e.target===m||x)m.remove();if(x==='sw')authUI();if(x==='out')sw(null)};
 }
 function authUI(mode='in'){
-  const up=mode==='up',m=document.createElement('div');m.className='auth';
-  m.innerHTML=`<button class="ax" aria-label="Close">✕</button><div class="ab"><div class="lg">Drift OS</div><p>${up?'Regístrate para guardar tus chats.':'Inicia sesión para guardar tus chats.'}</p><input id="au" placeholder="Usuario" autocomplete="username" autocapitalize="none"><input id="ap" type="password" placeholder="Contraseña" autocomplete="${up?'new-password':'current-password'}">${up?'<input id="ac" type="password" placeholder="Confirmar contraseña" autocomplete="new-password">':''}<small id="am">La cuenta guarda en este dispositivo tus chats de IA y de Chat.</small><button class="go">${up?'Registrarme':'Iniciar sesión'}</button><a class="sw">${up?'¿Ya tienes cuenta? Inicia sesión':'¿Necesitas una cuenta? Regístrate'}</a></div>`;
+  const up=mode==='up', forced=!S.user, m=document.createElement('div');m.className='auth';
+  m.innerHTML=`${forced?'':'<button class="ax" aria-label="Close">✕</button>'}<div class="ab"><div class="lg">Drift OS</div><p>${up?'Regístrate para guardar tus chats.':'Inicia sesión para guardar tus chats.'}</p><input id="au" placeholder="Usuario" autocomplete="username" autocapitalize="none"><input id="ap" type="password" placeholder="Contraseña" autocomplete="${up?'new-password':'current-password'}">${up?'<input id="ac" type="password" placeholder="Confirmar contraseña" autocomplete="new-password">':''}<small id="am">La cuenta guarda en este dispositivo tus chats de IA y de Chat.</small><button class="go">${up?'Registrarme':'Iniciar sesión'}</button><a class="sw">${up?'¿Ya tienes cuenta? Inicia sesión':'¿Necesitas una cuenta? Regístrate'}</a></div>`;
   document.body.appendChild(m);
   const ok=async()=>{
     const u=$('#au',m).value.trim().toLowerCase(),p=$('#ap',m).value,msg=$('#am',m),U=LS.get('wos:users',{});
@@ -1918,7 +1922,7 @@ function authUI(mode='in'){
     else if(U[u]!==h){msg.textContent='Usuario o contraseña incorrectos.';return}
     m.remove();sw(u);
   };
-  m.onclick=e=>{if(e.target.closest('.ax'))m.remove();else if(e.target.closest('.sw')){m.remove();authUI(up?'in':'up')}else if(e.target.closest('.go'))ok()};
+  m.onclick=e=>{if(!forced&&e.target.closest('.ax'))m.remove();else if(e.target.closest('.sw')){m.remove();authUI(up?'in':'up')}else if(e.target.closest('.go'))ok()};
   m.onkeydown=e=>{if(e.key==='Enter')ok()};
   setTimeout(()=>$('#au',m).focus(),50);
 }
@@ -2734,7 +2738,7 @@ function vscode(root){
     const wants=/\b(create|make|haz|crea|archivo|file|game|juego|build|minecraft)\b/i.test(asked);
     const sys='You are the coding assistant inside Drift VS Code. Never ask which file. If they want a game, a file, or any code, create it immediately. The first line must be FILE: name.ext. Use index.html for a web or 3d game, script.js for javascript, or the extension they asked for. Then one fenced block with the COMPLETE file. After the fence, one line ABOUT: a short sentence of what you did. Do not ask questions. Do not paste code outside the fence.';
     async function pull(prompt){
-      const r=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({max_tokens:2200,messages:[{role:'user',content:prompt}],system:sys})});
+      const r=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({max_tokens:8192,messages:[{role:'user',content:prompt}],system:sys})});
       const raw=await r.text();
       if(/^\s*</.test(raw)) throw new Error('No answer. Try again.');
       let j; try{ j=JSON.parse(raw); }catch(e){ throw new Error('No answer. Try again.'); }
@@ -2745,7 +2749,7 @@ function vscode(root){
       const re=/FILE:\s*([^\n]+)\n```[^\n]*\n([\s\S]*?)```/g; let m;
       while((m=re.exec(text))) made.push([m[1].trim(), m[2].replace(/\s+$/,'')]);
       if(!made.length){
-        const fence=text.match(/```([a-z0-9.+#-]*)\n([\s\S]*?)```/i);
+        const fence=text.match(/```([a-z0-9.+#-]*)\n([\s\S]*?)```/i) || text.match(/```([a-z0-9.+#-]*)\n([\s\S]+)$/i);
         if(fence){
           const map={python:'py',py:'py',javascript:'js',js:'js',typescript:'ts',ts:'ts',html:'html',css:'css',lua:'lua',luau:'lua',json:'json',cpp:'cpp','c++':'cpp',c:'c',java:'java',cs:'cs',go:'go',rust:'rs',rs:'rs',php:'php',ruby:'rb',rb:'rb'};
           const ext=map[(fence[1]||'').toLowerCase()]||(/game|minecraft|3d|html/i.test(asked)?'html':'js');
