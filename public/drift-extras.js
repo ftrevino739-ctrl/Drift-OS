@@ -346,8 +346,7 @@
         return name;
       }
       try {
-        var sys = 'You are Drift inside JS Injector. Never ask which file. Reply fast. First line is ABOUT: one short sentence. If they want a file or a change, the next line is FILE: name.ext (script.js if they did not name one). Then one fenced javascript block with the COMPLETE file. Do not paste code outside the fence.';
-        var r = await fetch('/api/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ max_tokens: 1800, messages: [{ role: 'user', content: q }], system: sys }) });
+        var r = await fetch((typeof EP === 'function' ? EP() : 'https://holy-firefly-982c.fert0480.workers.dev').replace(/\/$/, '') + '/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'mistralai/mistral-large-2512', max_tokens: 8192, messages: [{ role: 'user', content: q }] }) });
         var raw = await r.text();
         if (/^\s*</.test(raw)) throw new Error('No answer. Try again.');
         var j; try { j = JSON.parse(raw); } catch (err) { throw new Error('No answer. Try again.'); }
@@ -361,7 +360,7 @@
         var fence = text.match(/```[^\n]*\n([\s\S]*?)```/);
         var codeText = fence ? fence[1].replace(/\s+$/, '') : '';
         if (!codeText && wants) {
-          var r2 = await fetch('/api/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ max_tokens: 1800, messages: [{ role: 'user', content: q + '\n\nCreate the file now. FILE: script.js then one javascript fence. No questions.' }], system: sys }) });
+          var r2 = await fetch((typeof EP === 'function' ? EP() : 'https://holy-firefly-982c.fert0480.workers.dev').replace(/\/$/, '') + '/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'mistralai/mistral-large-2512', max_tokens: 8192, messages: [{ role: 'user', content: q }] }) });
           var raw2 = await r2.text();
           if (!/^\s*</.test(raw2)) {
             try { j = JSON.parse(raw2); text = ((j.content || []).map(function (x) { return x.text || ''; }).join('')) || text; } catch (e2) {}
@@ -448,33 +447,18 @@
         if (!q) return;
         out.textContent = 'Writing a new file…';
         try {
-          var body = {
-            systemInstruction: { parts: [{ text: 'You are Drift 2.1, the coding assistant inside Drift VS Code. When the user asks you to create something, reply with one or more new files. For each file use exactly:\nFILE: name.ext\n```\ncomplete code\n```\nPick the real extension (.py .json .js .ts .lua .luau .html .css .md .sql). Write the COMPLETE file. Never truncate, never say the rest continues.' }] },
-            contents: [{ role: 'user', parts: [{ text: q }] }],
-            generationConfig: { maxOutputTokens: 65536, temperature: 0.4 }
-          };
-          var r = await fetch('/api/gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-          var j = await r.json();
-          var text = '';
-          if (r.ok) {
-            text = ((((j.candidates || [])[0] || {}).content || {}).parts || []).filter(function (p) { return !p.thought; }).map(function (p) { return p.text || ''; }).join('');
-          } else if (r.status === 404 || /no-key/i.test(JSON.stringify(j.error || ''))) {
-            var ep = (typeof EP === 'function' ? EP() : (window.DDG0 || 'https://holy-firefly-982c.fert0480.workers.dev')).replace(/\/$/, '');
-            var r2 = await fetch(ep + '/ai', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                model: 'google/gemini-3.8-flash',
-                max_tokens: 32768,
-                messages: [{ role: 'user', content: q }],
-                system: body.systemInstruction.parts[0].text
-              })
-            });
-            var j2 = await r2.json();
-            text = ((j2.content || []).map(function (x) { return x.text || ''; }).join('')) || (j2.error && (j2.error.message || String(j2.error))) || '';
-          } else {
-            text = (j.error && (j.error.message || String(j.error))) || 'Drift 2.1 did not answer.';
-          }
+          var ep = (typeof EP === 'function' ? EP() : (window.DDG0 || 'https://holy-firefly-982c.fert0480.workers.dev')).replace(/\/$/, '');
+          var r2 = await fetch(ep + '/ai', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              model: 'mistralai/mistral-large-2512',
+              max_tokens: 8192,
+              messages: [{ role: 'user', content: q }]
+            })
+          });
+          var j2 = await r2.json();
+          var text = ((j2.content || []).map(function (x) { return x.text || ''; }).join('')) || '';
           var re = /FILE:\s*([^\n]+)\n```[^\n]*\n([\s\S]*?)```/g, m, made = [], hit;
           while ((m = re.exec(text))) made.push([m[1].trim(), m[2].replace(/\s+$/, '')]);
           if (!made.length) {
@@ -537,47 +521,13 @@
 
   function classdojoApp(root) {
     var page = 'https://www.classdojo.com/';
-    var scriptUrl = 'https://raw.githubusercontent.com/appsandoranges/Class-Dojo-Plus/master/class-dojo-plus.js';
     root.innerHTML = '';
     root.style.cssText = 'height:100%;min-height:0;position:relative;background:#fff';
     var box = document.createElement('div');
-    box.style.cssText = 'position:absolute;inset:0';
+    box.style.cssText = 'position:absolute;inset:0;pointer-events:auto';
     root.appendChild(box);
-    var src = '';
-    var seen = '';
-    function inject() {
-      var frame = box.querySelector('iframe');
-      if (!frame || !src) return;
-      try {
-        var d = frame.contentDocument;
-        var href = String(frame.contentWindow.location.href || '');
-        if (!d || !d.documentElement) return;
-        if (href !== seen) {
-          seen = href;
-          d.documentElement.removeAttribute('data-cdp');
-        }
-        if (d.documentElement.getAttribute('data-cdp') === '1') return;
-        d.documentElement.setAttribute('data-cdp', '1');
-        var s = d.createElement('script');
-        s.textContent = src + '\n//# sourceURL=class-dojo-plus.js';
-        (d.head || d.documentElement).appendChild(s);
-      } catch (e) {}
-    }
-    fetch('/api/raw?u=' + encodeURIComponent(scriptUrl), { cache: 'no-store' }).then(function (r) {
-      if (!r.ok) throw new Error('mod');
-      return r.text();
-    }).then(function (t) {
-      src = String(t || '').replace(/^[\s\S]*?==\/UserScript==\s*/, '');
-      inject();
-    }).catch(function () {});
-    if (typeof window.openProxied === 'function') {
-      window.openProxied(page, box).then(function (frame) {
-        if (frame && frame.frame) frame.frame.addEventListener('load', function () { setTimeout(inject, 400); });
-        setTimeout(inject, 800);
-      }).catch(function () {});
-    } else {
-      box.textContent = page;
-    }
+    if (typeof window.openProxied === 'function') window.openProxied(page, box);
+    else box.textContent = page;
   }
 
   function registerCore() {

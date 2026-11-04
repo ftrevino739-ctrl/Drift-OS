@@ -1,7 +1,7 @@
 /* Drift fixup */
 (function () {
   'use strict';
-  window.__DRIFT_BUILD = '20261103-d';
+  window.__DRIFT_BUILD = '20261104-a';
   window.DRIFT_BEST_MODEL = window.DRIFT_BEST_MODEL || 'mistralai/mistral-large-4-0';
   window.DRIFT_CODE_MODEL = 'google/gemini-3.8-flash';
 
@@ -293,6 +293,16 @@ function driftSite(url) {
     };
   }
   var YT_URL = 'https://www.youtube.com/?hl=es-419&gl=MX&persist_hl=1&persist_gl=1&app=desktop&bpctr=9999999999';
+  function ytVideoId(href) {
+    try {
+      var u = new URL(String(href || ''), 'https://www.youtube.com/');
+      if (/youtu\.be$/i.test(u.hostname)) return (u.pathname.split('/').filter(Boolean)[0] || '').replace(/[^A-Za-z0-9_-]/g, '');
+      var v = u.searchParams.get('v');
+      if (v) return v.replace(/[^A-Za-z0-9_-]/g, '');
+      var m = u.pathname.match(/\/(?:shorts|embed|live|v)\/([^/?#]+)/);
+      return m ? m[1].replace(/[^A-Za-z0-9_-]/g, '') : '';
+    } catch (e) { return ''; }
+  }
   function youtubeApp(root) {
     root.innerHTML = '';
     root.style.cssText = 'height:100%;min-height:0;position:relative;background:#000';
@@ -326,9 +336,43 @@ function driftSite(url) {
       }
       f.frame.addEventListener('load', function () { setTimeout(lock, 400); });
       var n = 0;
+      var swapped = false;
+      function showVideo(id) {
+        if (swapped || !id) return;
+        swapped = true;
+        clearInterval(timer);
+        root.innerHTML = '';
+        root.style.cssText = 'height:100%;min-height:0;position:relative;background:#000;display:flex;flex-direction:column';
+        var bar = document.createElement('div');
+        bar.style.cssText = 'flex:none;display:flex;align-items:center;gap:8px;padding:6px 8px;background:#111;color:#fff;font:13px system-ui';
+        var back = document.createElement('button');
+        back.type = 'button';
+        back.textContent = 'YouTube';
+        back.style.cssText = 'border:0;border-radius:8px;background:#222;color:#fff;padding:6px 10px;cursor:pointer';
+        back.onclick = function () { youtubeApp(root); };
+        bar.appendChild(back);
+        var emb = document.createElement('iframe');
+        emb.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen');
+        emb.setAttribute('allowfullscreen', '');
+        emb.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+        emb.style.cssText = 'flex:1;min-height:0;width:100%;border:0;background:#000';
+        emb.src = 'https://www.youtube-nocookie.com/embed/' + id + '?autoplay=1&rel=0';
+        root.append(bar, emb);
+      }
       var timer = setInterval(function () {
         if (!root.isConnected || ++n > 16) { clearInterval(timer); return; }
         lock();
+        try {
+          var fr = f.frame;
+          var href = '';
+          try { href = String(fr.contentWindow.location.href || ''); } catch (e) { href = ''; }
+          try { if (window.SJC && window.SJC.decodeUrl) { var dec = window.SJC.decodeUrl(href); if (dec) href = dec; } } catch (e2) {}
+          var id = ytVideoId(href);
+          var text = '';
+          try { text = fr.contentDocument && fr.contentDocument.body ? String(fr.contentDocument.body.innerText || '').slice(0, 500) : ''; } catch (e3) { text = ''; }
+          var bad = /couldn.?t load this page|could not load|Uh oh|refused to connect/i.test(text);
+          if (id && (bad || /\/watch|\/shorts\/|\/live\/|youtu\.be\//i.test(href))) showVideo(id);
+        } catch (e4) {}
       }, 700);
     }).catch(function () {});
   }
@@ -1143,33 +1187,9 @@ function driftSite(url) {
     window.XAPPS.winemu = { n: 'Windows emulator', f: windowsEmulator };
     window.XAPPS.gbuild = { n: 'Game Builder', f: driftSite('https://tesana.com/create') };
     window.XAPPS.minecraft = { n: 'Minecraft', f: function (root) {
-      root.innerHTML = '';
-      root.style.cssText = 'height:100%;min-height:0;position:relative;background:#000;color:#ddd';
-      var note = document.createElement('div');
-      note.textContent = 'Eaglercraft 1.8.8';
-      note.style.cssText = 'position:absolute;left:12px;top:8px;z-index:4;font:600 13px system-ui;pointer-events:none';
-      root.appendChild(note);
-      var urls = ['https://eaglercraft.com/mc/1.8.8/', 'https://eaglercraft.com/play?version=1.8.8&launch=1'];
-      var step = 0;
-      function mount(url) {
-        note.textContent = 'Eaglercraft 1.8.8';
-        if (typeof window.openProxied !== 'function') { note.textContent = 'Eaglercraft 1.8.8 — el proxy aún no arranca.'; return; }
-        root.querySelectorAll('iframe,.sjt').forEach(function (n) { n.remove(); });
-        window.openProxied(url, root);
-      }
-      mount(urls[0]);
-      var n = 0;
-      var timer = setInterval(function () {
-        if (!root.isConnected || ++n > 16) { clearInterval(timer); return; }
-        var fr = root.querySelector('iframe');
-        if (!fr) return;
-        var text = '';
-        try { text = fr.contentDocument && fr.contentDocument.body ? String(fr.contentDocument.body.innerText || '').slice(0, 240) : ''; } catch (e) { text = ''; }
-        if (/not found|refused|can.t be reached|ERR_|eaglercraft/i.test(text) && step < 1) {
-          step = 1;
-          mount(urls[1]);
-        }
-      }, 900);
+      var target = 'https://eaglercraft.com/mc/1.8.8/';
+      var via = 'https://translate.google.com/translate?sl=auto&tl=es&u=' + encodeURIComponent(target);
+      operaPage(via, 'bing', true)(root);
     } };
     window.XAPPS.espn = { n: 'ESPN', f: espnApp };
     window.XAPPS.gforms = { n: 'Google Forms', f: function (root) {
@@ -1197,41 +1217,8 @@ function driftSite(url) {
     window.XAPPS.yt = { n: 'YouTube', f: youtubeApp };
     window.XAPPS.tt = { n: 'TikTok', f: function (root) {
       root.innerHTML = '';
-      root.style.cssText = 'height:100%;overflow:auto;background:#000;color:#fff';
-      var box = document.createElement('div');
-      root.appendChild(box);
-      var cursor = '0', pages = 0;
-      function more() {
-        if (pages > 6) return;
-        pages++;
-        fetch('/api/tt-feed?cursor=' + encodeURIComponent(cursor)).then(function (r) { return r.json(); }).then(function (j) {
-          var items = (j && j.items) || [];
-          if (!items.length && pages === 1 && typeof window.openProxied === 'function') {
-            root.innerHTML = '';
-            window.openProxied('https://www.tiktok.com/foryou?lang=en', root);
-            return;
-          }
-          items.forEach(function (it) {
-            var v = document.createElement('video');
-            v.controls = true; v.playsInline = true; v.src = it.play;
-            v.style.cssText = 'width:100%;max-height:78vh;background:#000;display:block';
-            var cap = document.createElement('div');
-            cap.style.cssText = 'padding:8px 12px 18px;font:14px system-ui';
-            cap.textContent = (it.author ? '@' + it.author + ' · ' : '') + (it.title || '');
-            box.appendChild(v); box.appendChild(cap);
-          });
-          cursor = (j && j.cursor) || cursor;
-        }).catch(function () {
-          if (typeof window.openProxied === 'function') {
-            root.innerHTML = '';
-            window.openProxied('https://www.tiktok.com/foryou?lang=en', root);
-          }
-        });
-      }
-      more();
-      root.addEventListener('scroll', function () {
-        if (root.scrollTop + root.clientHeight > root.scrollHeight - 80) more();
-      });
+      root.style.cssText = 'height:100%;min-height:0;position:relative;background:#000';
+      operaPage('https://www.tiktok.com/', 'firefox', true)(root);
     } };
     window.XAPPS.gem = { n: 'Gemini', f: driftSite('https://gemini.google.com/app') };
     window.XAPPS.movies = { n: 'Movies', f: function (root) {
@@ -1272,6 +1259,12 @@ function driftSite(url) {
                 } catch (e4) { home = /racialequityleadership\.com\/?(?:\?|#|$)/i.test(href); }
               }
               if (home) fr.contentWindow.location.replace(page);
+              var text = '';
+              try { text = doc && doc.body ? String(doc.body.innerText || '').slice(0, 500) : ''; } catch (e5) { text = ''; }
+              if (/refused to connect|Uh oh|403 ERROR|Access Denied|couldn.?t load this page/i.test(text)) {
+                clearInterval(timer);
+                moviesApp(root);
+              }
             } catch (e) {}
           }, 700);
         }).catch(function () { moviesApp(root); });
@@ -1338,7 +1331,7 @@ function driftSite(url) {
     window.XAPPS.ig = { n: 'Instagram', f: function (root) {
       root.innerHTML = '';
       root.style.cssText = 'height:100%;min-height:0;position:relative;background:#fff';
-      operaPage('https://www.instagram.com/accounts/login/', 'edge')(root);
+      operaPage('https://www.instagram.com/', 'firefox', true)(root);
     } };
     window.__driftWhatsApp = 1;
     window.XAPPS.whatsapp = { n: 'WhatsApp', f: function (root) {
@@ -1389,8 +1382,15 @@ function driftSite(url) {
         window.S.d.v21 = 1;
         changed = true;
         if (!window.S.d.pins) window.S.d.pins = [];
-        ['movies', 'games', 'classroom', 'roblox', 'whatsapp', 'discord'].forEach(function (id) {
+        ['movies', 'games', 'roblox', 'whatsapp', 'discord'].forEach(function (id) {
           if (window.S.d.pins.indexOf(id) < 0) window.S.d.pins.push(id);
+        });
+      }
+      if (window.S && window.S.d && !window.S.d.v22) {
+        window.S.d.v22 = 1;
+        changed = true;
+        ['pins', 'desk'].forEach(function (k) {
+          if (Array.isArray(window.S.d[k])) window.S.d[k] = window.S.d[k].filter(function (id) { return id !== 'classroom'; });
         });
       }
       if (changed) {
@@ -1958,46 +1958,7 @@ function driftSite(url) {
     return 'win';
   }
   function robloxShell(root) {
-    root.innerHTML = '';
-    root.style.cssText = 'height:100%;min-height:0;position:relative;background:#111';
-    var urls = ['https://web.cloudmoonapp.com/game/com.roblox.client/', 'https://www.easyfun.gg/cloud-games/roblox.html'];
-    var step = 0;
-    if (typeof window.openProxied !== 'function') {
-      root.textContent = 'Roblox is still starting.';
-      return;
-    }
-    function mount(url) {
-      root.querySelectorAll('iframe,.sjt').forEach(function (n) { n.remove(); });
-      var old = root.querySelector('#drift-rbx-ads');
-      if (old) old.remove();
-      Promise.resolve(window.openProxied(url, root)).then(function () {
-        var n = 0;
-        var timer = setInterval(function () {
-          if (!root.isConnected || ++n > 20) { clearInterval(timer); return; }
-          var fr = root.querySelector('iframe');
-          if (!fr) return;
-          try {
-            var doc = fr.contentDocument;
-            if (!doc) return;
-            if (!doc.getElementById('drift-rbx-ads')) {
-              var st = doc.createElement('style');
-              st.id = 'drift-rbx-ads';
-              st.textContent = 'ins,.adsbygoogle,[id^=google_ads],[id*=aswift],[class*="ad-banner"],[class*="advert"],.ad-container,.popup-ad,#ad-container,.adsbox{display:none!important}';
-              (doc.head || doc.documentElement).appendChild(st);
-            }
-            var text = doc.body ? String(doc.body.innerText || '').slice(0, 280) : '';
-            if (step < 1 && /not found|refused|can.t be reached|ERR_|404/i.test(text)) {
-              step = 1;
-              clearInterval(timer);
-              mount(urls[1]);
-            }
-          } catch (e) {}
-        }, 800);
-      }).catch(function () {
-        if (step < 1) { step = 1; mount(urls[1]); }
-      });
-    }
-    mount(urls[0]);
+    operaPage('https://www.roblox.com/login', 'firefox', true)(root);
   }
   function inAppPage(url) {
     return function (root) {
@@ -2222,12 +2183,12 @@ function driftSite(url) {
   function wireLoginApps() {
     try {
       if (!window.XAPPS) return;
-      if (window.APPS) window.APPS.classroom = 'Classroom';
+      if (window.APPS) delete window.APPS.classroom;
       installGoogleApps();
       delete window.XAPPS.canva;
       if (window.APPS) delete window.APPS.canva;
       window.__driftRoblox = robloxShell;
-      window.__driftGmail = operaPage('https://mail.google.com/mail/u/0/', 'edge');
+      window.__driftGmail = operaPage('https://accounts.google.com/ServiceLogin?service=mail&passive=1209600&osid=1&continue=' + encodeURIComponent('https://mail.google.com/mail/u/0/') + '&followup=' + encodeURIComponent('https://mail.google.com/mail/u/0/') + '&emr=1', 'bing', true);
       window.XAPPS.roblox = { n: 'Roblox', f: robloxShell };
     } catch (e) {}
   }
@@ -2713,14 +2674,13 @@ function driftSite(url) {
     var classJs = 'javascript:(' + driftBypassBody.toString() + ')();';
     var guestJs = classJs;
     function googleMenuBody() {
-      if (!/google\./i.test(location.hostname)) { alert('Open this on a Google page.'); return; }
       var old = document.getElementById('drift-gmenu');
       if (old) { old.remove(); window.__driftGBar = null; return; }
       var css = document.getElementById('drift-gmenu-css');
       if (!css) {
         css = document.createElement('style');
         css.id = 'drift-gmenu-css';
-        css.textContent = '#drift-gmenu{position:fixed;right:12px;bottom:12px;z-index:2147483646;width:min(340px,calc(100vw - 24px));min-width:220px;min-height:160px;max-height:86vh;overflow:auto;resize:both;color:#111;border-radius:22px;padding:12px;font:13px/1.4 system-ui,sans-serif;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.48);box-shadow:0 12px 40px rgba(0,0,0,.18);backdrop-filter:blur(22px) saturate(1.6)}#drift-gmenu input,#drift-gmenu select,#drift-gmenu textarea{width:100%;box-sizing:border-box;margin-top:4px;padding:8px;border-radius:10px;border:1px solid rgba(255,255,255,.55);background:rgba(255,255,255,.5);color:#111}#drift-gmenu button{border:0;border-radius:10px;background:#c5c8ce;color:#111;font-weight:700;padding:8px 10px;cursor:pointer}#drift-gmenu [data-head]{cursor:move;user-select:none}#drift-gmenu [data-head] button{padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.55)}#drift-gmenu [data-log]{display:flex;flex-direction:column;gap:6px;min-height:72px;max-height:220px;overflow:auto}#drift-gmenu .u{align-self:flex-end;max-width:86%;background:#1a73e8;color:#fff;border-radius:12px 12px 4px 12px;padding:6px 8px;white-space:pre-wrap}#drift-gmenu .a{align-self:flex-start;max-width:86%;background:rgba(255,255,255,.78);color:#111;border-radius:12px 12px 12px 4px;padding:6px 8px;white-space:pre-wrap}';
+        css.textContent = '#drift-gmenu{position:fixed;right:12px;bottom:12px;z-index:2147483646;width:min(340px,calc(100vw - 24px));min-width:220px;min-height:160px;max-height:86vh;overflow:auto;resize:both;color:#111;border-radius:22px;padding:12px;font:13px/1.4 system-ui,sans-serif;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.48);box-shadow:0 12px 40px rgba(0,0,0,.18);backdrop-filter:blur(22px) saturate(1.6)}#drift-gmenu input,#drift-gmenu select,#drift-gmenu textarea{width:100%;box-sizing:border-box;margin-top:4px;padding:8px;border-radius:10px;border:1px solid rgba(255,255,255,.55);background:rgba(255,255,255,.5);color:#111}#drift-gmenu button{border:0;border-radius:10px;background:#c5c8ce;color:#111;font-weight:700;padding:8px 10px;cursor:pointer}#drift-gmenu [data-head]{cursor:move;user-select:none}#drift-gmenu [data-head] button{padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.55)}#drift-gmenu [data-log]{display:flex;flex-direction:column;gap:6px;min-height:72px;max-height:220px;overflow:auto}#drift-gmenu .u{align-self:flex-end;max-width:86%;background:#1a73e8;color:#fff;border-radius:12px 12px 4px 12px;padding:6px 8px;white-space:pre-wrap}#drift-gmenu .a{align-self:flex-start;max-width:86%;background:rgba(255,255,255,.78);color:#111;border-radius:12px 12px 12px 4px;padding:6px 8px;white-space:pre-wrap}#drift-gmenu input[type=checkbox]{appearance:none;-webkit-appearance:none;width:44px;height:26px;margin:0;padding:0;border:0;border-radius:999px;background:rgba(0,0,0,.28);position:relative;flex:none;cursor:pointer}#drift-gmenu input[type=checkbox]:after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .15s}#drift-gmenu input[type=checkbox]:checked{background:#1a73e8}#drift-gmenu input[type=checkbox]:checked:after{left:21px}#drift-gmenu textarea{min-height:84px;border-radius:18px;padding:12px 14px;background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.75);box-shadow:inset 0 1px 0 rgba(255,255,255,.65)}';
         document.documentElement.appendChild(css);
       }
       var bar = document.createElement('div');
@@ -2858,39 +2818,51 @@ function driftSite(url) {
       });
       function pull(j) { return ((j && j.content) || []).map(function (x) { return x.text || ''; }).join('').trim(); }
       async function driftFast(messages) {
-        var r = await fetch('https://holy-firefly-982c.fert0480.workers.dev/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'groq-llama-8b', max_tokens: 1200, messages: messages, system: 'You are Drift 2.1. Answer in the user language. Be complete. Read any attached file text.' }) });
+        var r = await fetch('https://holy-firefly-982c.fert0480.workers.dev/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'mistralai/mistral-large-2512', max_tokens: 1400, messages: messages }) });
         var j = await r.json();
         var text = pull(j);
         if (text) return text;
         throw new Error((j && j.error && (j.error.message || j.error)) || 'Try again.');
       }
       async function driftVision(data, ask) {
-        var text = '';
-        try {
-          var body = { systemInstruction: { parts: [{ text: 'You are Drift 2.1. The user is showing you a screenshot. Answer about what is visible, in their language, in one complete reply. Never say Gemini.' }] }, contents: [{ role: 'user', parts: [{ inlineData: { mimeType: 'image/jpeg', data: data } }, { text: ask }]}], generationConfig: { maxOutputTokens: 2048, temperature: 0.4 } };
-          var r = await fetch('https://drift.hostless.app/api/gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-          var j = await r.json();
-          if (r.ok) {
-            var parts = ((((j.candidates || [])[0] || {}).content || {}).parts || []);
-            text = parts.map(function (p) { return p.text || ''; }).join('').trim();
-          }
-        } catch (e) {}
-        if (!text) {
-          var r2 = await fetch('https://holy-firefly-982c.fert0480.workers.dev/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'google/gemini-3.8-flash', max_tokens: 2048, messages: [{ role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: data } }, { type: 'text', text: ask }] }], system: 'You are Drift 2.1. Answer about the screenshot. Never say Gemini.' }) });
-          var j2 = await r2.json();
-          text = pull(j2);
-        }
+        var r = await fetch('https://holy-firefly-982c.fert0480.workers.dev/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'mistralai/mistral-large-2512', max_tokens: 700, messages: [{ role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: data } }, { type: 'text', text: ask }] }] }) });
+        var j = await r.json();
+        var text = pull(j);
         if (!text) throw new Error('Try again.');
         return text;
+      }
+      function placeAns() {
+        var n = document.getElementById('drift-ball-ans');
+        var ball = document.getElementById('drift-gball');
+        if (!n || !ball) return;
+        var r = ball.getBoundingClientRect();
+        var w = Math.min(320, window.innerWidth * 0.9);
+        var left = r.left - w - 10;
+        if (left < 8) left = Math.min(window.innerWidth - w - 8, r.right + 10);
+        var top = Math.max(8, Math.min(window.innerHeight - 80, r.top));
+        n.style.left = left + 'px';
+        n.style.top = top + 'px';
+        n.style.right = 'auto';
+        n.style.bottom = 'auto';
       }
       function sayNear(text) {
         var n0 = document.getElementById('drift-ball-ans');
         if (n0) n0.remove();
         var n = document.createElement('div');
         n.id = 'drift-ball-ans';
-        n.textContent = text;
-        n.style.cssText = 'position:fixed;z-index:2147483646;right:18px;bottom:168px;width:min(320px,90vw);max-height:40vh;overflow:auto;background:rgba(255,255,255,.92);color:#111;border-radius:14px;padding:10px;font:13px/1.4 system-ui;box-shadow:0 8px 24px rgba(0,0,0,.2)';
+        n.style.cssText = 'position:fixed;z-index:2147483646;width:min(320px,90vw);max-height:40vh;overflow:auto;background:rgba(255,255,255,.72);color:#111;border:1px solid rgba(255,255,255,.55);border-radius:18px;padding:10px 10px 10px 28px;font:13px/1.4 system-ui;box-shadow:0 12px 40px rgba(0,0,0,.18);backdrop-filter:blur(18px) saturate(1.5)';
+        var x = document.createElement('button');
+        x.type = 'button';
+        x.textContent = '×';
+        x.setAttribute('aria-label', 'Dismiss');
+        x.style.cssText = 'position:absolute;left:6px;top:6px;width:22px;height:22px;border:0;border-radius:50%;background:transparent;color:#111;font-size:18px;line-height:1;cursor:pointer;padding:0';
+        x.onclick = function (e) { e.stopPropagation(); n.remove(); };
+        var body = document.createElement('div');
+        body.style.whiteSpace = 'pre-wrap';
+        body.textContent = text;
+        n.append(x, body);
         document.documentElement.appendChild(n);
+        placeAns();
       }
       async function grab() {
         var stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
@@ -2927,7 +2899,9 @@ function driftSite(url) {
         ball.id = 'drift-gball';
         ball.type = 'button';
         ball.style.cssText = 'position:fixed;right:18px;bottom:88px;z-index:2147483646;width:68px;height:68px;padding:0;border-radius:50%;border:2px solid rgba(255,255,255,.45);background:#071226;overflow:hidden;cursor:grab';
-        ball.innerHTML = '<img src="https://drift.hostless.app/drift-mark.png" alt="" style="width:100%;height:100%;object-fit:cover;transform:scale(1.18);pointer-events:none">';
+        ball.innerHTML = '<img alt="" referrerpolicy="no-referrer" src="https://drift.hostless.app/drift-mark.png" style="width:100%;height:100%;object-fit:cover;transform:scale(1.18);pointer-events:none">';
+        var mark = ball.querySelector('img');
+        if (mark) mark.onerror = function () { ball.style.background = 'radial-gradient(circle at 30% 30%, #7EC8FF, #0B1A36)'; this.remove(); };
         var drag = null;
         ball.addEventListener('pointerdown', function (e) {
           drag = { x: e.clientX, y: e.clientY, l: ball.offsetLeft, t: ball.offsetTop, moved: false };
@@ -2940,6 +2914,7 @@ function driftSite(url) {
           ball.style.left = (drag.l + dx) + 'px';
           ball.style.top = (drag.t + dy) + 'px';
           ball.style.right = 'auto'; ball.style.bottom = 'auto';
+          placeAns();
         });
         ball.addEventListener('pointerup', function () { if (drag && !drag.moved) screenAsk(); drag = null; });
         document.documentElement.appendChild(ball);
@@ -3090,7 +3065,7 @@ function driftSite(url) {
           '<div>Setup in your real browser, not inside Drift:</div>' +
           '<ol style="margin:8px 0 8px 18px;padding:0"><li>Show the bookmarks bar. Chrome and ChromeOS: Ctrl+Shift+B. Mac: Shift+Command+B.</li><li>Right-click the bookmarks bar, then Add page or Add bookmark.</li><li>Name it ' + title + '.</li><li>Paste into the URL field. It is already copied.</li><li>Save.</li></ol>' +
           '<div>How to use it:</div>' +
-          '<ol style="margin:8px 0 8px 18px;padding:0"><li>Open Google in that same real browser.</li><li>Search, or open the page you want.</li><li>Click the bookmark. ' + how + '</li></ol>' +
+          '<ol style="margin:8px 0 8px 18px;padding:0"><li>Open any site in that same real browser.</li><li>Search, or open the page you want.</li><li>Click the bookmark. ' + how + '</li></ol>' +
           '<button type="button" data-ok style="margin-top:6px;padding:8px 12px;border:0;border-radius:10px;background:#1a73e8;color:#fff;font-weight:650;cursor:pointer">OK</button>';
         document.body.appendChild(help);
         help.querySelector('[data-ok]').onclick = function () { help.remove(); };
@@ -3549,7 +3524,7 @@ function driftSite(url) {
     box.style.cssText = 'position:absolute;border:2px solid #1a73e8;background:rgba(26,115,232,.18);display:none;cursor:move;touch-action:none';
     var ask = document.createElement('button');
     ask.type = 'button';
-    ask.textContent = 'Preguntar a Gemini';
+    ask.textContent = 'Preguntar';
     ask.style.cssText = 'position:absolute;left:0;bottom:-36px;border:0;border-radius:999px;background:#1a73e8;color:#fff;font:650 12px system-ui;padding:6px 10px;cursor:pointer;white-space:nowrap';
     box.appendChild(ask);
     veil.append(tip, box);
@@ -3611,18 +3586,13 @@ function driftSite(url) {
       w.style.cssText = 'position:fixed;z-index:80;left:8vw;top:8vh;width:min(520px,92vw);height:min(640px,84vh);display:flex;flex-direction:column;background:#fff;color:#1f1f1f;border-radius:24px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.28);font:15px system-ui';
       var head = document.createElement('div');
       head.style.cssText = 'display:flex;align-items:center;gap:8px;padding:12px 14px;cursor:move;user-select:none';
-      head.innerHTML = '<span style="width:18px;height:18px;border-radius:50%;background:conic-gradient(#4285f4,#ea4335,#fbbc05,#34a853,#4285f4)"></span><b>Gemini</b><span style="opacity:.6;font-size:12px">Invitado</span>';
+      head.innerHTML = '<span style="width:18px;height:18px;border-radius:50%;background:conic-gradient(#4285f4,#ea4335,#fbbc05,#34a853,#4285f4)"></span><b>Lens</b>';
       var close = document.createElement('button');
       close.type = 'button';
       close.textContent = '✕';
       close.style.cssText = 'margin-left:auto;border:0;background:transparent;font-size:16px;cursor:pointer';
       close.onclick = function () { w.remove(); };
-      var chrome = document.createElement('button');
-      chrome.type = 'button';
-      chrome.textContent = 'Abrir Gemini en Chrome';
-      chrome.style.cssText = 'border:0;border-radius:999px;background:#e8eaed;padding:6px 10px;cursor:pointer;font:650 12px system-ui';
-      chrome.onclick = function () { window.open('https://gemini.google.com/app?hl=es-419', '_blank', 'noopener'); };
-      head.append(chrome, close);
+      head.append(close);
       var log = document.createElement('div');
       log.style.cssText = 'flex:1;overflow:auto;padding:8px 16px 12px';
       if (blob) {
@@ -3654,7 +3624,7 @@ function driftSite(url) {
       document.body.appendChild(w);
       var dx = 0, dy = 0, on = false;
       head.addEventListener('pointerdown', function (ev) {
-        if (ev.target === close || ev.target === chrome) return;
+        if (ev.target === close) return;
         on = true;
         dx = ev.clientX - w.offsetLeft;
         dy = ev.clientY - w.offsetTop;
@@ -3669,19 +3639,26 @@ function driftSite(url) {
         var q = input.value.trim() || '¿Qué hay en esta selección?';
         input.value = '';
         var me = document.createElement('div');
-        me.style.cssText = 'margin:8px 0;background:#f1f3f4;border-radius:16px;padding:10px 12px';
+        me.style.cssText = 'align-self:flex-end;max-width:86%;margin:8px 0 8px auto;background:#e8f0fe;border-radius:16px 16px 4px 16px;padding:10px 12px';
         me.textContent = q;
         var reply = document.createElement('div');
-        reply.style.cssText = 'margin:8px 0;white-space:pre-wrap';
-        reply.textContent = 'Gemini está contestando…';
+        reply.style.cssText = 'align-self:flex-start;max-width:86%;margin:8px auto 8px 0;white-space:pre-wrap;background:#f8f9fa;border-radius:16px 16px 16px 4px;padding:10px 12px';
+        reply.textContent = '…';
+        log.style.display = 'flex';
+        log.style.flexDirection = 'column';
         log.append(me, reply);
         log.scrollTop = log.scrollHeight;
         try {
           var text = '';
           if (typeof window.driftAsk === 'function') text = await window.driftAsk(q, blob);
-          if (!text) reply.textContent = 'Sin respuesta.';
-          else reply.textContent = text;
-        } catch (err2) { reply.textContent = 'Sin respuesta.'; }
+          if (!String(text || '').trim() && typeof window.driftAsk === 'function') text = await window.driftAsk(q, blob);
+          reply.textContent = String(text || '').trim() || 'No llegó. Pregunta otra vez.';
+        } catch (err2) {
+          try {
+            var again = typeof window.driftAsk === 'function' ? await window.driftAsk(q, blob) : '';
+            reply.textContent = String(again || '').trim() || 'No llegó. Pregunta otra vez.';
+          } catch (err3) { reply.textContent = 'No llegó. Pregunta otra vez.'; }
+        }
       }
       send.onclick = go;
       input.onkeydown = function (ev) { if (ev.key === 'Enter') go(); };
@@ -3715,31 +3692,19 @@ function driftSite(url) {
   }
   function installGoogleApps() {
     if (!window.XAPPS) return;
-    function directGoogle(label, url) {
-      return function (root) {
-        root.innerHTML = '';
-        root.style.cssText = 'height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center;background:#fff;color:#111;font:14px system-ui';
-        var title = document.createElement('b');
-        title.style.fontSize = '18px';
-        title.textContent = label;
-        var note = document.createElement('div');
-        note.style.cssText = 'max-width:420px;opacity:.75';
-        note.textContent = 'Se abre en este navegador, sin proxy.';
-        var btn = document.createElement('button');
-        btn.type = 'button';
-        btn.textContent = 'Abrir ' + label;
-        btn.style.cssText = 'padding:10px 16px;border:0;border-radius:10px;background:#c5c8ce;color:#111;font-weight:700;cursor:pointer';
-        function open() {
-          var w = window.open(url, '_blank', 'noopener');
-          if (!w) btn.textContent = 'Permite las ventanas, luego pulsa Abrir';
-        }
-        btn.onclick = open;
-        root.append(title, note, btn);
-        open();
-      };
-    }
-    window.XAPPS.gmail = { n: 'Gmail', f: directGoogle('Gmail', 'https://mail.google.com/mail/u/0/') };
-    window.XAPPS.classroom = { n: 'Classroom', f: directGoogle('Classroom', 'https://classroom.google.com/') };
+    try { if (window.APPS) delete window.APPS.classroom; } catch (e) {}
+    try { delete window.XAPPS.classroom; } catch (e2) {}
+    try { if (window.IC) delete window.IC.classroom; } catch (e3) {}
+    try {
+      if (window.S && window.S.d) {
+        ['pins', 'desk'].forEach(function (k) {
+          if (Array.isArray(window.S.d[k])) window.S.d[k] = window.S.d[k].filter(function (id) { return id !== 'classroom'; });
+        });
+      }
+    } catch (e4) {}
+    var login = 'https://accounts.google.com/ServiceLogin?service=mail&passive=1209600&osid=1&continue=' + encodeURIComponent('https://mail.google.com/mail/u/0/') + '&followup=' + encodeURIComponent('https://mail.google.com/mail/u/0/') + '&emr=1';
+    window.XAPPS.gmail = { n: 'Gmail', f: operaPage(login, 'bing', true) };
+    try { if (typeof rend === 'function') rend(); } catch (e5) {}
   }
   function installLensOrb() {
     var on = false;
@@ -3899,42 +3864,20 @@ function driftSite(url) {
     try { if (typeof EP === 'function') ep = String(EP()).replace(/\/$/, ''); } catch (e) {}
     try {
       var body = {
-        systemInstruction: { parts: [{ text: 'You are Drift 2.1. The user is showing you a screenshot. Answer about what is visible, in their language, in one complete reply. Never say Gemini. If they clearly ask to open a Drift app, add a final line OPEN_APP:id. Do not do that when they only ask for code.' }] },
-        contents: [{ role: 'user', parts: [
-          { inlineData: { mimeType: 'image/jpeg', data: data } },
-          { text: ask }
-        ]}],
-        generationConfig: { maxOutputTokens: 2048, temperature: 0.4, thinkingConfig: { thinkingBudget: 0 } }
+        model: 'mistralai/mistral-large-2512',
+        max_tokens: 900,
+        messages: [{ role: 'user', content: [
+          { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: data } },
+          { type: 'text', text: ask }
+        ]}]
       };
-      var r = await fetch('/api/gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      var r = await fetch(ep + '/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       var j = await r.json().catch(function () { return {}; });
-      if (!r.ok && /thinkingConfig|Unknown name|invalid/i.test(JSON.stringify(j && j.error || j))) {
-        delete body.generationConfig.thinkingConfig;
-        r = await fetch('/api/gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-        j = await r.json().catch(function () { return {}; });
-      }
-      var text = '';
-      if (r.ok) {
-        var parts = ((((j.candidates || [])[0] || {}).content || {}).parts || []);
-        text = parts.filter(function (p) { return !p.thought; }).map(function (p) { return p.text || ''; }).join('');
-        if (!String(text).trim()) text = parts.filter(function (p) { return p.thought; }).map(function (p) { return p.text || ''; }).join('\n');
-      }
+      var text = ((j.content || []).map(function (x) { return x.text || ''; }).join('')) || '';
       if (!String(text).trim()) {
-        var r2 = await fetch(ep + '/ai', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: 'google/gemini-3.8-flash',
-            max_tokens: 2048,
-            messages: [{ role: 'user', content: [
-              { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: data } },
-              { type: 'text', text: ask }
-            ]}],
-            system: 'You are Drift 2.1. Answer about the screenshot. Never say Gemini.'
-          })
-        });
-        var j2 = await r2.json().catch(function () { return {}; });
-        text = ((j2.content || []).map(function (x) { return x.text || ''; }).join('')) || '';
+        r = await fetch(ep + '/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        j = await r.json().catch(function () { return {}; });
+        text = ((j.content || []).map(function (x) { return x.text || ''; }).join('')) || '';
       }
       text = String(text || '').replace(/Gemini said/gi, 'Drift said');
       if (window.driftAct) {
@@ -4850,12 +4793,19 @@ function driftSite(url) {
   function installAccountGate() {
     function hasAccount() {
       try {
-        var raw = localStorage.getItem('wos:cur');
+        if (window.S && window.S.user) return true;
+        var raw = '';
+        try { raw = localStorage.getItem('wos:cur') || ''; } catch (e1) { raw = ''; }
+        if (!raw) { try { raw = sessionStorage.getItem('wos:cur') || ''; } catch (e2) { raw = ''; } }
         if (!raw || raw === 'null' || raw === '""') return false;
         var name = JSON.parse(raw);
-        var users = JSON.parse(localStorage.getItem('wos:users') || '{}');
+        var usersRaw = '{}';
+        try { usersRaw = localStorage.getItem('wos:users') || sessionStorage.getItem('wos:users') || '{}'; } catch (e3) {
+          try { usersRaw = sessionStorage.getItem('wos:users') || '{}'; } catch (e4) { usersRaw = '{}'; }
+        }
+        var users = JSON.parse(usersRaw || '{}');
         return !!(name && users && users[name]);
-      } catch (e) { return false; }
+      } catch (e) { return !!(window.S && window.S.user); }
     }
     var btn = document.getElementById('drift-join');
     if (hasAccount()) {
@@ -4875,7 +4825,7 @@ function driftSite(url) {
       if (task) task.appendChild(btn);
     }
   }
-  onReady(function () { boot(); setTimeout(installThinkStyles, 400); setTimeout(installVersionBadge, 500); setTimeout(installGoogleApps, 700); setTimeout(installSupport, 800); setTimeout(installTour, 900); setTimeout(installAccountGate, 1100); setInterval(installAccountGate, 4000); });
+  onReady(function () { try { if (typeof sjInit === 'function') sjInit(); } catch (e) {} boot(); setTimeout(installThinkStyles, 400); setTimeout(installVersionBadge, 500); setTimeout(installGoogleApps, 700); setTimeout(installSupport, 800); setTimeout(installTour, 900); setTimeout(installAccountGate, 1100); setInterval(installAccountGate, 4000); });
   console.log('[Drift] fixup loaded');
 })();
 

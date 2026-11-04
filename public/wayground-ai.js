@@ -12,7 +12,7 @@
     } catch (e) {}
     return 'https://holy-firefly-982c.fert0480.workers.dev/ai';
   })();
-  var DRIFT_MODEL = 'google/gemini-3.8-flash'; // Drift 2.1
+  var DRIFT_MODEL = 'mistralai/mistral-large-2512'; // Drift 2.1
 
   var GM_BOOT =
     "window.GM_getValue=function(k,d){try{var v=localStorage.getItem('GM_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}};" +
@@ -38,7 +38,7 @@
     "if(body){var sys='';if(body.systemInstruction&&body.systemInstruction.parts)sys=body.systemInstruction.parts.map(function(p){return p.text||''}).join('\\n');if(body.contents&&body.contents[0]&&body.contents[0].parts)userText=body.contents[0].parts.map(function(p){return p.text||(p.inline_data?'[image]':'')}).join('\\n');if(sys)userText=sys+'\\n'+userText;" +
     "else if(body.messages)userText=body.messages.filter(function(m){return m.role==='user'}).map(function(m){return typeof m.content==='string'?m.content:JSON.stringify(m.content)}).join('\\n');" +
     'else userText=JSON.stringify(body)}}catch(e){userText=String(opts.data||\'\')}' +
-    "fetch(DRIFT_AI,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:DRIFT_MODEL,messages:[{role:'user',content:userText}],system:SYS})})" +
+    "fetch(DRIFT_AI,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:DRIFT_MODEL,messages:[{role:'user',content:userText}]})})" +
     ".then(function(r){return r.json().then(function(j){var text=((j.content||[]).map(function(x){return x.text||''}).join('')||j.text||'');" +
     "if(!text&&j.choices&&j.choices[0]&&j.choices[0].message)text=j.choices[0].message.content||'';" +
     "text=(function(t){t=String(t||'').trim();var f=t.match(/```(?:json)?\\s*([\\s\\S]*?)```/i);if(f)t=f[1].trim();t=t.replace(/^\\*\\*([\\s\\S]*)\\*\\*$/,'$1').trim();function walk(v){if(typeof v==='string')return v.replace(/\\*\\*([\\s\\S]*?)\\*\\*/g,'$1').replace(/(^|\\s)\\*([^*\\n]+)\\*(?=\\s|$)/g,'$1$2').replace(/`([^`]+)`/g,'$1').trim();if(Array.isArray(v))return v.map(walk);if(v&&typeof v==='object'){var o={};for(var k in v)o[k]=walk(v[k]);return o;}return v;}try{var o=walk(JSON.parse(t));return JSON.stringify(o);}catch(e){var plain=t.replace(/```[\\w]*\\n?/g,'').replace(/```/g,'').replace(/\\*\\*([\\s\\S]*?)\\*\\*/g,'$1');try{var box=document.getElementById('drift-md')||document.createElement('div');box.id='drift-md';box.style.cssText='position:fixed;right:12px;bottom:12px;z-index:2147483646;max-width:min(440px,92vw);max-height:50vh;overflow:auto;background:#111;color:#fff;padding:12px;border-radius:12px;font:13px/1.45 system-ui';box.innerHTML=window.driftPaintAnswer?window.driftPaintAnswer(t):plain;document.body.appendChild(box);}catch(err){}return JSON.stringify({answers:{}});}})(text);" +

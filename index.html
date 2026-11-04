@@ -1551,7 +1551,7 @@ function ai(root){
       'Only when the user clearly asks to open an app, hide or show the taskbar, or change a setting, put each action on its own line and then a short answer. Use real lowercase ids, one per line, never the placeholder and never the same id twice. If they ask for several or random apps, pick that many different ids. Example for two apps:\nOPEN_APP:gmail\nOPEN_APP:games\nValid ids only: browser yt cam mus discord gmail ig tt classroom roblox movies code calc ai games chat github whatsapp wayground injector gimkit gem classdojo aleks espn winemu gbuild. Never write OPEN_APP:<id> or OPEN_APP:BROWSER. Do not emit those lines for code, homework, or ordinary questions.',
       EFI[eff]||''
     ].filter(Boolean).join(' ');
-    const input=mine.map((m,i)=>i===0?{role:m.role,content:pre+'\n\n'+m.content}:m);
+    const input=mine.map(function(m){return {role:m.role,content:m.content}});
     ctl=new AbortController();
     try{
       const r=await sample(input,{model,modelTier:(MODELS.find(x=>x[0]===model)||MODELS[0])[3],...(imgs.length?{images:imgs}:{}),cache:false,signal:ctl.signal,onThink:function(t){const full=String(t||'').trim();if(!full)return;thoughtNote=full;if(steps.indexOf('Esto revisé antes de escribir:')<0)steps.push('Esto revisé antes de escribir:');paintThink()},onText:({text})=>{
@@ -1585,7 +1585,7 @@ function ai(root){
       if(typeof window.driftAct==='function'){const __a=window.driftAct('',txt);if(typeof __a==='string'&&__a.trim())txt=__a}
       if(looksCode && fenceBody(txt).length<80){
         try{
-          const again=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'groq-llama-8b',max_tokens:8192,messages:[{role:'user',content:q}],system:'Return ONLY one fenced block with the complete file they asked for. No outline. Every line.',instructions:customInstr||''})});
+          const again=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'mistralai/mistral-large-2512',max_tokens:8192,messages:[{role:'user',content:q}]})});
           const jt=await again.json();
           const more=((jt.content||[]).map(x=>x.text||'').join(''));
           if(fenceBody(more).length>fenceBody(txt).length) txt=more;
@@ -1595,22 +1595,21 @@ function ai(root){
       }
       if(looksCode && (txt.match(/```/g)||[]).length%2===1){
         try{
-          const again=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'groq-llama-8b',max_tokens:8192,messages:[{role:'user',content:'The file was cut off. Continue from the exact last characters. Output only the missing lines, no explanation.\n\n'+txt.slice(-7000)}],system:'Continue the cut-off source file. Do not repeat the beginning.'})});
+          const again=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'mistralai/mistral-large-2512',max_tokens:8192,messages:[{role:'user',content:'The file was cut off. Continue from the exact last characters. Output only the missing lines, no explanation.\n\n'+txt.slice(-7000)}]})});
           const jt=await again.json();
           const more=((jt.content||[]).map(x=>x.text||'').join('')).replace(/^```[a-z0-9.+#-]*\n?/i,'').replace(/```\s*$/,'').trim();
           if(more) txt=txt.replace(/\s*$/,'\n')+more+'\n';
         }catch(e){}
       }
       if(txt.includes('```') && (txt.match(/```/g)||[]).length%2===1) txt=txt+'\n```';
-      if(txt && txt.length>700 && !/[.!?…"»)\]]$/.test(txt.trim()) && (txt.match(/```/g)||[]).length%2===0){
+      if((/<html[\s>]/i.test(txt) && !/<\/html>/i.test(txt)) || (txt && txt.length>700 && !/[.!?…"»)\]]$/.test(txt.trim()) && (txt.match(/```/g)||[]).length%2===0)){
         try{
-          const again=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'groq-llama-8b',max_tokens:4096,messages:[{role:'user',content:'The reply was cut off. Continue from the exact last characters. Do not repeat the start.\n\n'+txt.slice(-2500)}],system:'Continue the cut-off answer. Do not restart it.'})});
+          const again=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'mistralai/mistral-large-2512',max_tokens:4096,messages:[{role:'user',content:'The reply was cut off. Continue from the exact last characters. Do not repeat the start.\n\n'+txt.slice(-2500)}]})});
           const jt=await again.json();
           const more=((jt.content||[]).map(x=>x.text||'').join('')).trim();
           if(more && more.length>12) txt=txt.replace(/\s*$/,'\n')+more;
         }catch(e){}
       }
-      if(!/\b(qui[eé]n eres|who are you|c[oó]mo te llamas|your name|te llamas)\b/i.test(q)) txt=txt.replace(/^(hola[,.! ]*)?(soy|i am|i'm)\s+drift\b[^.!\n]*[.!]?\s*/i,'');
       out.innerHTML='';
       function driftSmooth(el, text){
         const parts=String(text||'').split(/(\s+)/);
@@ -1651,7 +1650,7 @@ function ai(root){
     if(o.images&&o.images.length){const last=msgs[msgs.length-1];const text=typeof last.content==='string'?last.content:'';last.content=[...await Promise.all(o.images.map(async b=>({type:'image',source:{type:'base64',media_type:b.type||'image/jpeg',data:await b64(b)}}))),{type:'text',text}]}
     if(o.model==='google/gemini-3.8-flash'){
       const ask=String((msgs[msgs.length-1]&&(typeof msgs[msgs.length-1].content==='string'?msgs[msgs.length-1].content:''))||'');
-      const r=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'groq-llama-8b',max_tokens:8192,messages:msgs,system:'You are Drift 2.1. Answer immediately and completely in the user language. Do not stop halfway. If they ask for code, put every line in one fenced block.',instructions:LS.get('wos:cinst','')}),signal:o.signal});
+      const r=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'mistralai/mistral-large-2512',max_tokens:16384,messages:msgs}),signal:o.signal});
       const j=await r.json().catch(()=>({}));
       const text=((j.content||[]).map(x=>x.text||'').join(''))||'';
       if(text.trim())return {text};
@@ -1668,7 +1667,7 @@ function ai(root){
       text=String(text||'').replace(/[^.!?\n]*talked\s+to+\s*much[^.!?\n]*[.!?]?/gi,'').trim();
       if(text && !/DuckDuckGo did not/i.test(text)) return {text};
       try{
-        const r2=await fetch((typeof EP==='function'?EP():'https://holy-firefly-982c.fert0480.workers.dev').replace(/\/$/,'')+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'groq-llama-8b',max_tokens:1200,messages:msgs,system:'Answer in the user language. Be complete.'}),signal:o.signal});
+        const r2=await fetch((typeof EP==='function'?EP():'https://holy-firefly-982c.fert0480.workers.dev').replace(/\/$/,'')+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'mistralai/mistral-large-2512',max_tokens:1200,messages:msgs}),signal:o.signal});
         const j2=await r2.json().catch(()=>({}));
         const t2=((j2.content||[]).map(x=>x.text||'').join('')).replace(/[^.!?\n]*talked\s+to+\s*much[^.!?\n]*[.!?]?/gi,'').trim();
         if(t2) return {text:t2};
@@ -1685,7 +1684,7 @@ function ai(root){
       const text=((j.candidates||[])[0]&&(j.candidates[0].content||{}).parts||[]).map(x=>x.text||'').join('')||'';
       return {text};
     }
-    const r=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:o.model,max_tokens:(/\b(c[oó]digo|code|html|css|javascript|python|script|lua|luau|function)\b/i.test(String((msgs[msgs.length-1]||{}).content||''))?16384:1800),messages:msgs,system:'Eres el asistente de Drift. Responde enseguida, en el idioma del usuario, sin plan ni preámbulo. Si piden abrir apps, usa una línea OPEN_APP:id en minúsculas por app, ids distintos. Si piden código, un solo bloque completo.',}),signal:o.signal});
+    const r=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:o.model,max_tokens:(/\b(c[oó]digo|code|html|css|javascript|python|script|lua|luau|function)\b/i.test(String((msgs[msgs.length-1]||{}).content||''))?16384:1800),messages:msgs}),signal:o.signal});
     const j=await r.json();if(!r.ok||j.error)throw {message:(j.error&&j.error.message)||j.error||'Error del servidor'};
     return {text:(j.content||[]).map(x=>x.text||'').join('')};
   };
@@ -1861,15 +1860,14 @@ function ai(root){
   }
   window.driftAsk=async function(question, imageBlob){
     const q=String(question||'').trim();
-    const pre='You are Drift 2.1. Never say you are Gemini and never write "Gemini said". Write the full answer in the user language. If they ask for code or a file, put the COMPLETE file in one fenced block. Then one short sentence about what it is.';
-    const msg={role:'user',content:pre+'\n\n'+q};
+    const msg={role:'user',content:q};
     if(imageBlob){
       try{
         const data=await b64(imageBlob);
-        msg.content=[{type:'image',source:{type:'base64',media_type:imageBlob.type||'image/jpeg',data}},{type:'text',text:pre+'\n\n'+q}];
+        msg.content=[{type:'image',source:{type:'base64',media_type:imageBlob.type||'image/jpeg',data}},{type:'text',text:q||'¿Qué hay en esta imagen?'}];
       }catch(e){}
     }
-    const r=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'groq-llama',max_tokens:8192,messages:[msg],system:pre})});
+    const r=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'mistralai/mistral-large-2512',max_tokens:4096,messages:[msg]})});
     const j=await r.json().catch(()=>({}));
     const text=((j.content||[]).map(x=>x.text||'').join(''))||'';
     if(text.trim()) return text;
@@ -1880,11 +1878,12 @@ function ai(root){
 
 /* ---------- Sistema: cuentas, apps, lanzador ---------- */
 const APPS={calc:'Calculator',browser:'Browser',ai:'AI',yt:'YouTube'};
-const LS={get(k,d){try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch{return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}};
+const LS={get(k,d){try{const v=JSON.parse(localStorage.getItem(k));if(v!=null)return v}catch{}try{const v=JSON.parse(sessionStorage.getItem(k));if(v!=null)return v}catch{}return d},set(k,v){const s=JSON.stringify(v);try{localStorage.setItem(k,s);return true}catch{}try{sessionStorage.setItem(k,s);return true}catch{}return false}};
 const S={user:null,d:null};
 const defD=()=>({pins:['calc','browser','ai','yt'],desk:['calc','browser','ai','yt'],chats:[]});
 const save=()=>LS.set('wos:u:'+(S.user||'_g'),S.d);
-const H=async(u,p)=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(u+':'+p)))].map(b=>b.toString(16).padStart(2,'0')).join('');
+function hashFallback(u,p){let h=2166136261;const s=u+':'+p;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return ('00000000'+(h>>>0).toString(16)).slice(-8)+s.length.toString(16)}
+const H=async(u,p)=>{try{if(crypto&&crypto.subtle){return [...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(u+':'+p)))].map(b=>b.toString(16).padStart(2,'0')).join('')}}catch{}return hashFallback(u,p)};
 function loadU(u){S.user=u;S.d=LS.get('wos:u:'+(u||'_g'),null)||defD();['pins','desk'].forEach(k=>S.d[k]=(S.d[k]||[]).filter(a=>!!a));S.d.chats=S.d.chats||[];if(!S.d.v2){S.d.v2=1;['pins','desk'].forEach(k=>{if(!S.d[k].includes('yt'))S.d[k].push('yt')});save()}LS.set('wos:cur',u);rend();if(typeof window.driftAsk!=='function'){try{ai(document.createElement('div'))}catch(e){}}}
 function sw(u){Object.keys(wins).forEach(k=>{wins[k].w.remove();wins[k].tb.remove();delete wins[k]});loadU(u)}
 function tiles(){const raw=$('#lq').value||'',f=raw.toLowerCase().trim(),D=S.d;
@@ -1925,7 +1924,7 @@ function authUI(mode='in'){
     const u=$('#au',m).value.trim().toLowerCase(),p=$('#ap',m).value,msg=$('#am',m),U=LS.get('wos:users',{});
     if(!/^[a-z0-9_]{2,20}$/.test(u)||p.length<4){msg.textContent='Usuario: 2-20 letras, números o _. Contraseña: mínimo 4.';return}
     if(up&&$('#ac',m).value!==p){msg.textContent='Las contraseñas no coinciden.';return}
-    let h;try{h=await H(u,p)}catch{msg.textContent='Tu navegador no permite crear cuentas aquí.';return}
+    let h=await H(u,p);
     if(up){if(U[u]){msg.textContent='Ese usuario ya existe.';return}U[u]=h;LS.set('wos:users',U)}
     else if(U[u]!==h){msg.textContent='Usuario o contraseña incorrectos.';return}
     document.body.classList.remove('drift-login');
@@ -2000,7 +1999,7 @@ const PX=u=>{const p=PT();return /^https?:\/\//i.test(p)&&/\{(url|raw)\}/.test(p
 const R0=render;
 render=u=>{const r=R0(u);if(r.h.includes('<iframe')){const p=PX(/^https?:/.test(u)?u:'https://'+u);if(p)r.h=r.h.replace(/(<iframe src=")[^"]*"/,(_,a)=>a+esc(p)+'"')}return r};
 /* ---- Buscador (Google/Bing/DDG), IA local Gemma sin API, chats de invitado efímeros ---- */
-const ENG=()=>LS.get('wos:eng','duckduckgo');
+const ENG=()=>{const v=LS.get('wos:eng','duckduckgo');if(v==='google')return 'firefox';if(v==='bing')return 'edge';return ['brave','edge','firefox','duckduckgo'].includes(v)?v:'duckduckgo'};
 const LOCAL={'local-gemma':['gemma-2-2b-it-q4f16_1-MLC','gemma-2-2b-it-q4f32_1-MLC']};
 /* models already set */
 let EN=null;
@@ -2041,7 +2040,7 @@ const B0=browser;
 browser=(root,w)=>{B0(root,w);
   const nav=$('.nav',root),s=document.createElement('select'),o=document.createElement('button');
   s.setAttribute('aria-label','Buscador');s.style.cssText='height:30px;border-radius:15px;border:1px solid var(--line);background:var(--omni);color:var(--ink);padding:0 6px;font-size:12px;flex:none';
-  s.innerHTML=[['google','Google'],['bing','Bing'],['duckduckgo','DuckDuckGo']].map(x=>`<option value="${x[0]}">${x[1]}</option>`).join('');
+  s.innerHTML=[['duckduckgo','DuckDuckGo'],['brave','Brave'],['edge','Edge'],['firefox','Firefox']].map(x=>`<option value="${x[0]}">${x[1]}</option>`).join('');
   s.value=ENG();s.onchange=()=>LS.set('wos:eng',s.value);
   o.textContent='↗';o.setAttribute('aria-label','Abrir en pestaña nueva');o.onclick=()=>{const v=$('.omni',root).value;if(/^https?:/.test(v))window.open(v,'_blank')};
   nav.append(s,o)};
@@ -2695,12 +2694,12 @@ function vscode(root){
     const tbh=parseInt(getComputedStyle(document.documentElement).getPropertyValue('--tbh'))||76;
     const W=Math.max(360,Math.min(innerWidth-16,Math.round(520*Math.min(sc,2))));
     const H=Math.max(240,Math.min(innerHeight-tbh-16,Math.round(360*Math.min(sc,2))));
-    w.style.cssText='width:'+W+'px;height:'+H+'px;left:'+Math.max(10,(innerWidth-W)/2)+'px;top:64px;z-index:'+(++z);
-    w.innerHTML='<div class="title"><b></b><button class="wb x" data-a="x" aria-label="Close">✕</button></div><div class="body" style="position:relative;min-height:0;background:#111"></div>';
+    w.style.cssText='width:'+W+'px;height:'+H+'px;left:'+Math.max(10,(innerWidth-W)/2)+'px;top:64px;z-index:'+(++z)+';display:flex;flex-direction:column';
+    w.innerHTML='<div class="title"><b></b><button class="wb x" data-a="x" aria-label="Close">✕</button></div><div class="body" style="position:relative;flex:1;min-height:0;height:auto;background:#111;display:flex"></div>';
     w.querySelector('.title b').textContent=title;
     const fr=document.createElement('iframe');
-    fr.setAttribute('sandbox','allow-scripts allow-modals allow-forms');
-    fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#111';
+    fr.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-modals allow-popups');
+    fr.style.cssText='flex:1;width:100%;height:100%;border:0;background:#111';
     fr.srcdoc=html;
     w.querySelector('.body').appendChild(fr);
     desk.appendChild(w);
@@ -2745,9 +2744,9 @@ function vscode(root){
     const asked=follow&&askAI.last? (askAI.last+'\n\nThe user said: '+q+'. Create the file now.') : q;
     askAI.last=q;
     const wants=/\b(create|make|haz|crea|archivo|file|game|juego|build|minecraft)\b/i.test(asked);
-    const sys='You are the coding assistant inside Drift VS Code. Never ask which file. If they want a game, a file, or any code, create it immediately. The first line must be FILE: name.ext. Use index.html for a web or 3d game, script.js for javascript, or the extension they asked for. Then one fenced block with the COMPLETE file. After the fence, one line ABOUT: a short sentence of what you did. Do not ask questions. Do not paste code outside the fence.';
     async function pull(prompt){
-      const r=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({max_tokens:8192,messages:[{role:'user',content:prompt}],system:sys})});
+      const ep=(typeof EP==='function'?EP():'https://holy-firefly-982c.fert0480.workers.dev').replace(/\/$/,'');
+      const r=await fetch(ep+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'mistralai/mistral-large-2512',max_tokens:8192,messages:[{role:'user',content:prompt}]})});
       const raw=await r.text();
       if(/^\s*</.test(raw)) throw new Error('No answer. Try again.');
       let j; try{ j=JSON.parse(raw); }catch(e){ throw new Error('No answer. Try again.'); }
@@ -3371,7 +3370,7 @@ function ttApp(root){
       root.innerHTML='<div class="ym" style="color:#fff">TikTok no cargó. Ábrelo otra vez.</div>';
       return;
     }
-    Promise.resolve(openProxied('https://www.tiktok.com/foryou', root)).then(function(f){
+    Promise.resolve(openProxied('https://www.tiktok.com/', root)).then(function(f){
       if(f&&f.frame) return;
       if(++n<3) setTimeout(open, 800);
     }).catch(function(){ if(++n<3) setTimeout(open, 800); });
@@ -3379,7 +3378,7 @@ function ttApp(root){
   open();
 }
 
-const XAPPS={cam:{n:'Camera',f:camera},mus:{n:'Music',f:music},movies:{n:'Netflix',f:movies},code:{n:'VS Code',f:vscode},discord:{n:'Discord',f:discordApp},gmail:{n:'Gmail',f:gmailApp},ig:{n:'Instagram',f:igApp},tt:{n:'TikTok',f:ttApp},classroom:{n:'Classroom',f:classroomApp},canva:{n:'Canva',f:canvaApp},roblox:{n:'Roblox',f:robloxApp}};
+const XAPPS={cam:{n:'Camera',f:camera},mus:{n:'Music',f:music},movies:{n:'Netflix',f:movies},code:{n:'VS Code',f:vscode},discord:{n:'Discord',f:discordApp},gmail:{n:'Gmail',f:gmailApp},ig:{n:'Instagram',f:igApp},tt:{n:'TikTok',f:ttApp},canva:{n:'Canva',f:canvaApp},roblox:{n:'Roblox',f:robloxApp}};
 function driftSite(url){return function(root){root.innerHTML='';root.style.cssText='height:100%;min-height:0;position:relative;background:#000';if(typeof openProxied==='function')openProxied(url,root);else root.textContent='Scramjet no está listo.';};}
 XAPPS.yt={n:'YouTube',f:driftSite('https://www.youtube.com/?hl=es-419&gl=MX&persist_hl=1&persist_gl=1')};
 XAPPS.tt={n:'TikTok',f:ttApp};
@@ -3484,11 +3483,11 @@ function sjBrowser(root){
   root.innerHTML='<div class="tabs"></div><div class="nav"><button aria-label="Atrás">←</button><button aria-label="Adelante">→</button><button aria-label="Recargar">⟳</button><input class="omni" placeholder="Search or type an address" aria-label="Barra de direcciones"><select aria-label="Buscador"></select></div><div class="page"></div>';
   const tabsEl=$('.tabs',root),om=$('.omni',root),page=$('.page',root),[bk,fw,rl]=root.querySelectorAll('.nav>button'),sel=$('select',root);
   sel.style.cssText='height:30px;border-radius:15px;border:1px solid var(--line);background:var(--omni);color:var(--ink);padding:0 6px;font-size:12px;flex:none';
-  sel.innerHTML='<option value="google">Google</option><option value="bing">Bing</option><option value="duckduckgo">DuckDuckGo</option>';
+  sel.innerHTML='<option value="duckduckgo">DuckDuckGo</option><option value="brave">Brave</option><option value="edge">Edge</option><option value="firefox">Firefox</option>';
   try { sel.value=(typeof ENG==='function'?ENG():'duckduckgo'); } catch (e) { sel.value='duckduckgo'; }
   if(!sel.value) sel.value='duckduckgo';
   sel.onchange=function(){ try { LS.set('wos:eng', sel.value); } catch (e) {} };
-  const ENGS={google:'https://www.google.com/search?hl=en&gl=us&pws=0&q=',bing:'https://www.bing.com/search?setlang=en-US&cc=US&mkt=en-US&q=',duckduckgo:'https://duckduckgo.com/?kl=us-en&q='};
+  const ENGS={brave:'https://search.brave.com/search?q=',edge:'https://www.bing.com/search?setlang=en-US&cc=US&mkt=en-US&q=',firefox:'https://www.google.com/search?hl=en&q=',duckduckgo:'https://duckduckgo.com/?kl=us-en&q='};
   let tabs=[],cur=0,sig='';
   const T=()=>tabs[cur];
   const norm=v=>{v=v.trim();if(!v)return'';
@@ -3521,11 +3520,11 @@ function sjBrowser(root){
     t.box.innerHTML='<div class="ym">Searching…</div>';
     bar(true);
     try{
-      const r=await fetch('/api/search?q='+encodeURIComponent(q)+'&engine='+encodeURIComponent((typeof ENG==='function'?ENG():'duckduckgo')));
+      const r=await fetch('/api/search?q='+encodeURIComponent(q)+'&engine='+encodeURIComponent(sel.value||(typeof ENG==='function'?ENG():'duckduckgo')));
       const j=await r.json();
       let rows=(j.results||[]).filter(x=>x&&x.url);
       if(!rows.length){
-        const w=await fetch((typeof EP==='function'?EP():DDG0)+'/search?q='+encodeURIComponent(q)+'&engine='+encodeURIComponent((typeof ENG==='function'?ENG():'duckduckgo')));
+        const w=await fetch((typeof EP==='function'?EP():DDG0)+'/search?q='+encodeURIComponent(q)+'&engine=duckduckgo');
         const d=await w.json();
         rows=(d.results||d.organic_results||[]).map(x=>({title:x.title||x.url||x.link,url:x.url||x.link})).filter(x=>x.url);
       }
@@ -3546,8 +3545,17 @@ function sjBrowser(root){
     const raw=String(v||'').trim(); if(!raw)return;
     const direct=asUrl(raw);
     try{
-      if(direct) await openFrame(direct);
-      else { const eng=sel.value||(typeof ENG==='function'?ENG():'duckduckgo'); const base=ENGS[eng]||ENGS.duckduckgo; await openFrame(base+encodeURIComponent(raw)); }
+      if(direct){
+        let host='';
+        try{host=new URL(direct).hostname}catch(e){}
+        if(/duckduckgo\.com$/i.test(host)){
+          let qq='';
+          try{qq=new URL(direct).searchParams.get('q')||''}catch(e){}
+          if(qq) await showResults(qq);
+          else { const t=T(); t.fr=null; t.url=''; home(t); bar(true); }
+        } else await openFrame(direct);
+      }
+      else await showResults(raw);
     }catch(e){T().box.innerHTML='<div class="ym">Could not start proxy: '+esc(String(e&&e.message||e))+'</div>'}}
   function bar(force){
     const s=tabs.map(t=>t.title).join('|')+'#'+cur;
@@ -3610,7 +3618,7 @@ XAPPS.gem={n:'Gemini',f:function(root){
   root.innerHTML='<div style="height:100%;display:flex;flex-direction:column;background:#0e0f13;color:#eee"><div style="padding:12px 14px;font-weight:700">Gemini</div><div data-log style="flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px"></div><div style="display:flex;gap:8px;padding:10px"><textarea data-q placeholder="Ask Gemini" style="flex:1;min-height:44px;border-radius:12px;border:1px solid #333;background:#17181d;color:#eee;padding:8px"></textarea><button type="button" data-go style="border:0;border-radius:12px;background:#1a73e8;color:#fff;padding:0 14px;cursor:pointer">Send</button></div></div>';
   const log=root.querySelector('[data-log]'), q=root.querySelector('[data-q]');
   function add(cls,text){const d=document.createElement('div');d.style.cssText='max-width:86%;padding:8px 10px;border-radius:12px;white-space:pre-wrap;'+(cls==='u'?'align-self:flex-end;background:#1a73e8':'align-self:flex-start;background:#1b1c22');d.textContent=text;log.appendChild(d);log.scrollTop=log.scrollHeight;return d}
-  async function go(){const text=(q.value||'').trim();if(!text)return;q.value='';add('u',text);const hold=add('a','…');const ep=(typeof EP==='function'?EP():'https://holy-firefly-982c.fert0480.workers.dev').replace(/\/$/,'');try{const r=await fetch(ep+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'qwen/qwen3.7-flash:free',max_tokens:4096,messages:[{role:'user',content:text}],system:'Answer in the user language. Do not introduce yourself. If they ask for code, put the complete file in one fenced block.',instructions:(typeof LS!=='undefined'?LS.get('wos:cinst',''):'')})});const j=await r.json();hold.textContent=((j.content||[]).map(x=>x.text||'').join(''))||(j.error&&(j.error.message||'No answer'))||'No answer';}catch(e){hold.textContent=String(e.message||e)}}
+  async function go(){const text=(q.value||'').trim();if(!text)return;q.value='';add('u',text);const hold=add('a','…');const ep=(typeof EP==='function'?EP():'https://holy-firefly-982c.fert0480.workers.dev').replace(/\/$/,'');try{const r=await fetch(ep+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'mistralai/mistral-large-2512',max_tokens:4096,messages:[{role:'user',content:text}]})});const j=await r.json();hold.textContent=((j.content||[]).map(x=>x.text||'').join(''))||(j.error&&(j.error.message||'No answer'))||'No answer';}catch(e){hold.textContent=String(e.message||e)}}
   root.querySelector('[data-go]').onclick=go; q.onkeydown=function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();go()}};
 }};
 
@@ -3628,7 +3636,7 @@ Object.assign(IC,{
 });
 Object.assign(IC,{discord:'<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="12" fill="#5865F2"/><path d="M32.5 15.5c-1.2-.5-2.5-.9-3.8-1.1l-.2.4c1.2.2 2.3.6 3.4 1.1-1.4-.7-3-1.2-4.6-1.5-1.5-.3-3-.4-4.5-.4s-3 .1-4.5.4c-1.6.3-3.2.8-4.6 1.5 1.1-.5 2.2-.9 3.4-1.1l-.2-.4c-1.3.2-2.6.6-3.8 1.1-2.4 3.5-3.3 7-3 10.4 1.6 1.2 3.1 1.9 4.6 2.4l.9-1.5c-.5-.2-1-.4-1.4-.7.1.1.3.2.4.2 3.2 1.5 6.7 1.5 9.9 0 .1 0 .3-.1.4-.2-.4.3-.9.5-1.4.7l.9 1.5c1.5-.5 3-1.2 4.6-2.4.4-3.7-.5-7.1-3-10.4zM20.2 24.3c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2zm7.6 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2z" fill="#fff"/></svg>'});
 
-Object.assign(APPS,{classroom:'Classroom',canva:'Canva',roblox:'Roblox',movies:'Netflix',chat:'Chat',games:'Games',gimkit:'Gimkit'});
+Object.assign(APPS,{canva:'Canva',roblox:'Roblox',movies:'Netflix',chat:'Chat',games:'Games',gimkit:'Gimkit'});
 Object.assign(IC,{chat:'<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="11" fill="#5865F2"/><path d="M14 16h20v12H22l-4 4v-4h-4V16z" fill="#fff"/></svg>',games:'<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="48" rx="12" fill="#312e81"/><path d="M11 20.5h26c2.6 0 5 2 5 5.4 0 4.6-3 7.8-6.6 7.8h-3.1l-2.4-3h-8.8l-2.4 3H13.6C10 33.7 7 30.5 7 25.9c0-3.4 2.4-5.4 4-5.4z" fill="#6366f1"/><path d="M16 24.2v5.6M13.2 27h5.6" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><circle cx="30" cy="25.4" r="1.45" fill="#f87171"/><circle cx="33.6" cy="28.4" r="1.45" fill="#fbbf24"/><circle cx="33.6" cy="22.6" r="1.45" fill="#4ade80"/><circle cx="37.2" cy="25.4" r="1.45" fill="#60a5fa"/></svg>',gimkit:'<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="11" fill="#5a31f4"/><text x="24" y="30" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">G</text></svg>'});
 Object.assign(IC,{
   classroom:'<svg viewBox="0 0 48 48"><rect width="48" height="48" rx="11" fill="#0F9D58"/><path d="M10 16h28v16H10V16zm4 4v8h8v-8h-8zm12 0v3h10v-3H26zm0 5v3h10v-3H26z" fill="#fff"/></svg>',
@@ -3643,7 +3651,7 @@ loadU=u=>{L0(u);if(!u){S.d.chats=[];save()}if(!S.d.v3){S.d.v3=1;['pins','desk'].
   if(!S.d.v4){S.d.v4=1;['pins','desk'].forEach(k=>{if(!S.d[k].includes('yt'))S.d[k].push('yt')});save();rend()}
   if(!S.d.v8){S.d.v8=1;['pins','desk'].forEach(k=>{['movies','code'].forEach(a=>{if(!S.d[k].includes(a))S.d[k].push(a)})});save();rend()}
   if(!S.d.v9){S.d.v9=1;['pins','desk'].forEach(k=>{['gmail','ig','tt'].forEach(a=>{if(!S.d[k].includes(a))S.d[k].push(a)})});save();rend()}
-  if(!S.d.v10){S.d.v10=1;['pins','desk'].forEach(k=>{['classroom','canva','roblox'].forEach(a=>{if(!S.d[k].includes(a))S.d[k].push(a)})});save();rend()}
+  if(!S.d.v10){S.d.v10=1;['pins','desk'].forEach(k=>{['canva','roblox'].forEach(a=>{if(!S.d[k].includes(a))S.d[k].push(a)})});save();rend()}
 if(!S.d.v11){S.d.v11=1;['pins','desk'].forEach(k=>{['chat','games','gimkit'].forEach(a=>{if(!S.d[k].includes(a))S.d[k].push(a)})});save();rend()}
   if(!S.d.v12){S.d.v12=1;['pins','desk'].forEach(k=>{if(!S.d[k].includes('classdojo'))S.d[k].push('classdojo')});save();rend()}
   if(!S.d.v13){S.d.v13=1;if(!S.d.desk.includes('injector'))S.d.desk.push('injector');save();rend()}

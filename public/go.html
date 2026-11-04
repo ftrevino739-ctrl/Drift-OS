@@ -414,7 +414,7 @@ iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#fff}
   </div>
 </div>
 <button id="drift-pass-peek" type="button" style="display:none;position:fixed;right:10px;bottom:10px;z-index:9;border:0;border-radius:999px;background:rgba(255,255,255,.72);color:#111;padding:8px 12px;font:700 12px system-ui;cursor:pointer;backdrop-filter:blur(12px)">Show</button>
-<button id="drift-go-ball" type="button" hidden style="position:fixed;right:18px;bottom:88px;z-index:9;width:68px;height:68px;padding:0;border-radius:50%;border:2px solid rgba(255,255,255,.45);background:#071226;overflow:hidden;cursor:grab"><img src="/drift-mark.png" alt="" style="width:100%;height:100%;object-fit:cover;transform:scale(1.18);pointer-events:none"></button>
+<button id="drift-go-ball" type="button" hidden style="position:fixed;right:18px;bottom:88px;z-index:9;width:68px;height:68px;padding:0;border-radius:50%;border:2px solid rgba(255,255,255,.45);background:#071226;overflow:hidden;cursor:grab"><img src="https://drift.hostless.app/drift-mark.png" alt="" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:cover;transform:scale(1.18);pointer-events:none" onerror="this.remove();this.parentNode.style.background='radial-gradient(circle at 30% 30%, #7EC8FF, #0B1A36)'"></button>
 <script>
 (function () {
   var bar = document.getElementById('drift-pass');
@@ -505,6 +505,7 @@ iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#fff}
       ball.style.top = (drag.t + dy) + 'px';
       ball.style.right = 'auto';
       ball.style.bottom = 'auto';
+      if (typeof placeAns === 'function') placeAns();
     });
     window.addEventListener('pointerup', function () {
       if (drag && !drag.moved) screenAsk();
@@ -592,39 +593,49 @@ iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#fff}
   });
   function pull(j) { return ((j && j.content) || []).map(function (x) { return x.text || ''; }).join('').trim(); }
   async function driftFast(messages) {
-    var r = await fetch('https://holy-firefly-982c.fert0480.workers.dev/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'groq-llama-8b', max_tokens: 1200, messages: messages, system: 'You are Drift 2.1. Answer in the user language. Be complete. Read any attached file text.' }) });
+    var r = await fetch('https://holy-firefly-982c.fert0480.workers.dev/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'mistralai/mistral-large-2512', max_tokens: 1400, messages: messages }) });
     var j = await r.json();
     var text = pull(j);
     if (text) return text;
     throw new Error((j && j.error && (j.error.message || j.error)) || 'Try again.');
   }
   async function driftVision(data, ask) {
-    var text = '';
-    try {
-      var body = { systemInstruction: { parts: [{ text: 'You are Drift 2.1. The user is showing you a screenshot. Answer about what is visible, in their language, in one complete reply. Never say Gemini.' }] }, contents: [{ role: 'user', parts: [{ inlineData: { mimeType: 'image/jpeg', data: data } }, { text: ask }]}], generationConfig: { maxOutputTokens: 2048, temperature: 0.4 } };
-      var r = await fetch('/api/gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      var j = await r.json();
-      if (r.ok) {
-        var parts = ((((j.candidates || [])[0] || {}).content || {}).parts || []);
-        text = parts.map(function (p) { return p.text || ''; }).join('').trim();
-      }
-    } catch (e) {}
-    if (!text) {
-      var r2 = await fetch('https://holy-firefly-982c.fert0480.workers.dev/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'google/gemini-3.8-flash', max_tokens: 2048, messages: [{ role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: data } }, { type: 'text', text: ask }] }], system: 'You are Drift 2.1. Answer about the screenshot. Never say Gemini.' }) });
-      var j2 = await r2.json();
-      text = pull(j2);
-    }
+    var r2 = await fetch('https://holy-firefly-982c.fert0480.workers.dev/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'mistralai/mistral-large-2512', max_tokens: 700, messages: [{ role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: data } }, { type: 'text', text: ask }] }] }) });
+    var j2 = await r2.json();
+    var text = pull(j2);
     if (!text) throw new Error('Try again.');
     return text;
+  }
+  function placeAns() {
+    var n = document.getElementById('drift-ball-ans');
+    if (!n || !ball) return;
+    var r = ball.getBoundingClientRect();
+    var w = Math.min(320, window.innerWidth * 0.9);
+    var left = r.left - w - 10;
+    if (left < 8) left = Math.min(window.innerWidth - w - 8, r.right + 10);
+    n.style.left = left + 'px';
+    n.style.top = Math.max(8, Math.min(window.innerHeight - 80, r.top)) + 'px';
+    n.style.right = 'auto';
+    n.style.bottom = 'auto';
   }
   function sayNear(text) {
     var old = document.getElementById('drift-ball-ans');
     if (old) old.remove();
     var n = document.createElement('div');
     n.id = 'drift-ball-ans';
-    n.textContent = text;
-    n.style.cssText = 'position:fixed;z-index:10;right:18px;bottom:168px;width:min(320px,90vw);max-height:40vh;overflow:auto;background:rgba(255,255,255,.92);color:#111;border-radius:14px;padding:10px;font:13px/1.4 system-ui;box-shadow:0 8px 24px rgba(0,0,0,.2)';
+    n.style.cssText = 'position:fixed;z-index:10;width:min(320px,90vw);max-height:40vh;overflow:auto;background:rgba(255,255,255,.72);color:#111;border:1px solid rgba(255,255,255,.55);border-radius:18px;padding:10px 10px 10px 28px;font:13px/1.4 system-ui;box-shadow:0 12px 40px rgba(0,0,0,.18);backdrop-filter:blur(18px)';
+    var x = document.createElement('button');
+    x.type = 'button';
+    x.textContent = '×';
+    x.setAttribute('aria-label', 'Dismiss');
+    x.style.cssText = 'position:absolute;left:6px;top:6px;width:22px;height:22px;border:0;background:transparent;color:#111;font-size:18px;line-height:1;cursor:pointer;padding:0';
+    x.onclick = function (e) { e.stopPropagation(); n.remove(); };
+    var body = document.createElement('div');
+    body.style.whiteSpace = 'pre-wrap';
+    body.textContent = text;
+    n.append(x, body);
     document.body.appendChild(n);
+    placeAns();
   }
   async function grab() {
     var stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });

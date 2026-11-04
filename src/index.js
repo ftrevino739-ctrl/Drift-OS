@@ -68,7 +68,7 @@ function loadAndPatchIndex() {
 
 	html = html.replace(
 		"const APPS={calc:'Calculator',browser:'Browser',ai:'AI',yt:'YouTube'};",
-		"const APPS={calc:'Calculator',browser:'Browser',ai:'AI',yt:'YouTube',cam:'Camera',mus:'Music',movies:'Movies',code:'VS Code',discord:'Discord',gmail:'Gmail',ig:'Instagram',tt:'TikTok',classroom:'Classroom',roblox:'Roblox',gimkit:'Gimkit',games:'Games',chat:'Chat',github:'GitHub',whatsapp:'WhatsApp',wayground:'Wayground',injector:'JS Injector'};"
+		"const APPS={calc:'Calculator',browser:'Browser',ai:'AI',yt:'YouTube',cam:'Camera',mus:'Music',movies:'Movies',code:'VS Code',discord:'Discord',gmail:'Gmail',ig:'Instagram',tt:'TikTok',roblox:'Roblox',gimkit:'Gimkit',games:'Games',chat:'Chat',github:'GitHub',whatsapp:'WhatsApp',wayground:'Wayground',injector:'JS Injector'};"
 	);
 	html = html.replace(
 		"const defD=()=>({pins:['calc','browser','ai','yt'],desk:['calc','browser','ai','yt'],chats:[]});",
@@ -76,8 +76,7 @@ function loadAndPatchIndex() {
 	);
 
 	const xapps =
-		"const XAPPS={cam:{n:'Camera',f:camera},mus:{n:'Music',f:music},movies:{n:'Movies',f:movies},code:{n:'VS Code',f:vscode},discord:{n:'Discord',f:discordApp},gmail:{n:'Gmail',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#fff';var fr=document.createElement('iframe');fr.setAttribute('credentialless','');fr.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-modals allow-downloads');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';fr.src='/api/opera?u='+encodeURIComponent('https://mail.google.com/mail/u/0/')+'&b=edge';r.appendChild(fr)}},ig:{n:'Instagram',f:igApp},tt:{n:'TikTok',f:ttApp}," +
-		"classroom:{n:'Classroom',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#fff';var fr=document.createElement('iframe');fr.setAttribute('referrerpolicy','no-referrer');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';fr.src='/api/opera?u='+encodeURIComponent('https://classroom.google.com/')+'&b=edge';r.appendChild(fr)}}," +
+		"const XAPPS={cam:{n:'Camera',f:camera},mus:{n:'Music',f:music},movies:{n:'Movies',f:movies},code:{n:'VS Code',f:vscode},discord:{n:'Discord',f:discordApp},gmail:{n:'Gmail',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#fff';var fr=document.createElement('iframe');fr.setAttribute('referrerpolicy','no-referrer');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';fr.src='/api/opera?u='+encodeURIComponent('https://accounts.google.com/ServiceLogin?service=mail&passive=1209600&osid=1&continue='+encodeURIComponent('https://mail.google.com/mail/u/0/')+'&followup='+encodeURIComponent('https://mail.google.com/mail/u/0/')+'&emr=1')+'&b=bing';r.appendChild(fr)}},ig:{n:'Instagram',f:igApp},tt:{n:'TikTok',f:ttApp}," +
 		"roblox:{n:'Roblox',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#111;color:#ddd;display:grid;place-items:center;font:14px system-ui';r.textContent='Abriendo Roblox…';var n=0;var t=setInterval(function(){if(!r.isConnected||++n>50){clearInterval(t);return}if(typeof window.__driftRoblox==='function'){clearInterval(t);window.__driftRoblox(r)}},120)}}," +
 		"gimkit:{n:'Gimkit',f:gimkitApp},games:{n:'Games',f:function(r){return (window.noahGamesApp||gamesHub)(r)}},chat:{n:'Chat',f:noahChat}};" +
 		"window.XAPPS=XAPPS;window.APPS=APPS;try{window.IC=IC}catch(e){}try{window.proxySite=proxySite}catch(e){}try{window.vscode=vscode}catch(e){}try{window.S=S}catch(e){}try{window.discordApp=discordApp}catch(e){};";
@@ -113,12 +112,12 @@ function loadAndPatchIndex() {
 	);
 
 	const tag =
-		'<script src="/drift-extras.js?v=20261103-d" defer></script>' +
-		'<script src="/chromebook-proxy.js?v=20261103-d" defer></script>' +
-		'<script src="/wayground-ai.js?v=20261103-d" defer></script>' +
-		'<script src="/drift-fixup.js?v=20261103-d" defer></script>' +
-		'<script src="/drift-userpatch.js?v=20261103-d" defer></script>' +
-		"<script>window.__DRIFT_BUILD_WANT='20261103-d';setTimeout(function(){if(window.__DRIFT_BUILD===window.__DRIFT_BUILD_WANT)return;var d=document.getElementById('drift-old');if(d)return;d=document.createElement('div');d.id='drift-old';d.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#000;color:#eee;overflow:auto;padding:28px;font:16px/1.5 system-ui';d.innerHTML='<div style=\"max-width:680px;margin:0 auto\"><b style=\"font-size:28px\">Versión vieja de Drift</b><p>Se abrió una copia guardada. Recarga forzada. No hace falta una terminal ni apagar el equipo con un comando.</p><p><b>Chrome, Edge, ChromeOS y Linux:</b> Ctrl+Shift+R. Si sigue igual, en la configuración del sitio borra los datos de Drift y entra otra vez.</p><p><b>Firefox:</b> Ctrl+Shift+R. Si sigue, Ajustes → Privacidad → borrar cookies y datos de este sitio.</p><p><b>Safari en Mac:</b> Opción+Comando+E y luego Comando+R. En iPhone o iPad: Ajustes → Safari → borrar historial y datos del sitio, o quita el acceso directo y ábrelo de nuevo.</p><p><b>Windows:</b> cierra el navegador desde la barra de tareas y ábrelo otra vez. El último paso, en cualquier sistema, es reiniciar el dispositivo desde el menú de apagado, no desde la terminal.</p></div>';document.body.appendChild(d);},2500);</script>" +
+		'<script src="/drift-extras.js?v=20261104-a" defer></script>' +
+		'<script src="/chromebook-proxy.js?v=20261104-a" defer></script>' +
+		'<script src="/wayground-ai.js?v=20261104-a" defer></script>' +
+		'<script src="/drift-fixup.js?v=20261104-a" defer></script>' +
+		'<script src="/drift-userpatch.js?v=20261104-a" defer></script>' +
+		"<script>window.__DRIFT_BUILD_WANT='20261104-a';setTimeout(function(){if(window.__DRIFT_BUILD===window.__DRIFT_BUILD_WANT)return;var d=document.getElementById('drift-old');if(d)return;d=document.createElement('div');d.id='drift-old';d.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#000;color:#eee;overflow:auto;padding:28px;font:16px/1.5 system-ui';d.innerHTML='<div style=\"max-width:680px;margin:0 auto\"><b style=\"font-size:28px\">Versión vieja de Drift</b><p>Se abrió una copia guardada. Recarga forzada. No hace falta una terminal ni apagar el equipo con un comando.</p><p><b>Chrome, Edge, ChromeOS y Linux:</b> Ctrl+Shift+R. Si sigue igual, en la configuración del sitio borra los datos de Drift y entra otra vez.</p><p><b>Firefox:</b> Ctrl+Shift+R. Si sigue, Ajustes → Privacidad → borrar cookies y datos de este sitio.</p><p><b>Safari en Mac:</b> Opción+Comando+E y luego Comando+R. En iPhone o iPad: Ajustes → Safari → borrar historial y datos del sitio, o quita el acceso directo y ábrelo de nuevo.</p><p><b>Windows:</b> cierra el navegador desde la barra de tareas y ábrelo otra vez. El último paso, en cualquier sistema, es reiniciar el dispositivo desde el menú de apagado, no desde la terminal.</p></div>';document.body.appendChild(d);},2500);</script>" +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +
@@ -564,20 +563,27 @@ fastify.get("/api/search", async (req, reply) => {
 	let results = [];
 	let used = "duckduckgo";
 	try {
-		if (engine === "bing") {
+		if (engine === "bing" || engine === "edge") {
 			const r = await fetch("https://www.bing.com/search?q=" + encodeURIComponent(q) + "&format=rss", {
 				headers: { "user-agent": SEARCH_UA, accept: "application/rss+xml,text/xml,text/html" },
 			});
 			const xml = await r.text();
 			if (!searchBlocked(xml)) results = parseBingRss(xml);
-			if (results.length) used = "bing";
-		} else if (engine === "google") {
+			if (results.length) used = "edge";
+		} else if (engine === "google" || engine === "firefox") {
 			const r = await fetch("https://www.google.com/search?q=" + encodeURIComponent(q) + "&gbv=1&hl=en&num=10", {
 				headers: { "user-agent": SEARCH_UA, accept: "text/html", "accept-language": "en-US,en;q=0.9" },
 			});
 			const html = await r.text();
 			if (!searchBlocked(html)) results = parseGoogle(html);
-			if (results.length) used = "google";
+			if (results.length) used = "firefox";
+		} else if (engine === "brave") {
+			const r = await fetch("https://search.brave.com/search?q=" + encodeURIComponent(q), {
+				headers: { "user-agent": SEARCH_UA, accept: "text/html", "accept-language": "en-US,en;q=0.9" },
+			});
+			const html = await r.text();
+			if (r.ok && !searchBlocked(html)) results = parseGoogle(html).filter((row) => row && row.url && !/search\.brave\.com/i.test(row.url));
+			if (results.length) used = "brave";
 		}
 	} catch {}
 	if (!results.length) {
@@ -780,7 +786,16 @@ function operaHostOk(host) {
 		host === "facebook.com" || host.endsWith(".facebook.com") ||
 		host === "facebook.net" || host.endsWith(".facebook.net") ||
 		host === "fbcdn.net" || host.endsWith(".fbcdn.net") ||
-		host === "fbsbx.com" || host.endsWith(".fbsbx.com")
+		host === "fbsbx.com" || host.endsWith(".fbsbx.com") ||
+		host === "translate.goog" || host.endsWith(".translate.goog") ||
+		host === "eaglercraft.com" || host.endsWith(".eaglercraft.com") ||
+		host === "eaglercraft.org" || host.endsWith(".eaglercraft.org") ||
+		host === "tiktok.com" || host.endsWith(".tiktok.com") ||
+		host === "tiktokcdn.com" || host.endsWith(".tiktokcdn.com") ||
+		host === "tiktokcdn-us.com" || host.endsWith(".tiktokcdn-us.com") ||
+		host === "tiktokv.com" || host.endsWith(".tiktokv.com") ||
+		host === "ibyteimg.com" || host.endsWith(".ibyteimg.com") ||
+		host === "muscdn.com" || host.endsWith(".muscdn.com")
 	);
 }
 function operaJar(req, reply) {
@@ -915,7 +930,7 @@ function operaBoot(browser) {
   function googleHost(u){
     try {
       var h = new URL(u).hostname;
-      return /(^|\\.)(google\\.com|gstatic\\.com|googleapis\\.com|googleusercontent\\.com|youtube\\.com|roblox\\.com|rbxcdn\\.com|espn\\.com|espncdn\\.com|espn\\.net|github\\.com|githubusercontent\\.com|githubassets\\.com|whatsapp\\.com|whatsapp\\.net|wa\\.me|whatsapp\\.biz|now\\.gg|easyfun\\.gg|instagram\\.com|cdninstagram\\.com|giphy\\.com|tenor\\.com|tenor\\.co|facebook\\.com|facebook\\.net|fbcdn\\.net|fbsbx\\.com|arkoselabs\\.com)$/i.test(h);
+      return /(^|\\.)(google\\.com|gstatic\\.com|googleapis\\.com|googleusercontent\\.com|youtube\\.com|youtu\\.be|ytimg\\.com|ggpht\\.com|translate\\.goog|eaglercraft\\.com|eaglercraft\\.org|tiktok\\.com|tiktokcdn\\.com|tiktokcdn-us\\.com|tiktokv\\.com|ibyteimg\\.com|muscdn\\.com|roblox\\.com|rbxcdn\\.com|espn\\.com|espncdn\\.com|espn\\.net|github\\.com|githubusercontent\\.com|githubassets\\.com|whatsapp\\.com|whatsapp\\.net|wa\\.me|whatsapp\\.biz|now\\.gg|easyfun\\.gg|instagram\\.com|cdninstagram\\.com|giphy\\.com|tenor\\.com|tenor\\.co|facebook\\.com|facebook\\.net|fbcdn\\.net|fbsbx\\.com|arkoselabs\\.com)$/i.test(h);
     }
     catch (e) { return false; }
   }
@@ -1286,7 +1301,7 @@ async function operaFetch(target, method, form, jar, contentType, extraHeaders, 
 			if (/support\.google\.com|signin_privatebrowsing|EmbeddedBrowser|signin\/rejected/i.test(next) || /support\.google\.com|signin_privatebrowsing|EmbeddedBrowser|signin\/rejected/i.test(current)) {
 				next = /classroom\.google\.com/i.test(current)
 					? "https://accounts.google.com/ServiceLogin?service=classroom&continue=" + encodeURIComponent("https://classroom.google.com/") + "&hl=en"
-					: "https://accounts.google.com/ServiceLogin?service=mail&continue=" + encodeURIComponent("https://mail.google.com/mail/u/0/h/") + "&hl=en";
+					: "https://accounts.google.com/ServiceLogin?service=mail&passive=1209600&osid=1&continue=" + encodeURIComponent("https://mail.google.com/mail/u/0/") + "&followup=" + encodeURIComponent("https://mail.google.com/mail/u/0/") + "&emr=1";
 			}
 			current = next;
 			verb = "GET";
@@ -1296,7 +1311,7 @@ async function operaFetch(target, method, form, jar, contentType, extraHeaders, 
 		if (/support\.google\.com|signin_privatebrowsing|EmbeddedBrowser|signin\/rejected/i.test(current) && i < 5) {
 			const back = /classroom\.google\.com|service=classroom/i.test(String(referer || "") + current)
 				? "https://accounts.google.com/ServiceLogin?service=classroom&continue=" + encodeURIComponent("https://classroom.google.com/") + "&hl=en"
-				: "https://accounts.google.com/ServiceLogin?service=mail&continue=" + encodeURIComponent("https://mail.google.com/mail/u/0/h/") + "&hl=en";
+				: "https://accounts.google.com/ServiceLogin?service=mail&passive=1209600&osid=1&continue=" + encodeURIComponent("https://mail.google.com/mail/u/0/") + "&followup=" + encodeURIComponent("https://mail.google.com/mail/u/0/") + "&emr=1";
 			if (back !== current) {
 				referer = current;
 				current = back;
@@ -1889,6 +1904,12 @@ await fastify.register(fastifyStatic, {
 	root: publicPath,
 	decorateReply: true,
 	index: false,
+	setHeaders(res, filePath) {
+		if (/\.(png|jpe?g|svg|webp|gif|ico)$/i.test(filePath)) {
+			res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+			res.setHeader("Access-Control-Allow-Origin", "*");
+		}
+	},
 });
 if (scramjetPath)
 	await fastify.register(fastifyStatic, {
