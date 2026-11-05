@@ -146,6 +146,8 @@
       var timer = setInterval(function () {
         ticks++;
         hideFrameBars(f.frame);
+        var hasDoc = false;
+        try { hasDoc = !!(f.frame.contentDocument && f.frame.contentDocument.documentElement); } catch (e4) { hasDoc = false; }
         if (frameUhOh(f.frame)) {
           try { f.frame.style.visibility = 'hidden'; } catch (e2) {}
           failOverlay(f.frame);
@@ -154,6 +156,12 @@
             n++;
             setTimeout(kick, 450);
           } else clearInterval(timer);
+          return;
+        }
+        if (hasDoc && !frameUhOh(f.frame)) {
+          try { f.frame.style.visibility = ''; } catch (e3) {}
+          clearFail(f.frame);
+          clearInterval(timer);
           return;
         }
         if (ticks > 8) {
@@ -318,6 +326,16 @@
 
   window.openProxied = async function openProxiedFast(url, box) {
     var target = normalizeProxyUrl(url);
+    if (window.SJC) {
+      try {
+        var ready = window.SJC.createFrame();
+        ready.frame.style.cssText = 'width:100%;height:100%;border:0;background:#fff';
+        box.innerHTML = '';
+        box.appendChild(ready.frame);
+        try { ready.go(target); } catch (e0) { goUntilOk(ready, target); }
+        return ready;
+      } catch (e1) {}
+    }
     showWait(box);
     var tries = 0;
     while (tries < 6) {

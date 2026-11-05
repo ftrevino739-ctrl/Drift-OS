@@ -1016,7 +1016,9 @@ function youtube(root){
     video.controls=true; video.autoplay=true; video.playsInline=true;
     video.style.cssText='position:absolute;inset:0;width:100%;height:100%;background:#000;object-fit:contain';
     function fail(){
-      box.innerHTML='<iframe credentialless src="https://www.youtube-nocookie.com/embed/'+encodeURIComponent(id)+'?autoplay=1&rel=0" allow="autoplay;encrypted-media;picture-in-picture" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0;background:#000"></iframe>';
+      box.innerHTML='';
+      if(typeof openProxied==='function') openProxied('https://www.youtube.com/watch?v='+encodeURIComponent(id)+'&hl=es-419&gl=MX&persist_hl=1&persist_gl=1', box);
+      else box.textContent='YouTube';
     }
     video.addEventListener('error', fail);
     (async()=>{
@@ -3463,8 +3465,10 @@ function lockFrame(frame){
 }
 async function openProxied(url, box){
   try{
-    if(!SJP && !(await scramjetAvailable()))throw new Error('no-scram');
-    await sjInit();
+    if(!window.SJC){
+      if(!SJP && !(await scramjetAvailable()))throw new Error('no-scram');
+      await sjInit();
+    }
     const f=SJC.createFrame();
     lockFrame(f.frame);
     f.frame.style.cssText='width:100%;height:100%;border:0;background:#fff';
@@ -3487,7 +3491,7 @@ function sjBrowser(root){
   try { sel.value=(typeof ENG==='function'?ENG():'duckduckgo'); } catch (e) { sel.value='duckduckgo'; }
   if(!sel.value) sel.value='duckduckgo';
   sel.onchange=function(){ try { LS.set('wos:eng', sel.value); } catch (e) {} };
-  const ENGS={brave:'https://search.brave.com/search?q=',edge:'https://www.bing.com/search?setlang=en-US&cc=US&mkt=en-US&q=',firefox:'https://www.google.com/search?hl=en&q=',duckduckgo:'https://duckduckgo.com/?kl=us-en&q='};
+  const ENGS={brave:'https://search.brave.com/search?q=',edge:'https://www.bing.com/search?setlang=en-US&cc=US&mkt=en-US&q=',firefox:'https://www.google.com/search?hl=en&q=',duckduckgo:'https://duckduckgo.com/?kl=mx-es&ia=web&q='};
   let tabs=[],cur=0,sig='';
   const T=()=>tabs[cur];
   const norm=v=>{v=v.trim();if(!v)return'';
@@ -3496,7 +3500,7 @@ function sjBrowser(root){
     return ENGS[ENG()]+encodeURIComponent(v)};
   const home=t=>{
     t.box.innerHTML='<div class="center"><div class="logo"><span>W</span><span>e</span><span>b</span><span>O</span><span>S</span></div><input class="sb" placeholder="Search or type an address" aria-label="Search"><div class="tiles">'+
-      [['Google','https://www.google.com/?hl=en&gl=us','/sites/google.svg'],['Bing','https://www.bing.com/?setlang=en-US&cc=US','/sites/bing.svg'],['DuckDuckGo','https://duckduckgo.com/?kl=us-en','/sites/duckduckgo.svg'],['YouTube','https://www.youtube.com/?hl=es-419&gl=MX&persist_hl=1&persist_gl=1','/sites/youtube.svg'],['Discord','https://discord.com/app','/sites/discord.png'],['Instagram','https://www.instagram.com','/sites/instagram.svg'],['TikTok','https://www.tiktok.com','/sites/tiktok.png'],['Reddit','https://www.reddit.com','/sites/reddit.svg'],['Wikipedia','https://en.wikipedia.org','/sites/wikipedia.png']]
+      [['Google','https://www.google.com/?hl=en&gl=us','/sites/google.svg'],['Bing','https://www.bing.com/?setlang=en-US&cc=US','/sites/bing.svg'],['DuckDuckGo','https://duckduckgo.com/?kl=mx-es&ia=web','/sites/duckduckgo.svg'],['YouTube','https://www.youtube.com/?hl=es-419&gl=MX&persist_hl=1&persist_gl=1','/sites/youtube.svg'],['Discord','https://discord.com/app','/sites/discord.png'],['Instagram','https://www.instagram.com','/sites/instagram.svg'],['TikTok','https://www.tiktok.com','/sites/tiktok.png'],['Reddit','https://www.reddit.com','/sites/reddit.svg'],['Wikipedia','https://en.wikipedia.org','/sites/wikipedia.png']]
       .map(x=>`<button class="tile" data-u="${x[1]}"><i><img src="${x[2]}" alt=""></i>${x[0]}</button>`).join('')+'</div></div>';
     const sb=$('.sb',t.box);sb.onkeydown=e=>{if(e.key==='Enter')go(sb.value)};
     t.box.querySelectorAll('.tile').forEach(b=>b.onclick=()=>go(b.dataset.u))};
@@ -3506,8 +3510,26 @@ function sjBrowser(root){
     if(!/\s/.test(v)){try{const u=new URL('https://'+v);if(u.hostname.includes('.'))return u.toString()}catch{}}
     return '';
   }
+  function googleLoginHost(u){
+    try{
+      const h=new URL(u).hostname.toLowerCase();
+      return h==='docs.google.com'||h==='drive.google.com'||h==='accounts.google.com'||h==='mail.google.com'||h==='calendar.google.com'||h==='forms.gle';
+    }catch(e){return false}
+  }
   async function openFrame(u){
     const t=T();
+    if(googleLoginHost(u)){
+      t.fr=null; t.url=u; t.title=u.replace(/^https?:\/\//,'').slice(0,30);
+      t.box.innerHTML='';
+      const frame=document.createElement('iframe');
+      frame.setAttribute('referrerpolicy','no-referrer');
+      frame.setAttribute('allow','camera; microphone; clipboard-read; clipboard-write; fullscreen');
+      frame.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';
+      frame.src='/api/opera?u='+encodeURIComponent(u)+'&b=firefox';
+      t.box.appendChild(frame);
+      bar();
+      return;
+    }
     if(!t.fr){t.box.innerHTML='<div class="ld">Loading…</div>';await sjInit();
       const f=SJC.createFrame();lockFrame(f.frame);f.frame.style.cssText=sjStyle;t.box.innerHTML='';t.box.appendChild(f.frame);t.fr=f}
     t.url=u;t.title=u.replace(/^https?:\/\//,'').slice(0,30);
@@ -3545,17 +3567,7 @@ function sjBrowser(root){
     const raw=String(v||'').trim(); if(!raw)return;
     const direct=asUrl(raw);
     try{
-      if(direct){
-        let host='';
-        try{host=new URL(direct).hostname}catch(e){}
-        if(/duckduckgo\.com$/i.test(host)){
-          let qq='';
-          try{qq=new URL(direct).searchParams.get('q')||''}catch(e){}
-          if(qq) await showResults(qq);
-          else { const t=T(); t.fr=null; t.url=''; home(t); bar(true); }
-        } else await openFrame(direct);
-      }
-      else await showResults(raw);
+      await openFrame(direct||norm(raw));
     }catch(e){T().box.innerHTML='<div class="ym">Could not start proxy: '+esc(String(e&&e.message||e))+'</div>'}}
   function bar(force){
     const s=tabs.map(t=>t.title).join('|')+'#'+cur;

@@ -67,7 +67,7 @@ iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#fff}
     q = String(q || '').replace(/\s+/g, ' ').trim();
     if (q) return 'https://duckduckgo.com/?kl=mx-es&ia=web&q=' + encodeURIComponent(q);
     if (/^https?:/i.test(href) && !/linewize|classwize|goguardian|securly/i.test(href)) return href;
-    return 'https://duckduckgo.com/?kl=mx-es';
+    return 'https://duckduckgo.com/?kl=mx-es&ia=web';
   }
   var params = new URLSearchParams(location.search);
   var target = searched(params.get('u') || '');
@@ -371,14 +371,21 @@ iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#fff}
 })();
 </script>
 <style>
-#drift-pass{position:fixed;right:12px;bottom:12px;z-index:8;width:min(340px,calc(100% - 24px));min-width:220px;min-height:160px;max-height:86vh;overflow:auto;resize:both;color:#111;border-radius:22px;padding:12px;font:13px/1.4 system-ui,sans-serif;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.48);box-shadow:0 12px 40px rgba(0,0,0,.18);backdrop-filter:blur(22px) saturate(1.6);-webkit-backdrop-filter:blur(22px) saturate(1.6)}
-#drift-pass input,#drift-pass select,#drift-pass textarea{width:100%;box-sizing:border-box;margin-top:4px;padding:8px;border-radius:10px;border:1px solid rgba(255,255,255,.55);background:rgba(255,255,255,.5);color:#111}
-#drift-pass button{border:0;border-radius:10px;background:#c5c8ce;color:#111;font-weight:700;padding:8px 10px;cursor:pointer}
-#drift-pass [data-head]{cursor:move;user-select:none}
+#drift-pass{position:fixed;right:12px;bottom:12px;z-index:8;width:min(340px,calc(100% - 24px));min-width:220px;min-height:160px;max-height:86vh;overflow:auto;scrollbar-width:none;-ms-overflow-style:none;resize:both;color:#111;border-radius:28px;padding:12px 12px 8px;font:13px/1.4 system-ui,sans-serif;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.48);box-shadow:0 12px 40px rgba(0,0,0,.18);backdrop-filter:blur(22px) saturate(1.6);-webkit-backdrop-filter:blur(22px) saturate(1.6)}
+#drift-pass::-webkit-scrollbar,#drift-pass *::-webkit-scrollbar{width:0;height:0;display:none}
+#drift-pass input,#drift-pass select,#drift-pass textarea{width:100%;box-sizing:border-box;margin-top:4px;padding:8px;border-radius:14px;border:1px solid rgba(255,255,255,.55);background:rgba(255,255,255,.5);color:#111}
+#drift-pass button{border:0;border-radius:14px;background:#c5c8ce;color:#111;font-weight:700;padding:8px 10px;cursor:pointer}
+#drift-pass [data-head],#drift-pass [data-foot]{cursor:move;user-select:none}
 #drift-pass [data-head] button{padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.55);cursor:pointer}
-#drift-pass [data-log]{display:flex;flex-direction:column;gap:6px;min-height:72px;max-height:220px;overflow:auto}
-#drift-pass .u{align-self:flex-end;max-width:86%;background:#1a73e8;color:#fff;border-radius:12px 12px 4px 12px;padding:6px 8px;white-space:pre-wrap}
-#drift-pass .a{align-self:flex-start;max-width:86%;background:rgba(255,255,255,.78);color:#111;border-radius:12px 12px 12px 4px;padding:6px 8px;white-space:pre-wrap}
+#drift-pass [data-foot]{height:22px;margin:10px 2px 2px;border-radius:999px;background:rgba(255,255,255,.62);box-shadow:inset 0 0 0 1px rgba(255,255,255,.8)}
+#drift-pass [data-log]{display:flex;flex-direction:column;gap:6px;min-height:72px;max-height:220px;overflow:auto;scrollbar-width:none}
+#drift-pass .u{align-self:flex-end;max-width:86%;background:#1a73e8;color:#fff;border-radius:16px 16px 6px 16px;padding:6px 8px}
+#drift-pass .a{align-self:flex-start;max-width:86%;background:rgba(255,255,255,.78);color:#111;border-radius:16px 16px 16px 6px;padding:6px 8px}
+#drift-pass .a strong{font-weight:800}
+#drift-pass input[type=checkbox]{appearance:none;-webkit-appearance:none;width:56px;height:32px;margin:0;padding:0;border:0;border-radius:999px;background:#8e8e93;box-shadow:inset 0 0 0 2px rgba(0,0,0,.35);position:relative;flex:none;cursor:pointer}
+#drift-pass input[type=checkbox]:after{content:"";position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.35);transition:left .15s}
+#drift-pass input[type=checkbox]:checked{background:#34c759}
+#drift-pass input[type=checkbox]:checked:after{left:27px}
 </style>
 <div id="drift-pass">
   <div data-head style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b>Bypass</b><span><button type="button" data-toggle>Close</button> <button type="button" data-kill>Close taskbar</button></span></div>
@@ -412,9 +419,10 @@ iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#fff}
       <button type="button" data-ask style="width:100%;margin-top:8px">Send</button>
     </div>
   </div>
+  <div data-foot aria-label="Drag"></div>
 </div>
 <button id="drift-pass-peek" type="button" style="display:none;position:fixed;right:10px;bottom:10px;z-index:9;border:0;border-radius:999px;background:rgba(255,255,255,.72);color:#111;padding:8px 12px;font:700 12px system-ui;cursor:pointer;backdrop-filter:blur(12px)">Show</button>
-<button id="drift-go-ball" type="button" hidden style="position:fixed;right:18px;bottom:88px;z-index:9;width:68px;height:68px;padding:0;border-radius:50%;border:2px solid rgba(255,255,255,.45);background:#071226;overflow:hidden;cursor:grab"><img src="https://drift.hostless.app/drift-mark.png" alt="" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:cover;transform:scale(1.18);pointer-events:none" onerror="this.remove();this.parentNode.style.background='radial-gradient(circle at 30% 30%, #7EC8FF, #0B1A36)'"></button>
+<button id="drift-go-ball" type="button" hidden style="position:fixed;right:18px;bottom:88px;z-index:9;width:68px;height:68px;padding:0;border-radius:50%;border:2px solid rgba(255,255,255,.45);background:#071226;overflow:hidden;cursor:grab"><img src="/drift-mark.png" alt="" style="width:100%;height:100%;object-fit:cover;transform:scale(1.18);pointer-events:none" onerror="this.remove();this.parentNode.style.background='radial-gradient(circle at 30% 30%, #7EC8FF, #0B1A36)'"></button>
 <script>
 (function () {
   var bar = document.getElementById('drift-pass');
@@ -437,12 +445,23 @@ iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#fff}
     try { localStorage.setItem('wos:bar-box', JSON.stringify({ l: bar.offsetLeft, t: bar.offsetTop, w: bar.offsetWidth, h: bar.offsetHeight })); } catch (e) {}
   }
   var dragBar = null;
-  var head = bar.querySelector('[data-head]');
-  if (head) head.addEventListener('pointerdown', function (e) {
-    if (e.target && e.target.closest && e.target.closest('button')) return;
-    dragBar = { x: e.clientX, y: e.clientY, l: bar.offsetLeft, t: bar.offsetTop };
-    bar.style.right = 'auto'; bar.style.bottom = 'auto';
-  });
+  function bindDrag(handle) {
+    if (!handle) return;
+    handle.addEventListener('pointerdown', function (e) {
+      if (e.target && e.target.closest && e.target.closest('button,input,textarea,select,a')) return;
+      dragBar = { x: e.clientX, y: e.clientY, l: bar.offsetLeft, t: bar.offsetTop };
+      bar.style.right = 'auto'; bar.style.bottom = 'auto';
+      try { handle.setPointerCapture(e.pointerId); } catch (err) {}
+    });
+    handle.addEventListener('pointermove', function (e) {
+      if (!dragBar) return;
+      bar.style.left = (dragBar.l + e.clientX - dragBar.x) + 'px';
+      bar.style.top = (dragBar.t + e.clientY - dragBar.y) + 'px';
+    });
+    handle.addEventListener('pointerup', function () { if (dragBar) { dragBar = null; saveBox(); } });
+  }
+  bindDrag(bar.querySelector('[data-head]'));
+  bindDrag(bar.querySelector('[data-foot]'));
   if (window.ResizeObserver) { try { new ResizeObserver(function () { saveBox(); }).observe(bar); } catch (e) {} }
   function mode(m) {
     try { localStorage.setItem('wos:pass-bar', m); } catch (e) {}
@@ -618,6 +637,19 @@ iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#fff}
     n.style.right = 'auto';
     n.style.bottom = 'auto';
   }
+  function paintMd(el, text) {
+    var s = String(text || '');
+    function esc(x) { return String(x).replace(/&/g, '&' + 'amp;').replace(/</g, '&' + 'lt;').replace(/>/g, '&' + 'gt;'); }
+    var h = esc(s);
+    h = h.replace(/^### (.+)$/gm, '<div style="font-weight:800;font-size:15px;margin:6px 0 2px">$1</div>');
+    h = h.replace(/^## (.+)$/gm, '<div style="font-weight:800;font-size:16px;margin:6px 0 2px">$1</div>');
+    h = h.replace(/^# (.+)$/gm, '<div style="font-weight:800;letter-spacing:.02em;margin:6px 0 2px">$1</div>');
+    h = h.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+    h = h.replace(/(^|[\s(])\*([^*\n]+)\*/g, '$1<em>$2</em>');
+    h = h.replace(/`([^`]+)`/g, '<code>$1</code>');
+    el.style.whiteSpace = 'pre-wrap';
+    el.innerHTML = h;
+  }
   function sayNear(text) {
     var old = document.getElementById('drift-ball-ans');
     if (old) old.remove();
@@ -631,8 +663,7 @@ iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#fff}
     x.style.cssText = 'position:absolute;left:6px;top:6px;width:22px;height:22px;border:0;background:transparent;color:#111;font-size:18px;line-height:1;cursor:pointer;padding:0';
     x.onclick = function (e) { e.stopPropagation(); n.remove(); };
     var body = document.createElement('div');
-    body.style.whiteSpace = 'pre-wrap';
-    body.textContent = text;
+    paintMd(body, text);
     n.append(x, body);
     document.body.appendChild(n);
     placeAns();
@@ -667,7 +698,8 @@ iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#fff}
     var log = bar.querySelector('[data-log]');
     var d = document.createElement('div');
     d.className = kind === 'u' ? 'u' : 'a';
-    d.textContent = text;
+    if (kind === 'u') d.textContent = text;
+    else paintMd(d, text);
     log.appendChild(d);
     log.scrollTop = log.scrollHeight;
     return d;
@@ -729,7 +761,7 @@ iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#fff}
         else text = await driftFast(turns.slice(-8));
       } catch (e2) { text = String((e2 && e2.message) || (e1 && e1.message) || ''); }
     }
-    hold.textContent = text || 'Try again.';
+    paintMd(hold, text || 'Try again.');
   };
   window.addEventListener('keydown', function (e) {
     var n = keyName(e).toLowerCase();

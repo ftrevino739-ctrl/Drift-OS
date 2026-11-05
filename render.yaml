@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: drift-os
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: "20"

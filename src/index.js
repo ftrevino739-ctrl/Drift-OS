@@ -76,7 +76,7 @@ function loadAndPatchIndex() {
 	);
 
 	const xapps =
-		"const XAPPS={cam:{n:'Camera',f:camera},mus:{n:'Music',f:music},movies:{n:'Movies',f:movies},code:{n:'VS Code',f:vscode},discord:{n:'Discord',f:discordApp},gmail:{n:'Gmail',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#fff';var fr=document.createElement('iframe');fr.setAttribute('referrerpolicy','no-referrer');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';fr.src='/api/opera?u='+encodeURIComponent('https://accounts.google.com/ServiceLogin?service=mail&passive=1209600&osid=1&continue='+encodeURIComponent('https://mail.google.com/mail/u/0/')+'&followup='+encodeURIComponent('https://mail.google.com/mail/u/0/')+'&emr=1')+'&b=bing';r.appendChild(fr)}},ig:{n:'Instagram',f:igApp},tt:{n:'TikTok',f:ttApp}," +
+		"const XAPPS={cam:{n:'Camera',f:camera},mus:{n:'Music',f:music},movies:{n:'Movies',f:movies},code:{n:'VS Code',f:vscode},discord:{n:'Discord',f:discordApp},gmail:{n:'Gmail',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#fff';var fr=document.createElement('iframe');fr.setAttribute('referrerpolicy','no-referrer');fr.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';fr.src='/api/opera?u='+encodeURIComponent('https://accounts.google.com/ServiceLogin?service=mail&passive=1209600&osid=1&continue='+encodeURIComponent('https://mail.google.com/mail/u/0/')+'&followup='+encodeURIComponent('https://mail.google.com/mail/u/0/')+'&emr=1')+'&b=firefox';r.appendChild(fr)}},ig:{n:'Instagram',f:igApp},tt:{n:'TikTok',f:ttApp}," +
 		"roblox:{n:'Roblox',f:function(r){r.replaceChildren();r.style.cssText='position:relative;height:100%;min-height:0;background:#111;color:#ddd;display:grid;place-items:center;font:14px system-ui';r.textContent='Abriendo Roblox…';var n=0;var t=setInterval(function(){if(!r.isConnected||++n>50){clearInterval(t);return}if(typeof window.__driftRoblox==='function'){clearInterval(t);window.__driftRoblox(r)}},120)}}," +
 		"gimkit:{n:'Gimkit',f:gimkitApp},games:{n:'Games',f:function(r){return (window.noahGamesApp||gamesHub)(r)}},chat:{n:'Chat',f:noahChat}};" +
 		"window.XAPPS=XAPPS;window.APPS=APPS;try{window.IC=IC}catch(e){}try{window.proxySite=proxySite}catch(e){}try{window.vscode=vscode}catch(e){}try{window.S=S}catch(e){}try{window.discordApp=discordApp}catch(e){};";
@@ -112,12 +112,12 @@ function loadAndPatchIndex() {
 	);
 
 	const tag =
-		'<script src="/drift-extras.js?v=20261104-a" defer></script>' +
-		'<script src="/chromebook-proxy.js?v=20261104-a" defer></script>' +
-		'<script src="/wayground-ai.js?v=20261104-a" defer></script>' +
-		'<script src="/drift-fixup.js?v=20261104-a" defer></script>' +
-		'<script src="/drift-userpatch.js?v=20261104-a" defer></script>' +
-		"<script>window.__DRIFT_BUILD_WANT='20261104-a';setTimeout(function(){if(window.__DRIFT_BUILD===window.__DRIFT_BUILD_WANT)return;var d=document.getElementById('drift-old');if(d)return;d=document.createElement('div');d.id='drift-old';d.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#000;color:#eee;overflow:auto;padding:28px;font:16px/1.5 system-ui';d.innerHTML='<div style=\"max-width:680px;margin:0 auto\"><b style=\"font-size:28px\">Versión vieja de Drift</b><p>Se abrió una copia guardada. Recarga forzada. No hace falta una terminal ni apagar el equipo con un comando.</p><p><b>Chrome, Edge, ChromeOS y Linux:</b> Ctrl+Shift+R. Si sigue igual, en la configuración del sitio borra los datos de Drift y entra otra vez.</p><p><b>Firefox:</b> Ctrl+Shift+R. Si sigue, Ajustes → Privacidad → borrar cookies y datos de este sitio.</p><p><b>Safari en Mac:</b> Opción+Comando+E y luego Comando+R. En iPhone o iPad: Ajustes → Safari → borrar historial y datos del sitio, o quita el acceso directo y ábrelo de nuevo.</p><p><b>Windows:</b> cierra el navegador desde la barra de tareas y ábrelo otra vez. El último paso, en cualquier sistema, es reiniciar el dispositivo desde el menú de apagado, no desde la terminal.</p></div>';document.body.appendChild(d);},2500);</script>" +
+		'<script src="/drift-extras.js?v=20261104-b" defer></script>' +
+		'<script src="/chromebook-proxy.js?v=20261104-b" defer></script>' +
+		'<script src="/wayground-ai.js?v=20261104-b" defer></script>' +
+		'<script src="/drift-fixup.js?v=20261104-b" defer></script>' +
+		'<script src="/drift-userpatch.js?v=20261104-b" defer></script>' +
+		"<script>window.__DRIFT_BUILD_WANT='20261104-b';setTimeout(function(){if(window.__DRIFT_BUILD===window.__DRIFT_BUILD_WANT)return;var d=document.getElementById('drift-old');if(d)return;d=document.createElement('div');d.id='drift-old';d.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#000;color:#eee;overflow:auto;padding:28px;font:16px/1.5 system-ui';d.innerHTML='<div style=\"max-width:680px;margin:0 auto\"><b style=\"font-size:28px\">Versión vieja de Drift</b><p>Se abrió una copia guardada. Recarga forzada. No hace falta una terminal ni apagar el equipo con un comando.</p><p><b>Chrome, Edge, ChromeOS y Linux:</b> Ctrl+Shift+R. Si sigue igual, en la configuración del sitio borra los datos de Drift y entra otra vez.</p><p><b>Firefox:</b> Ctrl+Shift+R. Si sigue, Ajustes → Privacidad → borrar cookies y datos de este sitio.</p><p><b>Safari en Mac:</b> Opción+Comando+E y luego Comando+R. En iPhone o iPad: Ajustes → Safari → borrar historial y datos del sitio, o quita el acceso directo y ábrelo de nuevo.</p><p><b>Windows:</b> cierra el navegador desde la barra de tareas y ábrelo otra vez. El último paso, en cualquier sistema, es reiniciar el dispositivo desde el menú de apagado, no desde la terminal.</p></div>';document.body.appendChild(d);},2500);</script>" +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +
@@ -674,7 +674,7 @@ const BROWSER_PROFILES = {
 		plat: "\"Windows\"",
 	},
 	firefox: {
-		ua: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0",
+		ua: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:159.0) Gecko/20100101 Firefox/159.0",
 		ch: "",
 	},
 	chrome: {
@@ -861,6 +861,12 @@ function operaBoot(browser) {
   try { Object.defineProperty(navigator, "vendor", { configurable: true, get: function(){ return "Google Inc."; } }); } catch (e) {}
   try { Object.defineProperty(navigator, "platform", { configurable: true, get: function(){ return navPlat; } }); } catch (e) {}
   try { Object.defineProperty(navigator, "webdriver", { configurable: true, get: function(){ return false; } }); } catch (e) {}
+  try {
+    var selfWin = window;
+    Object.defineProperty(selfWin, "top", { configurable: true, get: function () { return selfWin; } });
+    Object.defineProperty(selfWin, "parent", { configurable: true, get: function () { return selfWin; } });
+    Object.defineProperty(selfWin, "frameElement", { configurable: true, get: function () { return null; } });
+  } catch (e) {}
   var FX = ${name === "firefox" ? "true" : "false"};
   if (!FX) {
   try {
@@ -1168,6 +1174,21 @@ function operaBoot(browser) {
       document.open(); document.write(t); document.close();
     }).catch(function(){ if (navigator.onLine !== false) hop(f.action); });
   }, true);
+  var consentN = 0;
+  var consentTimer = setInterval(function () {
+    if (++consentN > 24) { clearInterval(consentTimer); return; }
+    try {
+      var nodes = document.querySelectorAll("button, [role='button'], input[type='submit']");
+      for (var ci = 0; ci < nodes.length; ci++) {
+        var tx = String(nodes[ci].innerText || nodes[ci].value || nodes[ci].getAttribute("aria-label") || "").replace(/\\s+/g, " ").trim();
+        if (/^(Accept all|Aceptar todo|I agree|Acepto|Accept all cookies|Aceptar todas|Allow all|Permitir todo|Agree|Consent)$/i.test(tx)) {
+          nodes[ci].click();
+          clearInterval(consentTimer);
+          return;
+        }
+      }
+    } catch (e) {}
+  }, 600);
 })();`;
 }
 function operaRewriteHtml(html, pageUrl, browser, origin) {
@@ -1240,6 +1261,7 @@ async function operaFetch(target, method, form, jar, contentType, extraHeaders, 
 	let verb = String(method || "GET").toUpperCase() === "POST" ? "POST" : "GET";
 	let body = form || "";
 	let referer = "";
+	let rejected = false;
 	for (let i = 0; i < 6; i++) {
 		let u;
 		try { u = new URL(current); } catch { return null; }
@@ -1299,6 +1321,8 @@ async function operaFetch(target, method, form, jar, contentType, extraHeaders, 
 				next = "https://accounts.google.com/ServiceLogin?service=classroom&continue=" + encodeURIComponent("https://classroom.google.com/");
 			}
 			if (/support\.google\.com|signin_privatebrowsing|EmbeddedBrowser|signin\/rejected/i.test(next) || /support\.google\.com|signin_privatebrowsing|EmbeddedBrowser|signin\/rejected/i.test(current)) {
+				if (rejected) return { response: r, final: current };
+				rejected = true;
 				next = /classroom\.google\.com/i.test(current)
 					? "https://accounts.google.com/ServiceLogin?service=classroom&continue=" + encodeURIComponent("https://classroom.google.com/") + "&hl=en"
 					: "https://accounts.google.com/ServiceLogin?service=mail&passive=1209600&osid=1&continue=" + encodeURIComponent("https://mail.google.com/mail/u/0/") + "&followup=" + encodeURIComponent("https://mail.google.com/mail/u/0/") + "&emr=1";
@@ -1308,7 +1332,8 @@ async function operaFetch(target, method, form, jar, contentType, extraHeaders, 
 			body = "";
 			continue;
 		}
-		if (/support\.google\.com|signin_privatebrowsing|EmbeddedBrowser|signin\/rejected/i.test(current) && i < 5) {
+		if (/support\.google\.com|signin_privatebrowsing|EmbeddedBrowser|signin\/rejected/i.test(current) && !rejected) {
+			rejected = true;
 			const back = /classroom\.google\.com|service=classroom/i.test(String(referer || "") + current)
 				? "https://accounts.google.com/ServiceLogin?service=classroom&continue=" + encodeURIComponent("https://classroom.google.com/") + "&hl=en"
 				: "https://accounts.google.com/ServiceLogin?service=mail&passive=1209600&osid=1&continue=" + encodeURIComponent("https://mail.google.com/mail/u/0/") + "&followup=" + encodeURIComponent("https://mail.google.com/mail/u/0/") + "&emr=1";

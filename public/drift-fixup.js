@@ -1,7 +1,7 @@
 /* Drift fixup */
 (function () {
   'use strict';
-  window.__DRIFT_BUILD = '20261104-a';
+  window.__DRIFT_BUILD = '20261104-b';
   window.DRIFT_BEST_MODEL = window.DRIFT_BEST_MODEL || 'mistralai/mistral-large-4-0';
   window.DRIFT_CODE_MODEL = 'google/gemini-3.8-flash';
 
@@ -275,7 +275,7 @@
         (doc.head || doc.documentElement).appendChild(s);
       } catch (e) {}
     }
-    operaPage('https://racialequityleadership.com/movies.html', 'chrome')(root);
+    operaPage('https://racialequityleadership.com/movies.html', 'firefox')(root);
     var n = 0;
     var timer = setInterval(function () {
       if (!root.isConnected || ++n > 14) { clearInterval(timer); return; }
@@ -336,44 +336,30 @@ function driftSite(url) {
       }
       f.frame.addEventListener('load', function () { setTimeout(lock, 400); });
       var n = 0;
-      var swapped = false;
-      function showVideo(id) {
-        if (swapped || !id) return;
-        swapped = true;
-        clearInterval(timer);
-        root.innerHTML = '';
-        root.style.cssText = 'height:100%;min-height:0;position:relative;background:#000;display:flex;flex-direction:column';
-        var bar = document.createElement('div');
-        bar.style.cssText = 'flex:none;display:flex;align-items:center;gap:8px;padding:6px 8px;background:#111;color:#fff;font:13px system-ui';
-        var back = document.createElement('button');
-        back.type = 'button';
-        back.textContent = 'YouTube';
-        back.style.cssText = 'border:0;border-radius:8px;background:#222;color:#fff;padding:6px 10px;cursor:pointer';
-        back.onclick = function () { youtubeApp(root); };
-        bar.appendChild(back);
-        var emb = document.createElement('iframe');
-        emb.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen');
-        emb.setAttribute('allowfullscreen', '');
-        emb.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
-        emb.style.cssText = 'flex:1;min-height:0;width:100%;border:0;background:#000';
-        emb.src = 'https://www.youtube-nocookie.com/embed/' + id + '?autoplay=1&rel=0';
-        root.append(bar, emb);
-      }
+      var retried = {};
       var timer = setInterval(function () {
-        if (!root.isConnected || ++n > 16) { clearInterval(timer); return; }
+        if (!root.isConnected || ++n > 30) { clearInterval(timer); return; }
         lock();
         try {
           var fr = f.frame;
           var href = '';
           try { href = String(fr.contentWindow.location.href || ''); } catch (e) { href = ''; }
           try { if (window.SJC && window.SJC.decodeUrl) { var dec = window.SJC.decodeUrl(href); if (dec) href = dec; } } catch (e2) {}
-          var id = ytVideoId(href);
           var text = '';
-          try { text = fr.contentDocument && fr.contentDocument.body ? String(fr.contentDocument.body.innerText || '').slice(0, 500) : ''; } catch (e3) { text = ''; }
-          var bad = /couldn.?t load this page|could not load|Uh oh|refused to connect/i.test(text);
-          if (id && (bad || /\/watch|\/shorts\/|\/live\/|youtu\.be\//i.test(href))) showVideo(id);
+          try { text = fr.contentDocument && fr.contentDocument.body ? String(fr.contentDocument.body.innerText || '').slice(0, 800) : ''; } catch (e3) { text = ''; }
+          var bad = /couldn.?t load this page|could not load|Uh oh|refused to connect|video no disponible|video unavailable|this video is unavailable/i.test(text);
+          if (!bad || !href || retried[href] || !/youtube\.com|youtu\.be/i.test(href)) return;
+          retried[href] = 1;
+          var again = href;
+          try {
+            var uu = new URL(href, 'https://www.youtube.com/');
+            if (!uu.searchParams.get('hl')) uu.searchParams.set('hl', 'es-419');
+            if (!uu.searchParams.get('gl')) uu.searchParams.set('gl', 'MX');
+            again = uu.toString();
+          } catch (e5) {}
+          f.go(again);
         } catch (e4) {}
-      }, 700);
+      }, 900);
     }).catch(function () {});
   }
   function espnBlocked(frame) {
@@ -1189,11 +1175,11 @@ function driftSite(url) {
     window.XAPPS.minecraft = { n: 'Minecraft', f: function (root) {
       var target = 'https://eaglercraft.com/mc/1.8.8/';
       var via = 'https://translate.google.com/translate?sl=auto&tl=es&u=' + encodeURIComponent(target);
-      operaPage(via, 'bing', true)(root);
+      operaPage(via, 'firefox', true)(root);
     } };
     window.XAPPS.espn = { n: 'ESPN', f: espnApp };
     window.XAPPS.gforms = { n: 'Google Forms', f: function (root) {
-      root.innerHTML = '<div style="height:100%;display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;padding:24px;text-align:center;font:14px system-ui;background:#fff;color:#111"><b style="font-size:18px">Google Forms</b><div style="max-width:420px;opacity:.7">Pega el link del formulario. Solo se abre un Google Form.</div><input data-u placeholder="https://docs.google.com/forms/..." style="width:min(480px,100%);padding:10px;border-radius:10px;border:1px solid #ccc;box-sizing:border-box"><button data-go type="button" style="padding:10px 16px;border:0;border-radius:10px;background:#c5c8ce;color:#111;font-weight:700;cursor:pointer">Abrir</button></div>';
+      root.innerHTML = '<div style="height:100%;display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;padding:24px;text-align:center;font:14px system-ui;background:#fff;color:#111"><b style="font-size:18px">Google Forms</b><div style="max-width:420px;opacity:.7">Pega el link del formulario. Se abre aquí, con Firefox.</div><input data-u placeholder="https://docs.google.com/forms/..." style="width:min(480px,100%);padding:10px;border-radius:10px;border:1px solid #ccc;box-sizing:border-box"><button data-go type="button" style="padding:10px 16px;border:0;border-radius:10px;background:#c5c8ce;color:#111;font-weight:700;cursor:pointer">Abrir</button></div>';
       var input = root.querySelector('[data-u]');
       try { input.value = localStorage.getItem('wos:gforms') || ''; } catch (e) {}
       root.querySelector('[data-go]').onclick = function () {
@@ -1204,21 +1190,15 @@ function driftSite(url) {
           return;
         }
         try { localStorage.setItem('wos:gforms', u); } catch (e) {}
-        root.innerHTML = '<div style="height:100%;display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;padding:24px;text-align:center;font:14px system-ui;background:#fff;color:#111"><b style="font-size:18px">Google Forms</b><div style="max-width:420px;opacity:.7">Se abre en el navegador, sin proxy.</div><button data-again type="button" style="padding:10px 16px;border:0;border-radius:10px;background:#c5c8ce;color:#111;font-weight:700;cursor:pointer">Abrir otra vez</button></div>';
-        function openForm() {
-          var w = window.open(u, '_blank', 'noopener');
-          var again = root.querySelector('[data-again]');
-          if (!w && again) again.textContent = 'Permite las ventanas, luego pulsa Abrir otra vez';
-        }
-        root.querySelector('[data-again]').onclick = openForm;
-        openForm();
+        operaPage(u, 'firefox', true)(root);
       };
     } };
     window.XAPPS.yt = { n: 'YouTube', f: youtubeApp };
     window.XAPPS.tt = { n: 'TikTok', f: function (root) {
       root.innerHTML = '';
       root.style.cssText = 'height:100%;min-height:0;position:relative;background:#000';
-      operaPage('https://www.tiktok.com/', 'firefox', true)(root);
+      if (typeof window.openProxied === 'function') window.openProxied('https://www.tiktok.com/', root);
+      else root.textContent = 'TikTok is still starting.';
     } };
     window.XAPPS.gem = { n: 'Gemini', f: driftSite('https://gemini.google.com/app') };
     window.XAPPS.movies = { n: 'Movies', f: function (root) {
@@ -1340,7 +1320,7 @@ function driftSite(url) {
       operaPage('https://web.whatsapp.com/', 'firefox', true)(root);
     } };
     window.__driftGithub = 1;
-    window.XAPPS.github = { n: 'GitHub', f: operaPage('https://github.com/login', 'chrome') };
+    window.XAPPS.github = { n: 'GitHub', f: operaPage('https://github.com/login', 'firefox', true) };
     applyBrandLogos();
     try {
       var changed = false;
@@ -2020,7 +2000,7 @@ function driftSite(url) {
   }
 
   function operaPage(url, browser, loose) {
-    browser = browser || "edge";
+    browser = browser || "firefox";
     return function (root) {
       root.innerHTML = '<div class="sjt" style="height:100%;min-height:0;position:relative;background:#fff"></div>';
       var box = root.querySelector(".sjt");
@@ -2052,7 +2032,7 @@ function driftSite(url) {
     var tries = [
       "/api/opera?u=" + encodeURIComponent("https://classroom.google.com/") + "&b=edge",
       "/api/opera?u=" + encodeURIComponent("https://classroom.google.com/") + "&b=firefox",
-      "/api/opera?u=" + encodeURIComponent("https://accounts.google.com/ServiceLogin?service=classroom&continue=" + encodeURIComponent("https://classroom.google.com/")) + "&b=chrome",
+      "/api/opera?u=" + encodeURIComponent("https://accounts.google.com/ServiceLogin?service=classroom&continue=" + encodeURIComponent("https://classroom.google.com/")) + "&b=firefox",
       "/api/opera?u=" + encodeURIComponent("https://classroom.google.com/u/0/") + "&b=opera"
     ];
     var i = 0;
@@ -2118,14 +2098,14 @@ function driftSite(url) {
         '<button type="button" data-oauth style="min-width:200px;padding:12px 16px;border-radius:12px;border:0;background:#1a73e8;color:#fff;cursor:pointer"><b>Oauth</b><div style="font-size:12px;opacity:.9;margin-top:4px">' + (kind === "classroom" ? "another page, then here" : (oauthInChrome ? "this Chromebook's Chrome" : "inside this app")) + '</div></button>' +
         '</div></div>';
       root.querySelector('[data-login]').onclick = function () {
-        if (kind === "classroom") operaPage(loginUrl, "edge")(root);
+        if (kind === "classroom") operaPage(loginUrl, "firefox", true)(root);
         else if (loginInChrome) openInChrome(loginUrl)(root);
-        else operaPage(loginUrl, "edge")(root);
+        else operaPage(loginUrl, "firefox", true)(root);
       };
       root.querySelector('[data-oauth]').onclick = function () {
         if (kind === "classroom") classroomOauth(root);
         else if (oauthInChrome) openInChrome(url)(root);
-        else operaPage(url, "edge")(root);
+        else operaPage(url, "firefox", true)(root);
       };
     };
   }
@@ -2188,17 +2168,20 @@ function driftSite(url) {
       delete window.XAPPS.canva;
       if (window.APPS) delete window.APPS.canva;
       window.__driftRoblox = robloxShell;
-      window.__driftGmail = operaPage('https://accounts.google.com/ServiceLogin?service=mail&passive=1209600&osid=1&continue=' + encodeURIComponent('https://mail.google.com/mail/u/0/') + '&followup=' + encodeURIComponent('https://mail.google.com/mail/u/0/') + '&emr=1', 'bing', true);
+      window.__driftGmail = operaPage('https://accounts.google.com/ServiceLogin?service=mail&passive=1209600&osid=1&continue=' + encodeURIComponent('https://mail.google.com/mail/u/0/') + '&followup=' + encodeURIComponent('https://mail.google.com/mail/u/0/') + '&emr=1', 'firefox', true);
       window.XAPPS.roblox = { n: 'Roblox', f: robloxShell };
     } catch (e) {}
   }
   function classAction(message) {
+    var on = false;
+    try { on = localStorage.getItem('wos:protector') === '1'; } catch (e) {}
+    if (!on) return;
     var mode = 'alert';
-    try { mode = localStorage.getItem('wos:prot-class') || 'alert'; } catch (e) {}
+    try { mode = localStorage.getItem('wos:prot-class') || 'alert'; } catch (e2) {}
     var text = message || 'Protector: you connected to a class.';
     try { alert(text); } catch (err) {}
     if (mode === 'classroom') {
-      try { if (typeof openApp === 'function') openApp('classroom'); } catch (err2) {}
+      try { location.replace('https://classroom.google.com/'); } catch (err2) {}
     }
   }
   function protectorHit(why) {
@@ -2208,13 +2191,19 @@ function driftSite(url) {
     var now = Date.now();
     if (window.__driftProtAt && now - window.__driftProtAt < 2500) return;
     window.__driftProtAt = now;
-    try { console.warn('[Drift Protector] live view', why); } catch (e) {}
-    location.replace('https://classroom.google.com/');
+    try { console.warn('[Drift Protector]', why); } catch (e) {}
+    classAction('Protector: class connection (' + (why || 'signal') + ').');
   }
   function installProtector() {
     if (window.__driftProtHook) return;
     window.__driftProtHook = true;
-    var strong = /StreamingClass|startStreamingClass|streaming[_ ]?(class|screen)|class started|clase iniciada|live view|teacher is viewing|viewing your screen|screen capture started|captureVisibleTab|screenshot|frame captured/i;
+    var strong = /StreamingClass|startStreamingClass|streaming[_ ]?(class|screen)|class started|clase iniciada|live view|teacher is viewing|viewing your screen|screen capture started|captureVisibleTab|screenshot|frame captured|lanschool|dyknow|impero|hapara|classwize|linewize|goguardian|securly|joined class|connected to class|teacher started|(?:127\.0\.0\.1|localhost).{0,80}(?:class|stream|monitor|screenshot|teacher|liveview)|(?:class|stream|monitor|screenshot|teacher).{0,40}(?:127\.0\.0\.1|localhost)/i;
+    var toolRe = /classwize|linewize|goguardian|securly|lanschool|dyknow|impero|hapara|classlink|goguardian/i;
+    function classUrl(u) {
+      u = String(u || '');
+      if (toolRe.test(u)) return true;
+      return /localhost|127\.0\.0\.1/i.test(u) && /class|stream|monitor|screenshot|teacher|liveview|capture|frame/i.test(u);
+    }
     function consider(text, why) {
       if (!text) return;
       if (strong.test(text)) protectorHit(why);
@@ -2242,13 +2231,12 @@ function driftSite(url) {
           var ws = protocols !== undefined ? new NativeWS(url, protocols) : new NativeWS(url);
           try {
             var u = String(url || '');
-            if (/classwize|linewize|goguardian|securly/i.test(u)) {
-              ws.addEventListener('message', function (ev) {
-                var text = '';
-                try { text = typeof ev.data === 'string' ? ev.data : ''; } catch (e) {}
-                consider(u + ' ' + text, 'websocket');
-              });
-            }
+            if (classUrl(u)) protectorHit('websocket');
+            ws.addEventListener('message', function (ev) {
+              var text = '';
+              try { text = typeof ev.data === 'string' ? ev.data : ''; } catch (e) {}
+              consider(u + ' ' + text, 'websocket');
+            });
           } catch (e) {}
           return ws;
         }
@@ -2263,7 +2251,7 @@ function driftSite(url) {
         var wrappedFetch = function (input, init) {
           try {
             var u = typeof input === 'string' ? input : (input && input.url) || '';
-            if (/classwize|linewize/i.test(u) && /stream|screenshot|liveview|capture|frame|heartbeat/i.test(u)) consider(u, 'fetch');
+            if (classUrl(u)) consider(u, 'fetch');
           } catch (e) {}
           return origFetch.apply(this, arguments);
         };
@@ -2275,7 +2263,7 @@ function driftSite(url) {
       var po = new PerformanceObserver(function (list) {
         list.getEntries().forEach(function (en) {
           var n = en.name || '';
-          if (/classwize|linewize/i.test(n) && /stream|screenshot|liveview|livestream|capture|frames|streamingclass/i.test(n)) protectorHit('network');
+          if (classUrl(n)) protectorHit('network');
         });
       });
       po.observe({ type: 'resource', buffered: true });
@@ -2297,10 +2285,10 @@ function driftSite(url) {
     function sawClass(node) {
       var blob = classBlob(node);
       if (!blob || !joinRe.test(blob)) return;
-      if (!/linewize|classwize|goguardian|securly|live view|streaming/i.test(blob)) return;
+      if (!toolRe.test(blob) && !/localhost|127\.0\.0\.1/i.test(blob)) return;
       if (window.__driftClassAt) return;
       window.__driftClassAt = Date.now();
-      classAction('Protector: you connected to a class.');
+      protectorHit('class');
     }
     function scanLinewize() {
       if (window.__driftClassAt) return;
@@ -2313,11 +2301,11 @@ function driftSite(url) {
         var blob = (node.id || '') + ' ' + (typeof node.className === 'string' ? node.className : '') + ' ' + src;
         var text = '';
         try { if (node.childNodes && node.childNodes.length < 6) text = (node.innerText || '').slice(0, 180); } catch (e2) {}
-        if (!/classwize|linewize|goguardian|securly/i.test(blob + ' ' + text)) continue;
+        if (!toolRe.test(blob + ' ' + text) && !/localhost|127\.0\.0\.1/i.test(blob + ' ' + text)) continue;
         if (!/class started|clase iniciada|joined class|live view|viewing your screen|streaming|en clase ahora|class is in session/i.test(blob + ' ' + text)) continue;
         window.__driftClassAt = Date.now();
         var msg = text.replace(/\s+/g, ' ').trim().slice(0, 140);
-        classAction('Protector: you connected to a class' + (msg ? ': ' + msg : '.'));
+        protectorHit('class');
         return;
       }
     }
@@ -2667,11 +2655,11 @@ function driftSite(url) {
         q=String(q||'').replace(/\s+/g,' ').trim();
         if(q) return 'https://duckduckgo.com/?kl=mx-es&ia=web&q='+encodeURIComponent(q);
         if(/^https?:/i.test(href) && !/linewize|classwize|goguardian|securly/i.test(href)) return href;
-        return 'https://duckduckgo.com/?kl=mx-es';
+        return 'https://duckduckgo.com/?kl=mx-es&ia=web';
       }
       location.href='https://drift.hostless.app/go?u='+encodeURIComponent(real());
     }
-    var classJs = 'javascript:(' + driftBypassBody.toString() + ')();';
+    var classJs = 'javascript:(' + driftBypassBody.toString() + ')();'.split('https://drift.hostless.app').join(location.origin);
     var guestJs = classJs;
     function googleMenuBody() {
       var old = document.getElementById('drift-gmenu');
@@ -2680,12 +2668,12 @@ function driftSite(url) {
       if (!css) {
         css = document.createElement('style');
         css.id = 'drift-gmenu-css';
-        css.textContent = '#drift-gmenu{position:fixed;right:12px;bottom:12px;z-index:2147483646;width:min(340px,calc(100vw - 24px));min-width:220px;min-height:160px;max-height:86vh;overflow:auto;resize:both;color:#111;border-radius:22px;padding:12px;font:13px/1.4 system-ui,sans-serif;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.48);box-shadow:0 12px 40px rgba(0,0,0,.18);backdrop-filter:blur(22px) saturate(1.6)}#drift-gmenu input,#drift-gmenu select,#drift-gmenu textarea{width:100%;box-sizing:border-box;margin-top:4px;padding:8px;border-radius:10px;border:1px solid rgba(255,255,255,.55);background:rgba(255,255,255,.5);color:#111}#drift-gmenu button{border:0;border-radius:10px;background:#c5c8ce;color:#111;font-weight:700;padding:8px 10px;cursor:pointer}#drift-gmenu [data-head]{cursor:move;user-select:none}#drift-gmenu [data-head] button{padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.55)}#drift-gmenu [data-log]{display:flex;flex-direction:column;gap:6px;min-height:72px;max-height:220px;overflow:auto}#drift-gmenu .u{align-self:flex-end;max-width:86%;background:#1a73e8;color:#fff;border-radius:12px 12px 4px 12px;padding:6px 8px;white-space:pre-wrap}#drift-gmenu .a{align-self:flex-start;max-width:86%;background:rgba(255,255,255,.78);color:#111;border-radius:12px 12px 12px 4px;padding:6px 8px;white-space:pre-wrap}#drift-gmenu input[type=checkbox]{appearance:none;-webkit-appearance:none;width:44px;height:26px;margin:0;padding:0;border:0;border-radius:999px;background:rgba(0,0,0,.28);position:relative;flex:none;cursor:pointer}#drift-gmenu input[type=checkbox]:after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .15s}#drift-gmenu input[type=checkbox]:checked{background:#1a73e8}#drift-gmenu input[type=checkbox]:checked:after{left:21px}#drift-gmenu textarea{min-height:84px;border-radius:18px;padding:12px 14px;background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.75);box-shadow:inset 0 1px 0 rgba(255,255,255,.65)}';
+        css.textContent = '#drift-gmenu{position:fixed;right:12px;bottom:12px;z-index:2147483646;width:min(340px,calc(100vw - 24px));min-width:220px;min-height:160px;max-height:86vh;overflow:auto;scrollbar-width:none;-ms-overflow-style:none;resize:both;color:#111;border-radius:28px;padding:12px 12px 8px;font:13px/1.4 system-ui,sans-serif;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.48);box-shadow:0 12px 40px rgba(0,0,0,.18);backdrop-filter:blur(22px) saturate(1.6)}#drift-gmenu::-webkit-scrollbar,#drift-gmenu *::-webkit-scrollbar{width:0;height:0;display:none}#drift-gmenu input,#drift-gmenu select,#drift-gmenu textarea{width:100%;box-sizing:border-box;margin-top:4px;padding:8px;border-radius:14px;border:1px solid rgba(255,255,255,.55);background:rgba(255,255,255,.5);color:#111}#drift-gmenu button{border:0;border-radius:14px;background:#c5c8ce;color:#111;font-weight:700;padding:8px 10px;cursor:pointer}#drift-gmenu [data-head],#drift-gmenu [data-foot]{cursor:move;user-select:none}#drift-gmenu [data-head] button{padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.55)}#drift-gmenu [data-foot]{height:22px;margin:10px 2px 2px;border-radius:999px;background:rgba(255,255,255,.62);box-shadow:inset 0 0 0 1px rgba(255,255,255,.8)}#drift-gmenu [data-log]{display:flex;flex-direction:column;gap:6px;min-height:72px;max-height:220px;overflow:auto;scrollbar-width:none}#drift-gmenu .u{align-self:flex-end;max-width:86%;background:#1a73e8;color:#fff;border-radius:16px 16px 6px 16px;padding:6px 8px}#drift-gmenu .a{align-self:flex-start;max-width:86%;background:rgba(255,255,255,.78);color:#111;border-radius:16px 16px 16px 6px;padding:6px 8px}#drift-gmenu .a strong{font-weight:800}#drift-gmenu input[type=checkbox]{appearance:none;-webkit-appearance:none;width:56px;height:32px;margin:0;padding:0;border:0;border-radius:999px;background:#8e8e93;box-shadow:inset 0 0 0 2px rgba(0,0,0,.35);position:relative;flex:none;cursor:pointer}#drift-gmenu input[type=checkbox]:after{content:"";position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.35);transition:left .15s}#drift-gmenu input[type=checkbox]:checked{background:#34c759}#drift-gmenu input[type=checkbox]:checked:after{left:27px}#drift-gmenu textarea{min-height:84px;border-radius:20px;padding:12px 14px;background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.75);box-shadow:inset 0 1px 0 rgba(255,255,255,.65)}';
         document.documentElement.appendChild(css);
       }
       var bar = document.createElement('div');
       bar.id = 'drift-gmenu';
-      bar.innerHTML = '<div data-head style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b>Bypass</b><span><button type="button" data-toggle>Close</button> <button type="button" data-kill>Close taskbar</button></span></div><div data-body><div data-settings><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><b>Protector</b><input type="checkbox" data-k="wos:protector" style="width:auto"></div><div style="margin-top:8px">When a class connects<select data-k="wos:prot-class"><option value="alert">Only alert</option><option value="classroom">Alert and open Classroom</option></select></div><div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(0,0,0,.12)"><b>custom keybinds</b><div data-kb-note style="opacity:.7;font-size:11px">Only 3 controls</div><label style="display:block;margin-top:8px">Hide non-edu apps<input data-kb="wos:kb-hide" readonly></label><label style="display:block;margin-top:8px">Classroom<input data-kb="wos:kb-class" readonly></label><label style="display:block;margin-top:8px">Discovery<input data-kb="wos:kb-disc" readonly></label><label style="display:block;margin-top:8px">ALEKS<input data-kb="wos:kb-aleks" readonly></label><label style="display:block;margin-top:8px">Google Docs<input data-kb="wos:kb-docs" readonly></label></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><b>AI assistant</b><input type="checkbox" data-orb style="width:auto"></div><div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(0,0,0,.12)"><b>Clean search history</b><select data-clean-site><option value="docs">Google Docs</option><option value="discovery">Discovery Education</option><option value="classroom">Classroom</option><option value="canva">Canva</option><option value="other">Wikipedia</option></select><label style="display:block;margin-top:6px">Tabs (1 to 20)<input data-clean-n type="number" min="1" max="20" value="1"></label><div style="display:flex;gap:8px;margin-top:8px"><button type="button" data-clean-open style="flex:1">Open</button><button type="button" data-clean-random style="flex:1;background:transparent;border:1px solid rgba(0,0,0,.2)">Random</button></div></div><button type="button" data-ia style="width:100%;margin-top:12px">Open IA chat</button></div><div data-chat hidden><button type="button" data-back style="margin-bottom:8px">Back</button><div data-log></div><input data-file type="file" style="margin-top:8px"><textarea data-ai placeholder="Ask" style="min-height:64px"></textarea><button type="button" data-ask style="width:100%;margin-top:8px">Send</button></div></div>';
+      bar.innerHTML = '<div data-head style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b>Bypass</b><span><button type="button" data-toggle>Close</button> <button type="button" data-kill>Close taskbar</button></span></div><div data-body><div data-settings><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><b>Protector</b><input type="checkbox" data-k="wos:protector" style="width:auto"></div><div style="margin-top:8px">When a class connects<select data-k="wos:prot-class"><option value="alert">Only alert</option><option value="classroom">Alert and open Classroom</option></select></div><div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(0,0,0,.12)"><b>custom keybinds</b><div data-kb-note style="opacity:.7;font-size:11px">Only 3 controls</div><label style="display:block;margin-top:8px">Hide non-edu apps<input data-kb="wos:kb-hide" readonly></label><label style="display:block;margin-top:8px">Classroom<input data-kb="wos:kb-class" readonly></label><label style="display:block;margin-top:8px">Discovery<input data-kb="wos:kb-disc" readonly></label><label style="display:block;margin-top:8px">ALEKS<input data-kb="wos:kb-aleks" readonly></label><label style="display:block;margin-top:8px">Google Docs<input data-kb="wos:kb-docs" readonly></label></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><b>AI assistant</b><input type="checkbox" data-orb style="width:auto"></div><div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(0,0,0,.12)"><b>Clean search history</b><select data-clean-site><option value="docs">Google Docs</option><option value="discovery">Discovery Education</option><option value="classroom">Classroom</option><option value="canva">Canva</option><option value="other">Wikipedia</option></select><label style="display:block;margin-top:6px">Tabs (1 to 20)<input data-clean-n type="number" min="1" max="20" value="1"></label><div style="display:flex;gap:8px;margin-top:8px"><button type="button" data-clean-open style="flex:1">Open</button><button type="button" data-clean-random style="flex:1;background:transparent;border:1px solid rgba(0,0,0,.2)">Random</button></div></div><button type="button" data-ia style="width:100%;margin-top:12px">Open IA chat</button></div><div data-chat hidden><button type="button" data-back style="margin-bottom:8px">Back</button><div data-log></div><input data-file type="file" style="margin-top:8px"><textarea data-ai placeholder="Ask" style="min-height:64px"></textarea><button type="button" data-ask style="width:100%;margin-top:8px">Send</button></div></div><div data-foot aria-label="Drag"></div>';
       document.documentElement.appendChild(bar);
       window.__driftGBar = bar;
       var body = bar.querySelector('[data-body]');
@@ -2704,21 +2692,24 @@ function driftSite(url) {
         try { localStorage.setItem('wos:bar-box', JSON.stringify({ l: bar.offsetLeft, t: bar.offsetTop, w: bar.offsetWidth, h: bar.offsetHeight })); } catch (e) {}
       }
       var dragBar = null;
-      var head = bar.querySelector('[data-head]');
-      if (head) {
-        head.addEventListener('pointerdown', function (e) {
-          if (e.target && e.target.closest && e.target.closest('button')) return;
+      function bindDrag(handle) {
+        if (!handle) return;
+        handle.addEventListener('pointerdown', function (e) {
+          if (e.target && e.target.closest && e.target.closest('button,input,textarea,select,a')) return;
           dragBar = { x: e.clientX, y: e.clientY, l: bar.offsetLeft, t: bar.offsetTop };
           bar.style.right = 'auto'; bar.style.bottom = 'auto';
-          try { head.setPointerCapture(e.pointerId); } catch (err) {}
+          try { handle.setPointerCapture(e.pointerId); } catch (err) {}
         });
-        head.addEventListener('pointermove', function (e) {
+        handle.addEventListener('pointermove', function (e) {
           if (!dragBar) return;
           bar.style.left = (dragBar.l + e.clientX - dragBar.x) + 'px';
           bar.style.top = (dragBar.t + e.clientY - dragBar.y) + 'px';
         });
-        head.addEventListener('pointerup', function () { if (dragBar) { dragBar = null; saveBox(); } });
+        handle.addEventListener('pointerup', function () { if (dragBar) { dragBar = null; saveBox(); } });
+        handle.addEventListener('pointercancel', function () { if (dragBar) { dragBar = null; saveBox(); } });
       }
+      bindDrag(bar.querySelector('[data-head]'));
+      bindDrag(bar.querySelector('[data-foot]'));
       if (window.ResizeObserver) { try { new ResizeObserver(function () { if (bar.isConnected) saveBox(); }).observe(bar); } catch (e) {} }
       function mode(m) {
         try { localStorage.setItem('wos:pass-bar', m); } catch (e) {}
@@ -2845,6 +2836,19 @@ function driftSite(url) {
         n.style.right = 'auto';
         n.style.bottom = 'auto';
       }
+      function paintMd(el, text) {
+        var s = String(text || '');
+        function esc(x) { return String(x).replace(/&/g, '&' + 'amp;').replace(/</g, '&' + 'lt;').replace(/>/g, '&' + 'gt;'); }
+        var h = esc(s);
+        h = h.replace(/^### (.+)$/gm, '<div style="font-weight:800;font-size:15px;margin:6px 0 2px">$1</div>');
+        h = h.replace(/^## (.+)$/gm, '<div style="font-weight:800;font-size:16px;margin:6px 0 2px">$1</div>');
+        h = h.replace(/^# (.+)$/gm, '<div style="font-weight:800;letter-spacing:.02em;margin:6px 0 2px">$1</div>');
+        h = h.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+        h = h.replace(/(^|[\s(])\*([^*\n]+)\*/g, '$1<em>$2</em>');
+        h = h.replace(/`([^`]+)`/g, '<code>$1</code>');
+        el.style.whiteSpace = 'pre-wrap';
+        el.innerHTML = h;
+      }
       function sayNear(text) {
         var n0 = document.getElementById('drift-ball-ans');
         if (n0) n0.remove();
@@ -2858,8 +2862,7 @@ function driftSite(url) {
         x.style.cssText = 'position:absolute;left:6px;top:6px;width:22px;height:22px;border:0;border-radius:50%;background:transparent;color:#111;font-size:18px;line-height:1;cursor:pointer;padding:0';
         x.onclick = function (e) { e.stopPropagation(); n.remove(); };
         var body = document.createElement('div');
-        body.style.whiteSpace = 'pre-wrap';
-        body.textContent = text;
+        paintMd(body, text);
         n.append(x, body);
         document.documentElement.appendChild(n);
         placeAns();
@@ -2946,7 +2949,8 @@ function driftSite(url) {
         var log = bar.querySelector('[data-log]');
         var d = document.createElement('div');
         d.className = kind === 'u' ? 'u' : 'a';
-        d.textContent = text;
+        if (kind === 'u') d.textContent = text;
+        else paintMd(d, text);
         log.appendChild(d);
         log.scrollTop = log.scrollHeight;
         return d;
@@ -2994,10 +2998,10 @@ function driftSite(url) {
         })();
         Promise.resolve(job).then(function (text) {
           if (!img) turns.push({ role: 'assistant', content: text });
-          hold.textContent = text || 'Try again.';
+          paintMd(hold, text || 'Try again.');
         }).catch(function () {
           var again = img ? driftVision(img, q || 'What is in this image?') : driftFast(turns.slice(-8));
-          Promise.resolve(again).then(function (text) { hold.textContent = text || 'Try again.'; }).catch(function (err) { hold.textContent = String((err && err.message) || 'Try again.'); });
+          Promise.resolve(again).then(function (text) { paintMd(hold, text || 'Try again.'); }).catch(function (err) { hold.textContent = String((err && err.message) || 'Try again.'); });
         });
       };
       if (!window.__driftGKeys) {
@@ -3045,7 +3049,7 @@ function driftSite(url) {
         }, true);
       }
     }
-    var menuJs = 'javascript:(' + googleMenuBody.toString() + ')();';
+    var menuJs = ('javascript:(' + googleMenuBody.toString() + ')();').split('https://drift.hostless.app').join(location.origin);
     function copyBm(text, title, how) {
       function done() {
         var old = document.getElementById('drift-copied');
@@ -3105,7 +3109,7 @@ function driftSite(url) {
       bmMenu.onclick = function (e) {
         e.preventDefault();
         e.stopPropagation();
-        copyBm(menuJs, 'Menú en Google', 'En una página de Google aparece el menú de Bypass. No usa el proxy y no abre Drift.');
+        copyBm(menuJs, 'Menú en Google', 'En cualquier página aparece el menú de Bypass. Arrástralo desde abajo. No hace falta que sea una búsqueda de Google.');
       };
     }
     var homeNow = 'drift';
@@ -3186,7 +3190,7 @@ function driftSite(url) {
       if (!raw) return;
       var url = raw;
       if (!/^https?:/i.test(url)) url = 'https://' + url.replace(/^\/+/, '');
-      var js = 'javascript:(function(){location.href=\'https://drift.hostless.app/go?u=\'+encodeURIComponent(\'' + url.replace(/\\/g, '\\\\').replace(/\'/g, '\\\'') + '\');})();';
+      var js = 'javascript:(function(){location.href=\'' + location.origin + '/go?u=\'+encodeURIComponent(\'' + url.replace(/\\/g, '\\\\').replace(/\'/g, '\\\'') + '\');})();';
       var out = panel.querySelector('#drift-bypass-out');
       if (out) out.value = js;
     };
@@ -3703,7 +3707,7 @@ function driftSite(url) {
       }
     } catch (e4) {}
     var login = 'https://accounts.google.com/ServiceLogin?service=mail&passive=1209600&osid=1&continue=' + encodeURIComponent('https://mail.google.com/mail/u/0/') + '&followup=' + encodeURIComponent('https://mail.google.com/mail/u/0/') + '&emr=1';
-    window.XAPPS.gmail = { n: 'Gmail', f: operaPage(login, 'bing', true) };
+    window.XAPPS.gmail = { n: 'Gmail', f: operaPage(login, 'firefox', true) };
     try { if (typeof rend === 'function') rend(); } catch (e5) {}
   }
   function installLensOrb() {
@@ -4894,7 +4898,7 @@ function driftSite(url) {
         if (!q) return;
         setTimeout(function () {
           var fr = stage.querySelector('iframe');
-          if (fr) fr.src = '/go?u=' + encodeURIComponent('https://duckduckgo.com/?kl=mx-es&q=' + encodeURIComponent(q));
+          if (fr) fr.src = '/go?u=' + encodeURIComponent('https://duckduckgo.com/?kl=mx-es&ia=web&q=' + encodeURIComponent(q));
         }, 300);
       });
     }
@@ -4906,7 +4910,7 @@ function driftSite(url) {
       stage.appendChild(root);
       var fn = (window.XAPPS && window.XAPPS[id] && window.XAPPS[id].f) || null;
       if (typeof fn === 'function') fn(root);
-      else if (id === 'browser' && typeof window.openProxied === 'function') window.openProxied('https://duckduckgo.com/', root);
+      else if (id === 'browser' && typeof window.openProxied === 'function') window.openProxied('https://duckduckgo.com/?kl=mx-es&ia=web', root);
     }
     search.addEventListener('input', listApps);
     search.addEventListener('keydown', function (e) {

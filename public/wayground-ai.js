@@ -85,36 +85,26 @@
 
   window.waygroundApp = async function waygroundApp(root) {
     root.innerHTML =
-      '<div style="display:flex;flex-direction:column;height:100%;min-height:0;background:#11131a;color:#eee">' +
-      '<div style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;flex-wrap:wrap;gap:8px;align-items:center">' +
-      '<b>Wayground</b><span style="font-size:12px;opacity:.75">Drift Intelligence</span>' +
-      '<span style="flex:1"></span><button type="button" data-open style="margin-left:auto;border:0;border-radius:8px;background:#e8e8e8;color:#111;padding:6px 10px;font-weight:700;cursor:pointer">Open URL</button></div>' +
-      '<div data-box style="flex:1;min-height:0;position:relative;background:#fff"></div></div>';
+      '<div style="display:flex;flex-direction:column;height:100%;min-height:0;background:#11131a;color:#eee;font:14px system-ui">' +
+      '<form data-ask style="margin:auto;width:min(460px,92%);display:flex;flex-direction:column;gap:10px;padding:18px">' +
+      '<b style="font-size:18px">Wayground</b>' +
+      '<div style="opacity:.8">URL or code</div>' +
+      '<input data-u placeholder="https://wayground.com/… or the code" style="padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.2);background:#0e1016;color:#fff">' +
+      '<button type="submit" style="border:0;border-radius:12px;background:#fff;color:#111;font-weight:700;padding:10px;cursor:pointer">Continue</button>' +
+      '<div data-msg style="min-height:1.2em;line-height:1.4"></div></form>' +
+      '<div data-box hidden style="flex:1;min-height:0;position:relative;background:#fff"></div></div>';
+    var form = root.querySelector('[data-ask]');
     var box = root.querySelector('[data-box]');
-    var openBtn = root.querySelector('[data-open]');
-    if (openBtn) openBtn.onclick = function () {
-      var raw = prompt('URL de tu Wayground', 'https://wayground.com/');
-      if (!raw) return;
-      var url = raw.trim();
-      if (!/^https?:/i.test(url)) url = 'https://' + url.replace(/^\/+/, '');
-      var host = '';
-      try { host = new URL(url).hostname; } catch (e) { return; }
-      if (/google\./i.test(host)) return;
-      box.innerHTML = '';
-      if (typeof openProxied === 'function') openProxied(url, box);
-    };
+    var msg = root.querySelector('[data-msg]');
     var cheatSrc = null;
     var seen = '';
     var injects = 0;
-
     function frame() { return box.querySelector('iframe'); }
-
     async function ensureCheat() {
       if (cheatSrc) return cheatSrc;
       cheatSrc = await loadCheat();
       return cheatSrc;
     }
-
     async function tryInject() {
       if (injects >= 2) return;
       try {
@@ -126,8 +116,6 @@
         if (injectInto(doc, cheatSrc, null)) injects++;
       } catch (e) {}
     }
-
-    box.innerHTML = '';
     function armFrame(el) {
       if (!el) return;
       el.addEventListener('load', function () {
@@ -135,24 +123,15 @@
         setTimeout(function () { tryInject(); }, 800);
       });
     }
-    if (typeof openProxied === 'function') {
-      openProxied('https://wayground.com/', box).then(function (fr) {
-        armFrame(fr && fr.frame);
-        setTimeout(function () { tryInject(); }, 1200);
-      }).catch(function () {});
-    } else {
-      var frameEl = document.createElement('iframe');
-      frameEl.title = 'Wayground';
-      frameEl.setAttribute('credentialless', '');
-      frameEl.setAttribute('referrerpolicy', 'no-referrer');
-      frameEl.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-modals allow-downloads');
-      frameEl.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';
-      frameEl.src = 'https://wayground.com/';
-      box.appendChild(frameEl);
-      armFrame(frameEl);
+    function quizUrl(raw) {
+      raw = String(raw || '').trim();
+      if (!raw) return '';
+      if (/^https?:\/\//i.test(raw)) return raw;
+      if (/wayground\.com|quizizz\.com/i.test(raw)) return 'https://' + raw.replace(/^\/+/, '');
+      return 'https://wayground.com/join/game/' + encodeURIComponent(raw.replace(/\s+/g, ''));
     }
-
-    if (!root.dataset.wgWatch) {
+    function watch() {
+      if (root.dataset.wgWatch) return;
       root.dataset.wgWatch = '1';
       var timer = setInterval(function () {
         if (!root.isConnected || injects >= 2) { clearInterval(timer); return; }
@@ -162,14 +141,47 @@
         var doc = null;
         try { href = String(el.contentWindow.location.href || ''); doc = el.contentDocument; } catch (e) { return; }
         if (!doc || !doc.documentElement || !href) return;
-        if (href !== seen) {
-          seen = href;
-          tryInject();
-        } else if (doc.documentElement.getAttribute('data-wg-inj') !== '1') {
-          tryInject();
-        }
+        if (href !== seen) { seen = href; tryInject(); }
+        else if (doc.documentElement.getAttribute('data-wg-inj') !== '1') tryInject();
       }, 1500);
     }
+    form.onsubmit = function (e) {
+      e.preventDefault();
+      var url = quizUrl(form.querySelector('[data-u]').value);
+      if (!url) { msg.textContent = 'Put a URL or a code.'; return; }
+      msg.textContent = 'We are gonna open a new tab with the mod menu';
+      var yes = document.createElement('button');
+      yes.type = 'button';
+      yes.textContent = 'Accept';
+      yes.style.cssText = 'margin-top:8px;border:0;border-radius:10px;background:#34c759;color:#111;font-weight:800;padding:8px 12px;cursor:pointer';
+      var no = document.createElement('button');
+      no.type = 'button';
+      no.textContent = 'Cancel';
+      no.style.cssText = 'margin:8px 0 0 8px;border:0;border-radius:10px;background:#333;color:#fff;padding:8px 12px;cursor:pointer';
+      msg.appendChild(document.createElement('br'));
+      msg.appendChild(yes);
+      msg.appendChild(no);
+      no.onclick = function () { msg.textContent = ''; };
+      yes.onclick = function () {
+        form.hidden = true;
+        box.hidden = false;
+        if (typeof openProxied === 'function') {
+          openProxied(url, box).then(function (fr) {
+            armFrame(fr && fr.frame);
+            setTimeout(function () { tryInject(); }, 1200);
+          }).catch(function () {});
+        } else {
+          var frameEl = document.createElement('iframe');
+          frameEl.title = 'Wayground';
+          frameEl.setAttribute('referrerpolicy', 'no-referrer');
+          frameEl.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';
+          frameEl.src = url;
+          box.appendChild(frameEl);
+          armFrame(frameEl);
+        }
+        watch();
+      };
+    };
   };
 
   function wire() {
