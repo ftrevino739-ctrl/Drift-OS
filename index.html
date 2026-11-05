@@ -1587,7 +1587,7 @@ function ai(root){
       if(typeof window.driftAct==='function'){const __a=window.driftAct('',txt);if(typeof __a==='string'&&__a.trim())txt=__a}
       if(looksCode && fenceBody(txt).length<80){
         try{
-          const again=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'mistralai/mistral-large-2512',max_tokens:8192,messages:[{role:'user',content:q}]})});
+          const again=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:model,max_tokens:8192,messages:[{role:'user',content:q}]})});
           const jt=await again.json();
           const more=((jt.content||[]).map(x=>x.text||'').join(''));
           if(fenceBody(more).length>fenceBody(txt).length) txt=more;
@@ -1597,7 +1597,7 @@ function ai(root){
       }
       if(looksCode && (txt.match(/```/g)||[]).length%2===1){
         try{
-          const again=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'mistralai/mistral-large-2512',max_tokens:8192,messages:[{role:'user',content:'The file was cut off. Continue from the exact last characters. Output only the missing lines, no explanation.\n\n'+txt.slice(-7000)}]})});
+          const again=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:model,max_tokens:8192,messages:[{role:'user',content:'The file was cut off. Continue from the exact last characters. Output only the missing lines, no explanation.\n\n'+txt.slice(-7000)}]})});
           const jt=await again.json();
           const more=((jt.content||[]).map(x=>x.text||'').join('')).replace(/^```[a-z0-9.+#-]*\n?/i,'').replace(/```\s*$/,'').trim();
           if(more) txt=txt.replace(/\s*$/,'\n')+more+'\n';
@@ -1606,7 +1606,7 @@ function ai(root){
       if(txt.includes('```') && (txt.match(/```/g)||[]).length%2===1) txt=txt+'\n```';
       if((/<html[\s>]/i.test(txt) && !/<\/html>/i.test(txt)) || (txt && txt.length>700 && !/[.!?…"»)\]]$/.test(txt.trim()) && (txt.match(/```/g)||[]).length%2===0)){
         try{
-          const again=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'mistralai/mistral-large-2512',max_tokens:4096,messages:[{role:'user',content:'The reply was cut off. Continue from the exact last characters. Do not repeat the start.\n\n'+txt.slice(-2500)}]})});
+          const again=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:model,max_tokens:4096,messages:[{role:'user',content:'The reply was cut off. Continue from the exact last characters. Do not repeat the start.\n\n'+txt.slice(-2500)}]})});
           const jt=await again.json();
           const more=((jt.content||[]).map(x=>x.text||'').join('')).trim();
           if(more && more.length>12) txt=txt.replace(/\s*$/,'\n')+more;
@@ -1650,9 +1650,11 @@ function ai(root){
   sample=async(input,o)=>{
     const msgs=input.map(m=>({role:m.role,content:m.content}));
     if(o.images&&o.images.length){const last=msgs[msgs.length-1];const text=typeof last.content==='string'?last.content:'';last.content=[...await Promise.all(o.images.map(async b=>({type:'image',source:{type:'base64',media_type:b.type||'image/jpeg',data:await b64(b)}}))),{type:'text',text}]}
+    const who=((typeof MODELS!=='undefined'&&(MODELS.find(x=>x[0]===o.model)||[])[1])||o.model||'');
+    const named=[{role:'system',content:'You are '+who+'. If the user asks which model you are, answer exactly: '+who+'. Do not claim to be a different model.'}].concat(msgs);
     if(o.model==='google/gemini-3.8-flash'){
       const ask=String((msgs[msgs.length-1]&&(typeof msgs[msgs.length-1].content==='string'?msgs[msgs.length-1].content:''))||'');
-      const r=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'mistralai/mistral-large-2512',max_tokens:16384,messages:msgs}),signal:o.signal});
+      const r=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:o.model,max_tokens:16384,messages:named}),signal:o.signal});
       const j=await r.json().catch(()=>({}));
       const text=((j.content||[]).map(x=>x.text||'').join(''))||'';
       if(text.trim())return {text};
@@ -1662,18 +1664,12 @@ function ai(root){
       const name=String(o.model).split(/[:/]/).pop();
       let text='';
       try{
-        const r=await fetch('/api/duck',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:name,messages:msgs}),signal:o.signal});
+        const r=await fetch('/api/duck',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:name,messages:named}),signal:o.signal});
         const j=await r.json().catch(()=>({}));
         text=((j.content||[]).map(x=>x.text||'').join(''))||'';
       }catch(e){}
       text=String(text||'').replace(/[^.!?\n]*talked\s+to+\s*much[^.!?\n]*[.!?]?/gi,'').trim();
       if(text && !/DuckDuckGo did not/i.test(text)) return {text};
-      try{
-        const r2=await fetch((typeof EP==='function'?EP():'https://holy-firefly-982c.fert0480.workers.dev').replace(/\/$/,'')+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'mistralai/mistral-large-2512',max_tokens:1200,messages:msgs}),signal:o.signal});
-        const j2=await r2.json().catch(()=>({}));
-        const t2=((j2.content||[]).map(x=>x.text||'').join('')).replace(/[^.!?\n]*talked\s+to+\s*much[^.!?\n]*[.!?]?/gi,'').trim();
-        if(t2) return {text:t2};
-      }catch(e2){}
       throw {message:'Duck no contestó. Vuelve a intentar.'};
     }
     if(real)return real(input,o);
@@ -1686,7 +1682,7 @@ function ai(root){
       const text=((j.candidates||[])[0]&&(j.candidates[0].content||{}).parts||[]).map(x=>x.text||'').join('')||'';
       return {text};
     }
-    const r=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:o.model,max_tokens:(/\b(c[oó]digo|code|html|css|javascript|python|script|lua|luau|function)\b/i.test(String((msgs[msgs.length-1]||{}).content||''))?16384:1800),messages:msgs}),signal:o.signal});
+    const r=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:o.model,max_tokens:(/\b(c[oó]digo|code|html|css|javascript|python|script|lua|luau|function)\b/i.test(String((msgs[msgs.length-1]||{}).content||''))?16384:1800),messages:named}),signal:o.signal});
     const j=await r.json();if(!r.ok||j.error)throw {message:(j.error&&j.error.message)||j.error||'Error del servidor'};
     return {text:(j.content||[]).map(x=>x.text||'').join('')};
   };

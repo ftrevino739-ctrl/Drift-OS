@@ -520,28 +520,16 @@
   }
 
   function classdojoApp(root) {
-    var page = 'https://www.classdojo.com/';
     root.innerHTML = '';
     root.style.cssText = 'height:100%;min-height:0;position:relative;background:#fff;overflow:hidden';
-    var box = document.createElement('div');
-    box.style.cssText = 'position:absolute;inset:0;pointer-events:auto;z-index:1';
-    root.appendChild(box);
-    function loosen(fr) {
-      if (!fr) return;
-      try { fr.removeAttribute('sandbox'); } catch (e) {}
-      fr.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;pointer-events:auto;visibility:visible';
-      fr.setAttribute('allow', 'fullscreen; clipboard-read; clipboard-write; camera; microphone; autoplay');
-    }
-    if (typeof window.openProxied === 'function') {
-      Promise.resolve(window.openProxied(page, box)).then(function (f) {
-        loosen((f && f.frame) || box.querySelector('iframe'));
-        var n = 0;
-        var t = setInterval(function () {
-          if (!root.isConnected || ++n > 24) { clearInterval(t); return; }
-          loosen(box.querySelector('iframe'));
-        }, 400);
-      });
-    } else box.textContent = page;
+    var frame = document.createElement('iframe');
+    frame.title = 'ClassDojo';
+    frame.setAttribute('referrerpolicy', 'no-referrer');
+    frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-modals allow-downloads allow-pointer-lock');
+    frame.setAttribute('allow', 'fullscreen; clipboard-read; clipboard-write; camera; microphone');
+    frame.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';
+    frame.src = '/api/opera?u=' + encodeURIComponent('https://www.classdojo.com/') + '&b=edge';
+    root.appendChild(frame);
   }
 
   function registerCore() {

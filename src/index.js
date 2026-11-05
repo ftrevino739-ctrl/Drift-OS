@@ -112,12 +112,12 @@ function loadAndPatchIndex() {
 	);
 
 	const tag =
-		'<script src="/drift-extras.js?v=20261104-b" defer></script>' +
-		'<script src="/chromebook-proxy.js?v=20261104-b" defer></script>' +
-		'<script src="/wayground-ai.js?v=20261104-b" defer></script>' +
-		'<script src="/drift-fixup.js?v=20261104-b" defer></script>' +
-		'<script src="/drift-userpatch.js?v=20261104-b" defer></script>' +
-		"<script>window.__DRIFT_BUILD_WANT='20261104-b';setTimeout(function(){if(window.__DRIFT_BUILD===window.__DRIFT_BUILD_WANT)return;var d=document.getElementById('drift-old');if(d)return;d=document.createElement('div');d.id='drift-old';d.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#000;color:#eee;overflow:auto;padding:28px;font:16px/1.5 system-ui';d.innerHTML='<div style=\"max-width:680px;margin:0 auto\"><b style=\"font-size:28px\">Versión vieja de Drift</b><p>Se abrió una copia guardada. Recarga forzada. No hace falta una terminal ni apagar el equipo con un comando.</p><p><b>Chrome, Edge, ChromeOS y Linux:</b> Ctrl+Shift+R. Si sigue igual, en la configuración del sitio borra los datos de Drift y entra otra vez.</p><p><b>Firefox:</b> Ctrl+Shift+R. Si sigue, Ajustes → Privacidad → borrar cookies y datos de este sitio.</p><p><b>Safari en Mac:</b> Opción+Comando+E y luego Comando+R. En iPhone o iPad: Ajustes → Safari → borrar historial y datos del sitio, o quita el acceso directo y ábrelo de nuevo.</p><p><b>Windows:</b> cierra el navegador desde la barra de tareas y ábrelo otra vez. El último paso, en cualquier sistema, es reiniciar el dispositivo desde el menú de apagado, no desde la terminal.</p></div>';document.body.appendChild(d);},2500);</script>" +
+		'<script src="/drift-extras.js?v=20261104-f" defer></script>' +
+		'<script src="/chromebook-proxy.js?v=20261104-f" defer></script>' +
+		'<script src="/wayground-ai.js?v=20261104-f" defer></script>' +
+		'<script src="/drift-fixup.js?v=20261104-f" defer></script>' +
+		'<script src="/drift-userpatch.js?v=20261104-f" defer></script>' +
+		"<script>window.__DRIFT_BUILD_WANT='20261104-f';setTimeout(function(){if(window.__DRIFT_BUILD===window.__DRIFT_BUILD_WANT)return;var d=document.getElementById('drift-old');if(d)return;d=document.createElement('div');d.id='drift-old';d.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#000;color:#eee;overflow:auto;padding:28px;font:16px/1.5 system-ui';d.innerHTML='<div style=\"max-width:680px;margin:0 auto\"><b style=\"font-size:28px\">Versión vieja de Drift</b><p>Se abrió una copia guardada. Recarga forzada. No hace falta una terminal ni apagar el equipo con un comando.</p><p><b>Chrome, Edge, ChromeOS y Linux:</b> Ctrl+Shift+R. Si sigue igual, en la configuración del sitio borra los datos de Drift y entra otra vez.</p><p><b>Firefox:</b> Ctrl+Shift+R. Si sigue, Ajustes → Privacidad → borrar cookies y datos de este sitio.</p><p><b>Safari en Mac:</b> Opción+Comando+E y luego Comando+R. En iPhone o iPad: Ajustes → Safari → borrar historial y datos del sitio, o quita el acceso directo y ábrelo de nuevo.</p><p><b>Windows:</b> cierra el navegador desde la barra de tareas y ábrelo otra vez. El último paso, en cualquier sistema, es reiniciar el dispositivo desde el menú de apagado, no desde la terminal.</p></div>';document.body.appendChild(d);},2500);</script>" +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +
@@ -674,7 +674,7 @@ const BROWSER_PROFILES = {
 		plat: "\"Windows\"",
 	},
 	firefox: {
-		ua: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:159.0) Gecko/20100101 Firefox/159.0",
+		ua: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:145.0) Gecko/20100101 Firefox/145.0",
 		ch: "",
 	},
 	chrome: {
@@ -795,7 +795,18 @@ function operaHostOk(host) {
 		host === "tiktokcdn-us.com" || host.endsWith(".tiktokcdn-us.com") ||
 		host === "tiktokv.com" || host.endsWith(".tiktokv.com") ||
 		host === "ibyteimg.com" || host.endsWith(".ibyteimg.com") ||
-		host === "muscdn.com" || host.endsWith(".muscdn.com")
+		host === "muscdn.com" || host.endsWith(".muscdn.com") ||
+		host === "youtube.com" || host.endsWith(".youtube.com") ||
+		host === "youtu.be" ||
+		host === "ytimg.com" || host.endsWith(".ytimg.com") ||
+		host === "ggpht.com" || host.endsWith(".ggpht.com") ||
+		host === "googlevideo.com" || host.endsWith(".googlevideo.com") ||
+		host === "youtube-nocookie.com" || host.endsWith(".youtube-nocookie.com") ||
+		host === "classdojo.com" || host.endsWith(".classdojo.com") ||
+		host === "wayground.com" || host.endsWith(".wayground.com") ||
+		host === "quizizz.com" || host.endsWith(".quizizz.com") ||
+		host === "cookielaw.org" || host.endsWith(".cookielaw.org") ||
+		host === "onetrust.com" || host.endsWith(".onetrust.com")
 	);
 }
 function operaJar(req, reply) {
@@ -878,6 +889,14 @@ function operaBoot(browser) {
   try { Object.defineProperty(navigator, "vendor", { configurable: true, get: function(){ return "Google Inc."; } }); } catch (e) {}
   } else {
   try { Object.defineProperty(navigator, "vendor", { configurable: true, get: function(){ return ""; } }); } catch (e) {}
+  try { Object.defineProperty(navigator, "productSub", { configurable: true, get: function(){ return "20100101"; } }); } catch (e) {}
+  try { Object.defineProperty(navigator, "oscpu", { configurable: true, get: function(){ return navPlat === "Win32" ? "Windows NT 10.0; Win64; x64" : navPlat; } }); } catch (e) {}
+  try { Object.defineProperty(navigator, "buildID", { configurable: true, get: function(){ return "20181001000000"; } }); } catch (e) {}
+  try { Object.defineProperty(navigator, "language", { configurable: true, get: function(){ return "es-MX"; } }); } catch (e) {}
+  try { Object.defineProperty(navigator, "languages", { configurable: true, get: function(){ return ["es-MX", "es", "en-US", "en"]; } }); } catch (e) {}
+  try { Object.defineProperty(navigator, "hardwareConcurrency", { configurable: true, get: function(){ return 8; } }); } catch (e) {}
+  try { Object.defineProperty(navigator, "maxTouchPoints", { configurable: true, get: function(){ return 0; } }); } catch (e) {}
+  try { Object.defineProperty(navigator, "pdfViewerEnabled", { configurable: true, get: function(){ return true; } }); } catch (e) {}
   try { delete window.chrome; } catch (e) {}
   try { Object.defineProperty(window, "chrome", { configurable: true, get: function(){ return undefined; } }); } catch (e) {}
   try { Object.defineProperty(navigator, "userAgentData", { configurable: true, get: function(){ return undefined; } }); } catch (e) {}
@@ -910,6 +929,7 @@ function operaBoot(browser) {
   function abs(u){ try { return new URL(u, document.baseURI).href; } catch (e) { return ""; } }
   function waHere(){ try { return /(^|\\.)whatsapp\\.com$/i.test(new URL(document.baseURI).hostname); } catch (e) { return false; } }
   function sameWa(u){ try { return /(^|\\.)whatsapp\\.com$/i.test(new URL(abs(u)).hostname); } catch (e) { return false; } }
+  function rbxHere(){ try { return /(^|\\.)roblox\\.com$/i.test(new URL(document.baseURI).hostname); } catch (e) { return false; } }
   try {
     if (navigator.serviceWorker && navigator.serviceWorker.register) {
       navigator.serviceWorker.register = function(){ return Promise.reject(new Error("blocked")); };
@@ -936,7 +956,7 @@ function operaBoot(browser) {
   function googleHost(u){
     try {
       var h = new URL(u).hostname;
-      return /(^|\\.)(google\\.com|gstatic\\.com|googleapis\\.com|googleusercontent\\.com|youtube\\.com|youtu\\.be|ytimg\\.com|ggpht\\.com|translate\\.goog|eaglercraft\\.com|eaglercraft\\.org|tiktok\\.com|tiktokcdn\\.com|tiktokcdn-us\\.com|tiktokv\\.com|ibyteimg\\.com|muscdn\\.com|roblox\\.com|rbxcdn\\.com|espn\\.com|espncdn\\.com|espn\\.net|github\\.com|githubusercontent\\.com|githubassets\\.com|whatsapp\\.com|whatsapp\\.net|wa\\.me|whatsapp\\.biz|now\\.gg|easyfun\\.gg|instagram\\.com|cdninstagram\\.com|giphy\\.com|tenor\\.com|tenor\\.co|facebook\\.com|facebook\\.net|fbcdn\\.net|fbsbx\\.com|arkoselabs\\.com)$/i.test(h);
+      return /(^|\\.)(google\\.com|gstatic\\.com|googleapis\\.com|googleusercontent\\.com|youtube\\.com|youtu\\.be|ytimg\\.com|ggpht\\.com|googlevideo\\.com|youtube-nocookie\\.com|translate\\.goog|eaglercraft\\.com|eaglercraft\\.org|tiktok\\.com|tiktokcdn\\.com|tiktokcdn-us\\.com|tiktokv\\.com|ibyteimg\\.com|muscdn\\.com|roblox\\.com|rbxcdn\\.com|espn\\.com|espncdn\\.com|espn\\.net|github\\.com|githubusercontent\\.com|githubassets\\.com|whatsapp\\.com|whatsapp\\.net|wa\\.me|whatsapp\\.biz|now\\.gg|easyfun\\.gg|instagram\\.com|cdninstagram\\.com|giphy\\.com|tenor\\.com|tenor\\.co|facebook\\.com|facebook\\.net|fbcdn\\.net|fbsbx\\.com|arkoselabs\\.com|classdojo\\.com|wayground\\.com|quizizz\\.com|cookielaw\\.org|onetrust\\.com)$/i.test(h);
     }
     catch (e) { return false; }
   }
@@ -1073,56 +1093,171 @@ function operaBoot(browser) {
         get: function(){ return desc.get.call(this); },
         set: function(v){
           var absU = abs(v);
-          var here = "";
-          try { here = document.baseURI || ""; } catch (e) {}
-          if (/mail\\.google\\.com|accounts\\.google\\.com/i.test(here) && /^https?:/i.test(absU)) {
-            if (absU.indexOf("/api/opera?u=") === -1) desc.set.call(this, ours("/api/opera?u=" + encodeURIComponent(absU) + "&b=" + encodeURIComponent(BROWSER)));
-            return;
+          if (absU.indexOf("/api/opera?u=") !== -1) { desc.set.call(this, absU); return; }
+          if (/^https?:/i.test(absU) && googleHost(absU)) {
+            var next = proxify(absU);
+            if (next) { desc.set.call(this, next); return; }
           }
-          if (hop(v)) return;
-          if (waHere()) return;
-          if (googleHost(absU)) return;
+          if (/^https?:/i.test(absU)) return;
+          if (rbxHere() && !/^https?:/i.test(String(absU || ""))) return;
           desc.set.call(this, v);
         }
       });
     }
   } catch (e) {}
   try {
+    ["host", "hostname", "pathname", "search", "hash", "protocol"].forEach(function (prop) {
+      var d = Object.getOwnPropertyDescriptor(Location.prototype, prop);
+      if (!d || !d.set || !d.configurable || d.set.__driftStay) return;
+      var wrap = function (v) {
+        var cur;
+        try { cur = new URL(document.baseURI); } catch (err) { return d.set.call(this, v); }
+        try {
+          if (prop === "search") cur.search = String(v || "");
+          else if (prop === "hash") cur.hash = String(v || "");
+          else if (prop === "pathname") cur.pathname = String(v || "/");
+          else if (prop === "hostname") cur.hostname = String(v || cur.hostname);
+          else if (prop === "host") cur.host = String(v || cur.host);
+          else if (prop === "protocol") cur.protocol = String(v || cur.protocol);
+        } catch (err2) { return; }
+        location.href = cur.href;
+      };
+      wrap.__driftStay = true;
+      Object.defineProperty(Location.prototype, prop, { configurable: true, get: d.get, set: wrap });
+    });
+  } catch (e) {}
+  try {
+    ["assign", "replace"].forEach(function (k) {
+      var orig = Location.prototype[k];
+      if (!orig || orig.__driftStay) return;
+      var wrap = function (v) {
+        var absU = abs(v);
+        if (/^https?:/i.test(absU) && googleHost(absU)) { location.href = absU; return; }
+        if (/^https?:/i.test(absU)) return;
+        return orig.apply(this, arguments);
+      };
+      wrap.__driftStay = true;
+      Location.prototype[k] = wrap;
+    });
+  } catch (e) {}
+  try {
     var ps = history.pushState, rs = history.replaceState;
     function via(u){
       if (!u) return false;
       var absU = abs(u);
-      if (!googleHost(absU)) return false;
-      hop(absU);
+      if (!/^https?:/i.test(absU) || !googleHost(absU)) return false;
+      location.href = absU;
       return true;
     }
-    function mailHere(){ try { return /mail\\.google\\.com|accounts\\.google\\.com/i.test(document.baseURI); } catch (e) { return false; } }
-    function mailDest(u){ try { return /mail\\.google\\.com|accounts\\.google\\.com/i.test(new URL(abs(u)).hostname); } catch (e) { return false; } }
-    history.pushState = function(s, t, u){ if (waHere()) return ps.apply(this, arguments); if (mailHere() && (!u || mailDest(u))) return ps.apply(this, arguments); if (via(u)) return; return ps.apply(this, arguments); };
-    history.replaceState = function(s, t, u){ if (waHere()) return rs.apply(this, arguments); if (mailHere() && (!u || mailDest(u))) return rs.apply(this, arguments); if (via(u)) return; return rs.apply(this, arguments); };
+    history.pushState = function(s, t, u){ if (waHere()) return ps.apply(this, arguments); if (via(u)) return; return ps.apply(this, arguments); };
+    history.replaceState = function(s, t, u){ if (waHere()) return rs.apply(this, arguments); if (via(u)) return; return rs.apply(this, arguments); };
   } catch (e) {}
   try {
     if (window.top && window.top !== window) {
-      var topSet = Object.getOwnPropertyDescriptor(window.top.Location.prototype, "href");
-      if (topSet && topSet.set && !topSet.set.__driftKeep) {
-        var keep = function () { return; };
-        keep.__driftKeep = true;
-        Object.defineProperty(window.top.Location.prototype, "href", {
+      var P = window.top;
+      var topSet = Object.getOwnPropertyDescriptor(P.Location.prototype, "href");
+      if (topSet && topSet.set && !topSet.set.__driftStay) {
+        var origSet = topSet.set;
+        var stay = function (v) {
+          var s = "";
+          try { s = String(v || ""); } catch (e) { s = ""; }
+          try {
+            var u = new URL(s, P.location.href);
+            if (u.origin === P.location.origin) {
+              if (rbxHere() && u.pathname.indexOf("/api/opera") === 0) return;
+              return origSet.call(this, s);
+            }
+          } catch (e) {}
+          return;
+        };
+        stay.__driftStay = true;
+        Object.defineProperty(P.Location.prototype, "href", {
           configurable: true,
           get: function () { return topSet.get.call(this); },
-          set: keep
+          set: stay
         });
       }
       ["assign", "replace"].forEach(function (k) {
-        var fn = window.top.Location.prototype[k];
-        if (!fn || fn.__driftKeep) return;
-        var wrap = function () { return; };
-        wrap.__driftKeep = true;
-        window.top.Location.prototype[k] = wrap;
+        var fn = P.Location.prototype[k];
+        if (!fn || fn.__driftStay) return;
+        var wrap = function (v) {
+          var s = "";
+          try { s = String(v || ""); } catch (e) { s = ""; }
+          try {
+            var u = new URL(s, P.location.href);
+            if (u.origin === P.location.origin) {
+              if (rbxHere() && u.pathname.indexOf("/api/opera") === 0) return;
+              return fn.apply(this, arguments);
+            }
+          } catch (e) {}
+          return;
+        };
+        wrap.__driftStay = true;
+        P.Location.prototype[k] = wrap;
       });
     }
   } catch (e) {}
-  try { window.open = function(u){ armed = true; hop(u || ""); return null; }; } catch (e) {}
+  function cleanTarget(u){
+    try {
+      var q = new URL(u);
+      var inner = q.searchParams.get("u") || "";
+      if (q.searchParams.get("b") && /^https?:/i.test(inner) && inner.indexOf("/api/opera") === -1) return inner;
+    } catch (e) {}
+    return u;
+  }
+  try {
+    if (window.navigation && navigation.addEventListener) {
+      navigation.addEventListener("navigate", function (ev) {
+        var dest = "";
+        try { dest = (ev.destination && ev.destination.url) || ""; } catch (e) { dest = ""; }
+        if (!dest || dest.indexOf("/api/opera") !== -1) return;
+        dest = cleanTarget(abs(dest));
+        if (!googleHost(dest)) {
+          try { if (ev.cancelable) ev.preventDefault(); } catch (e2) {}
+          return;
+        }
+        var next = proxify(dest);
+        if (!next) return;
+        var here = "";
+        try { here = String(location.href || ""); } catch (e3) {}
+        if (here && next === here) {
+          try { if (ev.cancelable) ev.preventDefault(); } catch (e4) {}
+          return;
+        }
+        try { if (ev.cancelable) ev.preventDefault(); } catch (e5) {}
+        location.href = next;
+      });
+    }
+  } catch (e) {}
+  try { window.open = function(u){
+    var raw = u == null ? "" : String(u);
+    var absU = abs(raw);
+    if (rbxHere()) {
+      var fake = { closed: false, focus: function(){}, close: function(){ this.closed = true; }, blur: function(){} };
+      function go(v){
+        var n = cleanTarget(abs(String(v || "")));
+        if (!n || /^about:/i.test(n)) return;
+        var p = proxify(n);
+        if (p) location.href = p;
+        else if (n.indexOf("/api/opera") !== -1) location.href = n;
+      }
+      try {
+        fake.document = { open: function(){}, close: function(){}, write: function(){}, writeln: function(){} };
+        Object.defineProperty(fake, "location", {
+          configurable: true,
+          get: function(){ return { href: absU || "about:blank", assign: go, replace: go }; },
+          set: function(v){ go(v); }
+        });
+      } catch (e) {}
+      if (absU && !/^about:/i.test(absU)) go(absU);
+      return fake;
+    }
+    if (absU && googleHost(absU)) {
+      var p = proxify(cleanTarget(absU));
+      if (p) location.href = p;
+    }
+    return null;
+  }; } catch (e) {}
   document.addEventListener("click", function(e){
     armed = true;
     var a = e.target && e.target.closest && e.target.closest("a[href]");
@@ -1130,17 +1265,12 @@ function operaBoot(browser) {
     var href = a.getAttribute("href") || "";
     var u = abs(href);
     if (href.indexOf("/api/opera?u=") !== -1 || u.indexOf("/api/opera?u=") !== -1) return;
-    if (/^https?:/i.test(u)) {
-      if (waHere() && sameWa(u)) return;
-      var mail = "";
-      try { mail = document.baseURI || ""; } catch (e) {}
-      if (/mail\\.google\\.com|accounts\\.google\\.com|classroom\\.google\\.com/i.test(mail)) {
-        e.preventDefault();
-        if (googleHost(u) && u.indexOf("/api/opera?u=") === -1) location.href = ours("/api/opera?u=" + encodeURIComponent(u) + "&b=" + encodeURIComponent(BROWSER));
-        return;
-      }
-      if (!googleHost(u)) { e.preventDefault(); return; }
-      if (hop(u)) e.preventDefault();
+    if (!/^https?:/i.test(u)) return;
+    if (waHere() && sameWa(u)) return;
+    e.preventDefault();
+    if (googleHost(u)) {
+      var next = proxify(cleanTarget(u));
+      if (next) location.href = next;
     }
   }, true);
   document.addEventListener("keydown", function(){ armed = true; }, true);
@@ -1209,6 +1339,12 @@ function operaInject(html, pageUrl, browser, origin) {
 	let boot = "<base href=\"" + String(pageUrl).replace(/"/g, "") + "\"><script>" + operaBoot(browser) + "<" + "/script>";
 	html = String(html).replace(/<meta[^>]+http-equiv=["']Content-Security-Policy["'][^>]*>/gi, "");
 	html = html.replace(/<meta[^>]+http-equiv=["']refresh["'][^>]*>/gi, "");
+	if (/roblox\.com/i.test(pageUrl)) {
+		html = html.replace(/if\s*\(\s*top\.location\s*!=\s*self\.location\s*\)\s*\{[\s\S]{0,200}?top\.location\s*=\s*self\.location\.href\s*;\s*\}/g, "");
+	}
+	if (/gemini\.google\.com/i.test(pageUrl)) {
+		boot += '<style id="drift-gem-hide">header,nav,[role="banner"],bard-sidenav,bard-sidenav-content,#gb,.gb_md,[class*="sidenav"],[class*="side-nav"],[class*="conversation-list"],[class*="boqOnegoogle"]{display:none!important}html,body{margin:0!important;background:#fff!important}</style>';
+	}
 	html = html.replace(/\s+integrity=(["'])[\s\S]*?\1/gi, "");
 	html = operaRewriteHtml(html, pageUrl, browser, origin);
 	if (/github\.com/i.test(pageUrl)) boot += '<style>html,body{background:#fff!important;color:#24292f!important}main,section,h1,h2,h3,p,li,a,span{color:#24292f!important}</style>';
@@ -1389,8 +1525,10 @@ async function operaReply(req, reply, target, method, form, raw, contentType, ex
 	const status = got.response.status >= 300 && got.response.status < 400 ? 200 : (got.response.status || 200);
 	reply.code(status);
 	reply.header("content-type", ct.split(";")[0] || ct);
-	for (const [key, value] of got.response.headers) {
-		if (/^(x-csrf-token|x-roblox-csrf|csrf-token|rblx-|x-roblox-)/i.test(key) && value) reply.header(key, value);
+	if (got.response.headers && typeof got.response.headers.forEach === "function") {
+		got.response.headers.forEach(function (value, key) {
+			if (/^(x-csrf-token|x-roblox-csrf|csrf-token|rblx-|x-roblox-)/i.test(key) && value) reply.header(key, value);
+		});
 	}
 	return reply.send(Buffer.from(await got.response.arrayBuffer()));
 }
@@ -1816,39 +1954,59 @@ fastify.get("/api/yt-list", async (req, reply) => {
 fastify.get("/api/yt-play", async (req, reply) => {
 	const id = String(req.query.id || "").replace(/[^a-zA-Z0-9_-]/g, "");
 	if (!id || id.length > 16) return reply.code(400).send({ error: "missing id" });
-	const hosts = [
-		"https://api.piped.private.coffee/streams/",
-		"https://pipedapi.kavin.rocks/streams/",
-		"https://invidious.f5.si/api/v1/videos/",
-	];
-	const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
-	const candidates = [];
-	for (const host of hosts) {
-		try {
-			const r = await fetch(host + id, { headers: { "user-agent": UA, accept: "application/json" } });
-			if (!r.ok) continue;
-			const j = await r.json();
-			const list = [].concat(j.formatStreams || [], j.videoStreams || []);
-			for (const s of list) {
-				if (!s || !s.url || s.videoOnly) continue;
-				const mime = String(s.mimeType || s.mime || s.type || s.container || "");
-				if (/mpegurl|m3u8/i.test(mime)) continue;
-				if (!/mp4/i.test(mime)) continue;
-				let hostName = "";
-				try { hostName = new URL(s.url).hostname; } catch { continue; }
-				if (!mediaHostOk(hostName, "yt")) continue;
-				const goog = /googlevideo\.com$/i.test(hostName) || hostName.endsWith(".googlevideo.com");
-				candidates.push({ url: s.url, title: j.title || "", score: (goog ? 50 : 0) + (/720/.test(String(s.quality || s.qualityLabel || "")) ? 20 : 0) + (/360|480/.test(String(s.quality || s.qualityLabel || "")) ? 12 : 0) });
-			}
-		} catch {}
-	}
-	candidates.sort((a, b) => b.score - a.score);
-	const pick = candidates[0];
-	if (pick) {
+	const ff = BROWSER_PROFILES.firefox.ua;
+	try {
+		const watch = await rawHttps("https://www.youtube.com/watch?v=" + id + "&hl=es-419&gl=MX&has_verified=1", "GET", {
+			"user-agent": ff,
+			accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+			"accept-language": "es-MX,es;q=0.9,en;q=0.8",
+		}, "");
+		const html = await watch.text();
+		if (/Sign in to confirm|confirmar que no eres un bot|unusual traffic|tu organizaci[oó]n no te permite/i.test(html.slice(0, 8000))) {
+			return reply.code(502).send({ error: "YouTube pidió un navegador. Reintenta." });
+		}
+		const visitor = ((html.match(/"visitorData":"([^"]+)"/) || [])[1]) || "";
+		const key = "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8";
+		const client = {
+			clientName: "ANDROID",
+			clientVersion: "20.10.38",
+			androidSdkVersion: 30,
+			hl: "es",
+			gl: "MX",
+			visitorData: visitor,
+		};
+		const body = JSON.stringify({ videoId: id, context: { client }, contentCheckOk: true, racyCheckOk: true });
+		const r = await rawHttps("https://www.youtube.com/youtubei/v1/player?key=" + key + "&prettyPrint=false", "POST", {
+			"content-type": "application/json",
+			"user-agent": "com.google.android.youtube/20.10.38 (Linux; U; Android 11) gzip",
+			"x-youtube-client-name": "3",
+			"x-youtube-client-version": "20.10.38",
+			"x-goog-visitor-id": visitor,
+			"content-length": String(Buffer.byteLength(body)),
+		}, body);
+		const j = JSON.parse(await r.text());
+		const status = (j.playabilityStatus && j.playabilityStatus.status) || "";
+		if (status && status !== "OK") {
+			const reason = (j.playabilityStatus && j.playabilityStatus.reason) || status;
+			return reply.code(502).send({ error: String(reason).slice(0, 180) });
+		}
+		const formats = (j.streamingData && j.streamingData.formats) || [];
+		const pick = formats.find((f) => f && f.url && /mp4/i.test(String(f.mimeType || ""))) || formats.find((f) => f && f.url);
+		if (!pick) return reply.code(502).send({ error: "no stream" });
+		let hostName = "";
+		try { hostName = new URL(pick.url).hostname; } catch { hostName = ""; }
+		if (!mediaHostOk(hostName, "yt")) return reply.code(502).send({ error: "no stream" });
+		const details = j.videoDetails || {};
 		reply.header("cache-control", "no-store");
-		return { url: "/api/yt-file?u=" + encodeURIComponent(pick.url), title: pick.title || "" };
+		return {
+			url: "/api/yt-file?u=" + encodeURIComponent(pick.url),
+			title: details.title || "",
+			seconds: Number(details.lengthSeconds || 0),
+			quality: pick.qualityLabel || "",
+		};
+	} catch (err) {
+		return reply.code(502).send({ error: "YouTube no respondió." });
 	}
-	return reply.code(502).send({ error: "no stream" });
 });
 
 function mediaHostOk(host, kind) {
@@ -1863,7 +2021,9 @@ function mediaHostOk(host, kind) {
 async function proxyMedia(req, reply, kind, referer) {
 	let current = "";
 	try { current = new URL(String(req.query.u || "")).toString(); } catch { return reply.code(400).send("bad url"); }
-	const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+	const UA = kind === "yt"
+		? BROWSER_PROFILES.firefox.ua
+		: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:145.0) Gecko/20100101 Firefox/145.0";
 	let r = null;
 	for (let i = 0; i < 3; i++) {
 		let u;
