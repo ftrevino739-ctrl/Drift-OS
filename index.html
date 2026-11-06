@@ -1953,7 +1953,7 @@ function authUI(mode='in'){
   document.body.appendChild(m);
   const ok=async()=>{
     const u=$('#au',m).value.trim().toLowerCase(),p=$('#ap',m).value,msg=$('#am',m),U=LS.get('wos:users',{});
-    if(!/^[a-z0-9_]{2,20}$/.test(u)||p.length<4){msg.textContent='Usuario: 2-20 letras, números o _. Contraseña: mínimo 4.';return}
+    if(u.length<2||u.length>20||p.length<2){msg.textContent='Usuario y contraseña: mínimo 2 caracteres.';return}
     if(up&&$('#ac',m).value!==p){msg.textContent='Las contraseñas no coinciden.';return}
     let h=await H(u,p);
     if(up){if(U[u]){msg.textContent='Ese usuario ya existe.';return}U[u]=h;LS.set('wos:users',U)}
