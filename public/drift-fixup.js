@@ -1,7 +1,7 @@
 /* Drift fixup */
 (function () {
   'use strict';
-  window.__DRIFT_BUILD = '20261106-b';
+  window.__DRIFT_BUILD = '20261106-c';
   window.DRIFT_BEST_MODEL = window.DRIFT_BEST_MODEL || 'mistralai/mistral-large-4-0';
   window.DRIFT_CODE_MODEL = 'google/gemini-3.8-flash';
 
@@ -3500,7 +3500,7 @@ function driftSite(url) {
       switchHTML('drift-hub-sw', localStorage.getItem('wos:hub') === '1') + '</div>' +
       '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px">' +
       '<div style="flex:1"><b>Background clock</b>' +
-      '<div style="opacity:.75;font-size:12px;margin-top:4px">Large clock in the middle of the desktop. Apps cannot be placed on it.</div></div>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Reloj grande en el escritorio. Si una app queda debajo, se quita para que no se amontonen.</div></div>' +
       switchHTML('drift-clock-sw', localStorage.getItem('wos:bg-clock') === '1') + '</div>' +
       '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px">' +
       '<div style="flex:1"><b>macOS desktops</b>' +
@@ -3549,6 +3549,9 @@ function driftSite(url) {
       '<div style="flex:1"><b>AI assistant</b>' +
       '<div style="opacity:.75;font-size:12px;margin-top:4px">Off until you turn this on. Then the Drift ball appears. Drag it anywhere. Each reply has an X to dismiss it.</div></div>' +
       switchHTML('drift-orb-sw', orbOn) + '</div>' +
+      '<div style="margin:0 0 14px"><b>Token de Puter</b>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Opcional. Pégalo y este navegador usa tu cuenta de Puter sin el aviso de inicio. Quien no tenga token sigue entrando en puter.com. Puter cobra a esa cuenta; no hay una sesión compartida.</div>' +
+      '<input id="drift-puter-token" type="password" autocomplete="off" style="display:block;width:100%;margin-top:6px;padding:8px;border-radius:8px;border:1px solid #333;background:#14141c;color:#eee;box-sizing:border-box"/></div>' +
       '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px">' +
       '<div style="flex:1"><b>Ver razonamiento</b>' +
       '<div style="opacity:.75;font-size:12px;margin-top:4px">Apagado hasta que lo actives. Entonces el cuadro gris muestra el razonamiento, no solo una plantilla.</div></div>' +
@@ -3622,8 +3625,12 @@ function driftSite(url) {
       '<label style="display:flex;gap:8px;align-items:center;margin-top:6px;cursor:pointer"><input type="radio" name="prot-class" value="classroom"/> Alert and open Classroom</label></div>' +
       '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:16px;border-top:1px solid rgba(255,255,255,.08);padding-top:14px">' +
       '<div style="flex:1"><b>Google Lens bypass</b>' +
-      '<div style="opacity:.75;font-size:12px;margin-top:4px">Shows a Google Lens button, like the assistant. Press it to use Lens.</div></div>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Logo movible. Al pulsarlo se abre una barra a la izquierda. Circula una imagen y la IA más rápida responde sobre esa imagen.</div></div>' +
       switchHTML('drift-lens-sw', lensOn) + '</div>' +
+      '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:12px">' +
+      '<div style="flex:1"><b>Google Lens bypass (Web)</b>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">El mismo Lens, con el logo, movible. Misma barra a la izquierda.</div></div>' +
+      switchHTML('drift-lens-web-sw', onFlag('wos:lens-web')) + '</div>' +
       '<div style="margin-top:16px;border-top:1px solid rgba(255,255,255,.08);padding-top:14px"><b>Bookmarklets</b>' +
       '<div style="opacity:.75;font-size:12px;margin:4px 0 8px">Arrástralos a la barra de marcadores del navegador real. Pulsa el nombre para copiarlo.</div>' +
       '<div class="bm-float"><div class="bm-card"><div><b>Full bypass (drift)</b><div style="opacity:.75;font-size:12px">La búsqueda se abre en DuckDuckGo en español (MX), en esta pestaña. No abre el escritorio.</div></div><a id="drift-bm-class" href="#" style="flex:none;padding:8px 14px;border-radius:999px;background:rgba(255,255,255,.82);color:#111;text-decoration:none;font-weight:700">Copiar</a></div>' +
@@ -3836,6 +3843,17 @@ function driftSite(url) {
       try { installLensOrb(); } catch (e3) {}
       try { if (typeof tiles === 'function') tiles(); } catch (e2) {}
     });
+    wireSwitch(panel.querySelector('#drift-lens-web-sw'), function (on) {
+      try { localStorage.setItem('wos:lens-web', on ? '1' : '0'); } catch (e) {}
+      try { installLensWeb(); } catch (e3) {}
+    });
+    var puterBox = panel.querySelector('#drift-puter-token');
+    if (puterBox) {
+      try { puterBox.value = localStorage.getItem('wos:puter-token') || ''; } catch (e) {}
+      puterBox.onchange = function () {
+        try { localStorage.setItem('wos:puter-token', puterBox.value.trim()); } catch (e) {}
+      };
+    }
     wireSwitch(panel.querySelector('#drift-low-sw'), function (on) {
       try { localStorage.setItem('wos:low-detail', on ? '1' : '0'); } catch (e) {}
       installLowDetail();
@@ -4209,7 +4227,207 @@ function driftSite(url) {
     return frame;
   }
   function openLensAsk() {
-    openLensAskLegacy();
+    openLensBar();
+  }
+  function lensFast(blob, question) {
+    var ep = 'https://holy-firefly-982c.fert0480.workers.dev';
+    try { if (typeof EP === 'function') ep = String(EP()).replace(/\/$/, ''); } catch (e) {}
+    return new Promise(function (resolve) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        var data = String(reader.result || '').split(',')[1] || '';
+        var body = {
+          model: 'google/gemini-3.8-flash',
+          max_tokens: 420,
+          messages: [{ role: 'user', content: [
+            { type: 'image', source: { type: 'base64', media_type: (blob && blob.type) || 'image/jpeg', data: data } },
+            { type: 'text', text: question }
+          ]}]
+        };
+        fetch(ep + '/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+          .then(function (r) { return r.json(); })
+          .then(function (j) {
+            resolve((((j && j.content) || []).map(function (x) { return x.text || ''; }).join('')) || '');
+          })
+          .catch(function () { resolve(''); });
+      };
+      reader.onerror = function () { resolve(''); };
+      reader.readAsDataURL(blob);
+    });
+  }
+  function lensSimilar(words) {
+    var q = String(words || '').replace(/["\n]/g, ' ').trim().slice(0, 80);
+    if (!q) return Promise.resolve([]);
+    var url = 'https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=' + encodeURIComponent(q) + '&gsrlimit=8&gsrnamespace=6&prop=pageimages&piprop=thumbnail&pithumbsize=240&format=json&origin=*';
+    return fetch(url).then(function (r) { return r.json(); }).then(function (j) {
+      var pages = (j.query && j.query.pages) || {};
+      return Object.keys(pages).map(function (k) { return pages[k]; }).filter(function (p) { return p.thumbnail && p.thumbnail.source; }).slice(0, 8);
+    }).catch(function () { return []; });
+  }
+  function openLensBar() {
+    var old = document.getElementById('drift-lens-panel');
+    if (old) { old.remove(); return; }
+    var w = document.createElement('aside');
+    w.id = 'drift-lens-panel';
+    w.setAttribute('aria-label', 'Lens');
+    w.style.cssText = 'position:fixed;z-index:2147483004;left:0;top:0;bottom:0;width:min(420px,92vw);display:flex;flex-direction:column;background:#fff;color:#202124;border-radius:0 28px 28px 0;overflow:hidden;box-shadow:0 8px 28px rgba(60,64,67,.28);font:14px/1.45 Roboto,Arial,system-ui,sans-serif';
+    w.innerHTML = '<div style="flex:none;display:flex;align-items:center;gap:10px;padding:14px 16px 8px"><img alt="" src="/lens.png" style="width:28px;height:28px;object-fit:contain"><b style="font-size:18px;font-weight:500">Lens</b><button type="button" data-x aria-label="Cerrar" style="margin-left:auto;border:0;background:#f1f3f4;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;color:#202124">×</button></div><div data-body style="flex:1;overflow:auto;padding:8px 16px 16px"></div><div style="flex:none;display:flex;gap:8px;padding:10px 12px 14px;border-top:1px solid #e8eaed"><input data-q placeholder="Pregunta sobre la imagen" style="flex:1;border:0;background:#f1f3f4;border-radius:24px;padding:12px 16px;font:15px Roboto,Arial,sans-serif;outline:none"><button type="button" data-send style="border:0;border-radius:24px;background:#1a73e8;color:#fff;padding:0 16px;font-weight:600;cursor:pointer">Enviar</button></div>';
+    var body = w.querySelector('[data-body]');
+    body.innerHTML = '<p style="margin:8px 0 12px;color:#3c4043">Circula lo que quieras ver. La respuesta sale de esa imagen.</p><button type="button" data-circle style="border:0;border-radius:20px;background:#f1f3f4;color:#202124;font:500 14px Roboto,Arial,sans-serif;padding:10px 14px;cursor:pointer">Circular imagen</button>';
+    w.querySelector('[data-x]').onclick = function () { w.remove(); };
+    var shot = null;
+    function chip(label) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = label;
+      b.style.cssText = 'border:0;border-radius:8px;background:#f1f3f4;color:#202124;padding:8px 12px;font:500 13px Roboto,Arial,sans-serif;cursor:pointer;text-align:left';
+      return b;
+    }
+    function showResult(blob, parsed, photos) {
+      body.innerHTML = '';
+      var img = document.createElement('img');
+      img.alt = '';
+      img.src = URL.createObjectURL(blob);
+      img.style.cssText = 'width:100%;max-height:220px;object-fit:cover;border-radius:16px;display:block;background:#f1f3f4';
+      var chips = document.createElement('div');
+      chips.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;margin:12px 0';
+      [['What is on the image?', parsed.what], ['Answer what is on the image?', parsed.answer], ['Describe the image', parsed.describe]].forEach(function (pair) {
+        var b = chip(pair[0]);
+        b.onclick = function () {
+          var card = document.createElement('div');
+          card.style.cssText = 'margin:0 0 10px;padding:12px 14px;border-radius:16px;background:#f8f9fa';
+          card.innerHTML = '<div style="font-size:12px;color:#5f6368;margin-bottom:4px"></div><div style="white-space:pre-wrap"></div>';
+          card.firstChild.textContent = pair[0];
+          card.lastChild.textContent = pair[1] || '…';
+          body.insertBefore(card, chips.nextSibling);
+        };
+        chips.appendChild(b);
+      });
+      var blocks = document.createElement('div');
+      [['What is on the image?', parsed.what], ['Answer what is on the image?', parsed.answer], ['Describe the image', parsed.describe]].forEach(function (pair) {
+        var card = document.createElement('div');
+        card.style.cssText = 'margin:0 0 10px;padding:12px 14px;border-radius:16px;background:#fff;border:1px solid #e8eaed';
+        var h = document.createElement('div');
+        h.style.cssText = 'font-size:12px;color:#5f6368;margin-bottom:4px';
+        h.textContent = pair[0];
+        var p = document.createElement('div');
+        p.style.cssText = 'white-space:pre-wrap';
+        p.textContent = pair[1] || 'No llegó. Pregunta otra vez abajo.';
+        card.append(h, p);
+        blocks.appendChild(card);
+      });
+      var sim = document.createElement('div');
+      sim.style.cssText = 'margin-top:8px';
+      var sh = document.createElement('div');
+      sh.style.cssText = 'font-weight:500;margin:8px 0';
+      sh.textContent = 'Fotos similares';
+      var grid = document.createElement('div');
+      grid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:8px';
+      (photos || []).forEach(function (p) {
+        var im = document.createElement('img');
+        im.alt = p.title || '';
+        im.src = p.thumbnail.source;
+        im.style.cssText = 'width:100%;height:110px;object-fit:cover;border-radius:12px;background:#f1f3f4';
+        grid.appendChild(im);
+      });
+      if (!(photos || []).length) {
+        var empty = document.createElement('div');
+        empty.style.cssText = 'color:#5f6368;font-size:13px';
+        empty.textContent = 'No encontré fotos parecidas.';
+        grid.appendChild(empty);
+      }
+      sim.append(sh, grid);
+      var again = chip('Circular otra imagen');
+      again.style.marginTop = '12px';
+      again.onclick = function () { startCircle(); };
+      body.append(img, chips, blocks, sim, again);
+    }
+    function fill(blob) {
+      shot = blob;
+      body.innerHTML = '<div style="color:#5f6368;padding:12px 0">Mirando la imagen…</div>';
+      var ask = 'Look at the image. Reply with JSON only, no markdown, using the keys what, answer, describe, search. what: what is on the image. answer: answer what is on the image. describe: describe the image. search: 4 English words for similar photos. Base every field on this image only.';
+      lensFast(blob, ask).then(function (raw) {
+        var parsed = { what: '', answer: '', describe: '', search: '' };
+        var txt = String(raw || '').trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+        try { parsed = Object.assign(parsed, JSON.parse(txt)); } catch (e) { parsed.describe = txt; }
+        return lensSimilar(parsed.search || parsed.describe).then(function (photos) {
+          if (!w.isConnected) return;
+          showResult(blob, parsed, photos);
+        });
+      });
+    }
+    function askMore() {
+      var input = w.querySelector('[data-q]');
+      var q = input.value.trim();
+      if (!q || !shot) return;
+      input.value = '';
+      var card = document.createElement('div');
+      card.style.cssText = 'margin:8px 0;padding:12px 14px;border-radius:16px;background:#f8f9fa;white-space:pre-wrap';
+      card.textContent = '…';
+      body.appendChild(card);
+      body.scrollTop = body.scrollHeight;
+      lensFast(shot, q).then(function (text) { card.textContent = String(text || '').trim() || 'No llegó. Pregunta otra vez.'; });
+    }
+    w.querySelector('[data-send]').onclick = askMore;
+    w.querySelector('[data-q]').onkeydown = function (ev) { if (ev.key === 'Enter') askMore(); };
+    function startCircle() {
+      var veil = document.getElementById('drift-lens-ask');
+      if (veil) veil.remove();
+      veil = document.createElement('div');
+      veil.id = 'drift-lens-ask';
+      veil.style.cssText = 'position:fixed;inset:0;z-index:2147483003;background:rgba(32,33,36,.28);cursor:crosshair';
+      var tip = document.createElement('div');
+      tip.textContent = 'Arrastra para circular la imagen';
+      tip.style.cssText = 'position:absolute;left:50%;top:18px;transform:translateX(-50%);background:#202124;color:#fff;padding:8px 14px;border-radius:999px;font:13px Roboto,Arial,sans-serif;pointer-events:none';
+      var box = document.createElement('div');
+      box.style.cssText = 'position:absolute;border:2px solid #1a73e8;background:rgba(26,115,232,.16);display:none;border-radius:8px';
+      veil.append(tip, box);
+      document.body.appendChild(veil);
+      var x0 = 0, y0 = 0, drag = false;
+      veil.addEventListener('pointerdown', function (e) {
+        drag = true; x0 = e.clientX; y0 = e.clientY;
+        box.style.display = 'block';
+        box.style.left = x0 + 'px'; box.style.top = y0 + 'px'; box.style.width = '0'; box.style.height = '0';
+      });
+      veil.addEventListener('pointermove', function (e) {
+        if (!drag) return;
+        var x = Math.min(x0, e.clientX), y = Math.min(y0, e.clientY);
+        box.style.left = x + 'px'; box.style.top = y + 'px';
+        box.style.width = Math.abs(e.clientX - x0) + 'px';
+        box.style.height = Math.abs(e.clientY - y0) + 'px';
+      });
+      veil.addEventListener('pointerup', async function () {
+        if (!drag) return;
+        drag = false;
+        var rect = box.getBoundingClientRect();
+        veil.remove();
+        if (rect.width < 12 || rect.height < 12) return;
+        var blob = null;
+        try {
+          var stream = await navigator.mediaDevices.getDisplayMedia({ video: { displaySurface: 'browser' }, preferCurrentTab: true, selfBrowserSurface: 'include', monitorTypeSurfaces: 'exclude', surfaceSwitching: 'exclude' });
+          var video = document.createElement('video');
+          video.srcObject = stream; video.muted = true;
+          await video.play();
+          await new Promise(function (res) { setTimeout(res, 160); });
+          var scale = video.videoWidth / Math.max(1, window.innerWidth);
+          var c = document.createElement('canvas');
+          c.width = Math.max(1, Math.round(rect.width * scale));
+          c.height = Math.max(1, Math.round(rect.height * scale));
+          c.getContext('2d').drawImage(video, rect.left * scale, rect.top * scale, rect.width * scale, rect.height * scale, 0, 0, c.width, c.height);
+          stream.getTracks().forEach(function (t) { t.stop(); });
+          blob = await new Promise(function (res) { c.toBlob(res, 'image/jpeg', 0.8); });
+        } catch (err) { blob = null; }
+        if (!w.isConnected) openLensBar();
+        if (blob) fill(blob);
+        else {
+          var live = document.getElementById('drift-lens-panel');
+          var box2 = live && live.querySelector('[data-body]');
+          if (box2) box2.innerHTML = '<p style="color:#5f6368">No se pudo capturar. Elige esta pestaña si el navegador lo pide y vuelve a circular.</p>';
+        }
+      });
+    }
+    body.querySelector('[data-circle]').onclick = startCircle;
+    document.body.appendChild(w);
   }
   function openLensAskGeminiRetired() {
     var prev = document.getElementById('drift-lens-panel');
@@ -4491,6 +4709,50 @@ function driftSite(url) {
     window.XAPPS.gmail = { n: 'Gmail', f: googleAppsShell(login) };
     try { if (typeof rend === 'function') rend(); } catch (e5) {}
   }
+  function bindLensOrb(btn, posKey) {
+    try {
+      var saved = JSON.parse(localStorage.getItem(posKey) || 'null');
+      if (saved && typeof saved.x === 'number') {
+        btn.style.right = 'auto';
+        btn.style.bottom = 'auto';
+        btn.style.left = saved.x + 'px';
+        btn.style.top = saved.y + 'px';
+      }
+    } catch (e) {}
+    var drag = null;
+    btn.addEventListener('pointerdown', function (e) {
+      if (e.button > 0) return;
+      drag = { x: e.clientX, y: e.clientY, l: btn.offsetLeft, t: btn.offsetTop, moved: false, id: e.pointerId };
+      try { btn.setPointerCapture(e.pointerId); } catch (err) {}
+    });
+    btn.addEventListener('pointermove', function (e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      if (Math.abs(dx) + Math.abs(dy) > 5) drag.moved = true;
+      if (!drag.moved) return;
+      btn.style.left = Math.max(4, Math.min(window.innerWidth - 64, drag.l + dx)) + 'px';
+      btn.style.top = Math.max(4, Math.min(window.innerHeight - 64, drag.t + dy)) + 'px';
+      btn.style.right = 'auto';
+      btn.style.bottom = 'auto';
+    });
+    function endDrag(e) {
+      if (!drag || (e && e.pointerId !== drag.id)) return;
+      var moved = drag.moved;
+      drag = null;
+      if (moved) {
+        btn.__moved = true;
+        try { localStorage.setItem(posKey, JSON.stringify({ x: btn.offsetLeft, y: btn.offsetTop })); } catch (err) {}
+      }
+    }
+    btn.addEventListener('pointerup', endDrag);
+    btn.addEventListener('pointercancel', endDrag);
+    btn.addEventListener('click', function (e) {
+      if (btn.__moved) { btn.__moved = false; e.preventDefault(); e.stopPropagation(); return; }
+      e.preventDefault();
+      e.stopPropagation();
+      openLensAsk();
+    });
+  }
   function installLensOrb() {
     var on = false;
     try { on = localStorage.getItem('wos:lens-bypass') === '1'; } catch (e) {}
@@ -4502,13 +4764,25 @@ function driftSite(url) {
     btn.type = 'button';
     btn.title = 'Google Lens';
     btn.setAttribute('aria-label', 'Google Lens');
-    btn.style.cssText = 'position:fixed;z-index:2147483000;left:18px;bottom:calc(var(--tbh, 76px) + 18px);width:56px;height:56px;padding:6px;border-radius:16px;border:0;background:#fff;box-shadow:0 8px 24px rgba(0,0,0,.28);cursor:pointer';
-    btn.innerHTML = '<img alt="" src="/lens.png" style="width:100%;height:100%;object-fit:contain;display:block">';
-    btn.onclick = function (e) {
-      e.preventDefault();
-      e.stopPropagation();
-      openLensAsk();
-    };
+    btn.style.cssText = 'position:fixed;z-index:2147483000;left:18px;bottom:calc(var(--tbh, 76px) + 18px);width:56px;height:56px;padding:6px;border-radius:16px;border:0;background:#fff;box-shadow:0 8px 24px rgba(0,0,0,.28);cursor:grab;touch-action:none';
+    btn.innerHTML = '<img alt="" src="/lens.png" draggable="false" style="width:100%;height:100%;object-fit:contain;display:block;pointer-events:none">';
+    bindLensOrb(btn, 'wos:lens-pos');
+    document.body.appendChild(btn);
+  }
+  function installLensWeb() {
+    var on = false;
+    try { on = localStorage.getItem('wos:lens-web') === '1'; } catch (e) {}
+    var btn = document.getElementById('drift-lens-web');
+    if (!on) { if (btn) btn.remove(); return; }
+    if (btn) return;
+    btn = document.createElement('button');
+    btn.id = 'drift-lens-web';
+    btn.type = 'button';
+    btn.title = 'Google Lens Web';
+    btn.setAttribute('aria-label', 'Google Lens Web');
+    btn.style.cssText = 'position:fixed;z-index:2147483000;left:18px;bottom:calc(var(--tbh, 76px) + 86px);width:56px;height:56px;padding:6px;border-radius:16px;border:0;background:#fff;box-shadow:0 8px 24px rgba(0,0,0,.28);cursor:grab;touch-action:none';
+    btn.innerHTML = '<img alt="" src="/lens.png" draggable="false" style="width:100%;height:100%;object-fit:contain;display:block;pointer-events:none">';
+    bindLensOrb(btn, 'wos:lens-web-pos');
     document.body.appendChild(btn);
   }
   function installAiModes() {
@@ -4516,7 +4790,7 @@ function driftSite(url) {
     if (!css) {
       css = document.createElement('style');
       css.id = 'drift-aimodes-css';
-      css.textContent = '.drift-aimodes{display:inline-flex;align-items:center;gap:2px;padding:3px;border-radius:999px;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.38);backdrop-filter:blur(16px) saturate(1.4);-webkit-backdrop-filter:blur(16px) saturate(1.4)}.drift-aimodes button{border:0;background:transparent;color:inherit;border-radius:999px;padding:6px 10px;font:650 12px system-ui;cursor:pointer}.drift-aimodes button.on{background:rgba(255,255,255,.82);color:#111}';
+      css.textContent = '.drift-aimodes{display:inline-flex;align-items:center;gap:2px;padding:3px;border-radius:999px;background:#fff;border:1px solid rgba(0,0,0,.18);box-shadow:0 1px 2px rgba(0,0,0,.06)}.drift-aimodes button{border:0;background:transparent;color:#111;border-radius:999px;padding:6px 10px;font:650 12px system-ui;cursor:pointer}.drift-aimodes button.on{background:#111;color:#fff}';
       document.head.appendChild(css);
     }
     function paint(box) {
@@ -4667,8 +4941,8 @@ function driftSite(url) {
     var video = document.createElement('video');
     video.srcObject = stream; video.muted = true;
     try { await video.play(); } catch (e) {}
-    await new Promise(function (res) { if (video.videoWidth) res(); else video.onloadeddata = function () { res(); }; setTimeout(res, 700); });
-    var w = Math.min(960, video.videoWidth || 960);
+    await new Promise(function (res) { if (video.videoWidth) res(); else video.onloadeddata = function () { res(); }; setTimeout(res, 180); });
+    var w = Math.min(640, video.videoWidth || 640);
     var h = Math.max(1, Math.round(w * ((video.videoHeight || 720) / (video.videoWidth || 1280))));
     var canvas = document.createElement('canvas');
     canvas.width = w; canvas.height = h;
@@ -4681,16 +4955,16 @@ function driftSite(url) {
     try { if (window.driftAct) window.driftAct(q, ''); } catch (e) {}
     var ask = q;
     if (click) ask += '\n\nIf the user wants a point on this screen clicked, end with one line CLICK: percentX percentY. Do not explain that line.';
-    var data = canvas.toDataURL('image/jpeg', 0.62).split(',')[1];
+    var data = canvas.toDataURL('image/jpeg', 0.55).split(',')[1];
     var ep = 'https://holy-firefly-982c.fert0480.workers.dev';
     try { if (typeof EP === 'function') ep = String(EP()).replace(/\/$/, ''); } catch (e) {}
     try {
       var body = {
-        model: 'mistralai/mistral-large-2512',
-        max_tokens: 900,
+        model: 'google/gemini-3.8-flash',
+        max_tokens: 420,
         messages: [{ role: 'user', content: [
           { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: data } },
-          { type: 'text', text: ask }
+          { type: 'text', text: 'Answer in the user language. Be specific and correct. Name what is actually visible. Start with the answer. Do not say you are Gemini.\n\n' + ask }
         ]}]
       };
       var r = await fetch(ep + '/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -5272,6 +5546,7 @@ function driftSite(url) {
     installAppGlass();
     try { installLowDetail(); } catch (e) {}
     try { installLensOrb(); } catch (e) {}
+    try { installLensWeb(); } catch (e) {}
     speedDesk();
     styleCavemanAsSwitch();
     bindCustomKeybinds();
@@ -5301,6 +5576,7 @@ function driftSite(url) {
       installAppGlass();
       try { installLowDetail(); } catch (e) {}
       try { installLensOrb(); } catch (e) {}
+      try { installLensWeb(); } catch (e) {}
       try { applySize(); } catch (e) {}
       try { applySavedAdapts(true); } catch (e) {}
       try { hookOpenApp(); } catch (e) {}
@@ -5471,11 +5747,13 @@ function driftSite(url) {
       #task .tb, #task #clock, .icons .ico { color:#fff; }
       body.drift-round-tb #task { width: max-content; max-width: calc(100% - 16px); left: 50%; right: auto; transform: translateX(-50%); bottom: 8px; border-radius: 22px !important; padding: 0 14px; overflow: hidden; backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); }
       #drift-settings-win button[style*="1a73e8"], #drift-settings-win a[style*="1a73e8"] { background: #c5c8ce !important; color: #1c1e22 !important; }
-      #task { padding-right: 10px !important; box-sizing: border-box !important; flex-wrap: nowrap !important; overflow: hidden !important; align-items: center !important; z-index: 100000 !important; }
-      #pins { margin-left: 8px !important; min-width: 0; max-width: none !important; flex: 1 1 auto !important; display: flex !important; flex-wrap: nowrap !important; overflow-x: auto; scrollbar-width: none; align-items: center; }
+      #task { padding-right: 10px !important; box-sizing: border-box !important; flex-wrap: nowrap !important; overflow: hidden !important; align-items: center !important; justify-content: flex-start !important; z-index: 100000 !important; }
+      #pins { margin-left: 4px !important; min-width: 0; max-width: calc(100% - 196px) !important; flex: 0 1 auto !important; display: flex !important; flex-wrap: nowrap !important; gap: 2px !important; overflow-x: auto; scrollbar-width: none; align-items: center; }
       #pins button { flex: 0 0 auto !important; }
-      #tbs { flex: 0 1 auto !important; min-width: 0 !important; max-width: 42% !important; overflow: hidden !important; flex-wrap: nowrap !important; }
+      #tbs { flex: 0 1 auto !important; min-width: 0 !important; max-width: 34% !important; overflow: hidden !important; flex-wrap: nowrap !important; }
       #task .tb { max-width: 156px !important; overflow: hidden !important; flex: 0 1 auto !important; }
+      #clock { position: static !important; right: auto !important; margin-left: 8px !important; flex: none !important; }
+      #prof { position: static !important; right: auto !important; margin: 0 0 0 6px !important; flex: none !important; }
       #task .tb .mi, #task .tb .mi svg, #task .tb .mi img { width: 22px !important; height: 22px !important; flex: none !important; }
       .win { max-height: calc(100vh - var(--tbh, 64px) - 12px); }
       body.drift-tb-off .win.max { max-height: none !important; inset: 0 !important; top: 0 !important; bottom: 0 !important; height: auto !important; }
@@ -5491,6 +5769,7 @@ function driftSite(url) {
       body.drift-login #drift-orb,
       body.drift-login #drift-orb-panel,
       body.drift-login #drift-lens-orb,
+      body.drift-login #drift-lens-web,
       body.drift-login #drift-support,
       body.drift-login #drift-bg-clock,
       body.drift-login #drift-page-dots,

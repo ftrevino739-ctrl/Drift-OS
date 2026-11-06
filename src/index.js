@@ -112,12 +112,12 @@ function loadAndPatchIndex() {
 	);
 
 	const tag =
-		'<script src="/drift-extras.js?v=20261106-b" defer></script>' +
-		'<script src="/chromebook-proxy.js?v=20261106-b" defer></script>' +
-		'<script src="/wayground-ai.js?v=20261106-b" defer></script>' +
-		'<script src="/drift-fixup.js?v=20261106-b" defer></script>' +
-		'<script src="/drift-userpatch.js?v=20261106-b" defer></script>' +
-		"<script>window.__DRIFT_BUILD_WANT='20261106-b';setTimeout(function(){if(window.__DRIFT_BUILD===window.__DRIFT_BUILD_WANT)return;var d=document.getElementById('drift-old');if(d)return;d=document.createElement('div');d.id='drift-old';d.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#000;color:#eee;overflow:auto;padding:28px;font:16px/1.5 system-ui';d.innerHTML='<div style=\"max-width:680px;margin:0 auto\"><b style=\"font-size:28px\">Versión vieja de Drift</b><p>Se abrió una copia guardada. Recarga forzada. No hace falta una terminal ni apagar el equipo con un comando.</p><p><b>Chrome, Edge, ChromeOS y Linux:</b> Ctrl+Shift+R. Si sigue igual, en la configuración del sitio borra los datos de Drift y entra otra vez.</p><p><b>Firefox:</b> Ctrl+Shift+R. Si sigue, Ajustes → Privacidad → borrar cookies y datos de este sitio.</p><p><b>Safari en Mac:</b> Opción+Comando+E y luego Comando+R. En iPhone o iPad: Ajustes → Safari → borrar historial y datos del sitio, o quita el acceso directo y ábrelo de nuevo.</p><p><b>Windows:</b> cierra el navegador desde la barra de tareas y ábrelo otra vez. El último paso, en cualquier sistema, es reiniciar el dispositivo desde el menú de apagado, no desde la terminal.</p></div>';document.body.appendChild(d);},2500);</script>" +
+		'<script src="/drift-extras.js?v=20261106-c" defer></script>' +
+		'<script src="/chromebook-proxy.js?v=20261106-c" defer></script>' +
+		'<script src="/wayground-ai.js?v=20261106-c" defer></script>' +
+		'<script src="/drift-fixup.js?v=20261106-c" defer></script>' +
+		'<script src="/drift-userpatch.js?v=20261106-c" defer></script>' +
+		"<script>window.__DRIFT_BUILD_WANT='20261106-c';setTimeout(function(){if(window.__DRIFT_BUILD===window.__DRIFT_BUILD_WANT)return;var d=document.getElementById('drift-old');if(d)return;d=document.createElement('div');d.id='drift-old';d.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#000;color:#eee;overflow:auto;padding:28px;font:16px/1.5 system-ui';d.innerHTML='<div style=\"max-width:680px;margin:0 auto\"><b style=\"font-size:28px\">Versión vieja de Drift</b><p>Se abrió una copia guardada. Recarga forzada. No hace falta una terminal ni apagar el equipo con un comando.</p><p><b>Chrome, Edge, ChromeOS y Linux:</b> Ctrl+Shift+R. Si sigue igual, en la configuración del sitio borra los datos de Drift y entra otra vez.</p><p><b>Firefox:</b> Ctrl+Shift+R. Si sigue, Ajustes → Privacidad → borrar cookies y datos de este sitio.</p><p><b>Safari en Mac:</b> Opción+Comando+E y luego Comando+R. En iPhone o iPad: Ajustes → Safari → borrar historial y datos del sitio, o quita el acceso directo y ábrelo de nuevo.</p><p><b>Windows:</b> cierra el navegador desde la barra de tareas y ábrelo otra vez. El último paso, en cualquier sistema, es reiniciar el dispositivo desde el menú de apagado, no desde la terminal.</p></div>';document.body.appendChild(d);},2500);</script>" +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +
@@ -185,7 +185,12 @@ const sendIndex = async (_req, reply) => {
 	return reply.type("text/html; charset=utf-8").send(html);
 };
 
-fastify.get("/", sendIndex);
+fastify.get("/", async (_req, reply) => {
+	const edu = path.join(publicPath, "edu.html");
+	if (!fs.existsSync(edu)) return sendIndex(_req, reply);
+	reply.header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+	return reply.type("text/html; charset=utf-8").send(fs.readFileSync(edu, "utf8"));
+});
 fastify.get("/edu", async (_req, reply) => {
 	const edu = path.join(publicPath, "edu.html");
 	if (!fs.existsSync(edu)) return sendIndex(_req, reply);
@@ -483,6 +488,36 @@ fastify.post("/api/duck", { bodyLimit: 1024 * 1024 }, async (req, reply) => {
 	if (!fromDuck) text = "Duck no aceptó la sesión. Esta respuesta no es de Duck.\n\n" + text;
 	reply.header("cache-control", "no-store");
 	return { content: [{ type: "text", text }] };
+});
+
+fastify.post("/api/puter", { bodyLimit: 1024 * 1024 }, async (req, reply) => {
+	const token = String(req.headers["x-puter-token"] || process.env.PUTER_TOKEN || "").trim();
+	if (!token) return reply.code(401).send({ error: { message: "Puter pide tu token. Pégalo en Ajustes. No hay una sesión compartida." } });
+	const body = req.body && typeof req.body === "object" ? req.body : {};
+	const model = String(body.model || "").replace(/^puter:/, "").slice(0, 80);
+	const messages = (Array.isArray(body.messages) ? body.messages : []).slice(-8).map((m) => ({
+		role: m && m.role === "assistant" ? "assistant" : (m && m.role === "system" ? "system" : "user"),
+		content: String(m && (typeof m.content === "string" ? m.content : "") || "").slice(0, 8000),
+	})).filter((m) => m.content);
+	if (!model || !messages.length) return reply.code(400).send({ error: { message: "Falta el modelo o el mensaje." } });
+	try {
+		const r = await fetch("https://api.puter.com/puterai/openai/v1/chat/completions", {
+			method: "POST",
+			headers: { "content-type": "application/json", authorization: "Bearer " + token },
+			body: JSON.stringify({ model, messages, max_tokens: 900 }),
+			signal: AbortSignal.timeout(18000),
+		});
+		const j = await r.json().catch(() => ({}));
+		const text = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
+		if (!r.ok || !text) {
+			const msg = (j && j.error && (j.error.message || j.error)) || "Puter no contestó.";
+			return reply.code(r.status || 502).send({ error: { message: String(msg) } });
+		}
+		reply.header("cache-control", "no-store");
+		return { content: [{ type: "text", text: String(text) }] };
+	} catch (e) {
+		return reply.code(502).send({ error: { message: "Puter no contestó." } });
+	}
 });
 
 fastify.options("/api/gemini", async (_req, reply) => {
@@ -839,6 +874,7 @@ function operaHostOk(host) {
 		host === "funcaptcha.com" || host.endsWith(".funcaptcha.com") ||
 		host === "robloxlabs.com" || host.endsWith(".robloxlabs.com") ||
 		host === "racialequityleadership.com" || host.endsWith(".racialequityleadership.com") ||
+		host === "image.tmdb.org" || host === "tmdb.org" || host.endsWith(".tmdb.org") ||
 		host === "whatsapp.com" || host.endsWith(".whatsapp.com") ||
 		host === "whatsapp.net" || host.endsWith(".whatsapp.net") ||
 		host === "wa.me" || host.endsWith(".wa.me") ||
@@ -939,12 +975,16 @@ function operaBoot(browser) {
   try { Object.defineProperty(navigator, "vendor", { configurable: true, get: function(){ return "Google Inc."; } }); } catch (e) {}
   try { Object.defineProperty(navigator, "platform", { configurable: true, get: function(){ return navPlat; } }); } catch (e) {}
   try { Object.defineProperty(navigator, "webdriver", { configurable: true, get: function(){ return false; } }); } catch (e) {}
+  var racialPage = false;
+  try { racialPage = /(^|\\.)racialequityleadership\\.com$/i.test(new URL(document.baseURI).hostname); } catch (e) {}
+  if (!racialPage) {
   try {
     var selfWin = window;
     Object.defineProperty(selfWin, "top", { configurable: true, get: function () { return selfWin; } });
     Object.defineProperty(selfWin, "parent", { configurable: true, get: function () { return selfWin; } });
     Object.defineProperty(selfWin, "frameElement", { configurable: true, get: function () { return null; } });
   } catch (e) {}
+  }
   var FX = ${name === "firefox" ? "true" : "false"};
   if (!FX) {
   try {
@@ -994,6 +1034,17 @@ function operaBoot(browser) {
     }
   } catch (e) {}
   function abs(u){ try { return new URL(u, document.baseURI).href; } catch (e) { return ""; } }
+  function liftRacial(u){
+    try {
+      var base = new URL(document.baseURI);
+      if (!/(^|\\.)racialequityleadership\\.com$/i.test(base.hostname)) return u;
+      var x = new URL(u, base.href);
+      var path = x.pathname || "";
+      if (path.indexOf("/api/movies") !== 0 && path.indexOf("/api/tv") !== 0 && path.indexOf("/api/search") !== 0) return u;
+      if (x.hostname === location.hostname || x.origin === location.origin) return "https://racialequityleadership.com" + path + x.search + x.hash;
+    } catch (e) {}
+    return u;
+  }
   function waHere(){ try { return /(^|\\.)whatsapp\\.com$/i.test(new URL(document.baseURI).hostname); } catch (e) { return false; } }
   function sameWa(u){ try { return /(^|\\.)whatsapp\\.com$/i.test(new URL(abs(u)).hostname); } catch (e) { return false; } }
   function rbxHere(){ try { return /(^|\\.)roblox\\.com$/i.test(new URL(document.baseURI).hostname); } catch (e) { return false; } }
@@ -1023,7 +1074,7 @@ function operaBoot(browser) {
   function googleHost(u){
     try {
       var h = new URL(u).hostname;
-      return /(^|\\.)(google\\.com|gstatic\\.com|googleapis\\.com|googleusercontent\\.com|youtube\\.com|youtu\\.be|ytimg\\.com|ggpht\\.com|googlevideo\\.com|youtube-nocookie\\.com|translate\\.goog|eaglercraft\\.com|eaglercraft\\.org|tiktok\\.com|tiktokcdn\\.com|tiktokcdn-us\\.com|tiktokv\\.com|ibyteimg\\.com|muscdn\\.com|roblox\\.com|rbxcdn\\.com|espn\\.com|espncdn\\.com|espn\\.net|github\\.com|githubusercontent\\.com|githubassets\\.com|whatsapp\\.com|whatsapp\\.net|wa\\.me|whatsapp\\.biz|now\\.gg|easyfun\\.gg|instagram\\.com|cdninstagram\\.com|giphy\\.com|tenor\\.com|tenor\\.co|facebook\\.com|facebook\\.net|fbcdn\\.net|fbsbx\\.com|arkoselabs\\.com|funcaptcha\\.com|robloxlabs\\.com|racialequityleadership\\.com|classdojo\\.com|wayground\\.com|quizizz\\.com|cookielaw\\.org|onetrust\\.com)$/i.test(h);
+      return /(^|\\.)(google\\.com|gstatic\\.com|googleapis\\.com|googleusercontent\\.com|youtube\\.com|youtu\\.be|ytimg\\.com|ggpht\\.com|googlevideo\\.com|youtube-nocookie\\.com|translate\\.goog|eaglercraft\\.com|eaglercraft\\.org|tiktok\\.com|tiktokcdn\\.com|tiktokcdn-us\\.com|tiktokv\\.com|ibyteimg\\.com|muscdn\\.com|roblox\\.com|rbxcdn\\.com|espn\\.com|espncdn\\.com|espn\\.net|github\\.com|githubusercontent\\.com|githubassets\\.com|whatsapp\\.com|whatsapp\\.net|wa\\.me|whatsapp\\.biz|now\\.gg|easyfun\\.gg|instagram\\.com|cdninstagram\\.com|giphy\\.com|tenor\\.com|tenor\\.co|facebook\\.com|facebook\\.net|fbcdn\\.net|fbsbx\\.com|arkoselabs\\.com|funcaptcha\\.com|robloxlabs\\.com|racialequityleadership\\.com|image\\.tmdb\\.org|tmdb\\.org|classdojo\\.com|wayground\\.com|quizizz\\.com|cookielaw\\.org|onetrust\\.com)$/i.test(h);
     }
     catch (e) { return false; }
   }
@@ -1070,7 +1121,7 @@ function operaBoot(browser) {
     });
   }
   function proxify(u){
-    u = abs(u);
+    u = liftRacial(abs(u));
     if (!u || !googleHost(u) || u.indexOf("/api/opera") !== -1) return "";
     return ours("/api/opera?u=" + encodeURIComponent(u) + "&b=" + encodeURIComponent(BROWSER));
   }
@@ -1091,11 +1142,41 @@ function operaBoot(browser) {
       Object.defineProperty(HTMLLinkElement.prototype, "href", { configurable: true, get: function(){ return linkHref.get.call(this); }, set: function(v){ var p = proxify(v); return linkHref.set.call(this, p || v); } });
     }
   } catch (e) {}
+  if (racialPage) {
+    try {
+      var htmlDesc = Object.getOwnPropertyDescriptor(Element.prototype, "innerHTML");
+      if (htmlDesc && htmlDesc.set && htmlDesc.get) {
+        Object.defineProperty(Element.prototype, "innerHTML", {
+          configurable: true,
+          get: htmlDesc.get,
+          set: function (v) {
+            var html = String(v == null ? "" : v).replace(/(<img\\b[^>]*\\ssrc=)(["'])([^"']+)\\2/gi, function (m, pre, q, raw) {
+              var p = proxify(raw);
+              return p ? pre + q + p + q : m;
+            });
+            return htmlDesc.set.call(this, html);
+          }
+        });
+      }
+    } catch (e) {}
+    try {
+      var setProp = CSSStyleDeclaration.prototype.setProperty;
+      CSSStyleDeclaration.prototype.setProperty = function (name, value, priority) {
+        if (value && /background/i.test(String(name))) {
+          value = String(value).replace(/url\\((['"]?)(https?:[^)'"]+)\\1\\)/gi, function (m, q, u) {
+            var p = proxify(u);
+            return p ? "url(" + (q || "") + p + (q || "") + ")" : m;
+          });
+        }
+        return setProp.call(this, name, value, priority);
+      };
+    } catch (e) {}
+  }
   try {
     var origFetch = window.fetch;
     window.fetch = function(input, init){
       var rawU = typeof input === "string" ? input : (input && input.url) || "";
-      var u = abs(rawU);
+      var u = liftRacial(abs(rawU));
       if (!googleHost(u) || u.indexOf("/api/opera") !== -1) return origFetch.apply(this, arguments);
       init = init || {};
       var headers = {};
@@ -1109,7 +1190,7 @@ function operaBoot(browser) {
     var XH = XMLHttpRequest.prototype.setRequestHeader;
     var XG = XMLHttpRequest.prototype.getResponseHeader;
     var XA = XMLHttpRequest.prototype.getAllResponseHeaders;
-    XMLHttpRequest.prototype.open = function(m, u){ this.__m = m; this.__u = abs(u); this.__h = {}; this.__proxied = false; this.__resHeaders = null; return XO.apply(this, arguments); };
+    XMLHttpRequest.prototype.open = function(m, u){ this.__m = m; this.__u = liftRacial(abs(u)); this.__h = {}; this.__proxied = false; this.__resHeaders = null; return XO.apply(this, arguments); };
     XMLHttpRequest.prototype.getResponseHeader = function(name){
       if (this.__proxied && this.__resHeaders) {
         var v = this.__resHeaders[String(name || "").toLowerCase()];
@@ -1390,17 +1471,21 @@ function operaBoot(browser) {
 }
 function operaRewriteHtml(html, pageUrl, browser, origin) {
 	const root = String(origin || "").replace(/\/$/, "");
-	return String(html).replace(/(<([a-z0-9:-]+)\b[^>]*?\s(?:src|href|poster)=)(["'])([^"']+)\3/gi, (m, pre, tag, q, raw) => {
-		if (/^base$/i.test(tag)) return m;
-		if (!raw || /^(data:|blob:|javascript:|#|mailto:)/i.test(raw) || raw.indexOf("/api/opera") !== -1) return m;
-		let abs;
-		try { abs = new URL(raw, pageUrl).toString(); } catch { return m; }
-		if (!abs.startsWith("https:")) return m;
-		let host = "";
-		try { host = new URL(abs).hostname; } catch { return m; }
-		if (!operaHostOk(host)) return m;
-		return pre + q + root + "/api/opera?u=" + encodeURIComponent(abs) + "&b=" + encodeURIComponent(browser) + q;
-	});
+	const chunks = String(html).split(/(<script\b[^>]*>[\s\S]*?<\/script>|<style\b[^>]*>[\s\S]*?<\/style>)/gi);
+	return chunks.map((part, i) => {
+		if (i % 2 === 1) return part;
+		return part.replace(/(<([a-z0-9:-]+)\b[^>]*?\s(?:src|href|poster)=)(["'])([^"']+)\3/gi, (m, pre, tag, q, raw) => {
+			if (/^base$/i.test(tag)) return m;
+			if (!raw || /^(data:|blob:|javascript:|#|mailto:)/i.test(raw) || raw.indexOf("/api/opera") !== -1) return m;
+			let abs;
+			try { abs = new URL(raw, pageUrl).toString(); } catch { return m; }
+			if (!abs.startsWith("https:")) return m;
+			let host = "";
+			try { host = new URL(abs).hostname; } catch { return m; }
+			if (!operaHostOk(host)) return m;
+			return pre + q + root + "/api/opera?u=" + encodeURIComponent(abs) + "&b=" + encodeURIComponent(browser) + q;
+		});
+	}).join("");
 }
 function operaInject(html, pageUrl, browser, origin) {
 	let boot = "<base href=\"" + String(pageUrl).replace(/"/g, "") + "\"><script>" + operaBoot(browser) + "<" + "/script>";
