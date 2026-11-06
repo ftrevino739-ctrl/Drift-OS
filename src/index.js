@@ -185,7 +185,8 @@ const sendIndex = async (_req, reply) => {
 	return reply.type("text/html; charset=utf-8").send(html);
 };
 
-fastify.get("/", async (_req, reply) => {
+fastify.get("/", sendIndex);
+fastify.get("/edu", async (_req, reply) => {
 	const edu = path.join(publicPath, "edu.html");
 	if (!fs.existsSync(edu)) return sendIndex(_req, reply);
 	reply.header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
