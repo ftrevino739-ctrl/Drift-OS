@@ -1,7 +1,7 @@
 /* Drift fixup */
 (function () {
   'use strict';
-  window.__DRIFT_BUILD = '20261105-a';
+  window.__DRIFT_BUILD = '20261105-b';
   window.DRIFT_BEST_MODEL = window.DRIFT_BEST_MODEL || 'mistralai/mistral-large-4-0';
   window.DRIFT_CODE_MODEL = 'google/gemini-3.8-flash';
 
@@ -1297,43 +1297,22 @@ function driftSite(url) {
         prov = localStorage.getItem('wos:movies') || 'racial';
       } catch (e) {}
       if (prov !== 'onlyflix' && prov !== 'noah') {
-        root.innerHTML = '';
-        root.style.cssText = 'height:100%;min-height:0;position:relative;overflow:hidden;background:#000';
-        var page = 'https://racialequityleadership.com/movies.html';
-        if (typeof window.openProxied !== 'function') return moviesApp(root);
-        Promise.resolve(window.openProxied(page, root)).then(function (f) {
-          var timer = setInterval(function () {
-            if (!root.isConnected) { clearInterval(timer); return; }
-            var fr = (f && f.frame) || root.querySelector('iframe');
-            if (!fr) return;
-            try {
-              var doc = fr.contentDocument;
-              if (doc && !doc.getElementById('drift-racial-hide')) {
-                var st = doc.createElement('style');
-                st.id = 'drift-racial-hide';
-                st.textContent = 'aside,nav,.sidebar,#sidebar,.side-bar,#side,.drawer,[class*="sidebar"],[class*="side-nav"],[id*="sidebar"]{display:none!important}body{margin-left:0!important;padding-left:0!important}';
-                (doc.head || doc.documentElement).appendChild(st);
-              }
-              var href = '';
-              try { href = String(fr.contentWindow.location.href || ''); } catch (e2) { href = ''; }
-              try { if (window.SJC && window.SJC.decodeUrl) { var dec = window.SJC.decodeUrl(href); if (dec) href = dec; } } catch (e3) {}
-              var home = false;
-              if (href && /racialequityleadership\.com/i.test(href) && !/movies\.html/i.test(href)) {
-                try {
-                  var path = new URL(href).pathname.replace(/\/+$/, '') || '/';
-                  home = path === '/' || path === '/index.html' || path === '/index' || path === '/home' || path === '/home.html';
-                } catch (e4) { home = /racialequityleadership\.com\/?(?:\?|#|$)/i.test(href); }
-              }
-              if (home) fr.contentWindow.location.replace(page);
-              var text = '';
-              try { text = doc && doc.body ? String(doc.body.innerText || '').slice(0, 500) : ''; } catch (e5) { text = ''; }
-              if (/refused to connect|Uh oh|403 ERROR|Access Denied|couldn.?t load this page/i.test(text)) {
-                clearInterval(timer);
-                moviesApp(root);
-              }
-            } catch (e) {}
-          }, 700);
-        }).catch(function () { moviesApp(root); });
+        operaPage('https://racialequityleadership.com/movies.html', 'firefox', true)(root);
+        var ticks = 0;
+        var watch = setInterval(function () {
+          if (!root.isConnected || ++ticks > 24) { clearInterval(watch); return; }
+          var fr = root.querySelector('iframe');
+          if (!fr) return;
+          try {
+            var doc = fr.contentDocument;
+            if (doc && doc.documentElement && !doc.getElementById('drift-racial-hide')) {
+              var st = doc.createElement('style');
+              st.id = 'drift-racial-hide';
+              st.textContent = 'aside.rail,.rail{display:none!important}body{margin-left:0!important}';
+              (doc.head || doc.documentElement).appendChild(st);
+            }
+          } catch (e) {}
+        }, 700);
         return;
       }
       var url = prov === 'noah' ? 'https://noahstutoring.academy/' : 'https://onlyflix.to/';
@@ -1546,9 +1525,9 @@ function driftSite(url) {
     if (on) {
       document.body.classList.add('drift-app-glass');
       st.textContent =
-        'body.drift-app-glass .win{background:rgba(255,255,255,.22)!important;backdrop-filter:blur(24px) saturate(180%)!important;-webkit-backdrop-filter:blur(24px) saturate(180%)!important;border:1px solid rgba(255,255,255,.28)!important;box-shadow:0 12px 40px rgba(0,0,0,.18)!important}' +
-        'body.drift-app-glass .win>.title{background:rgba(255,255,255,.16)!important}' +
-        'body.drift-app-glass .win>.body{background:rgba(10,12,20,.28)!important}';
+        'body.drift-app-glass .win,body.drift-app-glass #drift-settings-win{background:rgba(255,255,255,.22)!important;backdrop-filter:blur(24px) saturate(180%)!important;-webkit-backdrop-filter:blur(24px) saturate(180%)!important;border:1px solid rgba(255,255,255,.28)!important;box-shadow:0 12px 40px rgba(0,0,0,.18)!important}' +
+        'body.drift-app-glass .win>.title,body.drift-app-glass #drift-settings-win>.title,body.drift-app-glass #drift-settings-win nav{background:rgba(255,255,255,.16)!important}' +
+        'body.drift-app-glass .win>.body,body.drift-app-glass #drift-settings-win>.body,body.drift-app-glass #drift-settings-win #drift-set-main,body.drift-app-glass #drift-settings-win #drift-set-main section>div{background:rgba(16,18,28,.22)!important}';
     } else {
       document.body.classList.remove('drift-app-glass');
       st.textContent = '';
@@ -2050,7 +2029,7 @@ function driftSite(url) {
     return 'win';
   }
   function robloxShell(root) {
-    operaPage('https://www.roblox.com/login', 'firefox', false)(root);
+    operaPage('https://www.roblox.com/login', 'firefox', true)(root);
   }
   function inAppPage(url) {
     return function (root) {
@@ -2118,12 +2097,15 @@ function driftSite(url) {
     function kick() {
       try {
         var doc = frame.contentDocument;
-        if (!doc || !doc.documentElement || doc.documentElement.getAttribute('data-drift-menu') === '1') return;
+        if (!doc || !doc.documentElement || doc.documentElement.getAttribute('data-drift-menu') === '1' || doc.documentElement.getAttribute('data-ready') === '1') return;
         if (typeof window.__driftGoogleMenu !== 'function') return;
-        doc.documentElement.setAttribute('data-drift-menu', '1');
+        var quiet = false;
+        try { quiet = localStorage.getItem('wos:undetected') === '1'; } catch (e2) {}
+        doc.documentElement.setAttribute(quiet ? 'data-ready' : 'data-drift-menu', '1');
         var s = doc.createElement('script');
         s.textContent = 'try{(' + window.__driftGoogleMenu.toString() + ')()}catch(e){}';
         doc.documentElement.appendChild(s);
+        if (quiet) s.remove();
       } catch (e) {}
     }
     frame.addEventListener('load', function () { setTimeout(kick, 60); });
@@ -2143,8 +2125,10 @@ function driftSite(url) {
         box.innerHTML = "";
         var frame = document.createElement("iframe");
         frame.setAttribute("referrerpolicy", "no-referrer");
-        if (!loose) frame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms allow-modals allow-downloads allow-pointer-lock");
-        frame.setAttribute("allow", "camera; microphone; clipboard-read; clipboard-write; fullscreen");
+        var rbx = /roblox\.com/i.test(url);
+        if (!loose && !rbx) frame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-downloads allow-pointer-lock");
+        if (!rbx) frame.setAttribute("referrerpolicy", "no-referrer");
+        frame.setAttribute("allow", "camera; microphone; clipboard-read; clipboard-write; fullscreen; autoplay; payment; publickey-credentials-get");
         frame.style.cssText = "position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff";
         frame.src = "/api/opera?u=" + encodeURIComponent(url) + "&b=" + encodeURIComponent(browser);
         if (googleMenuHost(url)) armGoogleMenu(frame);
@@ -2516,35 +2500,68 @@ function driftSite(url) {
       if (!css) {
         css = document.createElement('style');
         css.id = 'drift-gmenu-css';
-        css.textContent = '#drift-gmenu{position:fixed;right:0;top:0;bottom:0;left:auto;z-index:2147483646;display:flex;flex-direction:row;align-items:stretch;width:max-content;max-width:100vw;height:100%;background:transparent;border:0;box-shadow:none;border-radius:0;overflow:visible;pointer-events:none;color:#111;font:13px/1.4 system-ui,sans-serif}#drift-gmenu [data-rail],#drift-gmenu [data-fly]{pointer-events:auto}#drift-gmenu [data-rail]{width:72px;flex:none;height:100%;display:flex;flex-direction:column;gap:14px;align-items:center;padding:16px 0 14px;background:rgba(12,14,20,.72);border-left:1px solid rgba(255,255,255,.16);backdrop-filter:blur(28px) saturate(1.6);-webkit-backdrop-filter:blur(28px) saturate(1.6)}#drift-gmenu [data-tab],#drift-gmenu [data-exit]{width:48px;height:48px;border:0;border-radius:16px;background:rgba(255,255,255,.1);color:#f5f7fb;display:grid;place-items:center;cursor:pointer;padding:0;font-weight:500}#drift-gmenu [data-tab].on{background:#3b82f6;color:#fff;box-shadow:0 8px 18px rgba(37,99,235,.35)}#drift-gmenu [data-exit]{margin-top:auto;background:rgba(255,255,255,.08)}#drift-gmenu [data-fly]{width:min(380px,calc(100vw - 72px));height:100%;display:flex;flex-direction:column;min-height:0;background:rgba(255,255,255,.46);border-left:1px solid rgba(255,255,255,.45);box-shadow:-18px 0 50px rgba(0,0,0,.18);backdrop-filter:blur(28px) saturate(1.7);-webkit-backdrop-filter:blur(28px) saturate(1.7)}#drift-gmenu [data-fly][hidden]{display:none!important}#drift-gmenu [data-view]{flex:1;min-height:0;overflow:auto;padding:16px 16px 22px}#drift-gmenu [data-view="ai"]{display:flex;flex-direction:column;overflow:hidden;gap:8px}#drift-gmenu [data-view][hidden]{display:none!important}#drift-gmenu input:not(.drift-sw),#drift-gmenu select,#drift-gmenu textarea{width:100%;box-sizing:border-box;margin-top:4px;padding:8px 10px;border-radius:12px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.72);color:#111}#drift-gmenu .drift-line{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:8px 0;padding:10px 12px;border-radius:16px;background:rgba(255,255,255,.45);border:1px solid rgba(255,255,255,.5)}#drift-gmenu .drift-line small{display:block;font-weight:500;opacity:.62;font-size:11px;margin-top:2px}#drift-gmenu input.drift-sw{appearance:none;-webkit-appearance:none;width:51px!important;height:31px!important;margin:0;padding:0;border:0;border-radius:999px;background:#e5e5ea;position:relative;flex:none;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}#drift-gmenu input.drift-sw:after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.28);transition:left .16s}#drift-gmenu input.drift-sw:checked{background:#34c759}#drift-gmenu input.drift-sw:checked:after{left:22px}#drift-gmenu [data-log]{flex:1;min-height:0;max-height:none;overflow:auto;display:flex;flex-direction:column;gap:8px}#drift-gmenu [data-gem]{flex:1;min-height:0;border-radius:16px;overflow:hidden;background:#fff}#drift-gmenu [data-gem][hidden]{display:none!important}#drift-gmenu .u{align-self:flex-end;max-width:86%;background:#1a73e8;color:#fff;border-radius:16px 16px 6px 16px;padding:8px 10px}#drift-gmenu .a{align-self:flex-start;max-width:92%;background:rgba(255,255,255,.86);color:#111;border-radius:16px 16px 16px 6px;padding:8px 10px}#drift-gmenu .drift-compose{flex:none;margin-top:0;background:rgba(255,255,255,.82);border:1px solid rgba(0,0,0,.06);border-radius:26px;padding:10px 12px 8px}#drift-gmenu .drift-compose textarea{border:0;background:transparent;min-height:44px;padding:4px 2px;resize:none}#drift-gmenu .drift-row{display:flex;align-items:center;gap:8px;margin-top:4px}#drift-gmenu .drift-pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;border:1px solid rgba(0,0,0,.12);background:#fff;color:#111;font-weight:650;padding:6px 10px}#drift-gmenu .drift-pill.on,#drift-gmenu [data-mode].on{background:#111;color:#fff}#drift-gmenu .drift-ico{width:32px;height:32px;border-radius:50%;background:#fff;border:1px solid rgba(0,0,0,.1);display:grid;place-items:center;padding:0}#drift-gmenu [data-modes]{display:flex;gap:6px;flex:none}#drift-gmenu [data-mode]{border-radius:999px;background:rgba(255,255,255,.72);border:1px solid rgba(0,0,0,.1);padding:6px 10px}#drift-gmenu h3{margin:14px 0 6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.55}#drift-gmenu table{border-collapse:collapse;width:100%}#drift-gmenu button.drift-sw{width:52px;height:32px;border-radius:999px;background:#e5e5ea;border:0;padding:0;position:relative;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}#drift-gmenu button.drift-sw i{position:absolute;top:2px;left:2px;width:28px;height:28px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.28);display:block;transition:left .16s}#drift-gmenu button.drift-sw.on{background:#34c759}#drift-gmenu button.drift-sw.on i{left:22px}#drift-gmenu .drift-compose{margin-top:auto}';
+        css.textContent = '#drift-gmenu{position:fixed;right:0;top:0;bottom:0;left:auto;z-index:2147483646;display:flex;flex-direction:row;align-items:stretch;width:max-content;max-width:100vw;height:100%;background:transparent;border:0;box-shadow:none;border-radius:0;overflow:visible;pointer-events:none;color:#111;font:13px/1.4 system-ui,sans-serif}#drift-gmenu [data-rail],#drift-gmenu [data-fly]{pointer-events:auto}#drift-gmenu [data-rail]{width:72px;flex:none;height:100%;display:flex;flex-direction:column;gap:14px;align-items:center;padding:16px 0 14px;background:rgba(12,14,20,.72);border-left:1px solid rgba(255,255,255,.16);backdrop-filter:blur(28px) saturate(1.6);-webkit-backdrop-filter:blur(28px) saturate(1.6)}#drift-gmenu [data-tab],#drift-gmenu [data-exit]{width:48px;height:48px;border:0;border-radius:16px;background:rgba(255,255,255,.1);color:#f5f7fb;display:grid;place-items:center;cursor:pointer;padding:0;font-weight:500}#drift-gmenu [data-tab].on{background:#3b82f6;color:#fff;box-shadow:0 8px 18px rgba(37,99,235,.35)}#drift-gmenu [data-exit]{margin-top:auto;background:rgba(255,255,255,.08)}#drift-gmenu [data-fly]{width:min(380px,calc(100vw - 72px));height:100%;display:flex;flex-direction:column;min-height:0;background:rgba(255,255,255,.46);border-left:1px solid rgba(255,255,255,.45);box-shadow:-18px 0 50px rgba(0,0,0,.18);backdrop-filter:blur(28px) saturate(1.7);-webkit-backdrop-filter:blur(28px) saturate(1.7)}#drift-gmenu [data-fly][hidden]{display:none!important}#drift-gmenu [data-view]{flex:1;min-height:0;overflow:auto;padding:16px 16px 22px}#drift-gmenu [data-view="ai"]{display:flex;flex-direction:column;overflow:hidden;gap:8px}#drift-gmenu [data-view][hidden]{display:none!important}#drift-gmenu input:not(.drift-sw),#drift-gmenu select,#drift-gmenu textarea{width:100%;box-sizing:border-box;margin-top:4px;padding:8px 10px;border-radius:12px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.72);color:#111}#drift-gmenu .drift-line{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:8px 0;padding:10px 12px;border-radius:16px;background:rgba(255,255,255,.45);border:1px solid rgba(255,255,255,.5)}#drift-gmenu .drift-line small{display:block;font-weight:500;opacity:.62;font-size:11px;margin-top:2px}#drift-gmenu input.drift-sw{appearance:none;-webkit-appearance:none;width:51px!important;height:31px!important;margin:0;padding:0;border:0;border-radius:999px;background:#e5e5ea;position:relative;flex:none;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}#drift-gmenu input.drift-sw:after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.28);transition:left .16s}#drift-gmenu input.drift-sw:checked{background:#34c759}#drift-gmenu input.drift-sw:checked:after{left:22px}#drift-gmenu [data-log]{flex:1;min-height:0;max-height:none;overflow:auto;display:flex;flex-direction:column;gap:8px}#drift-gmenu [data-gem]{flex:1;min-height:0;border-radius:16px;overflow:hidden;background:#fff}#drift-gmenu [data-gem][hidden]{display:none!important}#drift-gmenu .u{align-self:flex-end;max-width:86%;background:#1a73e8;color:#fff;border-radius:16px 16px 6px 16px;padding:8px 10px}#drift-gmenu .a{align-self:flex-start;max-width:92%;background:rgba(255,255,255,.86);color:#111;border-radius:16px 16px 16px 6px;padding:8px 10px}#drift-gmenu .drift-compose{flex:none;margin-top:0;background:rgba(255,255,255,.82);border:1px solid rgba(0,0,0,.06);border-radius:26px;padding:10px 12px 8px}#drift-gmenu .drift-compose textarea{border:0;background:transparent;min-height:44px;padding:4px 2px;resize:none}#drift-gmenu .drift-row{display:flex;align-items:center;gap:8px;margin-top:4px}#drift-gmenu .drift-pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;border:1px solid rgba(0,0,0,.12);background:#fff;color:#111;font-weight:650;padding:6px 10px}#drift-gmenu .drift-pill.on,#drift-gmenu [data-mode].on{background:#111;color:#fff}#drift-gmenu .drift-ico{width:32px;height:32px;border-radius:50%;background:#fff;border:1px solid rgba(0,0,0,.1);display:grid;place-items:center;padding:0}#drift-gmenu [data-modes]{display:flex;gap:6px;flex:none}#drift-gmenu [data-mode]{border-radius:999px;background:rgba(255,255,255,.72);border:1px solid rgba(0,0,0,.1);padding:6px 10px}#drift-gmenu h3{margin:14px 0 6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.55}#drift-gmenu table{border-collapse:collapse;width:100%}#drift-gmenu button.drift-sw{width:52px;height:32px;border-radius:999px;background:#e5e5ea;border:0;padding:0;position:relative;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}#drift-gmenu button.drift-sw i{position:absolute;top:2px;left:2px;width:28px;height:28px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.28);display:block;transition:left .16s}#drift-gmenu button.drift-sw.on{background:#34c759}#drift-gmenu button.drift-sw.on i{left:22px}#drift-gmenu .drift-compose{margin-top:auto}#drift-gmenu{inset:0;width:auto;height:auto}#drift-gmenu [data-rail]{position:fixed;right:0;top:0;bottom:0;z-index:3}#drift-gmenu [data-fly]{position:fixed;left:16px;top:16px;bottom:16px;width:min(840px,calc(100vw - 108px));height:auto;border-radius:28px;overflow:hidden;border:1px solid rgba(255,255,255,.55);box-shadow:0 24px 70px rgba(0,0,0,.28);background:rgba(255,255,255,.46)}#drift-gmenu .drift-glasspick{display:flex;align-items:center;gap:8px;margin:0 0 8px;padding:6px;border-radius:999px;background:rgba(255,255,255,.28);border:1px solid rgba(255,255,255,.62);backdrop-filter:blur(18px) saturate(1.6);-webkit-backdrop-filter:blur(18px) saturate(1.6)}#drift-gmenu .drift-glasspick select{width:auto;flex:1;margin:0;border-radius:999px;border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.5);padding:8px 14px;min-height:36px}#drift-gmenu .drift-glasspick [data-modes]{display:flex;gap:4px;flex:none}#drift-gmenu .drift-glasspick [data-mode]{border-radius:999px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.62);padding:8px 12px}#drift-gmenu .drift-ico{width:42px;height:42px;color:#111;background:#fff;border:1px solid rgba(0,0,0,.14);flex:none}#drift-gmenu .drift-ico svg{display:block}#drift-gmenu [data-log]{font-size:16px;padding:4px}#drift-gmenu [data-view=home],[data-view=settings]{padding:22px}';
         document.documentElement.appendChild(css);
       }
       var bar = document.createElement('div');
       bar.id = 'drift-gmenu';
-      bar.innerHTML = '<div data-fly hidden><div data-view="home" data-settings><b>Home</b><h3>Protector</h3><label class="drift-line"><span><b>Protector</b><small>Tócalo aquí. No hace falta mover la barra.</small></span><button type="button" class="drift-sw" role="switch" data-k="wos:protector" aria-checked="false"><i></i></button></label><div>When a class connects<select data-k="wos:prot-class"><option value="alert">Only alert</option><option value="classroom">Alert and open Classroom</option></select></div><h3>Atajos</h3><div data-kb-note style="opacity:.7;font-size:11px">Only 3 controls</div><label style="display:block;margin-top:8px">Hide non-edu apps<input data-kb="wos:kb-hide" readonly></label><label style="display:block;margin-top:8px">Classroom<input data-kb="wos:kb-class" readonly></label><label style="display:block;margin-top:8px">Discovery<input data-kb="wos:kb-disc" readonly></label><label style="display:block;margin-top:8px">ALEKS<input data-kb="wos:kb-aleks" readonly></label><label style="display:block;margin-top:8px">Google Docs<input data-kb="wos:kb-docs" readonly></label><h3>Asistente</h3><label class="drift-line"><span><b>AI assistant</b><small>El orbe en el escritorio.</small></span><button type="button" class="drift-sw" role="switch" data-orb aria-checked="false"><i></i></button></label><h3>Historial</h3><div><b>Clean search history</b><select data-clean-site><option value="docs">Google Docs</option><option value="discovery">Discovery Education</option><option value="classroom">Classroom</option><option value="canva">Canva</option><option value="other">Wikipedia</option></select><label style="display:block;margin-top:6px">Tabs (1 to 20)<input data-clean-n type="number" min="1" max="20" value="1"></label><div style="display:flex;gap:8px;margin-top:8px"><button type="button" data-clean-open style="flex:1">Open</button><button type="button" data-clean-random style="flex:1;background:transparent;border:1px solid rgba(0,0,0,.2)">Random</button></div></div></div><div data-view="settings" hidden><b>Settings</b></div><div data-view="ai" data-chat hidden><div data-log></div><div data-gem hidden></div><div class="drift-compose"><div data-model style="opacity:.6;font-size:11px;flex:none"></div><select data-pick aria-label="Modelo"><option value="">Auto</option></select><div data-modes><button type="button" data-mode="fast">Fast</button><button type="button" data-mode="think">Think</button><button type="button" data-mode="expert">Expert</button></div><textarea data-ai placeholder="Escribe o mantén presionado para hablar"></textarea><div class="drift-row"><button type="button" class="drift-pill" data-act="think"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="12" cy="12" r="1.7" fill="currentColor"/><ellipse cx="12" cy="12" rx="8" ry="3.1" fill="none" stroke="currentColor" stroke-width="1.5"/><ellipse cx="12" cy="12" rx="8" ry="3.1" transform="rotate(60 12 12)" fill="none" stroke="currentColor" stroke-width="1.5"/><ellipse cx="12" cy="12" rx="8" ry="3.1" transform="rotate(120 12 12)" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>Pensar</button><button type="button" class="drift-pill" data-act="search"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.6"/><ellipse cx="12" cy="12" rx="3.3" ry="8" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M4 12h16M6.3 7.6h11.4M6.3 16.4h11.4" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Buscar</button><span style="flex:1"></span><button type="button" class="drift-ico" data-plus aria-label="Adjuntar"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button><button type="button" class="drift-ico" data-mic aria-label="Hablar"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button></div></div><input data-file type="file" hidden><button type="button" data-ask hidden>Send</button></div></div><nav data-rail><button type="button" data-tab="home" aria-label="Home"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5.2v-6.2H10.2V21H5a1 1 0 0 1-1-1z"/></svg></button><button type="button" data-tab="settings" aria-label="Settings"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M10.2 2.8h3.6l.4 2.1a7.2 7.2 0 0 1 1.7.7l1.9-1.1 2.5 2.5-1.1 1.9c.3.5.5 1.1.7 1.7l2.1.4v3.6l-2.1.4a7.2 7.2 0 0 1-.7 1.7l1.1 1.9-2.5 2.5-1.9-1.1a7.2 7.2 0 0 1-1.7.7l-.4 2.1h-3.6l-.4-2.1a7.2 7.2 0 0 1-1.7-.7l-1.9 1.1-2.5-2.5 1.1-1.9a7.2 7.2 0 0 1-.7-1.7l-2.1-.4V9.6l2.1-.4c.2-.6.4-1.2.7-1.7L3.5 5.6l2.5-2.5 1.9 1.1c.5-.3 1.1-.5 1.7-.7l.6-1.7zM12 9.2A2.8 2.8 0 1 0 12 14.8 2.8 2.8 0 0 0 12 9.2z"/></svg></button><button type="button" data-tab="ai" aria-label="AI"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M12 2.2 13.8 8.2 19.8 10 13.8 11.8 12 17.8 10.2 11.8 4.2 10 10.2 8.2z"/><path fill="currentColor" d="M18.2 14.2 18.9 16.4 21.1 17.1 18.9 17.8 18.2 20 17.5 17.8 15.3 17.1 17.5 16.4z"/></svg></button><button type="button" data-exit aria-label="Salir"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10 12h10M16 8l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button></nav>';
+      bar.innerHTML = '<div data-fly hidden><div data-view="home" data-settings><b>Home</b><h3>Protector</h3><label class="drift-line"><span><b>Protector</b><small>Tócalo aquí. No hace falta mover la barra.</small></span><button type="button" class="drift-sw" role="switch" data-k="wos:protector" aria-checked="false"><i></i></button></label><div>When a class connects<select data-k="wos:prot-class"><option value="alert">Only alert</option><option value="classroom">Alert and open Classroom</option></select></div><h3>Atajos</h3><div data-kb-note style="opacity:.7;font-size:11px">Only 3 controls</div><label style="display:block;margin-top:8px">Hide non-edu apps<input data-kb="wos:kb-hide" readonly></label><label style="display:block;margin-top:8px">Classroom<input data-kb="wos:kb-class" readonly></label><label style="display:block;margin-top:8px">Discovery<input data-kb="wos:kb-disc" readonly></label><label style="display:block;margin-top:8px">ALEKS<input data-kb="wos:kb-aleks" readonly></label><label style="display:block;margin-top:8px">Google Docs<input data-kb="wos:kb-docs" readonly></label><h3>Asistente</h3><label class="drift-line"><span><b>AI assistant</b><small>El orbe en el escritorio.</small></span><button type="button" class="drift-sw" role="switch" data-orb aria-checked="false"><i></i></button></label><h3>Historial</h3><div><b>Clean search history</b><select data-clean-site><option value="docs">Google Docs</option><option value="discovery">Discovery Education</option><option value="classroom">Classroom</option><option value="canva">Canva</option><option value="other">Wikipedia</option></select><label style="display:block;margin-top:6px">Tabs (1 to 20)<input data-clean-n type="number" min="1" max="20" value="1"></label><div style="display:flex;gap:8px;margin-top:8px"><button type="button" data-clean-open style="flex:1">Open</button><button type="button" data-clean-random style="flex:1;background:transparent;border:1px solid rgba(0,0,0,.2)">Random</button></div></div></div><div data-view="settings" hidden><b>Settings</b><label class="drift-line"><span><b>Low detail mode</b><small>Quita blur y animaciones.</small></span><button type="button" class="drift-sw" role="switch" data-k="wos:low-detail" aria-checked="false"><i></i></button></label><div style="margin:12px 0"><b>App size</b><label style="display:flex;gap:8px;margin:6px 0"><input type="radio" name="g-app-size" value="xl"> Extra large</label><label style="display:flex;gap:8px;margin:6px 0"><input type="radio" name="g-app-size" value="lg"> Large</label><label style="display:flex;gap:8px;margin:6px 0"><input type="radio" name="g-app-size" value="sm"> Small</label><label style="display:flex;gap:8px;margin:6px 0"><input type="radio" name="g-app-size" value="xs"> Extra small</label></div><label class="drift-line"><span><b>Orb size</b><small>Tamaño del logo que abre el panel.</small></span><input data-orb-size type="range" min="44" max="110" value="68" style="width:140px;flex:none"></label><label class="drift-line"><span><b>Undetected</b><small>El logo del panel se ve menos y el script no se queda pegado en la página.</small></span><button type="button" class="drift-sw" role="switch" data-k="wos:undetected" aria-checked="false"><i></i></button></label></div><div data-view="ai" data-chat hidden><div data-log></div><div data-gem hidden></div><div class="drift-compose"><div data-model style="opacity:.6;font-size:11px;flex:none"></div><div class="drift-glasspick"><select data-pick aria-label="Modelo"><option value="">Auto</option></select><div data-modes><button type="button" data-mode="fast">Fast</button><button type="button" data-mode="think">Think</button><button type="button" data-mode="expert">Expert</button></div></div><textarea data-ai placeholder="Escribe o mantén presionado para hablar"></textarea><div class="drift-row"><button type="button" class="drift-pill" data-act="think"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="12" cy="12" r="1.7" fill="currentColor"/><ellipse cx="12" cy="12" rx="8" ry="3.1" fill="none" stroke="currentColor" stroke-width="1.5"/><ellipse cx="12" cy="12" rx="8" ry="3.1" transform="rotate(60 12 12)" fill="none" stroke="currentColor" stroke-width="1.5"/><ellipse cx="12" cy="12" rx="8" ry="3.1" transform="rotate(120 12 12)" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>Pensar</button><button type="button" class="drift-pill" data-act="search"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.6"/><ellipse cx="12" cy="12" rx="3.3" ry="8" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M4 12h16M6.3 7.6h11.4M6.3 16.4h11.4" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Buscar</button><span style="flex:1"></span><button type="button" class="drift-ico" data-plus style="color:#111" aria-label="Adjuntar"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button><button type="button" class="drift-ico" data-mic style="color:#111" aria-label="Hablar"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button></div></div><input data-file type="file" hidden><button type="button" data-ask hidden>Send</button></div></div><nav data-rail><button type="button" data-tab="home" aria-label="Home"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5.2v-6.2H10.2V21H5a1 1 0 0 1-1-1z"/></svg></button><button type="button" data-tab="settings" aria-label="Settings"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M10.2 2.8h3.6l.4 2.1a7.2 7.2 0 0 1 1.7.7l1.9-1.1 2.5 2.5-1.1 1.9c.3.5.5 1.1.7 1.7l2.1.4v3.6l-2.1.4a7.2 7.2 0 0 1-.7 1.7l1.1 1.9-2.5 2.5-1.9-1.1a7.2 7.2 0 0 1-1.7.7l-.4 2.1h-3.6l-.4-2.1a7.2 7.2 0 0 1-1.7-.7l-1.9 1.1-2.5-2.5 1.1-1.9a7.2 7.2 0 0 1-.7-1.7l-2.1-.4V9.6l2.1-.4c.2-.6.4-1.2.7-1.7L3.5 5.6l2.5-2.5 1.9 1.1c.5-.3 1.1-.5 1.7-.7l.6-1.7zM12 9.2A2.8 2.8 0 1 0 12 14.8 2.8 2.8 0 0 0 12 9.2z"/></svg></button><button type="button" data-tab="ai" aria-label="AI"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M12 2.2 13.8 8.2 19.8 10 13.8 11.8 12 17.8 10.2 11.8 4.2 10 10.2 8.2z"/><path fill="currentColor" d="M18.2 14.2 18.9 16.4 21.1 17.1 18.9 17.8 18.2 20 17.5 17.8 15.3 17.1 17.5 16.4z"/></svg></button><button type="button" data-exit aria-label="Salir"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10 12h10M16 8l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button></nav>';
       var mkGone = document.getElementById('drift-gmark');
       if (mkGone) mkGone.remove();
       document.documentElement.appendChild(bar);
       var exitBtn = bar.querySelector('[data-exit]');
       if (exitBtn) exitBtn.onclick = function () {
-        var fly = bar.querySelector('[data-fly]');
-        if (fly && !fly.hidden) {
-          fly.hidden = true;
-          bar.querySelectorAll('[data-tab]').forEach(function (n) { n.classList.remove('on'); });
-          return;
-        }
+        var sz = 68, und = false;
+        try {
+          sz = parseInt(localStorage.getItem('wos:gorb-size') || '68', 10) || 68;
+          und = localStorage.getItem('wos:undetected') === '1';
+        } catch (e) {}
         bar.remove();
         window.__driftGBar = null;
-        var back = document.getElementById('drift-gback');
-        if (!back) {
-          back = document.createElement('button');
-          back.id = 'drift-gback';
-          back.type = 'button';
-          back.setAttribute('aria-label', 'Drift');
-          back.style.cssText = 'position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:2147483646;width:18px;height:84px;border:0;border-radius:12px 0 0 12px;background:#3b82f6;color:#fff;cursor:pointer';
-          document.documentElement.appendChild(back);
+        var oldTab = document.getElementById('drift-gback');
+        if (oldTab) oldTab.remove();
+        var prev = document.getElementById('drift-gorb');
+        if (prev) prev.remove();
+        var orb = document.createElement('button');
+        orb.id = 'drift-gorb';
+        orb.type = 'button';
+        orb.setAttribute('aria-label', und ? 'Panel' : 'Drift');
+        var img = '/drift-mark.png';
+        try { if (/google\.|youtube\.|bing\.|wayground|quizizz|classroom/i.test(location.hostname || '')) img = 'https://drift.hostless.app/drift-mark.png'; } catch (e2) {}
+        orb.innerHTML = '<img alt="" draggable="false" src="' + img + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;transform:scale(1.18);pointer-events:none">';
+        orb.style.cssText = 'position:fixed;z-index:2147483646;right:18px;bottom:24px;width:' + sz + 'px;height:' + sz + 'px;padding:0;border-radius:50%;overflow:hidden;border:' + (und ? '0' : '2px solid rgba(255,255,255,.45)') + ';background:#071226;box-shadow:' + (und ? 'none' : '0 8px 24px rgba(0,0,0,.4)') + ';cursor:grab;touch-action:none;opacity:' + (und ? '.16' : '1');
+        try {
+          var saved = JSON.parse(localStorage.getItem('wos:gorb-pos') || 'null');
+          if (saved && typeof saved.x === 'number') { orb.style.right = 'auto'; orb.style.bottom = 'auto'; orb.style.left = saved.x + 'px'; orb.style.top = saved.y + 'px'; }
+        } catch (e3) {}
+        var drag = null, skip = false;
+        orb.addEventListener('pointerdown', function (e) {
+          if (e.button > 0) return;
+          drag = { x: e.clientX, y: e.clientY, l: orb.offsetLeft, t: orb.offsetTop, moved: false, id: e.pointerId };
+          try { orb.setPointerCapture(e.pointerId); } catch (err) {}
+        });
+        orb.addEventListener('pointermove', function (e) {
+          if (!drag || e.pointerId !== drag.id) return;
+          var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+          if (Math.abs(dx) + Math.abs(dy) > 5) drag.moved = true;
+          if (!drag.moved) return;
+          orb.style.right = 'auto'; orb.style.bottom = 'auto';
+          orb.style.left = Math.max(4, Math.min(window.innerWidth - sz - 4, drag.l + dx)) + 'px';
+          orb.style.top = Math.max(4, Math.min(window.innerHeight - sz - 4, drag.t + dy)) + 'px';
+        });
+        function end(e) {
+          if (!drag || (e && e.pointerId !== drag.id)) return;
+          var moved = drag.moved; drag = null;
+          if (moved) { skip = true; try { localStorage.setItem('wos:gorb-pos', JSON.stringify({ x: orb.offsetLeft, y: orb.offsetTop })); } catch (err) {} }
         }
-        back.onclick = function () { back.remove(); googleMenuBody(); };
+        orb.addEventListener('pointerup', end);
+        orb.addEventListener('pointercancel', end);
+        orb.addEventListener('click', function (e) {
+          if (skip) { skip = false; e.preventDefault(); return; }
+          orb.remove();
+          googleMenuBody();
+        });
+        document.documentElement.appendChild(orb);
       };
       window.__driftGBar = bar;
       var body = bar.querySelector('[data-body]');
@@ -2628,12 +2645,39 @@ function driftSite(url) {
             el.classList.toggle('on', next);
             el.setAttribute('aria-checked', next ? 'true' : 'false');
             try { localStorage.setItem(k, next ? '1' : '0'); } catch (err) {}
+            if (k === 'wos:low-detail') {
+              document.documentElement.classList.toggle('drift-low', next);
+              try { if (typeof installLowDetail === 'function') installLowDetail(); } catch (e2) {}
+            }
+            if (k === 'wos:undetected') {
+              var g = document.getElementById('drift-gorb');
+              if (g) { g.style.opacity = next ? '.16' : '1'; g.style.boxShadow = next ? 'none' : '0 8px 24px rgba(0,0,0,.4)'; }
+            }
           };
           return;
         }
         try { if (el.type === 'checkbox') el.checked = localStorage.getItem(k) === '1'; else el.value = localStorage.getItem(k) || ''; } catch (e) {}
         el.onchange = function () { try { localStorage.setItem(k, el.type === 'checkbox' ? (el.checked ? '1' : '0') : el.value); } catch (e) {} };
       });
+      bar.querySelectorAll('[name="g-app-size"]').forEach(function (r) {
+        try { r.checked = r.value === (localStorage.getItem('wos:size-apps') || 'lg'); } catch (e) {}
+        r.onchange = function () {
+          if (!r.checked) return;
+          try { localStorage.setItem('wos:size-apps', r.value); } catch (e) {}
+          var map = { xl: '3', lg: '2', sm: '1.7', xs: '1.5' };
+          if (map[r.value]) document.documentElement.style.setProperty('--drift-app', map[r.value]);
+          try { if (typeof applySize === 'function') applySize(); } catch (e2) {}
+        };
+      });
+      var orbRange = bar.querySelector('[data-orb-size]');
+      if (orbRange) {
+        try { orbRange.value = localStorage.getItem('wos:gorb-size') || '68'; } catch (e) {}
+        orbRange.oninput = function () {
+          try { localStorage.setItem('wos:gorb-size', orbRange.value); } catch (e) {}
+          var g = document.getElementById('drift-gorb');
+          if (g) { g.style.width = orbRange.value + 'px'; g.style.height = orbRange.value + 'px'; }
+        };
+      }
       function keyName(e) {
         if (e.key === ' ') return 'Space';
         if (e.key === 'Control') return 'Ctrl';
@@ -2750,7 +2794,7 @@ function driftSite(url) {
         var j = await r.json();
         var text = pull(j);
         if (text) return text;
-        throw new Error((j && j.error && (j.error.message || j.error)) || 'Try again.');
+        throw new Error((j && j.error && (j.error.message || j.error)) || 'Sin respuesta.');
       }
       async function driftFast(messages) {
         return driftDiscuss(messages);
@@ -2806,39 +2850,79 @@ function driftSite(url) {
       async function askGemini(messages) {
         var last = messages[messages.length - 1];
         var q = last && typeof last.content === 'string' ? last.content : '';
-        q = String(q || '').slice(0, 4000);
+        q = String(q || '').replace(/\s+/g, ' ').trim().slice(0, 4000);
         if (!q) return '';
         var frame = ensureGemFrame();
-        var doc = null;
-        try { doc = frame.contentDocument; } catch (e) { doc = null; }
-        if (!doc) return '';
-        var input = null;
-        var n = 0;
-        while (n < 24 && !input) {
-          try { doc = frame.contentDocument; } catch (e2) { doc = null; }
-          if (doc) input = doc.querySelector('rich-textarea [contenteditable="true"], div[contenteditable="true"], textarea');
-          if (!input) { await new Promise(function (r) { setTimeout(r, 250); }); n++; }
+        var shown = frame.parentNode && frame.parentNode.getAttribute && frame.parentNode.getAttribute('data-gem') != null && !frame.parentNode.hidden;
+        if (!shown) frame.style.cssText = 'position:fixed;left:0;top:0;width:520px;height:760px;border:0;opacity:.02;z-index:1';
+        function allNodes(root, sel) {
+          var out = [], stack = [root], guard = 0;
+          while (stack.length && guard < 5000) {
+            guard++;
+            var node = stack.pop();
+            if (!node || !node.querySelectorAll) continue;
+            try {
+              var found = node.querySelectorAll(sel);
+              for (var i = 0; i < found.length; i++) out.push(found[i]);
+              var every = node.querySelectorAll('*');
+              for (var j = 0; j < every.length; j++) if (every[j].shadowRoot) stack.push(every[j].shadowRoot);
+            } catch (e) {}
+          }
+          return out;
         }
-        if (!input) return '';
+        var input = null, doc = null, n = 0;
+        while (n < 28 && !input) {
+          try { doc = frame.contentDocument; } catch (e2) { doc = null; }
+          if (doc) {
+            var boxes = allNodes(doc, 'div[contenteditable="true"], textarea, [role="textbox"]');
+            for (var bi = boxes.length - 1; bi >= 0; bi--) {
+              var box = boxes[bi];
+              if (box && box.offsetParent !== null) { input = box; break; }
+            }
+            if (!input && boxes.length) input = boxes[boxes.length - 1];
+          }
+          if (!input) { await new Promise(function (r) { setTimeout(r, 300); }); n++; }
+        }
+        if (!input || !doc) return '';
         try { input.focus(); } catch (e3) {}
-        if (input.tagName === 'TEXTAREA') input.value = q;
-        else input.textContent = q;
-        try { input.dispatchEvent(new InputEvent('input', { bubbles: true, data: q })); } catch (e4) {}
-        var send = doc.querySelector('button[aria-label*="Send" i], button[aria-label*="Enviar" i]');
-        if (send) send.click();
-        else input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+        if (input.tagName === 'TEXTAREA' || input.tagName === 'INPUT') input.value = q;
+        else {
+          try { input.textContent = ''; } catch (e4) {}
+          try {
+            var sel = doc.getSelection && doc.getSelection();
+            if (sel && doc.createRange) {
+              var range = doc.createRange();
+              range.selectNodeContents(input);
+              sel.removeAllRanges();
+              sel.addRange(range);
+            }
+            if (doc.execCommand) doc.execCommand('insertText', false, q);
+          } catch (e5) {}
+          if (!String(input.textContent || '').trim()) input.textContent = q;
+        }
+        try { input.dispatchEvent(new InputEvent('input', { bubbles: true, data: q, inputType: 'insertText' })); } catch (e6) {}
+        try { input.dispatchEvent(new Event('input', { bubbles: true })); } catch (e7) {}
+        var send = null;
+        var buttons = allNodes(doc, 'button, [role="button"]');
+        for (var b = buttons.length - 1; b >= 0; b--) {
+          var label = String(buttons[b].getAttribute('aria-label') || buttons[b].getAttribute('data-test-id') || '');
+          if (/send|enviar/i.test(label)) { send = buttons[b]; break; }
+        }
+        if (send) { try { send.click(); } catch (e8) {} }
+        else {
+          try { input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true })); } catch (e9) {}
+        }
         var prev = '', stable = 0, i = 0;
-        while (i < 36) {
-          await new Promise(function (r) { setTimeout(r, 400); });
-          var nodes = [];
-          try { nodes = doc.querySelectorAll('message-content, model-response'); } catch (e5) { nodes = []; }
+        while (i < 40) {
+          await new Promise(function (r) { setTimeout(r, 450); });
+          var nodes = allNodes(doc, 'message-content, model-response, .model-response-text, .markdown');
           var text = nodes.length ? String(nodes[nodes.length - 1].innerText || '').trim() : '';
-          if (text && text === prev) stable++; else stable = 0;
+          if (text && text !== q && text === prev) stable++; else stable = 0;
           prev = text;
-          if (stable >= 2 && text.length > 8) return text;
+          if (stable >= 2 && text.length > 8 && text !== q) return text;
           i++;
         }
-        return prev || '';
+        return (prev && prev !== q && prev.length > 8) ? prev : '';
       }
       function bestFor(key) {
         var best = driftCatalog()[0], score = -1;
@@ -2863,12 +2947,17 @@ function driftSite(url) {
         for (var i = 0; i < team.length; i++) {
           var txt = '';
           if (team[i].id === 'gemini-web') txt = await askGemini(messages);
+          if (!txt && team[i].id === 'gemini-web') {
+            var backup = { id: 'mistralai/mistral-medium-3.5', name: 'Mistral Medium 3.5', fast: 3 };
+            try { txt = await driftCall(backup, messages, 1200); } catch (e) { txt = ''; }
+            if (txt) team[i] = backup;
+          }
           if (!txt && team[i].id !== 'gemini-web') {
             try { txt = await driftCall(team[i], messages, team[i].fast >= 4 ? 800 : 1200); } catch (e) { txt = ''; }
           }
           if (txt) parts.push({ name: team[i].id === 'gemini-web' ? 'Gemini' : team[i].name, text: txt });
         }
-        if (!parts.length) throw new Error('Try again.');
+        if (!parts.length) throw new Error('Sin respuesta.');
         if (parts.length === 1) {
           bar._model = { id: team[0].id, name: parts[0].name };
           var one = bar.querySelector('[data-model]');
@@ -2897,7 +2986,7 @@ function driftSite(url) {
         var r = await fetch('https://holy-firefly-982c.fert0480.workers.dev/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: m.id, max_tokens: 700, messages: [{ role: 'system', content: 'You are Qwen3.8 Omni. If asked which model you are, answer exactly Qwen3.8 Omni.' }, { role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: data } }, { type: 'text', text: ask }] }] }) });
         var j = await r.json();
         var text = pull(j);
-        if (!text) throw new Error('Try again.');
+        if (!text) throw new Error('Sin respuesta.');
         return text;
       }
       function placeAns() {
@@ -3012,7 +3101,7 @@ function driftSite(url) {
         var text = '';
         try { text = await driftVision(data, q); }
         catch (e1) { try { text = await driftVision(data, q); } catch (e2) { text = String((e2 && e2.message) || (e1 && e1.message) || ''); } }
-        sayNear(text || 'Try again.');
+        sayNear(text || 'Sin respuesta.');
       }
       function showBall(on) {
         try { localStorage.setItem('wos:ai-orb', on ? '1' : '0'); } catch (e) {}
@@ -3114,7 +3203,7 @@ function driftSite(url) {
         if (img) reader.readAsDataURL(file); else reader.readAsText(file);
       };
       function stamp(el, text) {
-        paintMd(el, text || 'Try again.');
+        paintMd(el, text || 'Sin respuesta.');
         var name = bar._model && bar._model.name;
         if (name) {
           var tag = document.createElement('div');
@@ -3142,10 +3231,10 @@ function driftSite(url) {
         })();
         Promise.resolve(job).then(function (text) {
           if (!img) turns.push({ role: 'assistant', content: text });
-          stamp(hold, text || 'Try again.');
+          stamp(hold, text || 'Sin respuesta.');
         }).catch(function () {
           var again = img ? driftVision(img, q || 'What is in this image?') : driftFast(turns.slice(-8));
-          Promise.resolve(again).then(function (text) { stamp(hold, text || 'Try again.'); }).catch(function (err) { hold.textContent = String((err && err.message) || 'Try again.'); });
+          Promise.resolve(again).then(function (text) { stamp(hold, text || 'Sin respuesta.'); }).catch(function (err) { hold.textContent = String((err && err.message) || 'Sin respuesta.'); });
         });
       };
       function showTab(id) {
@@ -3529,10 +3618,10 @@ function driftSite(url) {
       switchHTML('drift-lens-sw', lensOn) + '</div>' +
       '<div style="margin-top:16px;border-top:1px solid rgba(255,255,255,.08);padding-top:14px"><b>Bookmarklets</b>' +
       '<div style="opacity:.75;font-size:12px;margin:4px 0 8px">Arrástralos a la barra de marcadores del navegador real. Pulsa el nombre para copiarlo.</div>' +
-      '<div class="bm-card"><div><b>Full bypass (drift)</b><div style="opacity:.75;font-size:12px">La búsqueda se abre en DuckDuckGo en español (MX), en esta pestaña. No abre el escritorio.</div></div><a id="drift-bm-class" href="#" style="flex:none;padding:8px 12px;border-radius:10px;background:#c5c8ce;color:#111;text-decoration:none;font-weight:700">Copiar</a></div>' +
+      '<div class="bm-float"><div class="bm-card"><div><b>Full bypass (drift)</b><div style="opacity:.75;font-size:12px">La búsqueda se abre en DuckDuckGo en español (MX), en esta pestaña. No abre el escritorio.</div></div><a id="drift-bm-class" href="#" style="flex:none;padding:8px 14px;border-radius:999px;background:rgba(255,255,255,.82);color:#111;text-decoration:none;font-weight:700">Copiar</a></div>' +
       '<div class="bm-card"><div><b>Full bypass</b><div style="opacity:.75;font-size:12px">El mismo marcador. Se queda en esta pestaña.</div></div><a id="drift-bm-guest" href="#" style="flex:none;padding:8px 12px;border-radius:10px;background:#c5c8ce;color:#111;text-decoration:none;font-weight:700">Copiar</a></div>' +
       '<div class="bm-card"><div><b>Mod de Google</b><div style="opacity:.75;font-size:12px">Función JavaScript. Cópiala y pégala como marcador. Abre el panel Liquid Glass: Home, Settings y AI.</div></div><a id="drift-bm-menu" href="#" style="flex:none;padding:8px 12px;border-radius:10px;background:#c5c8ce;color:#111;text-decoration:none;font-weight:700">Copiar</a></div>' +
-      '<div class="bm-card"><div><b>Wayground</b><div style="opacity:.75;font-size:12px">Función JavaScript. Pide el código y abre wayground.com en una pestaña real, fuera de Drift.</div></div><a id="drift-bm-way" href="#" style="flex:none;padding:8px 12px;border-radius:10px;background:#c5c8ce;color:#111;text-decoration:none;font-weight:700">Copiar</a></div></div>' +
+      '<div class="bm-card"><div><b>Wayground</b><div style="opacity:.75;font-size:12px">Función JavaScript. Pide el código y abre wayground.com en una pestaña real, fuera de Drift.</div></div><a id="drift-bm-way" href="#" style="flex:none;padding:8px 14px;border-radius:999px;background:rgba(255,255,255,.82);color:#111;text-decoration:none;font-weight:700">Copiar</a></div></div></div>' +
       '<button type="button" id="drift-docs-btn" style="margin-top:12px;width:100%;padding:10px;border:1px solid rgba(255,255,255,.14);border-radius:10px;background:transparent;color:#fff;font-weight:600;cursor:pointer">Drift docs</button></section></div></div>';
     panel.querySelector('[data-x]').onclick = function (e) { e.stopPropagation(); panel.remove(); };
     function showSec(id) {
@@ -5374,8 +5463,15 @@ function driftSite(url) {
       #task .tb, #task #clock, .icons .ico { color:#fff; }
       body.drift-round-tb #task { width: max-content; max-width: calc(100% - 16px); left: 50%; right: auto; transform: translateX(-50%); bottom: 8px; border-radius: 22px !important; padding: 0 14px; overflow: hidden; backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); }
       #drift-settings-win button[style*="1a73e8"], #drift-settings-win a[style*="1a73e8"] { background: #c5c8ce !important; color: #1c1e22 !important; }
-      #task { padding-right: 248px !important; box-sizing: border-box !important; }
-      #pins { margin-left: auto; min-width: 0; max-width: calc(100% - 64px); display: flex; overflow-x: auto; scrollbar-width: none; }
+      #task { padding-right: 10px !important; box-sizing: border-box !important; flex-wrap: nowrap !important; overflow: hidden !important; align-items: center !important; z-index: 100000 !important; }
+      #pins { margin-left: 8px !important; min-width: 0; max-width: none !important; flex: 1 1 auto !important; display: flex !important; flex-wrap: nowrap !important; overflow-x: auto; scrollbar-width: none; align-items: center; }
+      #pins button { flex: 0 0 auto !important; }
+      #tbs { flex: 0 1 auto !important; min-width: 0 !important; max-width: 42% !important; overflow: hidden !important; flex-wrap: nowrap !important; }
+      #task .tb { max-width: 156px !important; overflow: hidden !important; flex: 0 1 auto !important; }
+      #task .tb .mi, #task .tb .mi svg, #task .tb .mi img { width: 22px !important; height: 22px !important; flex: none !important; }
+      .win { max-height: calc(100vh - var(--tbh, 64px) - 12px); }
+      #drift-settings-win .bm-float { display: flex; flex-direction: column; gap: 14px; padding: 6px 2px 12px; }
+      #drift-settings-win .bm-card { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; margin: 0; padding: 16px; border-radius: 22px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.16); box-shadow: 0 16px 36px rgba(0,0,0,.28); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
       #pins::-webkit-scrollbar { display: none; }
       #drift-join { position: absolute; right: 128px; top: 50%; transform: translateY(-50%); z-index: 6; border: 0; border-radius: 999px; background: #e8e8e8; color: #111; font: 650 12px system-ui; padding: 6px 10px; cursor: pointer; white-space: nowrap; }
       body.drift-login #task,
@@ -5397,10 +5493,10 @@ function driftSite(url) {
       #drift-settings-win nav button { min-height: 40px; font-weight: 650; }
       #drift-settings-win #drift-set-main section > div { padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.06); }
       #drift-settings-win input, #drift-settings-win select, #drift-settings-win textarea { max-width: 100%; box-sizing: border-box; }
-      #drift-settings-win .bm-card { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 12px; margin: 8px 0; border: 1px solid rgba(255,255,255,.1); border-radius: 14px; background: rgba(255,255,255,.04); }
-      body.drift-hub #drift-hub-side { background: rgba(255,255,255,.16) !important; color: #111; backdrop-filter: blur(22px) saturate(1.4); -webkit-backdrop-filter: blur(22px) saturate(1.4); border-right: 1px solid rgba(255,255,255,.28) !important; }
-      body.drift-hub #drift-hub-side .hub-sec { background: rgba(255,255,255,.28); border: 1px solid rgba(255,255,255,.35); border-radius: 14px; justify-content: space-between; color: #111; font-weight: 600; }
-      body.drift-hub #drift-hub-side .hub-sec i { order: 2; margin-left: auto; }
+      #drift-settings-win .bm-card { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 16px; margin: 0; border: 1px solid rgba(255,255,255,.16); border-radius: 22px; background: rgba(255,255,255,.07); box-shadow: 0 16px 36px rgba(0,0,0,.28); }
+      body.drift-hub #drift-hub-side { background: rgba(16,16,22,.78) !important; color: #f4f6fb; backdrop-filter: blur(22px) saturate(1.4); -webkit-backdrop-filter: blur(22px) saturate(1.4); border-left: 1px solid rgba(255,255,255,.14) !important; border-right: 0 !important; }
+      body.drift-hub #drift-hub-side .hub-sec { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); border-radius: 16px; justify-content: flex-start; color: #f4f6fb; font-weight: 650; padding: 10px 12px; gap: 12px; }
+      body.drift-hub #drift-hub-side .hub-sec i { order: 0; width: 36px; height: 36px; margin: 0; }
       body.drift-hub #drift-hub-side .hub-name { order: 1; }
       body.drift-macos-desk #task { border-radius: 24px 24px 0 0 !important; overflow: hidden; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
       .icons.jiggle .ico { animation: drift-jiggle .28s infinite alternate; }
@@ -5557,7 +5653,7 @@ function driftSite(url) {
 
   var hubStyle = document.createElement('style');
   hubStyle.id = 'drift-hub-css';
-  hubStyle.textContent = '#drift-hub-side{position:fixed;left:0;top:0;bottom:0;width:220px;background:#f4f4f6;color:#111;display:none;flex-direction:column;z-index:20;padding:12px 10px;gap:8px;overflow:hidden;border-right:1px solid rgba(0,0,0,.08)}#drift-hub-side.collapsed{width:0;padding:0;border:0;overflow:visible}#drift-hub-side.collapsed>*{display:none!important}#drift-hub-side.collapsed .hub-toggle{display:flex!important;position:fixed;left:10px;top:10px;z-index:30}#drift-hub-side .hub-search{width:100%;height:36px;border-radius:18px;border:1px solid rgba(0,0,0,.08);padding:0 12px;background:#fff;color:#111;box-sizing:border-box}#drift-hub-side .hub-sections{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:4px;scrollbar-width:none;-ms-overflow-style:none}#drift-hub-side .hub-sections::-webkit-scrollbar{display:none;width:0;height:0}#drift-hub-side .hub-sec{display:flex;align-items:center;gap:8px;background:transparent;border:none;color:#111;padding:8px;border-radius:8px;text-align:left;cursor:pointer;font:600 13px system-ui}#drift-hub-side .hub-sec i{width:22px;height:22px;display:inline-flex;flex:none}#drift-hub-side .hub-sec i img,#drift-hub-side .hub-sec i svg{width:22px;height:22px}#drift-hub-side .hub-settings,#drift-hub-side .hub-toggle,#drift-hub-side .hub-home{background:#fff;border:1px solid rgba(0,0,0,.08);color:#111;padding:8px;border-radius:8px;cursor:pointer}#drift-hub-stage{position:fixed;left:220px;top:0;right:0;bottom:0;background:#050505;z-index:15;display:none;overflow:hidden}body.drift-hub #task,body.drift-hub .icons,body.drift-hub #drift-settings-btn,body.drift-hub #drift-page-dots{display:none!important}body.drift-hub [data-desk-only]{display:none!important}#task .tb,#task #clock,.icons .ico{color:#fff}.hub-home{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:28px 18px 40px;background:#050505 url(/drift-mark.png) center 12%/160px no-repeat;color:#fff}.hub-word{font:800 76px/0.9 system-ui;letter-spacing:-2px;color:#fff;margin-top:28px}.hub-hi{opacity:.75;font:15px system-ui}.hub-web{width:min(560px,92%);height:52px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.1);color:#fff;padding:0 18px;font:16px system-ui;outline:none;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}body.drift-liquid .hub-web{background:rgba(255,255,255,.16)}.hub-tiles{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:780px;margin-top:8px}.hub-tile{width:108px;min-height:104px;border-radius:18px;border:1px solid rgba(0,0,0,.06);background:#f4f4f6;color:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;font:600 12px system-ui;padding:10px 6px}.hub-tile i{width:36px;height:36px;display:grid;place-items:center}.hub-tile i img,.hub-tile i svg{width:36px;height:36px}';
+  hubStyle.textContent = '#drift-hub-side{position:fixed;right:0;left:auto;top:0;bottom:0;width:300px;background:rgba(16,16,22,.78);color:#f4f6fb;display:none;flex-direction:column;z-index:20;padding:12px 10px;gap:8px;overflow:hidden;border-right:1px solid rgba(0,0,0,.08)}#drift-hub-side.collapsed{width:0;padding:0;border:0;overflow:visible}#drift-hub-side.collapsed>*{display:none!important}#drift-hub-side.collapsed .hub-toggle{display:flex!important;position:fixed;right:10px;left:auto;top:10px;z-index:30}#drift-hub-side .hub-search{width:100%;height:36px;border-radius:18px;border:1px solid rgba(0,0,0,.08);padding:0 12px;background:#fff;color:#111;box-sizing:border-box}#drift-hub-side .hub-sections{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:4px;scrollbar-width:none;-ms-overflow-style:none}#drift-hub-side .hub-sections::-webkit-scrollbar{display:none;width:0;height:0}#drift-hub-side .hub-sec{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#f4f6fb;padding:10px 12px;border-radius:16px;text-align:left;cursor:pointer;font:650 14px system-ui;box-shadow:0 8px 20px rgba(0,0,0,.18)}#drift-hub-side .hub-sec i{width:36px;height:36px;display:inline-flex;flex:none}#drift-hub-side .hub-sec i img,#drift-hub-side .hub-sec i svg{width:22px;height:22px}#drift-hub-side .hub-settings,#drift-hub-side .hub-toggle,#drift-hub-side .hub-home{background:#fff;border:1px solid rgba(0,0,0,.08);color:#111;padding:8px;border-radius:8px;cursor:pointer}#drift-hub-stage{position:fixed;left:0;top:0;right:300px;bottom:0;background:#050505;z-index:15;display:none;overflow:hidden}body.drift-hub #task,body.drift-hub .icons,body.drift-hub #drift-settings-btn,body.drift-hub #drift-page-dots{display:none!important}body.drift-hub [data-desk-only]{display:none!important}#task .tb,#task #clock,.icons .ico{color:#fff}.hub-home{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:28px 18px 40px;background:#050505 url(/drift-mark.png) center 12%/160px no-repeat;color:#fff}.hub-word{font:800 76px/0.9 system-ui;letter-spacing:-2px;color:#fff;margin-top:28px}.hub-hi{opacity:.75;font:15px system-ui}.hub-web{width:min(560px,92%);height:52px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.1);color:#fff;padding:0 18px;font:16px system-ui;outline:none;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}body.drift-liquid .hub-web{background:rgba(255,255,255,.16)}.hub-tiles{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:780px;margin-top:8px}.hub-tile{width:108px;min-height:104px;border-radius:18px;border:1px solid rgba(0,0,0,.06);background:#f4f4f6;color:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;font:600 12px system-ui;padding:10px 6px}.hub-tile i{width:36px;height:36px;display:grid;place-items:center}.hub-tile i img,.hub-tile i svg{width:36px;height:36px}';
   if (!document.getElementById('drift-hub-css')) document.head.appendChild(hubStyle);
 
   function installHubMode() {
@@ -5575,9 +5671,12 @@ function driftSite(url) {
     var sections = side.querySelector('.hub-sections');
     var search = side.querySelector('.hub-search');
     function appIds() {
-      var apps = window.DRIFT_APPS || Object.keys(window.XAPPS || {});
-      if (!apps || !apps.length) apps = ['browser','ai','yt','movies','minecraft','discord','github','roblox'];
-      return apps;
+      var seen = {}, out = [];
+      function add(id) { if (!id || seen[id]) return; seen[id] = 1; out.push(id); }
+      Object.keys(window.XAPPS || {}).forEach(add);
+      Object.keys(window.APPS || {}).forEach(add);
+      if (!out.length) ['browser','ai','yt','movies','cam','code','roblox','discord','gmail'].forEach(add);
+      return out;
     }
     function listApps() {
       var q = (search.value || '').toLowerCase().trim();
@@ -5648,7 +5747,8 @@ function driftSite(url) {
     };
     side.querySelector('.hub-toggle').onclick = function () {
       side.classList.toggle('collapsed');
-      stage.style.left = side.classList.contains('collapsed') ? '0' : '220px';
+      stage.style.right = side.classList.contains('collapsed') ? '0' : '300px';
+      stage.style.left = '0';
     };
     function apply() {
       var on = document.body.classList.contains('drift-hub');

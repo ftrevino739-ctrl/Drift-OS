@@ -112,12 +112,12 @@ function loadAndPatchIndex() {
 	);
 
 	const tag =
-		'<script src="/drift-extras.js?v=20261105-a" defer></script>' +
-		'<script src="/chromebook-proxy.js?v=20261105-a" defer></script>' +
-		'<script src="/wayground-ai.js?v=20261105-a" defer></script>' +
-		'<script src="/drift-fixup.js?v=20261105-a" defer></script>' +
-		'<script src="/drift-userpatch.js?v=20261105-a" defer></script>' +
-		"<script>window.__DRIFT_BUILD_WANT='20261105-a';setTimeout(function(){if(window.__DRIFT_BUILD===window.__DRIFT_BUILD_WANT)return;var d=document.getElementById('drift-old');if(d)return;d=document.createElement('div');d.id='drift-old';d.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#000;color:#eee;overflow:auto;padding:28px;font:16px/1.5 system-ui';d.innerHTML='<div style=\"max-width:680px;margin:0 auto\"><b style=\"font-size:28px\">Versión vieja de Drift</b><p>Se abrió una copia guardada. Recarga forzada. No hace falta una terminal ni apagar el equipo con un comando.</p><p><b>Chrome, Edge, ChromeOS y Linux:</b> Ctrl+Shift+R. Si sigue igual, en la configuración del sitio borra los datos de Drift y entra otra vez.</p><p><b>Firefox:</b> Ctrl+Shift+R. Si sigue, Ajustes → Privacidad → borrar cookies y datos de este sitio.</p><p><b>Safari en Mac:</b> Opción+Comando+E y luego Comando+R. En iPhone o iPad: Ajustes → Safari → borrar historial y datos del sitio, o quita el acceso directo y ábrelo de nuevo.</p><p><b>Windows:</b> cierra el navegador desde la barra de tareas y ábrelo otra vez. El último paso, en cualquier sistema, es reiniciar el dispositivo desde el menú de apagado, no desde la terminal.</p></div>';document.body.appendChild(d);},2500);</script>" +
+		'<script src="/drift-extras.js?v=20261105-b" defer></script>' +
+		'<script src="/chromebook-proxy.js?v=20261105-b" defer></script>' +
+		'<script src="/wayground-ai.js?v=20261105-b" defer></script>' +
+		'<script src="/drift-fixup.js?v=20261105-b" defer></script>' +
+		'<script src="/drift-userpatch.js?v=20261105-b" defer></script>' +
+		"<script>window.__DRIFT_BUILD_WANT='20261105-b';setTimeout(function(){if(window.__DRIFT_BUILD===window.__DRIFT_BUILD_WANT)return;var d=document.getElementById('drift-old');if(d)return;d=document.createElement('div');d.id='drift-old';d.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#000;color:#eee;overflow:auto;padding:28px;font:16px/1.5 system-ui';d.innerHTML='<div style=\"max-width:680px;margin:0 auto\"><b style=\"font-size:28px\">Versión vieja de Drift</b><p>Se abrió una copia guardada. Recarga forzada. No hace falta una terminal ni apagar el equipo con un comando.</p><p><b>Chrome, Edge, ChromeOS y Linux:</b> Ctrl+Shift+R. Si sigue igual, en la configuración del sitio borra los datos de Drift y entra otra vez.</p><p><b>Firefox:</b> Ctrl+Shift+R. Si sigue, Ajustes → Privacidad → borrar cookies y datos de este sitio.</p><p><b>Safari en Mac:</b> Opción+Comando+E y luego Comando+R. En iPhone o iPad: Ajustes → Safari → borrar historial y datos del sitio, o quita el acceso directo y ábrelo de nuevo.</p><p><b>Windows:</b> cierra el navegador desde la barra de tareas y ábrelo otra vez. El último paso, en cualquier sistema, es reiniciar el dispositivo desde el menú de apagado, no desde la terminal.</p></div>';document.body.appendChild(d);},2500);</script>" +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +
@@ -772,6 +772,9 @@ function operaHostOk(host) {
 		host === "githubusercontent.com" || host.endsWith(".githubusercontent.com") ||
 		host === "githubassets.com" || host.endsWith(".githubassets.com") ||
 		host === "arkoselabs.com" || host.endsWith(".arkoselabs.com") ||
+		host === "funcaptcha.com" || host.endsWith(".funcaptcha.com") ||
+		host === "robloxlabs.com" || host.endsWith(".robloxlabs.com") ||
+		host === "racialequityleadership.com" || host.endsWith(".racialequityleadership.com") ||
 		host === "whatsapp.com" || host.endsWith(".whatsapp.com") ||
 		host === "whatsapp.net" || host.endsWith(".whatsapp.net") ||
 		host === "wa.me" || host.endsWith(".wa.me") ||
@@ -956,7 +959,7 @@ function operaBoot(browser) {
   function googleHost(u){
     try {
       var h = new URL(u).hostname;
-      return /(^|\\.)(google\\.com|gstatic\\.com|googleapis\\.com|googleusercontent\\.com|youtube\\.com|youtu\\.be|ytimg\\.com|ggpht\\.com|googlevideo\\.com|youtube-nocookie\\.com|translate\\.goog|eaglercraft\\.com|eaglercraft\\.org|tiktok\\.com|tiktokcdn\\.com|tiktokcdn-us\\.com|tiktokv\\.com|ibyteimg\\.com|muscdn\\.com|roblox\\.com|rbxcdn\\.com|espn\\.com|espncdn\\.com|espn\\.net|github\\.com|githubusercontent\\.com|githubassets\\.com|whatsapp\\.com|whatsapp\\.net|wa\\.me|whatsapp\\.biz|now\\.gg|easyfun\\.gg|instagram\\.com|cdninstagram\\.com|giphy\\.com|tenor\\.com|tenor\\.co|facebook\\.com|facebook\\.net|fbcdn\\.net|fbsbx\\.com|arkoselabs\\.com|classdojo\\.com|wayground\\.com|quizizz\\.com|cookielaw\\.org|onetrust\\.com)$/i.test(h);
+      return /(^|\\.)(google\\.com|gstatic\\.com|googleapis\\.com|googleusercontent\\.com|youtube\\.com|youtu\\.be|ytimg\\.com|ggpht\\.com|googlevideo\\.com|youtube-nocookie\\.com|translate\\.goog|eaglercraft\\.com|eaglercraft\\.org|tiktok\\.com|tiktokcdn\\.com|tiktokcdn-us\\.com|tiktokv\\.com|ibyteimg\\.com|muscdn\\.com|roblox\\.com|rbxcdn\\.com|espn\\.com|espncdn\\.com|espn\\.net|github\\.com|githubusercontent\\.com|githubassets\\.com|whatsapp\\.com|whatsapp\\.net|wa\\.me|whatsapp\\.biz|now\\.gg|easyfun\\.gg|instagram\\.com|cdninstagram\\.com|giphy\\.com|tenor\\.com|tenor\\.co|facebook\\.com|facebook\\.net|fbcdn\\.net|fbsbx\\.com|arkoselabs\\.com|funcaptcha\\.com|robloxlabs\\.com|racialequityleadership\\.com|classdojo\\.com|wayground\\.com|quizizz\\.com|cookielaw\\.org|onetrust\\.com)$/i.test(h);
     }
     catch (e) { return false; }
   }

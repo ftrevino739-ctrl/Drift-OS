@@ -1987,6 +1987,16 @@ const st=document.createElement('style');st.textContent=`
 .icons{inset:0;display:block;flex-wrap:nowrap;pointer-events:none}
 .icons .ico{position:absolute;pointer-events:auto}
 .cam{display:flex;flex-direction:column;height:100%;gap:8px;padding:10px;overflow:auto}.cam video{width:100%;max-height:48%;background:#000;border-radius:12px;object-fit:cover}
+.ios-cam{position:absolute;inset:0;height:auto;width:auto;padding:0!important;gap:0!important;overflow:hidden;background:#000;display:block}
+.body:has(.ios-cam){position:relative}
+.ios-cam video{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-height:none!important;border-radius:0!important;object-fit:cover!important}
+.ios-cam .cam-side{position:absolute;right:10px;top:0;bottom:0;width:96px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:3;padding:12px 0}
+.ios-cam .cam-modes{display:flex;flex-direction:column;align-items:center;gap:6px;margin:0}
+.ios-cam .cam-modes button{border:0;background:transparent;color:rgba(255,255,255,.72);font-size:11px;font-weight:700;letter-spacing:.06em;padding:4px 8px;cursor:pointer}
+.ios-cam .cam-modes button.on{color:#ffd60a;background:rgba(30,30,30,.72);border-radius:14px}
+.ios-cam .cam-shutter{width:68px;height:68px;border-radius:50%;border:3px solid rgba(255,255,255,.85);background:#fff;box-shadow:0 0 0 5px rgba(0,0,0,.25)}
+.ios-cam .cam-thumb{width:44px;height:44px;border-radius:10px;border:2px solid rgba(255,255,255,.55)}
+.ios-cam .cam-mini{position:absolute;left:14px;top:50%;transform:translateY(-50%);z-index:3;width:36px;height:36px;border-radius:50%;border:0;background:rgba(20,20,20,.55);color:#fff;cursor:pointer}
 .cbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.cbar button{border:0;border-radius:18px;padding:8px 14px;background:var(--omni);color:var(--ink);cursor:pointer}.cbar button.on{background:var(--acc);color:#fff}.cbar .rec{background:#e5484d;color:#fff;font-weight:700}
 .cgal{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}.cgal>div{background:var(--omni);border-radius:10px;padding:6px;display:flex;flex-direction:column;gap:4px;font-size:11px;word-break:break-all}.cgal img,.cgal video{width:100%;border-radius:8px}.cgal audio{width:100%}.cgal button{border:0;background:none;color:var(--ink);cursor:pointer}
 .ml{display:flex;flex-direction:column;gap:4px}.ml button{display:flex;gap:10px;align-items:center;border:0;background:none;color:var(--ink);text-align:left;padding:6px;border-radius:10px;cursor:pointer}.ml button:hover,.ml button.on{background:var(--omni)}.ml img{width:44px;height:44px;border-radius:6px}.ml small{color:var(--mute);display:block}
@@ -2191,22 +2201,20 @@ const mDel=id=>S.user?tx('readwrite',s=>s.delete(id)):MEM.splice(MEM.findIndex(x
 function camera(root){
   root.innerHTML=`<div class="cam ios-cam">
     <video playsinline muted autoplay></video>
+    <button type="button" class="cam-mini" aria-label="Vista" tabindex="-1"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#fff" stroke-width="2"><path d="M8 4H4v4M16 4h4v4M8 20H4v-4M16 20h4v-4"/></svg></button>
     <div class="cam-side">
+      <button type="button" class="cam-ico" aria-label="Flash" tabindex="-1"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="1.8"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/></svg></button>
+      <button type="button" class="cam-ico" aria-label="Live" tabindex="-1"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 5v2M12 17v2M5 12H3M21 12h-2M7 7l-1.4-1.4M18.4 18.4 17 17M17 7l1.4-1.4M6 18.4 7.4 17"/></svg></button>
+      <button type="button" class="cam-ico" aria-label="Night" tabindex="-1"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="1.8"><path d="M20 14.5A8 8 0 1 1 9.5 4 6.5 6.5 0 0 0 20 14.5z"/></svg></button>
       <button type="button" data-a="flip" title="Cambiar cámara" class="cam-ico" aria-label="Voltear">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" stroke-width="2"><path d="M17 2v4h4M7 22v-4H3"/><path d="M7 7a7 7 0 0 1 12 2M17 17a7 7 0 0 1-12-2"/></svg>
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="1.8"><path d="M17 2v4h4M7 22v-4H3"/><path d="M7 7a7 7 0 0 1 12 2M17 17a7 7 0 0 1-12-2"/></svg>
       </button>
-    </div>
-    <div class="cam-zoom"><button type="button" data-z="1" class="on">1×</button></div>
-    <div class="cam-bottom">
+      <button type="button" class="cam-shutter" data-a="shutter" aria-label="Disparar"></button>
+      <button type="button" class="cam-thumb" data-a="gallery" aria-label="Galería"></button>
       <div class="cam-modes">
         <button type="button" data-m="video">VIDEO</button>
         <button type="button" data-m="photo" class="on">FOTO</button>
         <button type="button" data-m="square">CUADRADA</button>
-      </div>
-      <div class="cam-shutter-row">
-        <button type="button" class="cam-thumb" data-a="gallery" aria-label="Galería"></button>
-        <button type="button" class="cam-shutter" data-a="shutter" aria-label="Disparar"></button>
-        <span class="cam-spacer"></span>
       </div>
     </div>
     <div class="ym" hidden></div>
