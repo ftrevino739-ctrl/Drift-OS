@@ -1,7 +1,7 @@
 /* Drift fixup */
 (function () {
   'use strict';
-  window.__DRIFT_BUILD = '20261104-f';
+  window.__DRIFT_BUILD = '20261105-a';
   window.DRIFT_BEST_MODEL = window.DRIFT_BEST_MODEL || 'mistralai/mistral-large-4-0';
   window.DRIFT_CODE_MODEL = 'google/gemini-3.8-flash';
 
@@ -294,21 +294,37 @@ function driftSite(url) {
   }
   function youtubeApp(root) {
     root.innerHTML = '';
-    root.style.cssText = 'height:100%;min-height:0;display:flex;flex-direction:column;background:#0f0f0f;color:#f1f1f1;font:14px system-ui,sans-serif';
+    root.style.cssText = 'height:100%;min-height:0;display:flex;flex-direction:column;background:#0f0f0f;color:#f1f1f1;font:14px Roboto,Arial,sans-serif';
     var bar = document.createElement('form');
-    bar.style.cssText = 'flex:none;display:flex;gap:8px;align-items:center;padding:8px 10px;background:#212121';
-    bar.innerHTML = '<b style="font-size:14px">YouTube</b><input data-q placeholder="Busca o pega un enlace" style="flex:1;padding:8px 10px;border-radius:10px;border:0;background:#121212;color:#fff"><button type="submit" style="border:0;border-radius:10px;background:#ff0033;color:#fff;font-weight:700;padding:8px 12px;cursor:pointer">Ver</button><span data-st style="font-size:11px;opacity:.75">Firefox · dentro de la app</span>';
+    bar.style.cssText = 'flex:none;display:flex;gap:16px;align-items:center;height:56px;padding:0 16px;background:#0f0f0f';
+    bar.innerHTML = '<div style="display:flex;align-items:center;gap:4px;min-width:140px;flex:none"><span style="width:34px;height:24px;border-radius:8px;background:#ff0033;display:grid;place-items:center;color:#fff;font:800 13px Roboto,Arial,sans-serif">▶</span><b style="font:700 20px Roboto,Arial,sans-serif;letter-spacing:-.6px">YouTube</b></div><div style="flex:1;display:flex;justify-content:center"><div style="display:flex;width:min(640px,100%);height:40px;border:1px solid #303030;border-radius:40px 0 0 40px;overflow:hidden;background:#121212;margin-left:40px"><input data-q placeholder="Buscar" aria-label="Buscar" style="flex:1;border:0;background:transparent;color:#fff;padding:0 16px;font:16px Roboto,Arial,sans-serif;outline:none"></div><button type="submit" aria-label="Buscar" style="width:64px;height:40px;border:1px solid #303030;border-left:0;border-radius:0 40px 40px 0;background:#222;color:#f1f1f1;cursor:pointer;font-size:18px">⌕</button></div><span data-st style="flex:none;font-size:12px;color:#aaa;max-width:120px;overflow:hidden;white-space:nowrap"></span>';
+    var chips = document.createElement('div');
+    chips.style.cssText = 'flex:none;display:flex;gap:12px;padding:8px 16px 10px;overflow:auto;background:#0f0f0f;border-bottom:1px solid #272727';
+    ['Todo', 'Música', 'Juegos', 'Noticias', 'En directo'].forEach(function (name, i) {
+      var c = document.createElement('button');
+      c.type = 'button';
+      c.textContent = name;
+      c.style.cssText = 'border:0;border-radius:8px;padding:6px 12px;cursor:pointer;font:500 14px Roboto,Arial,sans-serif;background:' + (i ? '#272727' : '#f1f1f1') + ';color:' + (i ? '#f1f1f1' : '#0f0f0f');
+      c.onclick = function () {
+        chips.querySelectorAll('button').forEach(function (n, k) { n.style.background = k === i ? '#f1f1f1' : '#272727'; n.style.color = k === i ? '#0f0f0f' : '#f1f1f1'; });
+        var q = bar.querySelector('[data-q]');
+        if (q) q.value = i ? name : '';
+        catalog(i ? name : '');
+      };
+      chips.appendChild(c);
+    });
     var stage = document.createElement('div');
     stage.style.cssText = 'flex:1;min-height:0;display:flex;flex-direction:column';
     var video = document.createElement('video');
     video.controls = true;
     video.playsInline = true;
-    video.style.cssText = 'width:100%;max-height:58%;background:#000;flex:none';
+    video.style.cssText = 'width:100%;max-height:62%;background:#000;flex:none';
     var list = document.createElement('div');
-    list.style.cssText = 'flex:1;min-height:0;overflow:auto;padding:8px';
+    list.style.cssText = 'flex:1;min-height:0;overflow:auto;padding:16px 16px 32px;background:#0f0f0f;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px 12px;align-content:start';
     stage.appendChild(video);
     stage.appendChild(list);
     root.appendChild(bar);
+    root.appendChild(chips);
     root.appendChild(stage);
     var status = bar.querySelector('[data-st]');
     function videoId(raw) {
@@ -346,9 +362,9 @@ function driftSite(url) {
       var sn = item.snippet || {};
       var b = document.createElement('button');
       b.type = 'button';
-      b.style.cssText = 'display:flex;gap:10px;width:100%;text-align:left;margin:0 0 8px;padding:8px;border:0;border-radius:10px;background:#1a1a1a;color:#fff;cursor:pointer';
-      var thumb = (sn.thumbnails && (sn.thumbnails.medium || sn.thumbnails.default) || {}).url || '';
-      b.innerHTML = (thumb ? '<img alt="" src="' + thumb + '" style="width:120px;height:68px;object-fit:cover;border-radius:8px;flex:none">' : '') + '<span><b style="display:block">' + String(sn.title || 'Video') + '</b><span style="opacity:.7;font-size:12px">' + String((sn.channelTitle || '')) + '</span></span>';
+      b.style.cssText = 'display:flex;flex-direction:column;gap:8px;width:100%;text-align:left;margin:0;padding:0;border:0;background:transparent;color:#f1f1f1;cursor:pointer;font:14px Roboto,Arial,sans-serif';
+      var thumb = (sn.thumbnails && (sn.thumbnails.medium || sn.thumbnails.high || sn.thumbnails.default) || {}).url || '';
+      b.innerHTML = (thumb ? '<img alt="" src="' + thumb + '" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:12px;background:#1a1a1a">' : '<span style="display:block;width:100%;aspect-ratio:16/9;border-radius:12px;background:#1a1a1a"></span>') + '<span style="display:flex;gap:10px;min-width:0"><span style="width:36px;height:36px;border-radius:50%;background:#3a3a3a;flex:none"></span><span style="min-width:0"><b style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-weight:500;font-size:14px;line-height:1.35">' + String(sn.title || 'Video') + '</b><span style="display:block;margin-top:4px;color:#aaa;font-size:12px">' + String(sn.channelTitle || '') + '</span></span></span>';
       b.onclick = function () { play(String(id).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 11)); };
       return b;
     }
@@ -1493,7 +1509,7 @@ function driftSite(url) {
       i21 = MODELS.findIndex(function (m) { return m && m[0] === 'google/gemini-3.8-flash'; });
       if (i21 > 0) MODELS.unshift(MODELS.splice(i21, 1)[0]);
       var realName = {
-        'google/gemini-3.8-flash': 'Gemini 3.8 Flash',
+        'google/gemini-3.8-flash': 'Qwen 3.8',
         'qwen/qwen3.7-flash:free': 'Qwen3.7 Flash',
         'duck:gpt-4o-mini': 'GPT-4o mini',
         'duck:llama': 'Llama',
@@ -2500,23 +2516,36 @@ function driftSite(url) {
       if (!css) {
         css = document.createElement('style');
         css.id = 'drift-gmenu-css';
-        css.textContent = '#drift-gmark{position:fixed;left:14px;bottom:18px;z-index:2147483646;width:58px;height:58px;padding:0;border:0;border-radius:18px;overflow:hidden;cursor:pointer;background:linear-gradient(160deg,#7EC8FF,#0B1A36);box-shadow:0 10px 28px rgba(0,0,0,.28)}#drift-gmark svg{display:block;width:100%;height:100%}#drift-gmenu{position:fixed;left:14px;top:14px;bottom:14px;z-index:2147483646;display:flex;width:min(420px,calc(100vw - 28px));color:#111;border-radius:28px;overflow:hidden;font:13px/1.4 system-ui,sans-serif;background:rgba(255,255,255,.28);border:1px solid rgba(255,255,255,.5);box-shadow:0 18px 50px rgba(0,0,0,.22);backdrop-filter:blur(28px) saturate(1.7);-webkit-backdrop-filter:blur(28px) saturate(1.7)}#drift-gmenu[hidden]{display:none!important}#drift-gmenu [data-rail]{width:74px;flex:none;display:flex;flex-direction:column;gap:12px;align-items:center;padding:16px 0;background:rgba(8,12,24,.62)}#drift-gmenu [data-tab]{width:48px;height:48px;border:0;border-radius:16px;background:rgba(255,255,255,.14);color:#f4f7fb;display:grid;place-items:center;cursor:pointer;padding:0}#drift-gmenu [data-tab].on{background:#3b82f6;color:#fff;box-shadow:0 8px 18px rgba(37,99,235,.35)}#drift-gmenu [data-main]{flex:1;min-width:0;overflow:auto;padding:14px 14px 12px;scrollbar-width:none}#drift-gmenu input,#drift-gmenu select,#drift-gmenu textarea{width:100%;box-sizing:border-box;margin-top:4px;padding:8px;border-radius:14px;border:1px solid rgba(255,255,255,.55);background:rgba(255,255,255,.55);color:#111}#drift-gmenu button{border:0;border-radius:14px;background:#c5c8ce;color:#111;font-weight:700;padding:8px 10px;cursor:pointer}#drift-gmenu [data-tab]{font-weight:500;padding:0}#drift-gmenu input[type=checkbox]{appearance:none;-webkit-appearance:none;width:56px;height:32px;margin:0;padding:0;border:0;border-radius:999px;background:#8e8e93;box-shadow:inset 0 0 0 2px rgba(0,0,0,.35);position:relative;flex:none;cursor:pointer}#drift-gmenu input[type=checkbox]:after{content:"";position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.35);transition:left .15s}#drift-gmenu input[type=checkbox]:checked{background:#34c759}#drift-gmenu input[type=checkbox]:checked:after{left:27px}#drift-gmenu [data-log]{display:flex;flex-direction:column;gap:6px;min-height:80px;max-height:42vh;overflow:auto;scrollbar-width:none}#drift-gmenu .u{align-self:flex-end;max-width:86%;background:#1a73e8;color:#fff;border-radius:16px 16px 6px 16px;padding:6px 8px}#drift-gmenu .a{align-self:flex-start;max-width:92%;background:rgba(255,255,255,.78);color:#111;border-radius:16px 16px 16px 6px;padding:6px 8px}#drift-gmenu .drift-compose{margin-top:10px;background:rgba(255,255,255,.72);border:1px solid rgba(0,0,0,.06);border-radius:26px;padding:10px 12px 8px;box-shadow:0 8px 24px rgba(0,0,0,.06)}#drift-gmenu .drift-compose textarea{border:0;background:transparent;min-height:44px;padding:4px 2px;resize:none}#drift-gmenu .drift-row{display:flex;align-items:center;gap:8px;margin-top:4px}#drift-gmenu .drift-pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;border:1px solid rgba(0,0,0,.12);background:#fff;color:#111;font-weight:650;padding:6px 10px}#drift-gmenu .drift-pill.on,#drift-gmenu [data-mode].on{background:#111;color:#fff}#drift-gmenu .drift-ico{width:32px;height:32px;border-radius:50%;background:#fff;border:1px solid rgba(0,0,0,.1);display:grid;place-items:center;padding:0}#drift-gmenu [data-modes]{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}#drift-gmenu [data-mode]{border-radius:999px;background:rgba(255,255,255,.7);border:1px solid rgba(0,0,0,.1);padding:6px 10px}#drift-gmenu table{border-collapse:collapse;width:100%}';
+        css.textContent = '#drift-gmenu{position:fixed;right:0;top:0;bottom:0;left:auto;z-index:2147483646;display:flex;flex-direction:row;align-items:stretch;width:max-content;max-width:100vw;height:100%;background:transparent;border:0;box-shadow:none;border-radius:0;overflow:visible;pointer-events:none;color:#111;font:13px/1.4 system-ui,sans-serif}#drift-gmenu [data-rail],#drift-gmenu [data-fly]{pointer-events:auto}#drift-gmenu [data-rail]{width:72px;flex:none;height:100%;display:flex;flex-direction:column;gap:14px;align-items:center;padding:16px 0 14px;background:rgba(12,14,20,.72);border-left:1px solid rgba(255,255,255,.16);backdrop-filter:blur(28px) saturate(1.6);-webkit-backdrop-filter:blur(28px) saturate(1.6)}#drift-gmenu [data-tab],#drift-gmenu [data-exit]{width:48px;height:48px;border:0;border-radius:16px;background:rgba(255,255,255,.1);color:#f5f7fb;display:grid;place-items:center;cursor:pointer;padding:0;font-weight:500}#drift-gmenu [data-tab].on{background:#3b82f6;color:#fff;box-shadow:0 8px 18px rgba(37,99,235,.35)}#drift-gmenu [data-exit]{margin-top:auto;background:rgba(255,255,255,.08)}#drift-gmenu [data-fly]{width:min(380px,calc(100vw - 72px));height:100%;display:flex;flex-direction:column;min-height:0;background:rgba(255,255,255,.46);border-left:1px solid rgba(255,255,255,.45);box-shadow:-18px 0 50px rgba(0,0,0,.18);backdrop-filter:blur(28px) saturate(1.7);-webkit-backdrop-filter:blur(28px) saturate(1.7)}#drift-gmenu [data-fly][hidden]{display:none!important}#drift-gmenu [data-view]{flex:1;min-height:0;overflow:auto;padding:16px 16px 22px}#drift-gmenu [data-view="ai"]{display:flex;flex-direction:column;overflow:hidden;gap:8px}#drift-gmenu [data-view][hidden]{display:none!important}#drift-gmenu input:not(.drift-sw),#drift-gmenu select,#drift-gmenu textarea{width:100%;box-sizing:border-box;margin-top:4px;padding:8px 10px;border-radius:12px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.72);color:#111}#drift-gmenu .drift-line{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:8px 0;padding:10px 12px;border-radius:16px;background:rgba(255,255,255,.45);border:1px solid rgba(255,255,255,.5)}#drift-gmenu .drift-line small{display:block;font-weight:500;opacity:.62;font-size:11px;margin-top:2px}#drift-gmenu input.drift-sw{appearance:none;-webkit-appearance:none;width:51px!important;height:31px!important;margin:0;padding:0;border:0;border-radius:999px;background:#e5e5ea;position:relative;flex:none;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}#drift-gmenu input.drift-sw:after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.28);transition:left .16s}#drift-gmenu input.drift-sw:checked{background:#34c759}#drift-gmenu input.drift-sw:checked:after{left:22px}#drift-gmenu [data-log]{flex:1;min-height:0;max-height:none;overflow:auto;display:flex;flex-direction:column;gap:8px}#drift-gmenu [data-gem]{flex:1;min-height:0;border-radius:16px;overflow:hidden;background:#fff}#drift-gmenu [data-gem][hidden]{display:none!important}#drift-gmenu .u{align-self:flex-end;max-width:86%;background:#1a73e8;color:#fff;border-radius:16px 16px 6px 16px;padding:8px 10px}#drift-gmenu .a{align-self:flex-start;max-width:92%;background:rgba(255,255,255,.86);color:#111;border-radius:16px 16px 16px 6px;padding:8px 10px}#drift-gmenu .drift-compose{flex:none;margin-top:0;background:rgba(255,255,255,.82);border:1px solid rgba(0,0,0,.06);border-radius:26px;padding:10px 12px 8px}#drift-gmenu .drift-compose textarea{border:0;background:transparent;min-height:44px;padding:4px 2px;resize:none}#drift-gmenu .drift-row{display:flex;align-items:center;gap:8px;margin-top:4px}#drift-gmenu .drift-pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;border:1px solid rgba(0,0,0,.12);background:#fff;color:#111;font-weight:650;padding:6px 10px}#drift-gmenu .drift-pill.on,#drift-gmenu [data-mode].on{background:#111;color:#fff}#drift-gmenu .drift-ico{width:32px;height:32px;border-radius:50%;background:#fff;border:1px solid rgba(0,0,0,.1);display:grid;place-items:center;padding:0}#drift-gmenu [data-modes]{display:flex;gap:6px;flex:none}#drift-gmenu [data-mode]{border-radius:999px;background:rgba(255,255,255,.72);border:1px solid rgba(0,0,0,.1);padding:6px 10px}#drift-gmenu h3{margin:14px 0 6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.55}#drift-gmenu table{border-collapse:collapse;width:100%}#drift-gmenu button.drift-sw{width:52px;height:32px;border-radius:999px;background:#e5e5ea;border:0;padding:0;position:relative;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}#drift-gmenu button.drift-sw i{position:absolute;top:2px;left:2px;width:28px;height:28px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.28);display:block;transition:left .16s}#drift-gmenu button.drift-sw.on{background:#34c759}#drift-gmenu button.drift-sw.on i{left:22px}#drift-gmenu .drift-compose{margin-top:auto}';
         document.documentElement.appendChild(css);
       }
       var bar = document.createElement('div');
       bar.id = 'drift-gmenu';
-      bar.innerHTML = '<nav data-rail><button type="button" data-tab="home" class="on" aria-label="Home"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M3.8 11.2 12 4.2l8.2 7v8.2a1.2 1.2 0 0 1-1.2 1.2h-4.4v-6.2H9.4V20.6H5a1.2 1.2 0 0 1-1.2-1.2z"/></svg></button><button type="button" data-tab="settings" aria-label="Settings"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M10.2 2.8h3.6l.4 2.1a7.2 7.2 0 0 1 1.7.7l1.9-1.1 2.5 2.5-1.1 1.9c.3.5.5 1.1.7 1.7l2.1.4v3.6l-2.1.4a7.2 7.2 0 0 1-.7 1.7l1.1 1.9-2.5 2.5-1.9-1.1a7.2 7.2 0 0 1-1.7.7l-.4 2.1h-3.6l-.4-2.1a7.2 7.2 0 0 1-1.7-.7l-1.9 1.1-2.5-2.5 1.1-1.9a7.2 7.2 0 0 1-.7-1.7l-2.1-.4V9.6l2.1-.4c.2-.6.4-1.2.7-1.7L3.5 5.6l2.5-2.5 1.9 1.1c.5-.3 1.1-.5 1.7-.7l.6-1.7zM12 9.2A2.8 2.8 0 1 0 12 14.8 2.8 2.8 0 0 0 12 9.2z"/></svg></button><button type="button" data-tab="ai" aria-label="AI"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M12 2.4 13.7 8.3 19.6 10 13.7 11.7 12 17.6 10.3 11.7 4.4 10 10.3 8.3z"/><path fill="currentColor" d="M18.2 14.2 18.9 16.4 21.1 17.1 18.9 17.8 18.2 20 17.5 17.8 15.3 17.1 17.5 16.4z"/></svg></button></nav><div data-main><div data-view="home" data-settings><b>Home</b><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><b>Protector</b><input type="checkbox" data-k="wos:protector" style="width:auto"></div><div style="margin-top:8px">When a class connects<select data-k="wos:prot-class"><option value="alert">Only alert</option><option value="classroom">Alert and open Classroom</option></select></div><div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(0,0,0,.12)"><b>custom keybinds</b><div data-kb-note style="opacity:.7;font-size:11px">Only 3 controls</div><label style="display:block;margin-top:8px">Hide non-edu apps<input data-kb="wos:kb-hide" readonly></label><label style="display:block;margin-top:8px">Classroom<input data-kb="wos:kb-class" readonly></label><label style="display:block;margin-top:8px">Discovery<input data-kb="wos:kb-disc" readonly></label><label style="display:block;margin-top:8px">ALEKS<input data-kb="wos:kb-aleks" readonly></label><label style="display:block;margin-top:8px">Google Docs<input data-kb="wos:kb-docs" readonly></label></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><b>AI assistant</b><input type="checkbox" data-orb style="width:auto"></div><div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(0,0,0,.12)"><b>Clean search history</b><select data-clean-site><option value="docs">Google Docs</option><option value="discovery">Discovery Education</option><option value="classroom">Classroom</option><option value="canva">Canva</option><option value="other">Wikipedia</option></select><label style="display:block;margin-top:6px">Tabs (1 to 20)<input data-clean-n type="number" min="1" max="20" value="1"></label><div style="display:flex;gap:8px;margin-top:8px"><button type="button" data-clean-open style="flex:1">Open</button><button type="button" data-clean-random style="flex:1;background:transparent;border:1px solid rgba(0,0,0,.2)">Random</button></div></div></div><div data-view="settings" hidden><b>Settings</b></div><div data-view="ai" data-chat hidden><div data-log></div><div data-model style="opacity:.6;font-size:11px;margin-top:6px"></div><select data-pick aria-label="Modelo"><option value="">Auto</option></select><div data-modes><button type="button" data-mode="fast">Fast</button><button type="button" data-mode="think">Think</button><button type="button" data-mode="expert">Expert</button></div><div class="drift-compose"><textarea data-ai placeholder="Escribe o mantén presionado para hablar"></textarea><div class="drift-row"><button type="button" class="drift-pill" data-act="think"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="12" cy="12" r="1.7" fill="currentColor"/><ellipse cx="12" cy="12" rx="8" ry="3.1" fill="none" stroke="currentColor" stroke-width="1.5"/><ellipse cx="12" cy="12" rx="8" ry="3.1" transform="rotate(60 12 12)" fill="none" stroke="currentColor" stroke-width="1.5"/><ellipse cx="12" cy="12" rx="8" ry="3.1" transform="rotate(120 12 12)" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>Pensar</button><button type="button" class="drift-pill" data-act="search"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.6"/><ellipse cx="12" cy="12" rx="3.3" ry="8" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M4 12h16M6.3 7.6h11.4M6.3 16.4h11.4" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Buscar</button><span style="flex:1"></span><button type="button" class="drift-ico" data-plus aria-label="Adjuntar"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button><button type="button" class="drift-ico" data-mic aria-label="Hablar"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button></div></div><input data-file type="file" hidden><button type="button" data-ask hidden>Send</button></div></div>';
-      var mark = document.getElementById('drift-gmark');
-      if (!mark) {
-        mark = document.createElement('button');
-        mark.id = 'drift-gmark';
-        mark.type = 'button';
-        mark.setAttribute('aria-label', 'Drift');
-        mark.innerHTML = '<svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="18" fill="url(#dg)"/><defs><linearGradient id="dg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9ad7ff"/><stop offset="1" stop-color="#12315f"/></linearGradient></defs><path d="M32 12 46 28 32 52 18 28z" fill="#fff" opacity=".95"/><path d="M32 20 40 30 32 44 24 30z" fill="#7EC8FF"/></svg>';
-        document.documentElement.appendChild(mark);
-      }
-      mark.onclick = function () { bar.style.display = 'flex'; bar.hidden = !bar.hidden; };
+      bar.innerHTML = '<div data-fly hidden><div data-view="home" data-settings><b>Home</b><h3>Protector</h3><label class="drift-line"><span><b>Protector</b><small>Tócalo aquí. No hace falta mover la barra.</small></span><button type="button" class="drift-sw" role="switch" data-k="wos:protector" aria-checked="false"><i></i></button></label><div>When a class connects<select data-k="wos:prot-class"><option value="alert">Only alert</option><option value="classroom">Alert and open Classroom</option></select></div><h3>Atajos</h3><div data-kb-note style="opacity:.7;font-size:11px">Only 3 controls</div><label style="display:block;margin-top:8px">Hide non-edu apps<input data-kb="wos:kb-hide" readonly></label><label style="display:block;margin-top:8px">Classroom<input data-kb="wos:kb-class" readonly></label><label style="display:block;margin-top:8px">Discovery<input data-kb="wos:kb-disc" readonly></label><label style="display:block;margin-top:8px">ALEKS<input data-kb="wos:kb-aleks" readonly></label><label style="display:block;margin-top:8px">Google Docs<input data-kb="wos:kb-docs" readonly></label><h3>Asistente</h3><label class="drift-line"><span><b>AI assistant</b><small>El orbe en el escritorio.</small></span><button type="button" class="drift-sw" role="switch" data-orb aria-checked="false"><i></i></button></label><h3>Historial</h3><div><b>Clean search history</b><select data-clean-site><option value="docs">Google Docs</option><option value="discovery">Discovery Education</option><option value="classroom">Classroom</option><option value="canva">Canva</option><option value="other">Wikipedia</option></select><label style="display:block;margin-top:6px">Tabs (1 to 20)<input data-clean-n type="number" min="1" max="20" value="1"></label><div style="display:flex;gap:8px;margin-top:8px"><button type="button" data-clean-open style="flex:1">Open</button><button type="button" data-clean-random style="flex:1;background:transparent;border:1px solid rgba(0,0,0,.2)">Random</button></div></div></div><div data-view="settings" hidden><b>Settings</b></div><div data-view="ai" data-chat hidden><div data-log></div><div data-gem hidden></div><div class="drift-compose"><div data-model style="opacity:.6;font-size:11px;flex:none"></div><select data-pick aria-label="Modelo"><option value="">Auto</option></select><div data-modes><button type="button" data-mode="fast">Fast</button><button type="button" data-mode="think">Think</button><button type="button" data-mode="expert">Expert</button></div><textarea data-ai placeholder="Escribe o mantén presionado para hablar"></textarea><div class="drift-row"><button type="button" class="drift-pill" data-act="think"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="12" cy="12" r="1.7" fill="currentColor"/><ellipse cx="12" cy="12" rx="8" ry="3.1" fill="none" stroke="currentColor" stroke-width="1.5"/><ellipse cx="12" cy="12" rx="8" ry="3.1" transform="rotate(60 12 12)" fill="none" stroke="currentColor" stroke-width="1.5"/><ellipse cx="12" cy="12" rx="8" ry="3.1" transform="rotate(120 12 12)" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>Pensar</button><button type="button" class="drift-pill" data-act="search"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.6"/><ellipse cx="12" cy="12" rx="3.3" ry="8" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M4 12h16M6.3 7.6h11.4M6.3 16.4h11.4" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Buscar</button><span style="flex:1"></span><button type="button" class="drift-ico" data-plus aria-label="Adjuntar"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button><button type="button" class="drift-ico" data-mic aria-label="Hablar"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button></div></div><input data-file type="file" hidden><button type="button" data-ask hidden>Send</button></div></div><nav data-rail><button type="button" data-tab="home" aria-label="Home"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5.2v-6.2H10.2V21H5a1 1 0 0 1-1-1z"/></svg></button><button type="button" data-tab="settings" aria-label="Settings"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M10.2 2.8h3.6l.4 2.1a7.2 7.2 0 0 1 1.7.7l1.9-1.1 2.5 2.5-1.1 1.9c.3.5.5 1.1.7 1.7l2.1.4v3.6l-2.1.4a7.2 7.2 0 0 1-.7 1.7l1.1 1.9-2.5 2.5-1.9-1.1a7.2 7.2 0 0 1-1.7.7l-.4 2.1h-3.6l-.4-2.1a7.2 7.2 0 0 1-1.7-.7l-1.9 1.1-2.5-2.5 1.1-1.9a7.2 7.2 0 0 1-.7-1.7l-2.1-.4V9.6l2.1-.4c.2-.6.4-1.2.7-1.7L3.5 5.6l2.5-2.5 1.9 1.1c.5-.3 1.1-.5 1.7-.7l.6-1.7zM12 9.2A2.8 2.8 0 1 0 12 14.8 2.8 2.8 0 0 0 12 9.2z"/></svg></button><button type="button" data-tab="ai" aria-label="AI"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M12 2.2 13.8 8.2 19.8 10 13.8 11.8 12 17.8 10.2 11.8 4.2 10 10.2 8.2z"/><path fill="currentColor" d="M18.2 14.2 18.9 16.4 21.1 17.1 18.9 17.8 18.2 20 17.5 17.8 15.3 17.1 17.5 16.4z"/></svg></button><button type="button" data-exit aria-label="Salir"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10 12h10M16 8l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button></nav>';
+      var mkGone = document.getElementById('drift-gmark');
+      if (mkGone) mkGone.remove();
       document.documentElement.appendChild(bar);
+      var exitBtn = bar.querySelector('[data-exit]');
+      if (exitBtn) exitBtn.onclick = function () {
+        var fly = bar.querySelector('[data-fly]');
+        if (fly && !fly.hidden) {
+          fly.hidden = true;
+          bar.querySelectorAll('[data-tab]').forEach(function (n) { n.classList.remove('on'); });
+          return;
+        }
+        bar.remove();
+        window.__driftGBar = null;
+        var back = document.getElementById('drift-gback');
+        if (!back) {
+          back = document.createElement('button');
+          back.id = 'drift-gback';
+          back.type = 'button';
+          back.setAttribute('aria-label', 'Drift');
+          back.style.cssText = 'position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:2147483646;width:18px;height:84px;border:0;border-radius:12px 0 0 12px;background:#3b82f6;color:#fff;cursor:pointer';
+          document.documentElement.appendChild(back);
+        }
+        back.onclick = function () { back.remove(); googleMenuBody(); };
+      };
       window.__driftGBar = bar;
       var body = bar.querySelector('[data-body]');
       var settings = bar.querySelector('[data-settings]');
@@ -2583,12 +2612,25 @@ function driftSite(url) {
       try { saved = localStorage.getItem('wos:pass-bar') || 'full'; } catch (e) {}
       mode('full');
       bar.style.display = 'flex';
-      bar.hidden = true;
+      bar.hidden = false;
       if (toggle) toggle.onclick = function () { mode(body.hidden ? 'full' : 'mini'); };
       var killBtn = bar.querySelector('[data-kill]');
       if (killBtn) killBtn.onclick = function () { mode('off'); };
       bar.querySelectorAll('[data-k]').forEach(function (el) {
         var k = el.getAttribute('data-k');
+        if (el.getAttribute('role') === 'switch') {
+          var on = false;
+          try { on = localStorage.getItem(k) === '1'; } catch (e) {}
+          el.classList.toggle('on', on);
+          el.setAttribute('aria-checked', on ? 'true' : 'false');
+          el.onclick = function () {
+            var next = el.getAttribute('aria-checked') !== 'true';
+            el.classList.toggle('on', next);
+            el.setAttribute('aria-checked', next ? 'true' : 'false');
+            try { localStorage.setItem(k, next ? '1' : '0'); } catch (err) {}
+          };
+          return;
+        }
         try { if (el.type === 'checkbox') el.checked = localStorage.getItem(k) === '1'; else el.value = localStorage.getItem(k) || ''; } catch (e) {}
         el.onchange = function () { try { localStorage.setItem(k, el.type === 'checkbox' ? (el.checked ? '1' : '0') : el.value); } catch (e) {} };
       });
@@ -2652,7 +2694,7 @@ function driftSite(url) {
       function driftCatalog() {
         return [
           { id: 'mistralai/mistral-small-2603', name: 'Mistral Small', fast: 5, think: 2, expert: 0, search: 0 },
-          { id: 'google/gemini-3.8-flash', name: 'Gemini 3.8 Flash', fast: 4, think: 4, expert: 2, search: 5 },
+          { id: 'gemini-web', name: 'Gemini', fast: 2, think: 3, expert: 2, search: 5 },
           { id: 'mistralai/mistral-medium-3.5', name: 'Mistral Medium 3.5', fast: 3, think: 4, expert: 2, search: 1 },
           { id: 'mistralai/mistral-large-2512', name: 'Mistral Large 3', fast: 1, think: 3, expert: 4, search: 1 },
           { id: 'cohere/command-a-reasoning', name: 'Command A Reasoning', fast: 1, think: 3, expert: 5, search: 0 },
@@ -2671,16 +2713,8 @@ function driftSite(url) {
         ];
       }
       function driftPick() {
-        if (bar.dataset.pin) {
-          var pinned = null;
-          driftCatalog().forEach(function (m) { if (m.id === bar.dataset.pin) pinned = m; });
-          if (pinned) {
-            bar._model = pinned;
-            var pinnedLab = bar.querySelector('[data-model]');
-            if (pinnedLab) pinnedLab.textContent = pinned.name;
-            return pinned;
-          }
-        }
+        var pinned = null;
+        if (bar.dataset.pin) driftCatalog().forEach(function (m) { if (m.id === bar.dataset.pin) pinned = m; });
         var fast = bar.dataset.fast === '1';
         var think = bar.dataset.think === '1';
         var expert = bar.dataset.expert === '1';
@@ -2690,15 +2724,25 @@ function driftSite(url) {
         if (expert) w.expert += 3;
         if (bar.dataset.searchOn === '1') w.search += 4;
         if (bar.dataset.smart === '1') w.expert += 4;
-        if (!fast && !think && !expert && bar.dataset.searchOn !== '1' && bar.dataset.smart !== '1') w.think += 3;
-        var best = driftCatalog()[1], score = -1;
+        var modeOn = fast || think || expert || bar.dataset.searchOn === '1' || bar.dataset.smart === '1';
+        if (pinned && !modeOn) {
+          bar._model = pinned;
+          bar._partner = null;
+          var only = bar.querySelector('[data-model]');
+          if (only) only.textContent = pinned.name;
+          return pinned;
+        }
+        if (!modeOn) w.think += 3;
+        var best = driftCatalog()[0], score = -1;
         driftCatalog().forEach(function (m) {
+          if (pinned && m.id === pinned.id) return;
           var s = m.fast * w.fast + m.think * w.think + m.expert * w.expert + m.search * w.search;
           if (s > score) { score = s; best = m; }
         });
         bar._model = best;
+        bar._partner = pinned && pinned.id !== best.id ? pinned : null;
         var lab = bar.querySelector('[data-model]');
-        if (lab) lab.textContent = best.name;
+        if (lab) lab.textContent = bar._partner ? (pinned.name + ' · ' + best.name) : best.name;
         return best;
       }
       async function driftCall(model, messages, tokens) {
@@ -2709,15 +2753,148 @@ function driftSite(url) {
         throw new Error((j && j.error && (j.error.message || j.error)) || 'Try again.');
       }
       async function driftFast(messages) {
-        var m = driftPick();
-        return driftCall(m, messages, m.fast >= 4 ? 900 : 1400);
+        return driftDiscuss(messages);
+      }
+      function gemHost() {
+        var h = '';
+        try { h = location.hostname || ''; } catch (e) {}
+        if (/google\.|youtube\.|bing\.|wayground|quizizz|classroom/i.test(h)) return 'https://drift.hostless.app';
+        return location.origin;
+      }
+      function ensureGemFrame() {
+        var frame = document.getElementById('drift-gemini-preload');
+        if (!frame) {
+          frame = document.createElement('iframe');
+          frame.id = 'drift-gemini-preload';
+          frame.title = 'Gemini';
+          frame.setAttribute('referrerpolicy', 'no-referrer');
+          frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-modals allow-downloads allow-pointer-lock');
+          frame.setAttribute('allow', 'clipboard-read; clipboard-write; microphone; camera');
+          frame.style.cssText = 'position:fixed;left:-9999px;top:0;width:420px;height:700px;border:0;opacity:0;pointer-events:none';
+          frame.src = gemHost() + '/api/opera?u=' + encodeURIComponent('https://gemini.google.com/app') + '&b=firefox';
+          document.documentElement.appendChild(frame);
+        }
+        return frame;
+      }
+      function useGeminiFace(on) {
+        var gem = bar.querySelector('[data-gem]');
+        var log = bar.querySelector('[data-log]');
+        var compose = bar.querySelector('.drift-compose');
+        var modeOn = bar.dataset.fast === '1' || bar.dataset.think === '1' || bar.dataset.expert === '1';
+        var show = !!on && !modeOn;
+        if (!gem) return;
+        var frame = ensureGemFrame();
+        if (show) {
+          gem.hidden = false;
+          gem.appendChild(frame);
+          frame.style.cssText = 'width:100%;height:100%;border:0;background:transparent;opacity:1;pointer-events:auto;position:relative;left:auto;top:auto';
+          if (log) log.hidden = true;
+          if (compose) compose.hidden = false;
+          if (typeof hideGeminiChrome === 'function') hideGeminiChrome(frame);
+          var lab = bar.querySelector('[data-model]');
+          if (lab) lab.textContent = 'Gemini';
+        } else {
+          gem.hidden = true;
+          if (log) log.hidden = false;
+          if (compose) compose.hidden = false;
+          if (frame.parentNode === gem) {
+            frame.style.cssText = 'position:fixed;left:-9999px;top:0;width:420px;height:700px;border:0;opacity:0;pointer-events:none';
+            document.documentElement.appendChild(frame);
+          }
+        }
+      }
+      async function askGemini(messages) {
+        var last = messages[messages.length - 1];
+        var q = last && typeof last.content === 'string' ? last.content : '';
+        q = String(q || '').slice(0, 4000);
+        if (!q) return '';
+        var frame = ensureGemFrame();
+        var doc = null;
+        try { doc = frame.contentDocument; } catch (e) { doc = null; }
+        if (!doc) return '';
+        var input = null;
+        var n = 0;
+        while (n < 24 && !input) {
+          try { doc = frame.contentDocument; } catch (e2) { doc = null; }
+          if (doc) input = doc.querySelector('rich-textarea [contenteditable="true"], div[contenteditable="true"], textarea');
+          if (!input) { await new Promise(function (r) { setTimeout(r, 250); }); n++; }
+        }
+        if (!input) return '';
+        try { input.focus(); } catch (e3) {}
+        if (input.tagName === 'TEXTAREA') input.value = q;
+        else input.textContent = q;
+        try { input.dispatchEvent(new InputEvent('input', { bubbles: true, data: q })); } catch (e4) {}
+        var send = doc.querySelector('button[aria-label*="Send" i], button[aria-label*="Enviar" i]');
+        if (send) send.click();
+        else input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+        var prev = '', stable = 0, i = 0;
+        while (i < 36) {
+          await new Promise(function (r) { setTimeout(r, 400); });
+          var nodes = [];
+          try { nodes = doc.querySelectorAll('message-content, model-response'); } catch (e5) { nodes = []; }
+          var text = nodes.length ? String(nodes[nodes.length - 1].innerText || '').trim() : '';
+          if (text && text === prev) stable++; else stable = 0;
+          prev = text;
+          if (stable >= 2 && text.length > 8) return text;
+          i++;
+        }
+        return prev || '';
+      }
+      function bestFor(key) {
+        var best = driftCatalog()[0], score = -1;
+        driftCatalog().forEach(function (m) {
+          var s = m[key] || 0;
+          if (s > score) { score = s; best = m; }
+        });
+        return best;
+      }
+      async function driftDiscuss(messages) {
+        var picked = driftPick();
+        var mode = bar.dataset.expert === '1' ? 'expert' : bar.dataset.fast === '1' ? 'fast' : bar.dataset.think === '1' ? 'think' : '';
+        var team = [];
+        function add(m) { if (m && !team.some(function (x) { return x.id === m.id; })) team.push(m); }
+        add(picked);
+        if (bar._partner) add(bar._partner);
+        if (mode) add(bestFor(mode));
+        if (bar.dataset.searchOn === '1' || bar.dataset.smart === '1') add(bestFor(bar.dataset.searchOn === '1' ? 'search' : 'expert'));
+        team = team.slice(0, 3);
+        useGeminiFace(team.length === 1 && team[0].id === 'gemini-web');
+        var parts = [];
+        for (var i = 0; i < team.length; i++) {
+          var txt = '';
+          if (team[i].id === 'gemini-web') txt = await askGemini(messages);
+          if (!txt && team[i].id !== 'gemini-web') {
+            try { txt = await driftCall(team[i], messages, team[i].fast >= 4 ? 800 : 1200); } catch (e) { txt = ''; }
+          }
+          if (txt) parts.push({ name: team[i].id === 'gemini-web' ? 'Gemini' : team[i].name, text: txt });
+        }
+        if (!parts.length) throw new Error('Try again.');
+        if (parts.length === 1) {
+          bar._model = { id: team[0].id, name: parts[0].name };
+          var one = bar.querySelector('[data-model]');
+          if (one) one.textContent = parts[0].name;
+          return parts[0].text;
+        }
+        var writer = null;
+        team.forEach(function (m) { if (!writer && m.id !== 'gemini-web') writer = m; });
+        if (!writer) {
+          bar._model = { id: 'gemini-web', name: parts.map(function (p) { return p.name; }).join(' · ') };
+          return parts.map(function (p) { return p.name + '\n' + p.text; }).join('\n\n');
+        }
+        var brief = parts.map(function (p) { return p.name + ':\n' + p.text; }).join('\n\n');
+        var names = parts.map(function (p) { return p.name; }).join(' · ');
+        var merged = await driftCall(writer, [{ role: 'user', content: 'Une estas respuestas en UNA sola idea, en el idioma del usuario. No digas que eres otro modelo. Cierra con esta línea exacta: ' + names + '\n\n' + brief }], 1000);
+        bar._model = { id: writer.id, name: names };
+        var lab = bar.querySelector('[data-model]');
+        if (lab) lab.textContent = names;
+        return merged;
       }
       async function driftVision(data, ask) {
-        var m = { id: 'google/gemini-3.8-flash', name: 'Gemini 3.8 Flash' };
+        var m = { id: 'qwen/qwen3.8-omni-flash:free', name: 'Qwen3.8 Omni' };
         bar._model = m;
         var lab = bar.querySelector('[data-model]');
         if (lab) lab.textContent = m.name;
-        var r = await fetch('https://holy-firefly-982c.fert0480.workers.dev/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: m.id, max_tokens: 700, messages: [{ role: 'system', content: 'You are Gemini 3.8 Flash.' }, { role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: data } }, { type: 'text', text: ask }] }] }) });
+        var r = await fetch('https://holy-firefly-982c.fert0480.workers.dev/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: m.id, max_tokens: 700, messages: [{ role: 'system', content: 'You are Qwen3.8 Omni. If asked which model you are, answer exactly Qwen3.8 Omni.' }, { role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: data } }, { type: 'text', text: ask }] }] }) });
         var j = await r.json();
         var text = pull(j);
         if (!text) throw new Error('Try again.');
@@ -2867,9 +3044,18 @@ function driftSite(url) {
         document.documentElement.appendChild(ball);
       }
       var orb = bar.querySelector('[data-orb]');
-      try { orb.checked = localStorage.getItem('wos:ai-orb') === '1'; } catch (e) {}
-      showBall(orb.checked);
-      orb.onchange = function () { showBall(orb.checked); };
+      function orbOn() { return orb && orb.getAttribute('aria-checked') === 'true'; }
+      try {
+        var orbSaved = localStorage.getItem('wos:ai-orb') === '1';
+        if (orb) { orb.classList.toggle('on', orbSaved); orb.setAttribute('aria-checked', orbSaved ? 'true' : 'false'); }
+      } catch (e) {}
+      showBall(orbOn());
+      if (orb) orb.onclick = function () {
+        var next = orb.getAttribute('aria-checked') !== 'true';
+        orb.classList.toggle('on', next);
+        orb.setAttribute('aria-checked', next ? 'true' : 'false');
+        showBall(next);
+      };
       var sites = { docs: 'https://docs.google.com/', discovery: 'https://www.discoveryeducation.com/', classroom: 'https://classroom.google.com/', canva: 'https://www.canva.com/', other: 'https://en.wikipedia.org/' };
       function openClean(list) {
         var blocked = false;
@@ -2930,11 +3116,14 @@ function driftSite(url) {
       function stamp(el, text) {
         paintMd(el, text || 'Try again.');
         var name = bar._model && bar._model.name;
-        if (!name) return;
-        var tag = document.createElement('div');
-        tag.textContent = name;
-        tag.style.cssText = 'font-size:11px;font-weight:700;opacity:.6;margin-bottom:3px';
-        el.insertBefore(tag, el.firstChild);
+        if (name) {
+          var tag = document.createElement('div');
+          tag.textContent = name;
+          tag.style.cssText = 'font-size:11px;font-weight:700;opacity:.6;margin-bottom:3px';
+          el.insertBefore(tag, el.firstChild);
+        }
+        var log = bar.querySelector('[data-log]');
+        if (log) log.scrollTop = log.scrollHeight;
       }
       bar.querySelector('[data-ask]').onclick = function () {
         var box = bar.querySelector('[data-ai]');
@@ -2960,8 +3149,18 @@ function driftSite(url) {
         });
       };
       function showTab(id) {
+        var fly = bar.querySelector('[data-fly]');
+        var current = bar.querySelector('[data-tab].on');
+        var same = current && current.getAttribute('data-tab') === id && fly && !fly.hidden;
+        bar.querySelectorAll('[data-tab]').forEach(function (n) { n.classList.toggle('on', !same && n.getAttribute('data-tab') === id); });
+        if (fly) fly.hidden = !!same;
+        if (same) return;
         bar.querySelectorAll('[data-view]').forEach(function (v) { v.hidden = v.getAttribute('data-view') !== id; });
-        bar.querySelectorAll('[data-tab]').forEach(function (n) { n.classList.toggle('on', n.getAttribute('data-tab') === id); });
+        if (id === 'ai') {
+          ensureGemFrame();
+          var pin = bar.dataset.pin || '';
+          useGeminiFace(pin === 'gemini-web');
+        }
       }
       bar.querySelectorAll('[data-tab]').forEach(function (b) {
         b.onclick = function () { showTab(b.getAttribute('data-tab')); };
@@ -2982,14 +3181,23 @@ function driftSite(url) {
         pick.onchange = function () {
           bar.dataset.pin = pick.value || '';
           driftPick();
+          useGeminiFace(pick.value === 'gemini-web' && bar.dataset.fast !== '1' && bar.dataset.think !== '1' && bar.dataset.expert !== '1');
         };
       }
       bar.querySelectorAll('[data-mode]').forEach(function (b) {
         b.onclick = function () {
-          b.classList.toggle('on');
-          bar.dataset[b.getAttribute('data-mode')] = b.classList.contains('on') ? '1' : '';
-          clearPin();
+          var id = b.getAttribute('data-mode');
+          var on = !b.classList.contains('on');
+          bar.querySelectorAll('[data-mode]').forEach(function (n) {
+            n.classList.remove('on');
+            bar.dataset[n.getAttribute('data-mode')] = '';
+          });
+          if (on) {
+            b.classList.add('on');
+            bar.dataset[id] = '1';
+          }
           driftPick();
+          useGeminiFace(bar.dataset.pin === 'gemini-web' && !bar.dataset.fast && !bar.dataset.think && !bar.dataset.expert);
         };
       });
       bar.querySelectorAll('[data-act]').forEach(function (b) {
@@ -2998,7 +3206,6 @@ function driftSite(url) {
           var kind = b.getAttribute('data-act');
           if (kind === 'search') bar.dataset.searchOn = on ? '1' : '';
           if (kind === 'think') bar.dataset.smart = on ? '1' : '';
-          clearPin();
           driftPick();
           var box = bar.querySelector('[data-ai]');
           if (box && box.value.trim()) {
@@ -3053,6 +3260,7 @@ function driftSite(url) {
         }
       });
       driftPick();
+      ensureGemFrame();
       if (!window.__driftGKeys) {
         window.__driftGKeys = 1;
         window.__driftPressed = {};
@@ -3141,14 +3349,15 @@ function driftSite(url) {
         ' style="margin-top:3px"/><span><b>' + it.name + '</b></span></label>';
     });
     panel.innerHTML =
+      '<style>#drift-settings-win .body{background:#101014!important}#drift-settings-win nav{width:196px!important;background:#16161c;padding:12px 8px!important;gap:6px!important}#drift-settings-win nav button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;border-radius:12px!important;background:transparent!important;padding:8px 10px!important;border:1px solid transparent!important}#drift-settings-win nav button small{font-size:10px;letter-spacing:.08em;opacity:.5;font-weight:650}#drift-settings-win nav button.on{background:rgba(126,200,255,.14)!important;border-color:rgba(126,200,255,.35)!important}#drift-settings-win #drift-set-main section>div{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:12px 12px 10px;margin:0 0 8px}#drift-settings-win .bm-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:10px;margin:8px 0}#drift-settings-win a{background:transparent!important;color:#fff!important;border:1px solid rgba(255,255,255,.28)!important;border-radius:999px!important}#drift-settings-win #drift-bypass-make,#drift-settings-win #kb-class-go,#drift-settings-win #drift-clean-open{background:#1a73e8!important;color:#fff!important;border-radius:999px!important}#drift-settings-win #drift-delapps-sw,#drift-settings-win #drift-nodev-sw{box-shadow:0 0 0 1px rgba(255,90,90,.45)}#drift-settings-win section>div>b{font-size:13px}#drift-settings-win .body input,#drift-settings-win .body select,#drift-settings-win .body textarea{border-radius:10px!important}</style>' +
       '<div class="title"><b>Settings</b><button class="wb x" type="button" data-x data-a="x" aria-label="Close">✕</button></div>' +
       '<div class="body" style="flex-direction:row;min-height:0;background:#1c1c24;color:#eee;font:13px/1.45 system-ui,sans-serif">' +
       '<nav style="width:176px;flex:none;display:flex;flex-direction:column;gap:4px;padding:10px;border-right:1px solid rgba(255,255,255,.1)">' +
-      '<button type="button" data-nav="ui" style="text-align:left;border:0;border-radius:8px;background:rgba(255,255,255,.12);color:#fff;padding:8px 10px;cursor:pointer">UI</button>' +
-      '<button type="button" data-nav="os" style="text-align:left;border:0;border-radius:8px;background:transparent;color:#fff;padding:8px 10px;cursor:pointer">OS Adapts</button>' +
-      '<button type="button" data-nav="apps" style="text-align:left;border:0;border-radius:8px;background:transparent;color:#fff;padding:8px 10px;cursor:pointer">Apps Settings</button>' +
-      '<button type="button" data-nav="tools" style="text-align:left;border:0;border-radius:8px;background:transparent;color:#fff;padding:8px 10px;cursor:pointer">Tools</button>' +
-      '<button type="button" data-nav="bypass" style="text-align:left;border:0;border-radius:8px;background:transparent;color:#fff;padding:8px 10px;cursor:pointer">Bypass & protectors</button>' +
+      '<button type="button" data-nav="ui" style="text-align:left;border:0;color:#fff;cursor:pointer"><small>LOOK</small><span>UI</span></button>' +
+      '<button type="button" data-nav="os" style="text-align:left;border:0;color:#fff;cursor:pointer"><small>SYSTEM</small><span>OS Adapts</span></button>' +
+      '<button type="button" data-nav="apps" style="text-align:left;border:0;color:#fff;cursor:pointer"><small>LIBRARY</small><span>Apps Settings</span></button>' +
+      '<button type="button" data-nav="tools" style="text-align:left;border:0;color:#fff;cursor:pointer"><small>EXTRAS</small><span>Tools</span></button>' +
+      '<button type="button" data-nav="bypass" style="text-align:left;border:0;color:#fff;cursor:pointer"><small>SCHOOL</small><span>Bypass & protectors</span></button>' +
       '</nav><div id="drift-set-main" style="flex:1;min-width:0;overflow:auto;padding:14px 16px;scrollbar-width:none">' +
       '<section data-sec="ui">' +
       '<div style="margin-bottom:14px"><b>Home button</b>' +
@@ -3322,7 +3531,8 @@ function driftSite(url) {
       '<div style="opacity:.75;font-size:12px;margin:4px 0 8px">Arrástralos a la barra de marcadores del navegador real. Pulsa el nombre para copiarlo.</div>' +
       '<div class="bm-card"><div><b>Full bypass (drift)</b><div style="opacity:.75;font-size:12px">La búsqueda se abre en DuckDuckGo en español (MX), en esta pestaña. No abre el escritorio.</div></div><a id="drift-bm-class" href="#" style="flex:none;padding:8px 12px;border-radius:10px;background:#c5c8ce;color:#111;text-decoration:none;font-weight:700">Copiar</a></div>' +
       '<div class="bm-card"><div><b>Full bypass</b><div style="opacity:.75;font-size:12px">El mismo marcador. Se queda en esta pestaña.</div></div><a id="drift-bm-guest" href="#" style="flex:none;padding:8px 12px;border-radius:10px;background:#c5c8ce;color:#111;text-decoration:none;font-weight:700">Copiar</a></div>' +
-      '<div class="bm-card"><div><b>Mod de Google</b><div style="opacity:.75;font-size:12px">Función JavaScript. Cópiala y pégala como marcador. Abre el panel Liquid Glass: Home, Settings y AI.</div></div><a id="drift-bm-menu" href="#" style="flex:none;padding:8px 12px;border-radius:10px;background:#c5c8ce;color:#111;text-decoration:none;font-weight:700">Copiar</a></div></div>' +
+      '<div class="bm-card"><div><b>Mod de Google</b><div style="opacity:.75;font-size:12px">Función JavaScript. Cópiala y pégala como marcador. Abre el panel Liquid Glass: Home, Settings y AI.</div></div><a id="drift-bm-menu" href="#" style="flex:none;padding:8px 12px;border-radius:10px;background:#c5c8ce;color:#111;text-decoration:none;font-weight:700">Copiar</a></div>' +
+      '<div class="bm-card"><div><b>Wayground</b><div style="opacity:.75;font-size:12px">Función JavaScript. Pide el código y abre wayground.com en una pestaña real, fuera de Drift.</div></div><a id="drift-bm-way" href="#" style="flex:none;padding:8px 12px;border-radius:10px;background:#c5c8ce;color:#111;text-decoration:none;font-weight:700">Copiar</a></div></div>' +
       '<button type="button" id="drift-docs-btn" style="margin-top:12px;width:100%;padding:10px;border:1px solid rgba(255,255,255,.14);border-radius:10px;background:transparent;color:#fff;font-weight:600;cursor:pointer">Drift docs</button></section></div></div>';
     panel.querySelector('[data-x]').onclick = function (e) { e.stopPropagation(); panel.remove(); };
     function showSec(id) {
@@ -3330,7 +3540,9 @@ function driftSite(url) {
         s.style.display = s.getAttribute('data-sec') === id ? 'block' : 'none';
       });
       panel.querySelectorAll('[data-nav]').forEach(function (b) {
-        b.style.background = b.getAttribute('data-nav') === id ? 'rgba(255,255,255,.12)' : 'transparent';
+        var on = b.getAttribute('data-nav') === id;
+        b.classList.toggle('on', on);
+        b.style.background = 'transparent';
       });
     }
     panel.querySelectorAll('[data-nav]').forEach(function (b) {
@@ -3444,6 +3656,22 @@ function driftSite(url) {
         e.preventDefault();
         e.stopPropagation();
         copyBm(menuJs, 'Mod de Google', 'Es una función JavaScript. En cualquier página abre el panel de Drift: Home, Settings y AI. No abre el escritorio.');
+      };
+    }
+    var bmWay = panel.querySelector('#drift-bm-way');
+    function driftWayBody() {
+      var raw = prompt('Código de Wayground');
+      if (!raw) return;
+      raw = String(raw).trim();
+      var url = /^https?:/i.test(raw) ? raw : ('https://wayground.com/join?gc=' + encodeURIComponent(raw.replace(/\s+/g, '')));
+      window.open(url, '_blank', 'popup,width=1100,height=760');
+    }
+    if (bmWay) {
+      bmWay.setAttribute('href', '#');
+      bmWay.onclick = function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        copyBm('javascript:(' + driftWayBody.toString() + ')();', 'Wayground', 'Pide el código y abre wayground.com en una pestaña de tu navegador. No abre Drift.');
       };
     }
     var homeNow = 'drift';
@@ -3884,6 +4112,9 @@ function driftSite(url) {
     return frame;
   }
   function openLensAsk() {
+    openLensAskLegacy();
+  }
+  function openLensAskGeminiRetired() {
     var prev = document.getElementById('drift-lens-panel');
     if (prev) {
       var parked = document.getElementById('drift-gemini-preload');
@@ -4182,7 +4413,43 @@ function driftSite(url) {
       openLensAsk();
     };
     document.body.appendChild(btn);
-    prepGeminiLens();
+  }
+  function installAiModes() {
+    var css = document.getElementById('drift-aimodes-css');
+    if (!css) {
+      css = document.createElement('style');
+      css.id = 'drift-aimodes-css';
+      css.textContent = '.drift-aimodes{display:inline-flex;align-items:center;gap:2px;padding:3px;border-radius:999px;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.38);backdrop-filter:blur(16px) saturate(1.4);-webkit-backdrop-filter:blur(16px) saturate(1.4)}.drift-aimodes button{border:0;background:transparent;color:inherit;border-radius:999px;padding:6px 10px;font:650 12px system-ui;cursor:pointer}.drift-aimodes button.on{background:rgba(255,255,255,.82);color:#111}';
+      document.head.appendChild(css);
+    }
+    function paint(box) {
+      var saved = '';
+      try { saved = localStorage.getItem('wos:ai-eff') || ''; } catch (e) {}
+      box.querySelectorAll('[data-eff]').forEach(function (n) {
+        n.classList.toggle('on', n.getAttribute('data-eff') === saved);
+      });
+    }
+    document.querySelectorAll('.drift-aimodes').forEach(paint);
+    if (window.__driftAiModes) return;
+    window.__driftAiModes = 1;
+    document.addEventListener('click', function (e) {
+      var b = e.target && e.target.closest ? e.target.closest('.drift-aimodes [data-eff]') : null;
+      if (!b) return;
+      e.preventDefault();
+      var id = b.getAttribute('data-eff');
+      var on = !b.classList.contains('on');
+      b.parentNode.querySelectorAll('[data-eff]').forEach(function (n) { n.classList.remove('on'); });
+      var next = '';
+      if (on) { b.classList.add('on'); next = id; }
+      try { localStorage.setItem('wos:ai-eff', next); } catch (err) {}
+    });
+    if (window.MutationObserver) {
+      try {
+        new MutationObserver(function () {
+          document.querySelectorAll('.drift-aimodes').forEach(paint);
+        }).observe(document.body, { childList: true, subtree: true });
+      } catch (e2) {}
+    }
   }
   function installOrb() {
     var on = false;
@@ -4919,6 +5186,7 @@ function driftSite(url) {
       if (localStorage.getItem('wos:no-dev') === '1') setNoDev(true);
     } catch (e) {}
     try { installOrb(); } catch (e) {}
+    try { installAiModes(); } catch (e) {}
     try { installSettingsButton(); } catch (e) {}
     try { installProtector(); } catch (e) {}
     try { hookOpenApp(); } catch (e) {}

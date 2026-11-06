@@ -1179,7 +1179,7 @@ MODELS.forEach(m=>{AI_ABOUT[m[0]]=m[4]||m[2]});
 
 const EFF=['Low','Medium','High'],EFI={Low:'Reply very briefly and directly.',Medium:'',High:'Reason carefully and answer with detail and precision.'};
 function ai(root){
-  root.innerHTML=`<div class="ai"><div class="ah"><button class="hb" data-a="menu" aria-label="Chats">☰</button><b class="at">New chat</b><button class="hb" data-a="new" aria-label="New chat">＋</button></div><div class="ai-tools"><button type="button" data-t="caveman" title="Minimal answers only">Caveman</button><button type="button" data-t="instr" title="Custom instructions">Instructions</button></div><div class="am"></div><div class="cmp"><textarea rows="1" placeholder="Ask anything — try: open Browser" aria-label="Message"></textarea><div class="thumbs"></div><div class="cr"><button class="rb" data-a="att" aria-label="Adjuntar fotos">＋</button><input type="file" accept="image/*" multiple hidden><button class="pill" data-a="mdl"></button><span style="flex:1"></span><button class="rb mic" data-a="mic" aria-label="Dictar"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg></button><button class="rb snd" data-a="send" aria-label="Enviar">↑</button></div></div><div class="drw"><div class="dh"><b>Chats</b><button class="hb" data-a="cl" aria-label="Close">✕</button></div><button class="nw" data-a="new">＋ Chat nuevo</button><div class="cl"></div></div><div class="sheet"></div></div>`;
+  root.innerHTML=`<div class="ai"><div class="ah"><button class="hb" data-a="menu" aria-label="Chats">☰</button><b class="at">New chat</b><button class="hb" data-a="new" aria-label="New chat">＋</button></div><div class="ai-tools"><button type="button" data-t="caveman" title="Minimal answers only">Caveman</button><button type="button" data-t="instr" title="Custom instructions">Instructions</button></div><div class="am"></div><div class="cmp"><textarea rows="1" placeholder="Ask anything — try: open Browser" aria-label="Message"></textarea><div class="thumbs"></div><div class="cr"><button class="rb" data-a="att" aria-label="Adjuntar fotos">＋</button><input type="file" accept="image/*" multiple hidden><button class="pill" data-a="mdl"></button><span class="drift-aimodes"><button type="button" data-eff="fast">Fast</button><button type="button" data-eff="think">Think</button><button type="button" data-eff="expert">Expert</button></span><span style="flex:1"></span><button class="rb mic" data-a="mic" aria-label="Dictar"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg></button><button class="rb snd" data-a="send" aria-label="Enviar">↑</button></div></div><div class="drw"><div class="dh"><b>Chats</b><button class="hb" data-a="cl" aria-label="Close">✕</button></div><button class="nw" data-a="new">＋ Chat nuevo</button><div class="cl"></div></div><div class="sheet"></div></div>`;
   const am=$('.am',root),ta=$('textarea',root),th=$('.thumbs',root),pill=$('.pill',root),sd=$('.snd',root),drw=$('.drw',root),cl=$('.cl',root),sh=$('.sheet',root),fi=$('input[type=file]',root),mic=$('[data-a=mic]',root),title=$('.at',root);
   let hist=[],curId=null,busy=false,sample=null,ctl=null,pend=[],model='google/gemini-3.8-flash',eff='Medium',caveman=false,customInstr=LS.get('wos:cinst','');
   const cur=()=>S.d.chats.find(c=>c.id===curId);
@@ -1650,6 +1650,9 @@ function ai(root){
   sample=async(input,o)=>{
     const msgs=input.map(m=>({role:m.role,content:m.content}));
     if(o.images&&o.images.length){const last=msgs[msgs.length-1];const text=typeof last.content==='string'?last.content:'';last.content=[...await Promise.all(o.images.map(async b=>({type:'image',source:{type:'base64',media_type:b.type||'image/jpeg',data:await b64(b)}}))),{type:'text',text}]}
+    const effNow=(typeof LS!=='undefined'?LS.get('wos:ai-eff',''):'');
+    const byEff={fast:'mistralai/mistral-small-2603',think:'mistralai/mistral-medium-3.5',expert:'cohere/command-a-reasoning'};
+    if(byEff[effNow] && (!o.model || o.model==='google/gemini-3.8-flash' || o.model===byEff[effNow])) o.model=byEff[effNow];
     const who=((typeof MODELS!=='undefined'&&(MODELS.find(x=>x[0]===o.model)||[])[1])||o.model||'');
     const named=[{role:'system',content:'You are '+who+'. If the user asks which model you are, answer exactly: '+who+'. Do not claim to be a different model.'}].concat(msgs);
     if(o.model==='google/gemini-3.8-flash'){
@@ -3483,11 +3486,11 @@ function sjBrowser(root){
   root.innerHTML='<div class="tabs"></div><div class="nav"><button aria-label="Atrás">←</button><button aria-label="Adelante">→</button><button aria-label="Recargar">⟳</button><input class="omni" placeholder="Search or type an address" aria-label="Barra de direcciones"><select aria-label="Buscador"></select></div><div class="page"></div>';
   const tabsEl=$('.tabs',root),om=$('.omni',root),page=$('.page',root),[bk,fw,rl]=root.querySelectorAll('.nav>button'),sel=$('select',root);
   sel.style.cssText='height:30px;border-radius:15px;border:1px solid var(--line);background:var(--omni);color:var(--ink);padding:0 6px;font-size:12px;flex:none';
-  sel.innerHTML='<option value="duckduckgo">DuckDuckGo</option><option value="brave">Brave</option><option value="edge">Edge</option><option value="firefox">Firefox</option>';
+  sel.innerHTML='<option value="duckduckgo">DuckDuckGo</option><option value="brave">Brave</option><option value="edge">Edge</option><option value="firefox">Bing</option>';
   try { sel.value=(typeof ENG==='function'?ENG():'duckduckgo'); } catch (e) { sel.value='duckduckgo'; }
   if(!sel.value) sel.value='duckduckgo';
   sel.onchange=function(){ try { LS.set('wos:eng', sel.value); } catch (e) {} };
-  const ENGS={brave:'https://search.brave.com/search?q=',edge:'https://www.bing.com/search?setlang=en-US&cc=US&mkt=en-US&q=',firefox:'https://www.google.com/search?hl=en&q=',duckduckgo:'https://duckduckgo.com/?kl=mx-es&ia=web&q='};
+  const ENGS={brave:'https://search.brave.com/search?q=',edge:'https://www.bing.com/search?setlang=en-US&cc=US&mkt=en-US&q=',firefox:'https://www.bing.com/search?setlang=es-MX&cc=MX&q=',duckduckgo:'https://duckduckgo.com/?kl=mx-es&ia=web&q='};
   let tabs=[],cur=0,sig='';
   const T=()=>tabs[cur];
   const norm=v=>{v=v.trim();if(!v)return'';
@@ -3514,6 +3517,16 @@ function sjBrowser(root){
   }
   async function openFrame(u){
     const t=T();
+    try{
+      const host=new URL(u).hostname;
+      if(/(^|\.)bing\.com$/i.test(host)){
+        t.fr=null;t.url=u;t.title='Bing';
+        const w=window.open(u,'_blank','popup,width=1100,height=760');
+        t.box.innerHTML='<div class="ym"><b>Bing</b><br>'+(w?'Se abrió en tu navegador, sin proxy.':'Permite las ventanas emergentes y busca otra vez.')+'</div>';
+        bar();
+        return;
+      }
+    }catch(e){}
     if(googleLoginHost(u)){
       t.fr=null; t.url=u; t.title=u.replace(/^https?:\/\//,'').slice(0,30);
       t.box.innerHTML='';
