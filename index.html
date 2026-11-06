@@ -1154,6 +1154,8 @@ async function go(){
 
 const MODELS=[
 ['google/gemini-3.8-flash','Drift 2.1','Main · fastest reply','default','Drift 2.1 is the main model. It answers immediately and writes code.',{code:1,vision:1,files:1,think:1,fast:1}],
+['puter:gemini-3.5-flash-lite','Gemini Flash Lite','Puter · más rápido','quick','Gemini 3.5 Flash Lite on Puter. Faster than Drift 2.1. Puter may ask you to sign in.',{code:1,vision:0,files:0,think:0,fast:1}],
+['puter:gemini-4-argon','Gemini 4 Argon','Puter · mejor','default','Gemini 4 Argon on Puter. Stronger than Drift 2.1. Puter may ask you to sign in.',{code:1,vision:0,files:0,think:1,fast:0}],
 ['qwen/qwen3.7-flash:free','Drift Fast','Quick','quick','Qwen3.7 Flash, free on xKiro.',{code:1,vision:1,files:0,think:1,fast:1}],
 ['duck:gpt-4o-mini','Duck GPT','DuckDuckGo','quick','Imported from DuckDuckGo AI.',{code:1,vision:0,files:0,think:0,fast:1}],
 ['duck:llama','Duck Llama','DuckDuckGo','quick','Imported from DuckDuckGo AI.',{code:1,vision:0,files:0,think:0,fast:1}],
@@ -1662,6 +1664,34 @@ function ai(root){
       const text=((j.content||[]).map(x=>x.text||'').join(''))||'';
       if(text.trim())return {text};
       throw {message:(j.error&&(j.error.message||j.error))||'No se pudo obtener respuesta.'};
+    }
+    if(/^puter:/.test(String(o.model||''))){
+      const id=String(o.model).slice(6);
+      if(!window.puter){
+        await new Promise((resolve,reject)=>{
+          const s=document.createElement('script');
+          s.src='https://js.puter.com/v2/';
+          s.onload=()=>resolve();
+          s.onerror=()=>reject({message:'No se pudo cargar Puter.'});
+          document.head.appendChild(s);
+        });
+      }
+      const prompt=named.map(m=>{
+        const body=typeof m.content==='string'?m.content:'';
+        return (m.role==='system'?'':(m.role+': '))+body;
+      }).filter(Boolean).join('\n\n');
+      let res;
+      try{ res=await window.puter.ai.chat(prompt,{model:id}); }
+      catch(e){ throw {message:(e&&e.message)||'Puter pide iniciar sesión en puter.com y volver a preguntar.'}; }
+      let text='';
+      if(typeof res==='string') text=res;
+      else if(res&&typeof res.message==='string') text=res.message;
+      else if(res&&res.message&&typeof res.message.content==='string') text=res.message.content;
+      else if(res&&res.message&&Array.isArray(res.message.content)) text=res.message.content.map(c=>c&&(c.text||'')||'').join('');
+      else if(res&&typeof res.text==='string') text=res.text;
+      text=String(text||'').trim();
+      if(!text) throw {message:'Puter no contestó. Si pide cuenta, inicia sesión en puter.com.'};
+      return {text};
     }
     if(/^duck[:/]/.test(String(o.model||''))){
       const name=String(o.model).split(/[:/]/).pop();

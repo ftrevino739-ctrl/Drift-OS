@@ -112,12 +112,12 @@ function loadAndPatchIndex() {
 	);
 
 	const tag =
-		'<script src="/drift-extras.js?v=20261105-b" defer></script>' +
-		'<script src="/chromebook-proxy.js?v=20261105-b" defer></script>' +
-		'<script src="/wayground-ai.js?v=20261105-b" defer></script>' +
-		'<script src="/drift-fixup.js?v=20261105-b" defer></script>' +
-		'<script src="/drift-userpatch.js?v=20261105-b" defer></script>' +
-		"<script>window.__DRIFT_BUILD_WANT='20261105-b';setTimeout(function(){if(window.__DRIFT_BUILD===window.__DRIFT_BUILD_WANT)return;var d=document.getElementById('drift-old');if(d)return;d=document.createElement('div');d.id='drift-old';d.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#000;color:#eee;overflow:auto;padding:28px;font:16px/1.5 system-ui';d.innerHTML='<div style=\"max-width:680px;margin:0 auto\"><b style=\"font-size:28px\">Versión vieja de Drift</b><p>Se abrió una copia guardada. Recarga forzada. No hace falta una terminal ni apagar el equipo con un comando.</p><p><b>Chrome, Edge, ChromeOS y Linux:</b> Ctrl+Shift+R. Si sigue igual, en la configuración del sitio borra los datos de Drift y entra otra vez.</p><p><b>Firefox:</b> Ctrl+Shift+R. Si sigue, Ajustes → Privacidad → borrar cookies y datos de este sitio.</p><p><b>Safari en Mac:</b> Opción+Comando+E y luego Comando+R. En iPhone o iPad: Ajustes → Safari → borrar historial y datos del sitio, o quita el acceso directo y ábrelo de nuevo.</p><p><b>Windows:</b> cierra el navegador desde la barra de tareas y ábrelo otra vez. El último paso, en cualquier sistema, es reiniciar el dispositivo desde el menú de apagado, no desde la terminal.</p></div>';document.body.appendChild(d);},2500);</script>" +
+		'<script src="/drift-extras.js?v=20261106-a" defer></script>' +
+		'<script src="/chromebook-proxy.js?v=20261106-a" defer></script>' +
+		'<script src="/wayground-ai.js?v=20261106-a" defer></script>' +
+		'<script src="/drift-fixup.js?v=20261106-a" defer></script>' +
+		'<script src="/drift-userpatch.js?v=20261106-a" defer></script>' +
+		"<script>window.__DRIFT_BUILD_WANT='20261106-a';setTimeout(function(){if(window.__DRIFT_BUILD===window.__DRIFT_BUILD_WANT)return;var d=document.getElementById('drift-old');if(d)return;d=document.createElement('div');d.id='drift-old';d.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#000;color:#eee;overflow:auto;padding:28px;font:16px/1.5 system-ui';d.innerHTML='<div style=\"max-width:680px;margin:0 auto\"><b style=\"font-size:28px\">Versión vieja de Drift</b><p>Se abrió una copia guardada. Recarga forzada. No hace falta una terminal ni apagar el equipo con un comando.</p><p><b>Chrome, Edge, ChromeOS y Linux:</b> Ctrl+Shift+R. Si sigue igual, en la configuración del sitio borra los datos de Drift y entra otra vez.</p><p><b>Firefox:</b> Ctrl+Shift+R. Si sigue, Ajustes → Privacidad → borrar cookies y datos de este sitio.</p><p><b>Safari en Mac:</b> Opción+Comando+E y luego Comando+R. En iPhone o iPad: Ajustes → Safari → borrar historial y datos del sitio, o quita el acceso directo y ábrelo de nuevo.</p><p><b>Windows:</b> cierra el navegador desde la barra de tareas y ábrelo otra vez. El último paso, en cualquier sistema, es reiniciar el dispositivo desde el menú de apagado, no desde la terminal.</p></div>';document.body.appendChild(d);},2500);</script>" +
 		"<script>(function(){try{sessionStorage.setItem('drift:gate','1')}catch(e){}" +
 		"function h(){var g=document.getElementById('gate');if(g){g.style.display='none';g.classList.add('gone')}" +
 		"document.querySelectorAll('.gate-ui,.gate-access,#gate-stars,#gate-nebula').forEach(function(el){el.style.display='none'});}" +
@@ -302,46 +302,107 @@ fastify.post("/api/ai", { bodyLimit: 6 * 1024 * 1024 }, async (req, reply) => {
 	return reply.send({ content: [{ type: "text", text: String(text) }] });
 });
 
-let duckVqd = "";
-let duckVqdAt = 0;
+const DUCK_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36";
+function duckSha(s) { return crypto.createHash("sha256").update(String(s)).digest("base64"); }
+function duckHex(s) {
+	let t = String(s || "");
+	const p = t.indexOf("(");
+	if (p !== -1) t = t.slice(p + 3, t.length - 1);
+	return parseInt(t, 16);
+}
+function duckSolve(hash) {
+	const decoded = Buffer.from(String(hash || ""), "base64").toString("utf8");
+	const cap = (pat) => { const m = decoded.match(new RegExp(pat)); return m ? m[1] : null; };
+	const rawArr = cap("\\{const _0x......=\\[(.*?)\\];");
+	if (!rawArr) throw new Error("duck-array");
+	const arr = rawArr.split(",").map((s) => s.replace(/^'|'$/g, "").replace(/\\x([0-9a-fA-F]{2})/g, (_, h) => String.fromCharCode(parseInt(h, 16))));
+	const offset = parseInt(cap("0x([0-9a-fA-F]+);let"), 16);
+	const findShift = (pat, target) => {
+		const index = duckHex(pat);
+		const origin = arr.indexOf(target);
+		if (origin < 0) throw new Error(target);
+		return origin - (index - offset);
+	};
+	let shift = null;
+	for (const [pat, target] of [
+		[cap("await Promise\\[[^(]*\\(0x([0-9a-fA-F]+)\\)\\]"), "all"],
+		[cap("\\]\\(\\[navigator\\[[^(]*\\(0x([0-9a-fA-F]+)\\)\\],"), "userAgent"],
+	]) {
+		if (pat && shift === null) { try { shift = findShift("0x" + pat, target); } catch { /* next pattern */ } }
+	}
+	if (shift === null) throw new Error("duck-shift");
+	const val = (pat) => {
+		pat = String(pat || "").trim();
+		if (pat.startsWith("'")) return pat.slice(1, -1);
+		const index = duckHex(pat);
+		const n = arr.length;
+		return arr[((index - offset + shift) % n + n) % n];
+	};
+	const serverMatch = decoded.match(/'server_hashes':\[([^,]+),([^,]+),([^\]]+)\]/);
+	if (!serverMatch) throw new Error("duck-server");
+	let second = "";
+	if (decoded.includes("innerHTML")) {
+		const html = val(cap("=([^,;]+),String"));
+		const lens = { "<div><div></div><div></div": 99, "<p><div></p><p></div": 128, "<br><div></br><br></div": 92, "<li><div></li><li></div": 87 };
+		const base = duckHex(cap("String\\(0x([0-9a-fA-F]+)\\+"));
+		if (!Number.isFinite(base) || lens[html] == null) throw new Error("duck-html");
+		second = String(base + lens[html]);
+	} else if (decoded.includes("instanceof HTMLDivElement")) {
+		const n = cap(",0x([0-9a-fA-F]+)\\)\\);\\}\\(\\)\\),\\(function");
+		if (!n) throw new Error("duck-div");
+		second = String(duckHex(n) + 12);
+	} else throw new Error("duck-kind");
+	const third = cap(",0x([0-9a-fA-F]+)\\)\\);\\}\\(\\)\\)\\]\\)");
+	if (!third) throw new Error("duck-third");
+	return Buffer.from(JSON.stringify({
+		server_hashes: serverMatch.slice(1).map(val),
+		client_hashes: [duckSha(DUCK_UA), duckSha(second), duckSha(String(duckHex(third)))],
+		signals: {},
+		meta: { v: "4", challenge_id: val(cap("'challenge_id':([^},]+)")), timestamp: val(cap("'timestamp':([^},]+)")), origin: "https://duck.ai", stack: "Error", debug: "B\u001f", duration: "0" },
+	})).toString("base64");
+}
 async function duckChat(model, messages) {
-	const fresh = !duckVqd || Date.now() - duckVqdAt > 3 * 60 * 1000;
-	if (fresh) {
-		const status = await fetch("https://duckduckgo.com/duckchat/v1/status", {
-			headers: { "x-vqd-accept": "1", "user-agent": "Mozilla/5.0" },
-			signal: AbortSignal.timeout(4000),
-		});
-		duckVqd = status.headers.get("x-vqd-4") || "";
-		duckVqdAt = Date.now();
-	}
-	if (!duckVqd) return "";
-	const r = await fetch("https://duckduckgo.com/duckchat/v1/chat", {
-		method: "POST",
-		headers: {
-			"content-type": "application/json",
-			accept: "text/event-stream",
-			"x-vqd-4": duckVqd,
-			"user-agent": "Mozilla/5.0",
-		},
-		body: JSON.stringify({ model, messages }),
-		signal: AbortSignal.timeout(8000),
-	});
-	const next = r.headers.get("x-vqd-4");
-	if (next) { duckVqd = next; duckVqdAt = Date.now(); }
-	else { duckVqd = ""; }
-	const raw = await r.text();
-	let text = "";
-	for (const line of raw.split("\n")) {
-		if (!line.startsWith("data:")) continue;
-		const data = line.slice(5).trim();
-		if (!data || data === "[DONE]") continue;
+	for (let attempt = 0; attempt < 2; attempt++) {
+		let token = "";
 		try {
-			const j = JSON.parse(data);
-			if (j && (j.action === "error" || j.error)) continue;
-			if (j && j.message && !/talked\s+to+\s*much/i.test(j.message)) text += j.message;
-		} catch {}
+			const status = await fetch("https://duck.ai/duckchat/v1/status", {
+				headers: { "x-vqd-accept": "1", "user-agent": DUCK_UA, origin: "https://duck.ai", referer: "https://duck.ai/" },
+				signal: AbortSignal.timeout(8000),
+			});
+			token = duckSolve(status.headers.get("x-vqd-hash-1") || "");
+		} catch { continue; }
+		try {
+			const r = await fetch("https://duck.ai/duckchat/v1/chat", {
+				method: "POST",
+				headers: {
+					"content-type": "application/json",
+					accept: "text/event-stream",
+					"user-agent": DUCK_UA,
+					origin: "https://duck.ai",
+					referer: "https://duck.ai/",
+					"x-vqd-hash-1": token,
+				},
+				body: JSON.stringify({ model, messages, canUseTools: false, reasoningEffort: "none" }),
+				signal: AbortSignal.timeout(20000),
+			});
+			if (r.status === 418) continue;
+			const raw = await r.text();
+			let text = "";
+			for (const line of raw.split("\n")) {
+				if (!line.startsWith("data:")) continue;
+				const data = line.slice(5).trim();
+				if (!data || data === "[DONE]") continue;
+				try {
+					const j = JSON.parse(data);
+					if (j && (j.action === "error" || j.error)) continue;
+					if (j && j.message && !/talked\s+to+\s*much/i.test(j.message)) text += j.message;
+				} catch {}
+			}
+			text = text.trim();
+			if (text) return text;
+		} catch { /* retry with a new challenge */ }
 	}
-	return text.trim();
+	return "";
 }
 async function fastAnswer(messages) {
 	const chat = messages.slice(-8).map((m) => ({ role: m.role === "assistant" ? "assistant" : "user", content: String(m.content || "").slice(0, 8000) }));
@@ -374,10 +435,13 @@ async function fastAnswer(messages) {
 fastify.post("/api/duck", { bodyLimit: 1024 * 1024 }, async (req, reply) => {
 	const body = req.body && typeof req.body === "object" ? req.body : {};
 	const aliases = {
-		"claude-haiku": "claude-3-haiku-20240307",
-		"gpt-mini": "gpt-4o-mini",
+		"claude-haiku": "claude-haiku-4-5",
+		"claude-3-haiku-20240307": "claude-haiku-4-5",
+		"gpt-mini": "gpt-5.4-mini",
+		"gpt-4o-mini": "gpt-5.4-mini",
 		llama: "meta-llama/Llama-3.3-70B-Instruct-Turbo",
-		mistral: "mistralai/Mistral-Small-24B-Instruct-2501",
+		mistral: "mistral-small-2603",
+		"mistralai/Mistral-Small-24B-Instruct-2501": "mistral-small-2603",
 		gemma: "gemma-4-31b",
 		oss: "gpt-oss-120b",
 	};
@@ -389,10 +453,10 @@ fastify.post("/api/duck", { bodyLimit: 1024 * 1024 }, async (req, reply) => {
 	})).filter((m) => m.content);
 	if (!messages.length) messages.push({ role: "user", content: "Hello" });
 	const names = {
-		"gpt-4o-mini": "Duck GPT (GPT-4o mini on DuckDuckGo). You are not GPT-4.",
-		"claude-3-haiku-20240307": "Duck Haiku (Claude 3 Haiku). You are not ChatGPT.",
+		"gpt-5.4-mini": "Duck GPT (GPT-5.4 mini on DuckDuckGo). You are not GPT-4.",
+		"claude-haiku-4-5": "Duck Haiku (Claude Haiku 4.5). You are not ChatGPT.",
 		"meta-llama/Llama-3.3-70B-Instruct-Turbo": "Duck Llama (Meta Llama 3.3 70B). You are not ChatGPT.",
-		"mistralai/Mistral-Small-24B-Instruct-2501": "Duck Mistral. You are not ChatGPT.",
+		"mistral-small-2603": "Duck Mistral. You are not ChatGPT.",
 		"gemma-4-31b": "Duck Gemma. You are not ChatGPT.",
 		"gpt-oss-120b": "Duck OSS. You are not ChatGPT.",
 	};
@@ -406,17 +470,16 @@ fastify.post("/api/duck", { bodyLimit: 1024 * 1024 }, async (req, reply) => {
 		return !t || /did not (answer|offer|respond)|DuckDuckGo did not/i.test(t);
 	}
 	let text = "";
-	try { text = stripDuck(await duckChat(model, primed)); } catch { duckVqd = ""; text = ""; }
+	let fromDuck = true;
+	try { text = stripDuck(await duckChat(model, primed)); } catch { text = ""; }
 	if (duckBad(text)) {
-		duckVqd = "";
-		try { text = stripDuck(await duckChat(model, primed)); } catch { text = ""; }
-	}
-	if (duckBad(text)) {
+		fromDuck = false;
 		try { text = stripDuck(await fastAnswer(messages)); } catch { text = ""; }
 	}
 	if (duckBad(text)) {
 		return reply.code(502).send({ error: { message: "Duck no contestó. Vuelve a intentar." } });
 	}
+	if (!fromDuck) text = "Duck no aceptó la sesión. Esta respuesta no es de Duck.\n\n" + text;
 	reply.header("cache-control", "no-store");
 	return { content: [{ type: "text", text }] };
 });

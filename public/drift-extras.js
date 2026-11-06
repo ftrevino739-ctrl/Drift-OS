@@ -521,17 +521,14 @@
 
   function classdojoApp(root) {
     root.innerHTML = '';
-    root.style.cssText = 'height:100%;min-height:0;display:grid;place-items:center;background:#fff;color:#111;font:15px system-ui';
-    var box = document.createElement('div');
-    box.style.cssText = 'text-align:center;padding:24px;max-width:420px';
-    box.innerHTML = '<b style="font-size:20px">ClassDojo</b><p style="opacity:.75">Se abre en una pestaña real, sin proxy, para que la página responda.</p><button type="button" data-go style="margin-top:8px;padding:10px 16px;border:0;border-radius:12px;background:#1a73e8;color:#fff;font-weight:700;cursor:pointer">Abrir ClassDojo</button>';
-    root.appendChild(box);
-    function open() {
-      var w = window.open('https://www.classdojo.com/', '_blank', 'popup,width=1100,height=760');
-      if (!w) box.querySelector('[data-go]').textContent = 'Permite ventanas y pulsa otra vez';
-    }
-    box.querySelector('[data-go]').onclick = open;
-    open();
+    root.style.cssText = 'height:100%;min-height:0;position:relative;background:#fff';
+    var frame = document.createElement('iframe');
+    frame.setAttribute('referrerpolicy', 'no-referrer');
+    frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-modals allow-downloads allow-pointer-lock');
+    frame.setAttribute('allow', 'camera; microphone; clipboard-read; clipboard-write; fullscreen; autoplay');
+    frame.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff';
+    frame.src = '/api/opera?u=' + encodeURIComponent('https://www.classdojo.com/') + '&b=edge';
+    root.appendChild(frame);
   }
 
   function registerCore() {
