@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   window.__DRIFT_BUILD = '20261107-menu';
-  window.DRIFT_BEST_MODEL = window.DRIFT_BEST_MODEL || 'mistralai/mistral-large-4-0';
+  window.DRIFT_BEST_MODEL = window.DRIFT_BEST_MODEL || 'google/gemini-3.8-flash';
   window.DRIFT_CODE_MODEL = 'google/gemini-3.8-flash';
 
   var GIMKIT_INJECTORS = {
