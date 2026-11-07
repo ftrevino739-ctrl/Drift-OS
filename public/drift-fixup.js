@@ -1,7 +1,7 @@
 /* Drift fixup */
 (function () {
   'use strict';
-  window.__DRIFT_BUILD = '20261106-c';
+  window.__DRIFT_BUILD = '20261107-menu';
   window.DRIFT_BEST_MODEL = window.DRIFT_BEST_MODEL || 'mistralai/mistral-large-4-0';
   window.DRIFT_CODE_MODEL = 'google/gemini-3.8-flash';
 
@@ -1490,7 +1490,7 @@ function driftSite(url) {
       i21 = MODELS.findIndex(function (m) { return m && m[0] === 'google/gemini-3.8-flash'; });
       if (i21 > 0) MODELS.unshift(MODELS.splice(i21, 1)[0]);
       var realName = {
-        'google/gemini-3.8-flash': 'Qwen 3.8',
+        'google/gemini-3.8-flash': 'Drift 2.1',
         'qwen/qwen3.7-flash:free': 'Qwen3.7 Flash',
         'duck:gpt-4o-mini': 'GPT-4o mini',
         'duck:llama': 'Llama',
@@ -2508,12 +2508,12 @@ function driftSite(url) {
       if (!css) {
         css = document.createElement('style');
         css.id = 'drift-gmenu-css';
-        css.textContent = '#drift-gmenu{position:fixed;right:0;top:0;bottom:0;left:auto;z-index:2147483646;display:flex;flex-direction:row;align-items:stretch;width:max-content;max-width:100vw;height:100%;background:transparent;border:0;box-shadow:none;border-radius:0;overflow:visible;pointer-events:none;color:#111;font:13px/1.4 system-ui,sans-serif}#drift-gmenu [data-rail],#drift-gmenu [data-fly]{pointer-events:auto}#drift-gmenu [data-rail]{width:72px;flex:none;height:100%;display:flex;flex-direction:column;gap:14px;align-items:center;padding:16px 0 14px;background:rgba(12,14,20,.72);border-left:1px solid rgba(255,255,255,.16);backdrop-filter:blur(28px) saturate(1.6);-webkit-backdrop-filter:blur(28px) saturate(1.6)}#drift-gmenu [data-tab],#drift-gmenu [data-exit]{width:48px;height:48px;border:0;border-radius:16px;background:rgba(255,255,255,.1);color:#f5f7fb;display:grid;place-items:center;cursor:pointer;padding:0;font-weight:500}#drift-gmenu [data-tab].on{background:#3b82f6;color:#fff;box-shadow:0 8px 18px rgba(37,99,235,.35)}#drift-gmenu [data-exit]{margin-top:auto;background:rgba(255,255,255,.08)}#drift-gmenu [data-fly]{width:min(380px,calc(100vw - 72px));height:100%;display:flex;flex-direction:column;min-height:0;background:rgba(255,255,255,.46);border-left:1px solid rgba(255,255,255,.45);box-shadow:-18px 0 50px rgba(0,0,0,.18);backdrop-filter:blur(28px) saturate(1.7);-webkit-backdrop-filter:blur(28px) saturate(1.7)}#drift-gmenu [data-fly][hidden]{display:none!important}#drift-gmenu [data-view]{flex:1;min-height:0;overflow:auto;padding:16px 16px 22px}#drift-gmenu [data-view="ai"]{display:flex;flex-direction:column;overflow:hidden;gap:8px}#drift-gmenu [data-view][hidden]{display:none!important}#drift-gmenu input:not(.drift-sw),#drift-gmenu select,#drift-gmenu textarea{width:100%;box-sizing:border-box;margin-top:4px;padding:8px 10px;border-radius:12px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.72);color:#111}#drift-gmenu .drift-line{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:8px 0;padding:10px 12px;border-radius:16px;background:rgba(255,255,255,.45);border:1px solid rgba(255,255,255,.5)}#drift-gmenu .drift-line small{display:block;font-weight:500;opacity:.62;font-size:11px;margin-top:2px}#drift-gmenu input.drift-sw{appearance:none;-webkit-appearance:none;width:51px!important;height:31px!important;margin:0;padding:0;border:0;border-radius:999px;background:#e5e5ea;position:relative;flex:none;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}#drift-gmenu input.drift-sw:after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.28);transition:left .16s}#drift-gmenu input.drift-sw:checked{background:#34c759}#drift-gmenu input.drift-sw:checked:after{left:22px}#drift-gmenu [data-log]{flex:1;min-height:0;max-height:none;overflow:auto;display:flex;flex-direction:column;gap:8px}#drift-gmenu [data-gem]{flex:1;min-height:0;border-radius:16px;overflow:hidden;background:#fff}#drift-gmenu [data-gem][hidden]{display:none!important}#drift-gmenu .u{align-self:flex-end;max-width:86%;background:#1a73e8;color:#fff;border-radius:16px 16px 6px 16px;padding:8px 10px}#drift-gmenu .a{align-self:flex-start;max-width:92%;background:rgba(255,255,255,.86);color:#111;border-radius:16px 16px 16px 6px;padding:8px 10px}#drift-gmenu .drift-compose{flex:none;margin-top:0;background:rgba(255,255,255,.82);border:1px solid rgba(0,0,0,.06);border-radius:26px;padding:10px 12px 8px}#drift-gmenu .drift-compose textarea{border:0;background:transparent;min-height:44px;padding:4px 2px;resize:none}#drift-gmenu .drift-row{display:flex;align-items:center;gap:8px;margin-top:4px}#drift-gmenu .drift-pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;border:1px solid rgba(0,0,0,.12);background:#fff;color:#111;font-weight:650;padding:6px 10px}#drift-gmenu .drift-pill.on,#drift-gmenu [data-mode].on{background:#111;color:#fff}#drift-gmenu .drift-ico{width:32px;height:32px;border-radius:50%;background:#fff;border:1px solid rgba(0,0,0,.1);display:grid;place-items:center;padding:0}#drift-gmenu [data-modes]{display:flex;gap:6px;flex:none}#drift-gmenu [data-mode]{border-radius:999px;background:rgba(255,255,255,.72);border:1px solid rgba(0,0,0,.1);padding:6px 10px}#drift-gmenu h3{margin:14px 0 6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.55}#drift-gmenu table{border-collapse:collapse;width:100%}#drift-gmenu button.drift-sw{width:52px;height:32px;border-radius:999px;background:#e5e5ea;border:0;padding:0;position:relative;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}#drift-gmenu button.drift-sw i{position:absolute;top:2px;left:2px;width:28px;height:28px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.28);display:block;transition:left .16s}#drift-gmenu button.drift-sw.on{background:#34c759}#drift-gmenu button.drift-sw.on i{left:22px}#drift-gmenu .drift-compose{margin-top:auto}#drift-gmenu{inset:0;width:auto;height:auto}#drift-gmenu [data-rail]{position:fixed;right:0;top:0;bottom:0;z-index:3}#drift-gmenu [data-fly]{position:fixed;right:84px;left:auto;top:12px;bottom:12px;width:min(400px,calc(100vw - 108px));height:auto;border-radius:0;overflow:auto;border:0;border-left:0;box-shadow:none;background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none}#drift-gmenu [data-view=home],#drift-gmenu [data-view=settings]{display:flex;flex-direction:column;gap:10px;padding:6px 2px;background:transparent}#drift-gmenu [data-view=home] > *,#drift-gmenu [data-view=settings] > *{margin:0;padding:14px 16px;border-radius:22px;background:rgba(255,255,255,.42);border:1px solid rgba(255,255,255,.62);box-shadow:0 12px 32px rgba(0,0,0,.12);backdrop-filter:blur(22px) saturate(1.7);-webkit-backdrop-filter:blur(22px) saturate(1.7)}#drift-gmenu [data-view] > b{background:transparent;border:0;box-shadow:none;backdrop-filter:none;padding:2px 8px;font-size:22px;font-weight:700}#drift-gmenu [data-view=home] h3{background:transparent;border:0;box-shadow:none;backdrop-filter:none;padding:2px 8px;margin:0;font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.55}#drift-gmenu [data-view] .drift-line{background:transparent;border:0;box-shadow:none;padding:0;margin:0}#drift-gmenu [data-view=ai]{margin:8px 2px;border-radius:28px;overflow:hidden;background:rgba(255,255,255,.46);border:1px solid rgba(255,255,255,.62);box-shadow:0 18px 48px rgba(0,0,0,.16);backdrop-filter:blur(26px) saturate(1.7);-webkit-backdrop-filter:blur(26px) saturate(1.7)}#drift-gmenu .drift-glasspick{display:flex;align-items:center;gap:8px;margin:0 0 8px;padding:6px;border-radius:999px;background:rgba(255,255,255,.28);border:1px solid rgba(255,255,255,.62);backdrop-filter:blur(18px) saturate(1.6);-webkit-backdrop-filter:blur(18px) saturate(1.6)}#drift-gmenu .drift-glasspick select{width:auto;flex:1;margin:0;border-radius:999px;border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.5);padding:8px 14px;min-height:36px}#drift-gmenu .drift-glasspick [data-modes]{display:flex;gap:4px;flex:none}#drift-gmenu .drift-glasspick [data-mode]{border-radius:999px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.62);padding:8px 12px}#drift-gmenu .drift-ico{width:42px;height:42px;color:#111;background:#fff;border:1px solid rgba(0,0,0,.14);flex:none}#drift-gmenu .drift-ico svg{display:block}#drift-gmenu [data-log]{font-size:16px;padding:4px}#drift-gmenu [data-view=home],[data-view=settings]{padding:22px}';
         document.documentElement.appendChild(css);
       }
+      css.textContent = '#drift-gmenu{position:fixed;inset:0;z-index:2147483646;width:auto;height:auto;background:transparent;pointer-events:none;color:#f4f4f6;font:13px/1.4 system-ui,sans-serif}#drift-gmenu [data-rail],#drift-gmenu [data-fly]{pointer-events:auto}#drift-gmenu [data-rail]{position:fixed;right:12px;top:12px;bottom:12px;width:68px;z-index:3;display:flex;flex-direction:column;gap:12px;align-items:center;padding:14px 0;background:#2a2a2e;border:1px solid rgba(255,255,255,.08);border-radius:22px;box-shadow:0 18px 40px rgba(0,0,0,.35)}#drift-gmenu [data-tab],#drift-gmenu [data-exit]{width:46px;height:46px;border:0;border-radius:14px;background:rgba(255,255,255,.06);color:#f5f5f7;display:grid;place-items:center;cursor:pointer;padding:0;font:700 10px/1 system-ui,sans-serif}#drift-gmenu [data-tab].on{background:#5a5d66;color:#fff}#drift-gmenu [data-exit]{margin-top:auto}#drift-gmenu [data-fly]{position:fixed;right:96px;top:12px;bottom:12px;width:min(480px,calc(100vw - 124px));display:flex;flex-direction:column;min-height:0;background:transparent;border:0;box-shadow:none;overflow:hidden}#drift-gmenu [data-fly][hidden]{display:none!important}#drift-gmenu [data-view]{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:12px;background:transparent}#drift-gmenu [data-view][hidden]{display:none!important}#drift-gmenu .dg-card{background:rgba(50,50,54,.92);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:14px 16px;box-shadow:0 12px 32px rgba(0,0,0,.32);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}#drift-gmenu .dg-fill{flex:1;min-height:0;overflow:auto}#drift-gmenu [data-clock]{font-size:44px;font-weight:700;letter-spacing:-.03em;line-height:1}#drift-gmenu [data-day]{opacity:.72;margin-top:6px;text-transform:capitalize}#drift-gmenu table.dg-set{width:100%;border-collapse:separate;border-spacing:0 8px}#drift-gmenu table.dg-set td{vertical-align:middle}#drift-gmenu table.dg-set td:first-child{padding-right:12px}#drift-gmenu .drift-line{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0}#drift-gmenu .drift-line small, #drift-gmenu table small{display:block;font-weight:500;opacity:.62;font-size:11px;margin-top:2px}#drift-gmenu input:not(.drift-sw),#drift-gmenu select,#drift-gmenu textarea{width:100%;box-sizing:border-box;margin-top:4px;padding:8px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:#1f1f22;color:#f4f4f6}#drift-gmenu option{color:#111;background:#fff}#drift-gmenu button.drift-sw{width:52px;height:32px;border-radius:999px;background:#3a3a3e;border:0;padding:0;position:relative;flex:none;cursor:pointer}#drift-gmenu button.drift-sw i{position:absolute;top:2px;left:2px;width:28px;height:28px;border-radius:50%;background:#fff;display:block;transition:left .16s}#drift-gmenu button.drift-sw.on{background:#34c759}#drift-gmenu button.drift-sw.on i{left:22px}#drift-gmenu [data-view=ai]{margin-right:8px}#drift-gmenu [data-view=ai]>.dg-card{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}#drift-gmenu [data-log]{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:8px;font-size:15px;padding:4px}#drift-gmenu [data-gem]{flex:1;min-height:80px;border-radius:16px;overflow:hidden;background:#1f1f22}#drift-gmenu [data-gem][hidden],#drift-gmenu [data-preview][hidden]{display:none!important}#drift-gmenu .u{align-self:flex-end;max-width:86%;background:#3a3a3e;color:#fff;border-radius:16px 16px 6px 16px;padding:8px 10px}#drift-gmenu .a{align-self:flex-start;max-width:92%;background:#1f1f22;color:#f4f4f6;border-radius:16px 16px 16px 6px;padding:8px 10px}#drift-gmenu .u img,#drift-gmenu [data-preview] img{max-width:100%;max-height:160px;border-radius:12px;display:block;margin-top:6px}#drift-gmenu .drift-compose{flex:none;margin-top:8px;background:#1f1f22;border:1px solid rgba(255,255,255,.08);border-radius:22px;padding:10px 12px 8px}#drift-gmenu .drift-compose textarea{border:0;background:transparent;min-height:44px;padding:4px 2px;resize:none;color:#f4f4f6}#drift-gmenu .drift-row{display:flex;align-items:center;gap:8px;margin-top:4px}#drift-gmenu .drift-pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:#2a2a2e;color:#f4f4f6;font-weight:650;padding:6px 10px;cursor:pointer}#drift-gmenu .drift-pill.on,#drift-gmenu [data-mode].on{background:#f4f4f6;color:#111}#drift-gmenu .drift-ico{width:36px;height:36px;border-radius:50%;background:#2a2a2e;border:1px solid rgba(255,255,255,.12);color:#f4f4f6;display:grid;place-items:center;padding:0;cursor:pointer}#drift-gmenu .drift-glasspick{display:flex;align-items:center;gap:8px;margin:0 0 8px}#drift-gmenu .drift-glasspick select{width:auto;flex:1;margin:0;border-radius:999px;min-height:36px}#drift-gmenu [data-modes]{display:flex;gap:4px;flex:none}#drift-gmenu [data-mode]{border-radius:999px;background:#2a2a2e;border:1px solid rgba(255,255,255,.1);color:#f4f4f6;padding:6px 10px;cursor:pointer}#drift-gmenu h3{margin:0 0 8px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.55}#drift-gmenu button:not(.drift-sw):not([data-tab]):not([data-exit]):not(.drift-pill):not(.drift-ico):not([data-mode]){border:0;border-radius:12px;background:#3a3a3e;color:#f4f4f6;padding:8px 10px;cursor:pointer}';
       var bar = document.createElement('div');
       bar.id = 'drift-gmenu';
-      bar.innerHTML = '<div data-fly hidden><div data-view="home" data-settings><b>Home</b><h3>Protector</h3><label class="drift-line"><span><b>Protector</b><small>Tócalo aquí. No hace falta mover la barra.</small></span><button type="button" class="drift-sw" role="switch" data-k="wos:protector" aria-checked="false"><i></i></button></label><div>When a class connects<select data-k="wos:prot-class"><option value="alert">Only alert</option><option value="classroom">Alert and open Classroom</option></select></div><h3>Atajos</h3><div data-kb-note style="opacity:.7;font-size:11px">Only 3 controls</div><label style="display:block;margin-top:8px">Hide non-edu apps<input data-kb="wos:kb-hide" readonly></label><label style="display:block;margin-top:8px">Classroom<input data-kb="wos:kb-class" readonly></label><label style="display:block;margin-top:8px">Discovery<input data-kb="wos:kb-disc" readonly></label><label style="display:block;margin-top:8px">ALEKS<input data-kb="wos:kb-aleks" readonly></label><label style="display:block;margin-top:8px">Google Docs<input data-kb="wos:kb-docs" readonly></label><h3>Asistente</h3><label class="drift-line"><span><b>AI assistant</b><small>El orbe en el escritorio.</small></span><button type="button" class="drift-sw" role="switch" data-orb aria-checked="false"><i></i></button></label><h3>Historial</h3><div><b>Clean search history</b><select data-clean-site><option value="docs">Google Docs</option><option value="discovery">Discovery Education</option><option value="classroom">Classroom</option><option value="canva">Canva</option><option value="other">Wikipedia</option></select><label style="display:block;margin-top:6px">Tabs (1 to 20)<input data-clean-n type="number" min="1" max="20" value="1"></label><div style="display:flex;gap:8px;margin-top:8px"><button type="button" data-clean-open style="flex:1">Open</button><button type="button" data-clean-random style="flex:1;background:transparent;border:1px solid rgba(0,0,0,.2)">Random</button></div></div></div><div data-view="settings" hidden><b>Settings</b><label class="drift-line"><span><b>Low detail mode</b><small>Quita blur y animaciones.</small></span><button type="button" class="drift-sw" role="switch" data-k="wos:low-detail" aria-checked="false"><i></i></button></label><div style="margin:12px 0"><b>App size</b><label style="display:flex;gap:8px;margin:6px 0"><input type="radio" name="g-app-size" value="xl"> Extra large</label><label style="display:flex;gap:8px;margin:6px 0"><input type="radio" name="g-app-size" value="lg"> Large</label><label style="display:flex;gap:8px;margin:6px 0"><input type="radio" name="g-app-size" value="sm"> Small</label><label style="display:flex;gap:8px;margin:6px 0"><input type="radio" name="g-app-size" value="xs"> Extra small</label></div><label class="drift-line"><span><b>Orb size</b><small>Tamaño del logo que abre el panel.</small></span><input data-orb-size type="range" min="44" max="110" value="68" style="width:140px;flex:none"></label><label class="drift-line"><span><b>Undetected</b><small>El logo del panel se ve menos y el script no se queda pegado en la página.</small></span><button type="button" class="drift-sw" role="switch" data-k="wos:undetected" aria-checked="false"><i></i></button></label></div><div data-view="ai" data-chat hidden><div data-log></div><div data-gem hidden></div><div class="drift-compose"><div data-model style="opacity:.6;font-size:11px;flex:none"></div><div class="drift-glasspick"><select data-pick aria-label="Modelo"><option value="">Auto</option></select><div data-modes><button type="button" data-mode="fast">Fast</button><button type="button" data-mode="think">Think</button><button type="button" data-mode="expert">Expert</button></div></div><textarea data-ai placeholder="Escribe o mantén presionado para hablar"></textarea><div class="drift-row"><button type="button" class="drift-pill" data-act="think"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="12" cy="12" r="1.7" fill="currentColor"/><ellipse cx="12" cy="12" rx="8" ry="3.1" fill="none" stroke="currentColor" stroke-width="1.5"/><ellipse cx="12" cy="12" rx="8" ry="3.1" transform="rotate(60 12 12)" fill="none" stroke="currentColor" stroke-width="1.5"/><ellipse cx="12" cy="12" rx="8" ry="3.1" transform="rotate(120 12 12)" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>Pensar</button><button type="button" class="drift-pill" data-act="search"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.6"/><ellipse cx="12" cy="12" rx="3.3" ry="8" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M4 12h16M6.3 7.6h11.4M6.3 16.4h11.4" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Buscar</button><span style="flex:1"></span><button type="button" class="drift-ico" data-plus style="color:#111" aria-label="Adjuntar"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button><button type="button" class="drift-ico" data-mic style="color:#111" aria-label="Hablar"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button></div></div><input data-file type="file" hidden><button type="button" data-ask hidden>Send</button></div></div><nav data-rail><button type="button" data-tab="home" aria-label="Home"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5.2v-6.2H10.2V21H5a1 1 0 0 1-1-1z"/></svg></button><button type="button" data-tab="settings" aria-label="Settings"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M10.2 2.8h3.6l.4 2.1a7.2 7.2 0 0 1 1.7.7l1.9-1.1 2.5 2.5-1.1 1.9c.3.5.5 1.1.7 1.7l2.1.4v3.6l-2.1.4a7.2 7.2 0 0 1-.7 1.7l1.1 1.9-2.5 2.5-1.9-1.1a7.2 7.2 0 0 1-1.7.7l-.4 2.1h-3.6l-.4-2.1a7.2 7.2 0 0 1-1.7-.7l-1.9 1.1-2.5-2.5 1.1-1.9a7.2 7.2 0 0 1-.7-1.7l-2.1-.4V9.6l2.1-.4c.2-.6.4-1.2.7-1.7L3.5 5.6l2.5-2.5 1.9 1.1c.5-.3 1.1-.5 1.7-.7l.6-1.7zM12 9.2A2.8 2.8 0 1 0 12 14.8 2.8 2.8 0 0 0 12 9.2z"/></svg></button><button type="button" data-tab="ai" aria-label="AI"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M12 2.2 13.8 8.2 19.8 10 13.8 11.8 12 17.8 10.2 11.8 4.2 10 10.2 8.2z"/><path fill="currentColor" d="M18.2 14.2 18.9 16.4 21.1 17.1 18.9 17.8 18.2 20 17.5 17.8 15.3 17.1 17.5 16.4z"/></svg></button><button type="button" data-exit aria-label="Salir"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10 12h10M16 8l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button></nav>';
+      bar.innerHTML = '<div data-fly><div data-view="home" data-settings><div class="dg-card"><div data-clock>--:--</div><div data-day></div></div><div class="dg-card"><label class="drift-line"><span><b>Enable Protector</b><small>Tócalo aquí. No hace falta mover la barra.</small></span><button type="button" class="drift-sw" role="switch" data-k="wos:protector" aria-checked="false"><i></i></button></label></div><div data-mount><div data-board class="dg-card dg-fill"><b>Settings</b><table class="dg-set"><tr><td><b>Low detail mode</b><small>Quita blur y animaciones.</small></td><td><button type="button" class="drift-sw" role="switch" data-k="wos:low-detail" aria-checked="false"><i></i></button></td></tr><tr><td><b>App size</b></td><td><select data-app-size><option value="xl">Extra large</option><option value="lg">Large</option><option value="sm">Small</option><option value="xs">Extra small</option></select></td></tr><tr><td><b>Orb size</b><small>Tamaño del logo que abre el panel.</small></td><td><select data-orb-size><option value="44">44</option><option value="56">56</option><option value="68" selected>68</option><option value="84">84</option><option value="110">110</option></select></td></tr><tr><td><b>Undetected</b><small>El logo del panel se ve menos y el script no se queda pegado en la página.</small></td><td><button type="button" class="drift-sw" role="switch" data-k="wos:undetected" aria-checked="false"><i></i></button></td></tr><tr><td><b>AI assistant</b><small>El orbe en el escritorio.</small></td><td><button type="button" class="drift-sw" role="switch" data-orb aria-checked="false"><i></i></button></td></tr><tr><td colspan="2"><b>Atajos</b><div data-kb-note style="opacity:.7;font-size:11px">Only 3 controls</div></td></tr><tr><td>Hide non-edu apps</td><td><input data-kb="wos:kb-hide" readonly></td></tr><tr><td>Classroom</td><td><input data-kb="wos:kb-class" readonly></td></tr><tr><td>Discovery</td><td><input data-kb="wos:kb-disc" readonly></td></tr><tr><td>ALEKS</td><td><input data-kb="wos:kb-aleks" readonly></td></tr><tr><td>Google Docs</td><td><input data-kb="wos:kb-docs" readonly></td></tr><tr><td><b>When a class connects</b></td><td><select data-k="wos:prot-class"><option value="alert">Only alert</option><option value="classroom">Alert and open Classroom</option></select></td></tr><tr><td colspan="2"><b>Clean search history</b><select data-clean-site><option value="docs">Google Docs</option><option value="discovery">Discovery Education</option><option value="classroom">Classroom</option><option value="canva">Canva</option><option value="other">Wikipedia</option></select><label style="display:block;margin-top:6px">Tabs (1 to 20)<input data-clean-n type="number" min="1" max="20" value="1"></label><div style="display:flex;gap:8px;margin-top:8px"><button type="button" data-clean-open style="flex:1">Open</button><button type="button" data-clean-random style="flex:1;background:transparent;border:1px solid rgba(255,255,255,.2)">Random</button></div></td></tr></table></div></div></div><div data-view="settings" hidden><div class="dg-card dg-fill" data-mount></div></div><div data-view="ai" data-chat hidden><div class="dg-card"><div data-log></div><div data-gem hidden></div><div class="drift-compose"><div data-model style="opacity:.7;font-size:12px">Drift 2.1</div><div class="drift-glasspick"><select data-pick aria-label="Modelo"><option value="">Auto</option></select><div data-modes><button type="button" data-mode="fast">Fast</button><button type="button" data-mode="think">Think</button><button type="button" data-mode="expert">Expert</button></div></div><div data-preview hidden></div><textarea data-ai placeholder="Escribe o mantén presionado para hablar"></textarea><div class="drift-row"><button type="button" class="drift-pill" data-act="think">Pensar</button><button type="button" class="drift-pill" data-act="search">Buscar</button><span style="flex:1"></span><button type="button" class="drift-ico" data-plus aria-label="Adjuntar">+</button><button type="button" class="drift-ico" data-mic aria-label="Hablar">Mic</button></div></div><input data-file type="file" accept="image/*,.txt,.js,.json,.md" hidden><button type="button" data-ask hidden>Send</button></div></div></div><nav data-rail><button type="button" data-tab="home" class="on" aria-label="Home">Home</button><button type="button" data-tab="settings" aria-label="Settings">Set</button><button type="button" data-tab="ai" aria-label="AI">AI</button><button type="button" data-exit aria-label="Salir">Exit</button></nav>';
       var mkGone = document.getElementById('drift-gmark');
       if (mkGone) mkGone.remove();
       document.documentElement.appendChild(bar);
@@ -2572,6 +2572,16 @@ function driftSite(url) {
         document.documentElement.appendChild(orb);
       };
       window.__driftGBar = bar;
+      function tickMenuClock() {
+        if (!bar.isConnected) return;
+        var now = new Date();
+        var c = bar.querySelector('[data-clock]');
+        var d = bar.querySelector('[data-day]');
+        if (c) c.textContent = now.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+        if (d) d.textContent = now.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
+      }
+      tickMenuClock();
+      setInterval(tickMenuClock, 1000);
       var body = bar.querySelector('[data-body]');
       var settings = bar.querySelector('[data-settings]');
       var chat = bar.querySelector('[data-chat]');
@@ -2667,10 +2677,9 @@ function driftSite(url) {
         try { if (el.type === 'checkbox') el.checked = localStorage.getItem(k) === '1'; else el.value = localStorage.getItem(k) || ''; } catch (e) {}
         el.onchange = function () { try { localStorage.setItem(k, el.type === 'checkbox' ? (el.checked ? '1' : '0') : el.value); } catch (e) {} };
       });
-      bar.querySelectorAll('[name="g-app-size"]').forEach(function (r) {
-        try { r.checked = r.value === (localStorage.getItem('wos:size-apps') || 'lg'); } catch (e) {}
+      bar.querySelectorAll('[data-app-size]').forEach(function (r) {
+        try { r.value = localStorage.getItem('wos:size-apps') || 'lg'; } catch (e) {}
         r.onchange = function () {
-          if (!r.checked) return;
           try { localStorage.setItem('wos:size-apps', r.value); } catch (e) {}
           var map = { xl: '3', lg: '2', sm: '1.7', xs: '1.5' };
           if (map[r.value]) document.documentElement.style.setProperty('--drift-app', map[r.value]);
@@ -2680,7 +2689,7 @@ function driftSite(url) {
       var orbRange = bar.querySelector('[data-orb-size]');
       if (orbRange) {
         try { orbRange.value = localStorage.getItem('wos:gorb-size') || '68'; } catch (e) {}
-        orbRange.oninput = function () {
+        orbRange.onchange = orbRange.oninput = function () {
           try { localStorage.setItem('wos:gorb-size', orbRange.value); } catch (e) {}
           var g = document.getElementById('drift-gorb');
           if (g) { g.style.width = orbRange.value + 'px'; g.style.height = orbRange.value + 'px'; }
@@ -2745,6 +2754,7 @@ function driftSite(url) {
       function pull(j) { return ((j && j.content) || []).map(function (x) { return x.text || ''; }).join('').trim(); }
       function driftCatalog() {
         return [
+          { id: 'google/gemini-3.8-flash', name: 'Drift 2.1', fast: 5, think: 5, expert: 5, search: 3 },
           { id: 'mistralai/mistral-small-2603', name: 'Mistral Small', fast: 5, think: 2, expert: 0, search: 0 },
           { id: 'gemini-web', name: 'Gemini', fast: 2, think: 3, expert: 2, search: 5 },
           { id: 'mistralai/mistral-medium-3.5', name: 'Mistral Medium 3.5', fast: 3, think: 4, expert: 2, search: 1 },
@@ -2987,11 +2997,11 @@ function driftSite(url) {
         return merged;
       }
       async function driftVision(data, ask) {
-        var m = { id: 'qwen/qwen3.8-omni-flash:free', name: 'Qwen3.8 Omni' };
+        var m = { id: 'google/gemini-3.8-flash', name: 'Drift 2.1' };
         bar._model = m;
         var lab = bar.querySelector('[data-model]');
         if (lab) lab.textContent = m.name;
-        var r = await fetch('https://holy-firefly-982c.fert0480.workers.dev/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: m.id, max_tokens: 700, messages: [{ role: 'system', content: 'You are Qwen3.8 Omni. If asked which model you are, answer exactly Qwen3.8 Omni.' }, { role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: data } }, { type: 'text', text: ask }] }] }) });
+        var r = await fetch('https://holy-firefly-982c.fert0480.workers.dev/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: m.id, max_tokens: 700, messages: [{ role: 'system', content: 'You are Drift 2.1. If asked which model you are, answer exactly Drift 2.1.' }, { role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: data } }, { type: 'text', text: ask }] }] }) });
         var j = await r.json();
         var text = pull(j);
         if (!text) throw new Error('Sin respuesta.');
@@ -3205,8 +3215,21 @@ function driftSite(url) {
         var img = /^image\//.test(file.type);
         reader.onload = function () {
           var raw = String(reader.result || '');
-          if (img) fileImage = raw.split(',')[1] || '';
-          else { var text = usable(raw); fileNote = text ? ('File ' + file.name + ':\n' + text) : ('File ' + file.name); }
+          var preview = bar.querySelector('[data-preview]');
+          if (img) {
+            fileImage = raw.split(',')[1] || '';
+            if (preview) {
+              preview.hidden = false;
+              preview.innerHTML = '';
+              var im = document.createElement('img');
+              im.alt = file.name;
+              im.src = raw;
+              preview.appendChild(im);
+            }
+          } else {
+            if (preview) { preview.hidden = true; preview.innerHTML = ''; }
+            var text = usable(raw); fileNote = text ? ('File ' + file.name + ':\n' + text) : ('File ' + file.name);
+          }
         };
         if (img) reader.readAsDataURL(file); else reader.readAsText(file);
       };
@@ -3227,10 +3250,18 @@ function driftSite(url) {
         var q = box.value.trim();
         if (!q && !fileNote && !fileImage) return;
         box.value = '';
-        bubble('u', q || (fileImage ? 'Image' : 'File'));
+        var mine = bubble('u', q || (fileImage ? 'Imagen' : 'Archivo'));
+        if (fileImage && mine) {
+          var shot = document.createElement('img');
+          shot.alt = '';
+          shot.src = 'data:image/jpeg;base64,' + fileImage;
+          mine.appendChild(shot);
+        }
         var hold = bubble('a', '…');
         var note = fileNote, img = fileImage;
         fileNote = ''; fileImage = '';
+        var preview = bar.querySelector('[data-preview]');
+        if (preview) { preview.hidden = true; preview.innerHTML = ''; }
         var input = bar.querySelector('[data-file]');
         if (input) input.value = '';
         var job = img ? driftVision(img, (q || 'What is in this image?') + (note ? '\n\n' + note : '')) : (function () {
@@ -3253,6 +3284,11 @@ function driftSite(url) {
         if (fly) fly.hidden = !!same;
         if (same) return;
         bar.querySelectorAll('[data-view]').forEach(function (v) { v.hidden = v.getAttribute('data-view') !== id; });
+        if (id === 'home' || id === 'settings') {
+          var board = bar.querySelector('[data-board]');
+          var mount = bar.querySelector('[data-view="' + id + '"] [data-mount]');
+          if (board && mount) mount.appendChild(board);
+        }
         if (id === 'ai') {
           ensureGemFrame();
           var pin = bar.dataset.pin || '';
@@ -3275,6 +3311,8 @@ function driftSite(url) {
           o.textContent = m.name;
           pick.appendChild(o);
         });
+        pick.value = 'google/gemini-3.8-flash';
+        bar.dataset.pin = 'google/gemini-3.8-flash';
         pick.onchange = function () {
           bar.dataset.pin = pick.value || '';
           driftPick();
@@ -3629,7 +3667,7 @@ function driftSite(url) {
       switchHTML('drift-lens-sw', lensOn) + '</div>' +
       '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:12px">' +
       '<div style="flex:1"><b>Google Lens bypass (Web)</b>' +
-      '<div style="opacity:.75;font-size:12px;margin-top:4px">El mismo Lens, con el logo, movible. Misma barra a la izquierda.</div></div>' +
+      '<div style="opacity:.75;font-size:12px;margin-top:4px">Logo movible. Al pulsarlo te pide circular lo que quieres preguntar. Drift 2.1 responde sobre esa imagen.</div></div>' +
       switchHTML('drift-lens-web-sw', onFlag('wos:lens-web')) + '</div>' +
       '<div style="margin-top:16px;border-top:1px solid rgba(255,255,255,.08);padding-top:14px"><b>Bookmarklets</b>' +
       '<div style="opacity:.75;font-size:12px;margin:4px 0 8px">Arrástralos a la barra de marcadores del navegador real. Pulsa el nombre para copiarlo.</div>' +
@@ -4264,14 +4302,21 @@ function driftSite(url) {
       return Object.keys(pages).map(function (k) { return pages[k]; }).filter(function (p) { return p.thumbnail && p.thumbnail.source; }).slice(0, 8);
     }).catch(function () { return []; });
   }
-  function openLensBar() {
+  function openLensBar(autoCircle) {
     var old = document.getElementById('drift-lens-panel');
-    if (old) { old.remove(); return; }
+    if (old) {
+      if (!autoCircle) { old.remove(); return; }
+      old.remove();
+    }
     var w = document.createElement('aside');
     w.id = 'drift-lens-panel';
     w.setAttribute('aria-label', 'Lens');
     w.style.cssText = 'position:fixed;z-index:2147483004;left:0;top:0;bottom:0;width:min(420px,92vw);display:flex;flex-direction:column;background:#fff;color:#202124;border-radius:0 28px 28px 0;overflow:hidden;box-shadow:0 8px 28px rgba(60,64,67,.28);font:14px/1.45 Roboto,Arial,system-ui,sans-serif';
     w.innerHTML = '<div style="flex:none;display:flex;align-items:center;gap:10px;padding:14px 16px 8px"><img alt="" src="/lens.png" style="width:28px;height:28px;object-fit:contain"><b style="font-size:18px;font-weight:500">Lens</b><button type="button" data-x aria-label="Cerrar" style="margin-left:auto;border:0;background:#f1f3f4;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;color:#202124">×</button></div><div data-body style="flex:1;overflow:auto;padding:8px 16px 16px"></div><div style="flex:none;display:flex;gap:8px;padding:10px 12px 14px;border-top:1px solid #e8eaed"><input data-q placeholder="Pregunta sobre la imagen" style="flex:1;border:0;background:#f1f3f4;border-radius:24px;padding:12px 16px;font:15px Roboto,Arial,sans-serif;outline:none"><button type="button" data-send style="border:0;border-radius:24px;background:#1a73e8;color:#fff;padding:0 16px;font-weight:600;cursor:pointer">Enviar</button></div>';
+    if (autoCircle) {
+      w.style.visibility = 'hidden';
+      w.style.pointerEvents = 'none';
+    }
     var body = w.querySelector('[data-body]');
     body.innerHTML = '<p style="margin:8px 0 12px;color:#3c4043">Circula lo que quieras ver. La respuesta sale de esa imagen.</p><button type="button" data-circle style="border:0;border-radius:20px;background:#f1f3f4;color:#202124;font:500 14px Roboto,Arial,sans-serif;padding:10px 14px;cursor:pointer">Circular imagen</button>';
     w.querySelector('[data-x]').onclick = function () { w.remove(); };
@@ -4342,6 +4387,10 @@ function driftSite(url) {
       again.onclick = function () { startCircle(); };
       body.append(img, chips, blocks, sim, again);
     }
+    function showPanel() {
+      w.style.visibility = 'visible';
+      w.style.pointerEvents = 'auto';
+    }
     function fill(blob) {
       shot = blob;
       body.innerHTML = '<div style="color:#5f6368;padding:12px 0">Mirando la imagen…</div>';
@@ -4377,11 +4426,12 @@ function driftSite(url) {
       veil.id = 'drift-lens-ask';
       veil.style.cssText = 'position:fixed;inset:0;z-index:2147483003;background:rgba(32,33,36,.28);cursor:crosshair';
       var tip = document.createElement('div');
-      tip.textContent = 'Arrastra para circular la imagen';
+      tip.textContent = 'Arrastra para circular lo que quieres preguntar';
       tip.style.cssText = 'position:absolute;left:50%;top:18px;transform:translateX(-50%);background:#202124;color:#fff;padding:8px 14px;border-radius:999px;font:13px Roboto,Arial,sans-serif;pointer-events:none';
       var box = document.createElement('div');
       box.style.cssText = 'position:absolute;border:2px solid #1a73e8;background:rgba(26,115,232,.16);display:none;border-radius:8px';
       veil.append(tip, box);
+      veil.style.zIndex = '2147483006';
       document.body.appendChild(veil);
       var x0 = 0, y0 = 0, drag = false;
       veil.addEventListener('pointerdown', function (e) {
@@ -4401,7 +4451,7 @@ function driftSite(url) {
         drag = false;
         var rect = box.getBoundingClientRect();
         veil.remove();
-        if (rect.width < 12 || rect.height < 12) return;
+        if (rect.width < 12 || rect.height < 12) { showPanel(); return; }
         var blob = null;
         try {
           var stream = await navigator.mediaDevices.getDisplayMedia({ video: { displaySurface: 'browser' }, preferCurrentTab: true, selfBrowserSurface: 'include', monitorTypeSurfaces: 'exclude', surfaceSwitching: 'exclude' });
@@ -4418,6 +4468,7 @@ function driftSite(url) {
           blob = await new Promise(function (res) { c.toBlob(res, 'image/jpeg', 0.8); });
         } catch (err) { blob = null; }
         if (!w.isConnected) openLensBar();
+        showPanel();
         if (blob) fill(blob);
         else {
           var live = document.getElementById('drift-lens-panel');
@@ -4428,6 +4479,7 @@ function driftSite(url) {
     }
     body.querySelector('[data-circle]').onclick = startCircle;
     document.body.appendChild(w);
+    if (autoCircle) startCircle();
   }
   function openLensAskGeminiRetired() {
     var prev = document.getElementById('drift-lens-panel');
@@ -4709,7 +4761,7 @@ function driftSite(url) {
     window.XAPPS.gmail = { n: 'Gmail', f: googleAppsShell(login) };
     try { if (typeof rend === 'function') rend(); } catch (e5) {}
   }
-  function bindLensOrb(btn, posKey) {
+  function bindLensOrb(btn, posKey, onOpen) {
     try {
       var saved = JSON.parse(localStorage.getItem(posKey) || 'null');
       if (saved && typeof saved.x === 'number') {
@@ -4750,7 +4802,7 @@ function driftSite(url) {
       if (btn.__moved) { btn.__moved = false; e.preventDefault(); e.stopPropagation(); return; }
       e.preventDefault();
       e.stopPropagation();
-      openLensAsk();
+      (onOpen || openLensAsk)();
     });
   }
   function installLensOrb() {
@@ -4782,7 +4834,7 @@ function driftSite(url) {
     btn.setAttribute('aria-label', 'Google Lens Web');
     btn.style.cssText = 'position:fixed;z-index:2147483000;left:18px;bottom:calc(var(--tbh, 76px) + 86px);width:56px;height:56px;padding:6px;border-radius:16px;border:0;background:#fff;box-shadow:0 8px 24px rgba(0,0,0,.28);cursor:grab;touch-action:none';
     btn.innerHTML = '<img alt="" src="/lens.png" draggable="false" style="width:100%;height:100%;object-fit:contain;display:block;pointer-events:none">';
-    bindLensOrb(btn, 'wos:lens-web-pos');
+    bindLensOrb(btn, 'wos:lens-web-pos', function () { openLensBar(true); });
     document.body.appendChild(btn);
   }
   function installAiModes() {
