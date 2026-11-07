@@ -346,7 +346,7 @@
         return name;
       }
       try {
-        var r = await fetch((typeof EP === 'function' ? EP() : 'https://holy-firefly-982c.fert0480.workers.dev').replace(/\/$/, '') + '/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'mistralai/mistral-large-2512', max_tokens: 8192, messages: [{ role: 'user', content: q }] }) });
+        var r = await fetch((typeof EP === 'function' ? EP() : 'https://holy-firefly-982c.fert0480.workers.dev').replace(/\/$/, '') + '/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'google/gemini-3.8-flash', max_tokens: 8192, messages: [{ role: 'user', content: q }] }) });
         var raw = await r.text();
         if (/^\s*</.test(raw)) throw new Error('No answer. Try again.');
         var j; try { j = JSON.parse(raw); } catch (err) { throw new Error('No answer. Try again.'); }
@@ -360,7 +360,7 @@
         var fence = text.match(/```[^\n]*\n([\s\S]*?)```/);
         var codeText = fence ? fence[1].replace(/\s+$/, '') : '';
         if (!codeText && wants) {
-          var r2 = await fetch((typeof EP === 'function' ? EP() : 'https://holy-firefly-982c.fert0480.workers.dev').replace(/\/$/, '') + '/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'mistralai/mistral-large-2512', max_tokens: 8192, messages: [{ role: 'user', content: q }] }) });
+          var r2 = await fetch((typeof EP === 'function' ? EP() : 'https://holy-firefly-982c.fert0480.workers.dev').replace(/\/$/, '') + '/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'google/gemini-3.8-flash', max_tokens: 8192, messages: [{ role: 'user', content: q }] }) });
           var raw2 = await r2.text();
           if (!/^\s*</.test(raw2)) {
             try { j = JSON.parse(raw2); text = ((j.content || []).map(function (x) { return x.text || ''; }).join('')) || text; } catch (e2) {}
@@ -452,7 +452,7 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              model: 'mistralai/mistral-large-2512',
+              model: 'google/gemini-3.8-flash',
               max_tokens: 8192,
               messages: [{ role: 'user', content: q }]
             })
