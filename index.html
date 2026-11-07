@@ -1907,7 +1907,7 @@ function ai(root){
         msg.content=[{type:'image',source:{type:'base64',media_type:imageBlob.type||'image/jpeg',data}},{type:'text',text:q||'¿Qué hay en esta imagen?'}];
       }catch(e){}
     }
-    const r=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'mistralai/mistral-large-2512',max_tokens:4096,messages:[msg]})});
+    const r=await fetch(EP()+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'google/gemini-3.8-flash',max_tokens:4096,messages:[msg]})});
     const j=await r.json().catch(()=>({}));
     const text=((j.content||[]).map(x=>x.text||'').join(''))||'';
     if(text.trim()) return text;
@@ -2822,7 +2822,7 @@ function vscode(root){
     const wants=/\b(create|make|haz|crea|archivo|file|game|juego|build|minecraft)\b/i.test(asked);
     async function pull(prompt){
       const ep=(typeof EP==='function'?EP():'https://holy-firefly-982c.fert0480.workers.dev').replace(/\/$/,'');
-      const r=await fetch(ep+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'mistralai/mistral-large-2512',max_tokens:8192,messages:[{role:'user',content:prompt}]})});
+      const r=await fetch(ep+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'google/gemini-3.8-flash',max_tokens:8192,messages:[{role:'user',content:prompt}]})});
       const raw=await r.text();
       if(/^\s*</.test(raw)) throw new Error('No answer. Try again.');
       let j; try{ j=JSON.parse(raw); }catch(e){ throw new Error('No answer. Try again.'); }
@@ -3714,7 +3714,7 @@ XAPPS.gem={n:'Gemini',f:function(root){
   root.innerHTML='<div style="height:100%;display:flex;flex-direction:column;background:#0e0f13;color:#eee"><div style="padding:12px 14px;font-weight:700">Gemini</div><div data-log style="flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px"></div><div style="display:flex;gap:8px;padding:10px"><textarea data-q placeholder="Ask Gemini" style="flex:1;min-height:44px;border-radius:12px;border:1px solid #333;background:#17181d;color:#eee;padding:8px"></textarea><button type="button" data-go style="border:0;border-radius:12px;background:#1a73e8;color:#fff;padding:0 14px;cursor:pointer">Send</button></div></div>';
   const log=root.querySelector('[data-log]'), q=root.querySelector('[data-q]');
   function add(cls,text){const d=document.createElement('div');d.style.cssText='max-width:86%;padding:8px 10px;border-radius:12px;white-space:pre-wrap;'+(cls==='u'?'align-self:flex-end;background:#1a73e8':'align-self:flex-start;background:#1b1c22');d.textContent=text;log.appendChild(d);log.scrollTop=log.scrollHeight;return d}
-  async function go(){const text=(q.value||'').trim();if(!text)return;q.value='';add('u',text);const hold=add('a','…');const ep=(typeof EP==='function'?EP():'https://holy-firefly-982c.fert0480.workers.dev').replace(/\/$/,'');try{const r=await fetch(ep+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'mistralai/mistral-large-2512',max_tokens:4096,messages:[{role:'user',content:text}]})});const j=await r.json();hold.textContent=((j.content||[]).map(x=>x.text||'').join(''))||(j.error&&(j.error.message||'No answer'))||'No answer';}catch(e){hold.textContent=String(e.message||e)}}
+  async function go(){const text=(q.value||'').trim();if(!text)return;q.value='';add('u',text);const hold=add('a','…');const ep=(typeof EP==='function'?EP():'https://holy-firefly-982c.fert0480.workers.dev').replace(/\/$/,'');try{const r=await fetch(ep+'/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'google/gemini-3.8-flash',max_tokens:4096,messages:[{role:'user',content:text}]})});const j=await r.json();hold.textContent=((j.content||[]).map(x=>x.text||'').join(''))||(j.error&&(j.error.message||'No answer'))||'No answer';}catch(e){hold.textContent=String(e.message||e)}}
   root.querySelector('[data-go]').onclick=go; q.onkeydown=function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();go()}};
 }};
 
